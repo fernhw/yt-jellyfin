@@ -19,7 +19,6 @@
 - https://www.youtube.com/@ConnorDawg
 - https://www.youtube.com/@TheAnimeMan
 - https://www.youtube.com/@CDawgVA
-- https://www.youtube.com/@MothersBasement
 - https://www.youtube.com/@InternetHistorian
 - https://www.youtube.com/@Echidnut
 - https://www.youtube.com/@RedLetterMedia
