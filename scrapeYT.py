@@ -254,26 +254,27 @@ def scrape_channel(channel_url, yt_root, filter_file=None, force=False):
 
 def main():
     parser = argparse.ArgumentParser(description='Scrape YouTube channel metadata for Jellyfin')
-    parser.add_argument('channel_url', help='YouTube channel URL')
-    parser.add_argument('yt_root', help='Root directory for YT library (e.g. /Volumes/Darrel4tb/YT)')
+    parser.add_argument('channel_url', nargs='+', help='YouTube channel URL(s)')
+    parser.add_argument('--yt-root', dest='yt_root', required=True,
+                        help='Root directory for YT library (e.g. /Volumes/Darrel4tb/YT)')
     parser.add_argument('--filter', dest='filter_file', default=None,
                         help='Path to filterYT.md for channel name remapping')
     parser.add_argument('--force', action='store_true',
                         help='Re-scrape even if already scraped')
     args = parser.parse_args()
 
-    folder_name, status = scrape_channel(
-        args.channel_url, args.yt_root,
-        filter_file=args.filter_file, force=args.force)
+    errors = 0
+    for url in args.channel_url:
+        folder_name, status = scrape_channel(
+            url, args.yt_root,
+            filter_file=args.filter_file, force=args.force)
+        print(f"  {status}")
+        if status.startswith('ERROR'):
+            errors += 1
+        if not status.startswith('SKIP') and not status.startswith('ERROR'):
+            time.sleep(1)
 
-    print(f"  {status}")
-
-    if status.startswith('ERROR'):
-        sys.exit(1)
-    elif status.startswith('SKIP'):
-        sys.exit(2)
-    else:
-        sys.exit(0)
+    sys.exit(1 if errors else 0)
 
 
 if __name__ == '__main__':

@@ -152,50 +152,64 @@ reorder_queue() {
   rm -f "$priority_queue" "$normal_queue"
 }
 
-# Derive folder name from @handle (shell-only, no Python)
-handle_to_folder() {
+SCRAPED_CACHE="$YT_ROOT/.scraped"
+
+# Build scraped cache: one HDD read, stores folder names + titles + IDs
+# All lowercased and stripped of separators for fuzzy handle matching
+refresh_scraped_cache() {
+  {
+    ls -d "$YT_ROOT"/*/tvshow.nfo 2>/dev/null | sed 's|.*/YT/||; s|/tvshow.nfo||'
+    grep -h '<title>' "$YT_ROOT"/*/tvshow.nfo 2>/dev/null | sed 's|.*<title>||; s|</title>.*||'
+  } | tr '[:upper:]' '[:lower:]' | sed 's/[_ -]//g' | sort -u > "$SCRAPED_CACHE"
+}
+
+# Check if a URL is already scraped (from cache file, no per-channel I/O)
+is_scraped() {
   local handle
-  handle=$(printf '%s' "$1" | grep -oE '@[^/]+' | sed 's/^@//')
+  handle=$(printf '%s' "$1" | grep -oE '@[^/]+' | sed 's/^@//' | tr '[:upper:]' '[:lower:]' | sed 's/[_ -]//g')
   [ -z "$handle" ] && return 1
-  # Check filterYT.md for remapping
-  local filtered="$handle"
-  if [ -f "$FILTER_FILE" ]; then
-    local match
-    match=$(awk -F ' *-> *' -v ch="$handle" 'tolower($1)==tolower(ch) && NF>=2 {print $2; exit}' "$FILTER_FILE")
-    [ -n "$match" ] && filtered="$match"
-  fi
-  # Normalize: strip special chars, spaces to underscores, truncate
-  printf '%s' "$filtered" | sed 's/[^a-zA-Z0-9 _-]//g; s/  */ /g; s/^ *//; s/ *$//' | tr ' ' '_' | cut -c1-50
+  grep -qix "$handle" "$SCRAPED_CACHE" 2>/dev/null
 }
 
 scrape_all_channels() {
   echo ""
   echo "--- Scraping channel metadata ---"
 
-  # Fast check: count scraped folders vs subscribed channels
+  # Single HDD read: cache all scraped folder names
+  refresh_scraped_cache
   local scraped_count sub_count
-  scraped_count=$(find "$YT_ROOT" -maxdepth 2 -name 'tvshow.nfo' 2>/dev/null | wc -l | tr -d ' ')
+  scraped_count=$(wc -l < "$SCRAPED_CACHE" | tr -d ' ')
   sub_count=$(get_channels | wc -l | tr -d ' ')
 
   if [ "$scraped_count" -ge "$sub_count" ]; then
-    echo "  all $scraped_count channels scraped, skipping"
+    echo "  all channels scraped, skipping"
     echo "--- Scraping complete ---"
     return
   fi
 
-  echo "  $scraped_count/$sub_count scraped, checking new..."
+  # Collect unscraped URLs
+  local scrape_list="$YT_ROOT/.scrape_queue"
+  rm -f "$scrape_list"
   get_channels | while IFS= read -r channel_url; do
     [ -z "$channel_url" ] && continue
-    label=$(channel_label "$channel_url")
-    folder=$(handle_to_folder "$channel_url")
-    # Fast filesystem check — skip if tvshow.nfo exists (handle match)
-    if [ -n "$folder" ] && [ -f "$YT_ROOT/$folder/tvshow.nfo" ]; then
-      continue
-    fi
-    echo "Scrape $label"
-    python3 "$SCRAPER" "$channel_url" "$YT_ROOT" --filter "$FILTER_FILE"
-    sleep 1
+    is_scraped "$channel_url" && continue
+    echo "$channel_url" >> "$scrape_list"
   done
+
+  if [ ! -f "$scrape_list" ] || [ ! -s "$scrape_list" ]; then
+    echo "  all channels scraped, skipping"
+    echo "--- Scraping complete ---"
+    return
+  fi
+
+  local to_scrape
+  to_scrape=$(wc -l < "$scrape_list" | tr -d ' ')
+  echo "  $to_scrape new channel(s) to scrape..."
+
+  # Single Python call with all URLs
+  python3 "$SCRAPER" --yt-root "$YT_ROOT" --filter "$FILTER_FILE" $(cat "$scrape_list")
+  rm -f "$scrape_list"
+
   echo "--- Scraping complete ---"
 }
 
