@@ -152,41 +152,21 @@ reorder_queue() {
   rm -f "$priority_queue" "$normal_queue"
 }
 
-SCRAPED_CACHE="$YT_ROOT/.scraped"
+SCRAPED_HANDLES="$YT_ROOT/.scraped_handles"
 
-# Build scraped cache: ONE directory listing of YT_ROOT, no deep reads
-refresh_scraped_cache() {
-  ls -1 "$YT_ROOT" 2>/dev/null | while IFS= read -r d; do
-    [ -f "$YT_ROOT/$d/tvshow.nfo" ] && printf '%s\n' "$d"
-  done | tr '[:upper:]' '[:lower:]' | sed 's/[_ -]//g' | sort -u > "$SCRAPED_CACHE"
-}
-
-# Check if a URL's handle matches a scraped folder (from RAM cache)
+# Check if a handle is already scraped (single file lookup)
 is_scraped() {
   local handle
-  handle=$(printf '%s' "$1" | grep -oE '@[^/]+' | sed 's/^@//' | tr '[:upper:]' '[:lower:]' | sed 's/[_ -]//g')
+  handle=$(printf '%s' "$1" | grep -oE '@[^/]+' | sed 's/^@//' | tr '[:upper:]' '[:lower:]')
   [ -z "$handle" ] && return 1
-  grep -qix "$handle" "$SCRAPED_CACHE" 2>/dev/null
+  [ -f "$SCRAPED_HANDLES" ] && grep -qix "$handle" "$SCRAPED_HANDLES" 2>/dev/null
 }
 
 scrape_all_channels() {
   echo ""
   echo "--- Scraping channel metadata ---"
 
-  # One HDD read: list dirs that have tvshow.nfo
-  refresh_scraped_cache
-  local scraped_count sub_count
-  scraped_count=$(wc -l < "$SCRAPED_CACHE" | tr -d ' ')
-  sub_count=$(get_channels | wc -l | tr -d ' ')
-
-  # Fast path: if scraped folders >= subscribed channels, nothing to do
-  if [ "$scraped_count" -ge "$sub_count" ]; then
-    echo "  all $scraped_count channels scraped, skipping"
-    echo "--- Scraping complete ---"
-    return
-  fi
-
-  # Collect unscraped URLs (cache matching, no per-channel I/O)
+  # Collect unscraped URLs (reads one file, no HDD per-channel)
   local scrape_list="$YT_ROOT/.scrape_queue"
   rm -f "$scrape_list"
   get_channels | while IFS= read -r channel_url; do

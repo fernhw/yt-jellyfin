@@ -244,6 +244,22 @@ def scrape_channel(channel_url, yt_root, filter_file=None, force=False):
     return folder_name, f"SCRAPED ({', '.join(got)})"
 
 
+def append_handle(channel_url, yt_root):
+    """Record handle in .scraped_handles so shell can skip next time."""
+    match = re.search(r'@([^/]+)', channel_url)
+    if not match:
+        return
+    handle = match.group(1).lower()
+    handles_file = os.path.join(yt_root, '.scraped_handles')
+    existing = set()
+    if os.path.exists(handles_file):
+        with open(handles_file, encoding='utf-8') as f:
+            existing = {line.strip().lower() for line in f}
+    if handle not in existing:
+        with open(handles_file, 'a', encoding='utf-8') as f:
+            f.write(handle + '\n')
+
+
 def main():
     parser = argparse.ArgumentParser(description='Scrape YouTube channel metadata for Jellyfin')
     parser.add_argument('channel_url', nargs='+', help='YouTube channel URL(s)')
@@ -263,6 +279,9 @@ def main():
         print(f"  {status}")
         if status.startswith('ERROR'):
             errors += 1
+        else:
+            # Record handle so shell skips this channel next run
+            append_handle(url, args.yt_root)
         if not status.startswith('SKIP') and not status.startswith('ERROR'):
             time.sleep(1)
 
