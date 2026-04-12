@@ -171,12 +171,24 @@ handle_to_folder() {
 scrape_all_channels() {
   echo ""
   echo "--- Scraping channel metadata ---"
-  local needs_scrape=""
+
+  # Fast check: count scraped folders vs subscribed channels
+  local scraped_count sub_count
+  scraped_count=$(find "$YT_ROOT" -maxdepth 2 -name 'tvshow.nfo' 2>/dev/null | wc -l | tr -d ' ')
+  sub_count=$(get_channels | wc -l | tr -d ' ')
+
+  if [ "$scraped_count" -ge "$sub_count" ]; then
+    echo "  all $scraped_count channels scraped, skipping"
+    echo "--- Scraping complete ---"
+    return
+  fi
+
+  echo "  $scraped_count/$sub_count scraped, checking new..."
   get_channels | while IFS= read -r channel_url; do
     [ -z "$channel_url" ] && continue
     label=$(channel_label "$channel_url")
     folder=$(handle_to_folder "$channel_url")
-    # Fast filesystem check — skip if tvshow.nfo exists
+    # Fast filesystem check — skip if tvshow.nfo exists (handle match)
     if [ -n "$folder" ] && [ -f "$YT_ROOT/$folder/tvshow.nfo" ]; then
       continue
     fi
