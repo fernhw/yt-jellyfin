@@ -147,7 +147,7 @@ print(f'upload_date={shlex.quote(d.get(\"upload_date\",\"\"))}')
     --no-playlist \
     --extractor-args "youtube:lang=en" \
     -S "res,br,acodec,vcodec" \
-    -f "bv*+ba/b" \
+    -f "bv*+ba[language=en]/bv*+ba/b" \
     --merge-output-format mp4 \
     --throttled-rate 100K \
     --sleep-requests 1 \
