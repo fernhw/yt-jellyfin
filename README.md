@@ -10,9 +10,9 @@ Channel_Name/
 ├── folder.jpg          # Channel avatar
 ├── poster.jpg          # Channel avatar (copy)
 ├── backdrop.jpg        # Channel banner
-└── 2026/
-    ├── S26E01_Video_Title.mp4
-    └── S26E02_Another_Video.mp4
+├── S25E01_Older_Video.mp4
+├── S26E01_Video_Title.mp4
+└── S26E02_Another_Video.mp4
 ```
 
 ## Scripts
@@ -73,4 +73,5 @@ brew install yt-dlp ffmpeg sqlite3 python3
 - DB (`ytdb.db`) is source of truth for seen/downloaded videos
 - Scraper skips channels that already have `tvshow.nfo` (no network hit)
 - Lock file prevents overlapping `downloadSubs.sh` runs
-- Videos named `S{YY}E{##}_{Title}.mp4` for Jellyfin season/episode parsing
+- Videos named `S{YY}E{##}_{Title}.mp4` — Jellyfin parses season/episode from filename
+- All videos stored directly in channel folder (no year subdirectories)

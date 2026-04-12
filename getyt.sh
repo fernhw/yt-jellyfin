@@ -1,6 +1,6 @@
 #!/bin/sh
 # getyt.sh - YouTube video downloader for Jellyfin library
-# Organizes: <channel>/<year>/S##E##_<title>.mp4
+# Organizes: <channel>/S##E##_<title>.mp4
 # INSTALL: brew install yt-dlp ffmpeg
 #
 # Usage:
@@ -47,12 +47,12 @@ apply_filter() {
   printf '%s' "$1"
 }
 
-# Return next episode number for a year directory
+# Return next episode number for a channel directory
 next_episode() {
   local dir="$1"
   [ ! -d "$dir" ] && { echo 1; return; }
   local max
-  max=$(ls "$dir" 2>/dev/null | grep -oE 'E[0-9]+' | sed 's/E//' | sort -n | tail -1)
+  max=$(find "$dir" -maxdepth 1 -name '*.mp4' -exec basename {} \; 2>/dev/null | grep -oE 'E[0-9]+' | sed 's/E//' | sort -n | tail -1)
   echo $(( ${max:-0} + 1 ))
 }
 
@@ -128,20 +128,21 @@ print(f'upload_date={shlex.quote(d.get(\"upload_date\",\"\"))}')
   local title_norm
   title_norm=$(normalize "$raw_title" "$MAX_TITLE")
 
+  local dest_dir="$YT_ROOT/$channel_norm"
+  mkdir -p "$dest_dir"
+
+  # Season from upload year (for S##E## naming)
   local year season
   year=$(printf '%s' "$upload_date" | cut -c1-4)
   [ -z "$year" ] && year=$(date +%Y)
   season=$(printf '%s' "$year" | cut -c3-4)
-
-  local dest_dir="$YT_ROOT/$channel_norm/$year"
-  mkdir -p "$dest_dir"
 
   # Check if a file with the same normalized title already exists on disk
   local existing_file
   existing_file=$(ls "$dest_dir" 2>/dev/null | grep -F "_${title_norm}.mp4" | head -1)
   if [ -n "$existing_file" ]; then
     echo "  EXISTS: $dest_dir/$existing_file"
-    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$existing_file" "downloaded"
+    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$existing_file" "downloaded"
     return 0
   fi
 
@@ -150,10 +151,10 @@ print(f'upload_date={shlex.quote(d.get(\"upload_date\",\"\"))}')
   local filename
   filename=$(printf 'S%02dE%02d_%s' "$season" "$ep" "$title_norm")
 
-  echo "  -> $channel_norm/$year/$filename.mp4"
+  echo "  -> $channel_norm/$filename.mp4"
 
   # Mark in DB before downloading to prevent re-queuing on failure
-  db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$filename.mp4" "downloading"
+  db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$filename.mp4" "downloading"
 
   # Language enforcement:
   # 1) bv+ba (never bv* or b — forces separate streams so language filter works)
@@ -191,22 +192,22 @@ for s in d.get('streams', []):
       *)
         echo "  WRONG AUDIO: $audio_lang — deleting and marking failed"
         rm -f "$dest_dir/$filename.mp4"
-        db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$filename.mp4" "failed"
+        db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$filename.mp4" "failed"
         return 1
         ;;
     esac
   fi
 
   if [ $dl_rc -eq 0 ] || [ -f "$dest_dir/$filename.mp4" ]; then
-    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$filename.mp4" "downloaded"
+    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$filename.mp4" "downloaded"
     echo "  DONE"
   elif [ $dl_rc -eq 130 ]; then
     # SIGINT — keep as 'interrupted' so it won't re-queue
-    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$filename.mp4" "interrupted"
+    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$filename.mp4" "interrupted"
     echo "  INTERRUPTED"
     return 1
   else
-    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$filename.mp4" "failed"
+    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$filename.mp4" "failed"
     echo "  FAILED"
     return 1
   fi
