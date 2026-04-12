@@ -10,7 +10,7 @@
 #
 # INSTALL: brew install yt-dlp ffmpeg
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
 YT_ROOT="/Volumes/Darrel4tb/YT"
 DB="$SCRIPT_DIR/ytdb.db"
 SUBS_FILE="$SCRIPT_DIR/subscribedTo.md"

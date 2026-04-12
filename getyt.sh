@@ -7,7 +7,7 @@
 #   ./getyt.sh URL [URL...]
 #   ./getyt.sh -f FILE_WITH_URLS
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
 YT_ROOT="/Volumes/Darrel4tb/YT"
 DB="$SCRIPT_DIR/ytdb.db"
 FILTER_FILE="$SCRIPT_DIR/filterYT.md"
