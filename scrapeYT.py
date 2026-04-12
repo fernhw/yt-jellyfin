@@ -197,14 +197,6 @@ def scrape_channel(channel_url, yt_root, filter_file=None, force=False):
             clean = clean[:-len(suffix)]
             break
 
-    # Fast pre-check: skip if folder already has tvshow.nfo (no network needed)
-    if not force:
-        guess = folder_from_handle(channel_url, filter_file)
-        if guess:
-            nfo_guess = os.path.join(yt_root, guess, 'tvshow.nfo')
-            if os.path.exists(nfo_guess):
-                return guess, "SKIP (already scraped)"
-
     print(f"  fetching {clean} ...")
     try:
         html = fetch_page(clean)
