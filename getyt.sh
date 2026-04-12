@@ -70,7 +70,7 @@ db_insert() {
       '$(printf '%s' "$5" | sed "s/'/''/g")',
       $6,
       '$(printf '%s' "$7" | sed "s/'/''/g")',
-      'downloaded'
+      '$(printf '%s' "${8:-downloaded}" | sed "s/'/''/g")'
     );"
 }
 
@@ -136,12 +136,24 @@ print(f'upload_date={shlex.quote(d.get(\"upload_date\",\"\"))}')
   local dest_dir="$YT_ROOT/$channel_norm/$year"
   mkdir -p "$dest_dir"
 
+  # Check if a file with the same normalized title already exists on disk
+  local existing_file
+  existing_file=$(ls "$dest_dir" 2>/dev/null | grep -F "_${title_norm}.mp4" | head -1)
+  if [ -n "$existing_file" ]; then
+    echo "  EXISTS: $dest_dir/$existing_file"
+    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$existing_file" "downloaded"
+    return 0
+  fi
+
   local ep
   ep=$(next_episode "$dest_dir")
   local filename
   filename=$(printf 'S%02dE%02d_%s' "$season" "$ep" "$title_norm")
 
   echo "  -> $channel_norm/$year/$filename.mp4"
+
+  # Mark in DB before downloading to prevent re-queuing on failure
+  db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$filename.mp4" "downloading"
 
   yt-dlp \
     --no-playlist \
@@ -153,11 +165,18 @@ print(f'upload_date={shlex.quote(d.get(\"upload_date\",\"\"))}')
     --sleep-requests 1 \
     -o "$dest_dir/$filename.%(ext)s" \
     "$url"
+  local dl_rc=$?
 
-  if [ $? -eq 0 ] || [ -f "$dest_dir/$filename.mp4" ]; then
-    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$filename.mp4"
+  if [ $dl_rc -eq 0 ] || [ -f "$dest_dir/$filename.mp4" ]; then
+    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$filename.mp4" "downloaded"
     echo "  DONE"
+  elif [ $dl_rc -eq 130 ]; then
+    # SIGINT — keep as 'interrupted' so it won't re-queue
+    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$filename.mp4" "interrupted"
+    echo "  INTERRUPTED"
+    return 1
   else
+    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$filename.mp4" "failed"
     echo "  FAILED"
     return 1
   fi
