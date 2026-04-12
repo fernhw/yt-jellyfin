@@ -152,18 +152,36 @@ reorder_queue() {
   rm -f "$priority_queue" "$normal_queue"
 }
 
+# Derive folder name from @handle (shell-only, no Python)
+handle_to_folder() {
+  local handle
+  handle=$(printf '%s' "$1" | grep -oE '@[^/]+' | sed 's/^@//')
+  [ -z "$handle" ] && return 1
+  # Check filterYT.md for remapping
+  local filtered="$handle"
+  if [ -f "$FILTER_FILE" ]; then
+    local match
+    match=$(awk -F ' *-> *' -v ch="$handle" 'tolower($1)==tolower(ch) && NF>=2 {print $2; exit}' "$FILTER_FILE")
+    [ -n "$match" ] && filtered="$match"
+  fi
+  # Normalize: strip special chars, spaces to underscores, truncate
+  printf '%s' "$filtered" | sed 's/[^a-zA-Z0-9 _-]//g; s/  */ /g; s/^ *//; s/ *$//' | tr ' ' '_' | cut -c1-50
+}
+
 scrape_all_channels() {
   echo ""
   echo "--- Scraping channel metadata ---"
+  local needs_scrape=""
   get_channels | while IFS= read -r channel_url; do
     [ -z "$channel_url" ] && continue
     label=$(channel_label "$channel_url")
+    folder=$(handle_to_folder "$channel_url")
+    # Fast filesystem check — skip if tvshow.nfo exists
+    if [ -n "$folder" ] && [ -f "$YT_ROOT/$folder/tvshow.nfo" ]; then
+      continue
+    fi
     echo "Scrape $label"
     python3 "$SCRAPER" "$channel_url" "$YT_ROOT" --filter "$FILTER_FILE"
-    rc=$?
-    if [ $rc -eq 2 ]; then
-      echo "  up to date"
-    fi
     sleep 1
   done
   echo "--- Scraping complete ---"
