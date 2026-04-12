@@ -155,17 +155,47 @@ print(f'upload_date={shlex.quote(d.get(\"upload_date\",\"\"))}')
   # Mark in DB before downloading to prevent re-queuing on failure
   db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$filename.mp4" "downloading"
 
+  # Language enforcement:
+  # 1) bv+ba (never bv* or b — forces separate streams so language filter works)
+  # 2) -S "lang:en" sorts audio preferring English
+  # 3) Post-download ffprobe verification
   yt-dlp \
     --no-playlist \
     --extractor-args "youtube:lang=en" \
-    -S "res,br,acodec,vcodec" \
-    -f "bv*+ba[language=en]/bv*+ba/b" \
+    -S "lang:en,res,br,acodec,vcodec" \
+    -f "bv+ba[language^=en]/bv+ba[language=en]/bv+ba" \
     --merge-output-format mp4 \
     --throttled-rate 100K \
     --sleep-requests 1 \
     -o "$dest_dir/$filename.%(ext)s" \
     "$url"
   local dl_rc=$?
+
+  # Post-download: verify audio is English (or undefined/single-track)
+  if [ $dl_rc -eq 0 ] && [ -f "$dest_dir/$filename.mp4" ]; then
+    local audio_lang
+    audio_lang=$(ffprobe -v quiet -print_format json -show_streams "$dest_dir/$filename.mp4" 2>/dev/null \
+      | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+for s in d.get('streams', []):
+    if s.get('codec_type') == 'audio':
+        print(s.get('tags', {}).get('language', 'und'))
+        break
+" 2>/dev/null)
+    audio_lang="${audio_lang:-und}"
+    case "$audio_lang" in
+      en*|und|"") 
+        echo "  audio: $audio_lang (ok)"
+        ;;
+      *)
+        echo "  WRONG AUDIO: $audio_lang — deleting and marking failed"
+        rm -f "$dest_dir/$filename.mp4"
+        db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$filename.mp4" "failed"
+        return 1
+        ;;
+    esac
+  fi
 
   if [ $dl_rc -eq 0 ] || [ -f "$dest_dir/$filename.mp4" ]; then
     db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$year/$filename.mp4" "downloaded"
