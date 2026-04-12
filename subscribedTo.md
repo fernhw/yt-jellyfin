@@ -1,0 +1,43 @@
+# Subscribed Channels
+# Add YouTube channel URLs below (one per line)
+# Checked hourly by downloadSubs.sh
+
+- https://www.youtube.com/@TrashTaste
+- https://www.youtube.com/@yesseniavo
+- https://www.youtube.com/@Max0r
+- https://www.youtube.com/@InternetTodayTV
+- https://www.youtube.com/@videogamedunkey
+- https://www.youtube.com/@Vsauce
+- https://www.youtube.com/@GMTK
+- https://www.youtube.com/@Fireship
+- https://www.youtube.com/@supereyepatchwolf0
+- https://www.youtube.com/@worm-girl
+- https://www.youtube.com/@GLITCH/
+- https://www.youtube.com/@MichaelReeves
+- https://www.youtube.com/@Gigguk
+- https://www.youtube.com/@GarntM
+- https://www.youtube.com/@ConnorDawg
+- https://www.youtube.com/@TheAnimeMan
+- https://www.youtube.com/@CDawgVA
+- https://www.youtube.com/@MothersBasement
+- https://www.youtube.com/@InternetHistorian
+- https://www.youtube.com/@Echidnut
+- https://www.youtube.com/@RedLetterMedia
+- https://www.youtube.com/@RetroGameCorps
+- https://www.youtube.com/@IHincognitoMode
+- https://www.youtube.com/@CorridorCrew
+- https://www.youtube.com/@CaptainDisillusion
+- https://www.youtube.com/@SummoningSalt
+- https://www.youtube.com/@CosmoVH
+- https://www.youtube.com/@YourMovieSucksDOTorg
+- https://www.youtube.com/@SkillUp
+- https://www.youtube.com/@Matthewmatosis
+- https://www.youtube.com/@SchaffrillasProductions
+- https://www.youtube.com/@Nerrel
+- https://www.youtube.com/@PapaMeat
+- https://www.youtube.com/@Nerdwriter1
+- https://www.youtube.com/@CanipaEffect
+- https://www.youtube.com/@NoClipDocs
+- https://www.youtube.com/@Razbuten
+- https://www.youtube.com/@haboryme
+- https://www.youtube.com/@Asmongold
