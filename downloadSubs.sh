@@ -260,7 +260,10 @@ while IFS= read -r channel_url <&3; do
   fi
 
   # Check if this is a brand new channel (no entries in DB)
-  known_count=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE channel='$(printf '%s' "$label" | sed "s/'/''/g")';" 2>/dev/null)
+  # Match both @handle (from scan label) and channel name (from yt-dlp metadata)
+  local bare_label
+  bare_label=$(printf '%s' "$label" | sed 's/^@//')
+  known_count=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE channel='$(printf '%s' "$label" | sed "s/'/''/g")' OR channel LIKE '%$(printf '%s' "$bare_label" | sed "s/'/''/g")%';" 2>/dev/null)
   is_new_channel=0
   [ "${known_count:-0}" -eq 0 ] && is_new_channel=1
 
