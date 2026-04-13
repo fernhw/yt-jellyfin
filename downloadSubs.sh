@@ -24,9 +24,10 @@ FILTER_FILE="$SCRIPT_DIR/filterYT.md"
 
 MODE="download"
 case "$1" in
-  --init)        MODE="init" ;;
-  --dry-run)     MODE="dry-run" ;;
-  --scrape-only) MODE="scrape-only" ;;
+  --init)             MODE="init" ;;
+  --dry-run)          MODE="dry-run" ;;
+  --scrape-only)      MODE="scrape-only" ;;
+  --collage-seasons)  MODE="collage-only" ;;
 esac
 
 init_db() {
@@ -63,10 +64,58 @@ update_vars() {
   now_ms=$(python3 -c "import time; print(int(time.time()*1000))")
   local total
   total=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos;" 2>/dev/null || echo 0)
+  local today
+  today=$(date '+%Y-%m-%d')
+
+  # Read existing daily counters if same day, otherwise reset
+  local prev_date prev_dl prev_del prev_err prev_dl_list prev_del_list prev_err_list
+  prev_date=""
+  prev_dl=0; prev_del=0; prev_err=0
+  prev_dl_list=""; prev_del_list=""; prev_err_list=""
+  if [ -f "$VARS_FILE" ]; then
+    prev_date=$(grep '^report_date=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+    if [ "$prev_date" = "$today" ]; then
+      prev_dl=$(grep '^downloaded_today=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+      prev_del=$(grep '^deleted_today=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+      prev_err=$(grep '^errors_today=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+      prev_dl_list=$(grep '^downloaded_list=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+      prev_del_list=$(grep '^deleted_list=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+      prev_err_list=$(grep '^errors_list=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+    fi
+  fi
+  prev_dl=${prev_dl:-0}; prev_del=${prev_del:-0}; prev_err=${prev_err:-0}
+
+  # Merge new items with existing daily lists
+  local final_dl_list final_del_list final_err_list
+  if [ -n "$prev_dl_list" ] && [ -n "$DL_ITEMS" ]; then
+    final_dl_list="${prev_dl_list}|${DL_ITEMS}"
+  else
+    final_dl_list="${prev_dl_list}${DL_ITEMS}"
+  fi
+  if [ -n "$prev_del_list" ] && [ -n "$DEL_ITEMS" ]; then
+    final_del_list="${prev_del_list}|${DEL_ITEMS}"
+  else
+    final_del_list="${prev_del_list}${DEL_ITEMS}"
+  fi
+  if [ -n "$prev_err_list" ] && [ -n "$ERR_ITEMS" ]; then
+    final_err_list="${prev_err_list}|${ERR_ITEMS}"
+  else
+    final_err_list="${prev_err_list}${ERR_ITEMS}"
+  fi
+
   cat > "$VARS_FILE" <<EOF
 last_scan=$now_ms
 total_videos=$total
 updated=$(date '+%Y-%m-%d %H:%M:%S')
+report_date=$today
+downloaded_today=$(( prev_dl + DL_COUNT ))
+deleted_today=$(( prev_del + DEL_COUNT ))
+errors_today=$(( prev_err + ERR_COUNT ))
+channels_scanned=$CHAN_SCANNED
+channels_total=$CHAN_TOTAL
+downloaded_list=$final_dl_list
+deleted_list=$final_del_list
+errors_list=$final_err_list
 EOF
 }
 
@@ -119,10 +168,14 @@ enforce_limit() {
     | xargs -0 ls -1tr \
     | head -n "$to_delete" \
     | while IFS= read -r f; do
-        echo "  DELETE: $(basename "$f")"
+        local bname
+        bname=$(basename "$f")
+        echo "  DELETE: $bname"
         rm -f "$f"
         # Also remove matching thumbnail
         rm -f "${f%.mp4}-thumb.jpg"
+        # Track for report
+        echo "$(basename "$channel_dir"):${bname%.mp4}" >> "$YT_ROOT/.deleted_today"
       done
 }
 
@@ -191,8 +244,8 @@ scrape_all_channels() {
   to_scrape=$(wc -l < "$scrape_list" | tr -d ' ')
   echo "  $to_scrape new channel(s) to scrape..."
 
-  # Single Python call with all URLs
-  python3 "$SCRAPER" --yt-root "$YT_ROOT" --filter "$FILTER_FILE" $(cat "$scrape_list")
+  # Single Python call with all URLs (brew python for modern TLS)
+  /opt/homebrew/bin/python3 "$SCRAPER" --yt-root "$YT_ROOT" --filter "$FILTER_FILE" $(cat "$scrape_list")
   rm -f "$scrape_list"
 
   echo "--- Scraping complete ---"
@@ -200,6 +253,17 @@ scrape_all_channels() {
 
 # --- Main ---
 echo "=== downloadSubs [$MODE] $(date '+%Y-%m-%d %H:%M:%S') ==="
+
+# Daily counters for report
+DL_COUNT=0
+DEL_COUNT=0
+ERR_COUNT=0
+CHAN_SCANNED=0
+CHAN_TOTAL=0
+DL_ITEMS=""
+DEL_ITEMS=""
+ERR_ITEMS=""
+REPORT_MAKER="$SCRIPT_DIR/reportMaker.sh"
 
 if [ ! -d "/Volumes/Darrel4tb" ]; then
   echo "ERROR: /Volumes/Darrel4tb not mounted"
@@ -233,6 +297,14 @@ if [ "$MODE" = "scrape-only" ]; then
   exit 0
 fi
 
+COLLAGE_MAKER="$SCRIPT_DIR/collageSeasons.py"
+
+if [ "$MODE" = "collage-only" ]; then
+  [ -f "$COLLAGE_MAKER" ] && python3 "$COLLAGE_MAKER"
+  echo "=== Collage-only complete ==="
+  exit 0
+fi
+
 NEW_COUNT=0
 QUEUE="$YT_ROOT/.download_queue"
 rm -f "$QUEUE"
@@ -240,9 +312,11 @@ rm -f "$QUEUE"
 # Write channel list to file to avoid stdin conflicts with sqlite3/yt-dlp in the loop
 CHANNEL_LIST="$YT_ROOT/.channel_list"
 get_channels > "$CHANNEL_LIST"
+CHAN_TOTAL=$(wc -l < "$CHANNEL_LIST" | tr -d ' ')
 
 while IFS= read -r channel_url <&3; do
   [ -z "$channel_url" ] && continue
+  CHAN_SCANNED=$(( CHAN_SCANNED + 1 ))
 
   # Ensure /videos tab (chronological, no shorts)
   clean_url=$(printf '%s' "$channel_url" | sed 's|/[[:space:]]*$||')
@@ -260,6 +334,12 @@ while IFS= read -r channel_url <&3; do
 
   if [ -z "$video_ids" ]; then
     echo "  WARN: no videos returned"
+    ERR_COUNT=$(( ERR_COUNT + 1 ))
+    if [ -n "$ERR_ITEMS" ]; then
+      ERR_ITEMS="${ERR_ITEMS}|${label}:no_videos_returned"
+    else
+      ERR_ITEMS="${label}:no_videos_returned"
+    fi
     continue
   fi
 
@@ -350,9 +430,24 @@ elif [ -f "$QUEUE" ] && [ -s "$QUEUE" ]; then
   tmp_urls="$QUEUE.urls"
   cut -f1 "$QUEUE" > "$tmp_urls"
 
+  # Snapshot DB before downloads to detect what got added
+  dl_before=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status='downloaded';" 2>/dev/null || echo 0)
+
   count=$(wc -l < "$tmp_urls" | tr -d ' ')
   echo "Downloading $count new video(s)..."
   "$GETYT" -f "$tmp_urls"
+
+  # Compute what was actually downloaded this run
+  dl_after=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status='downloaded';" 2>/dev/null || echo 0)
+  DL_COUNT=$(( dl_after - dl_before ))
+  [ "$DL_COUNT" -lt 0 ] && DL_COUNT=0
+
+  # Collect titles of newly downloaded videos
+  DL_ITEMS=$(sqlite3 "$DB" "SELECT channel || ':' || title FROM videos WHERE status='downloaded' ORDER BY download_date DESC LIMIT $DL_COUNT;" 2>/dev/null | tr '\n' '|' | sed 's/|$//')
+
+  # Count failures from this run
+  fail_after=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status='failed';" 2>/dev/null || echo 0)
+
   rm -f "$QUEUE" "$tmp_urls"
 else
   echo "No new videos."
@@ -394,6 +489,15 @@ else
     thumb="${mp4%.mp4}-thumb.jpg"
     duration=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$mp4" 2>/dev/null | cut -d. -f1)
     if [ -z "$duration" ] || [ "${duration:-0}" -lt 1 ]; then
+      # Fallback: try stream-level duration
+      duration=$(ffprobe -v quiet -select_streams v:0 -show_entries stream=duration -of csv=p=0 "$mp4" 2>/dev/null | cut -d. -f1)
+    fi
+    if [ -z "$duration" ] || [ "${duration:-0}" -lt 1 ]; then
+      # Fallback: decode and parse total duration from ffmpeg output
+      duration=$(ffmpeg -i "$mp4" -f null - 2>&1 | grep -oE 'Duration: [0-9:.]+' | head -1 \
+        | sed 's/Duration: //' | awk -F: '{print int($1*3600+$2*60+$3)}')
+    fi
+    if [ -z "$duration" ] || [ "${duration:-0}" -lt 1 ]; then
       echo "  SKIP (unreadable): $(basename "$mp4")"
       continue
     fi
@@ -425,14 +529,40 @@ else
       mv "$best_file" "$thumb"
       echo "  THUMB: $(basename "$thumb") (score: $best_score)"
     else
-      # Fallback: single frame at 10s
-      ffmpeg -y -ss 10 -i "$mp4" -vframes 1 -update 1 -q:v 2 "$thumb" -loglevel quiet 2>/dev/null \
-        && echo "  THUMB (fallback): $(basename "$thumb")" \
-        || echo "  SKIP (no frame): $(basename "$mp4")"
+      # Fallback: single frame at 10% of duration
+      local fb_seek=$(( duration / 10 ))
+      [ "$fb_seek" -lt 2 ] && fb_seek=2
+      ffmpeg -y -ss "$fb_seek" -i "$mp4" -vframes 1 -update 1 -q:v 2 "$thumb" -loglevel quiet 2>/dev/null
+      if [ -f "$thumb" ]; then
+        echo "  THUMB (fallback): $(basename "$thumb")"
+      else
+        # Last resort: grab the very first frame
+        ffmpeg -y -i "$mp4" -vframes 1 -update 1 -q:v 2 "$thumb" -loglevel quiet 2>/dev/null \
+          && echo "  THUMB (first-frame): $(basename "$thumb")" \
+          || echo "  SKIP (no frame): $(basename "$mp4")"
+      fi
     fi
     rm -rf "$tmpdir"
   done
 fi
 
+# Collect delete tracking from temp file (written by enforce_limit subshell)
+if [ -f "$YT_ROOT/.deleted_today" ]; then
+  DEL_COUNT=$(wc -l < "$YT_ROOT/.deleted_today" | tr -d ' ')
+  DEL_ITEMS=$(tr '\n' '|' < "$YT_ROOT/.deleted_today" | sed 's/|$//')
+  rm -f "$YT_ROOT/.deleted_today"
+fi
+
 update_vars
+
+# Generate season poster collages (only rebuilds changed seasons)
+if [ -f "$COLLAGE_MAKER" ]; then
+  python3 "$COLLAGE_MAKER"
+fi
+
+# Generate daily report
+if [ -x "$REPORT_MAKER" ]; then
+  "$REPORT_MAKER"
+fi
+
 echo "=== Done ==="

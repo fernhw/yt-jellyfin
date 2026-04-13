@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
+#!/opt/homebrew/bin/python3
 """scrapeYT.py - Scrape YouTube channel artwork + metadata for Jellyfin
 
-Generates tvshow.nfo, folder.jpg, poster.jpg, backdrop.jpg per channel folder.
+Generates tvshow.nfo, folder.jpg, poster.jpg, banner.jpg per channel folder.
 Matches folder names using the same normalize+filter logic as getyt.sh.
 
 Usage:
@@ -18,6 +18,7 @@ import urllib.request
 import urllib.error
 import argparse
 import time
+import subprocess
 
 MAX_CHANNEL = 50
 
@@ -134,7 +135,7 @@ def apply_filter(name, filter_file):
 
 
 def download_image(url, filepath):
-    """Download image from URL to filepath."""
+    """Download image from URL to filepath. Falls back to curl on SSL errors."""
     if not url:
         return False
     try:
@@ -149,9 +150,22 @@ def download_image(url, filepath):
             with open(filepath, 'wb') as f:
                 f.write(data)
         return True
-    except Exception as e:
-        print(f"  WARN: {os.path.basename(filepath)}: {e}", file=sys.stderr)
-        return False
+    except Exception:
+        # Fallback to curl for SSL compatibility
+        try:
+            result = subprocess.run(
+                ['curl', '-sL', '-o', filepath, '-A',
+                 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                 url],
+                timeout=30, capture_output=True)
+            if result.returncode == 0 and os.path.exists(filepath) and os.path.getsize(filepath) >= 500:
+                return True
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            return False
+        except Exception as e:
+            print(f"  WARN: {os.path.basename(filepath)}: {e}", file=sys.stderr)
+            return False
 
 
 def write_nfo(info, filepath):
@@ -234,8 +248,8 @@ def scrape_channel(channel_url, yt_root, filter_file=None, force=False):
         download_image(info.get('avatar_url'), os.path.join(folder_path, 'poster.jpg'))
         got.append('poster.jpg')
 
-    if download_image(info.get('banner_url'), os.path.join(folder_path, 'backdrop.jpg')):
-        got.append('backdrop.jpg')
+    if download_image(info.get('banner_url'), os.path.join(folder_path, 'banner.jpg')):
+        got.append('banner.jpg')
 
     # Write NFO
     write_nfo(info, nfo_path)

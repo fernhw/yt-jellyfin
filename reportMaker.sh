@@ -1,0 +1,236 @@
+#!/bin/sh
+# reportMaker.sh - "What to Watch Today" report for Jellyfin
+# Focuses on what's new TODAY, ranked by priority and rarity.
+# Called at the end of downloadSubs.sh each run.
+#
+# Ranking logic:
+#   1. Priority channels (from channelConfig.md [priority]) always on top
+#   2. "Rare drops" — channels that haven't uploaded in 30+ days get highlighted
+#   3. Everything else grouped by channel
+#
+# Two files:
+#   todayReport.md     - Current day (updated each run)
+#   yesterdayReport.md  - Previous day (rolled over at midnight)
+
+SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
+TODAY_REPORT="$SCRIPT_DIR/todayReport.md"
+YESTERDAY_REPORT="$SCRIPT_DIR/yesterdayReport.md"
+DB="$SCRIPT_DIR/ytdb.db"
+CONFIG="$SCRIPT_DIR/channelConfig.md"
+VARS_FILE="$SCRIPT_DIR/varsYT.md"
+
+TODAY=$(date '+%Y-%m-%d')
+NOW_HUMAN=$(date '+%B %d, %Y at %I:%M %p')
+DAY_OF_WEEK=$(date '+%A')
+RARE_THRESHOLD=30
+
+# --- Day rollover ---
+if [ -f "$TODAY_REPORT" ]; then
+  old_date=$(head -5 "$TODAY_REPORT" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)
+  if [ -n "$old_date" ] && [ "$old_date" != "$TODAY" ]; then
+    mv "$TODAY_REPORT" "$YESTERDAY_REPORT"
+  fi
+fi
+
+# --- Read priority channels (preserve order) ---
+PRIORITY_LIST=""
+if [ -f "$CONFIG" ]; then
+  in_priority=0
+  while IFS= read -r line; do
+    case "$line" in
+      \[priority\]*) in_priority=1; continue ;;
+      \[*) in_priority=0; continue ;;
+    esac
+    if [ "$in_priority" -eq 1 ]; then
+      clean=$(echo "$line" | sed 's/#.*//' | tr -d ' ')
+      [ -n "$clean" ] && PRIORITY_LIST="$PRIORITY_LIST|$clean"
+    fi
+  done < "$CONFIG"
+  PRIORITY_LIST="${PRIORITY_LIST#|}"
+fi
+
+# --- Greeting ---
+hour=$(date '+%H')
+if [ "$hour" -lt 12 ]; then
+  greeting="Good morning"
+elif [ "$hour" -lt 17 ]; then
+  greeting="Good afternoon"
+else
+  greeting="Good evening"
+fi
+
+# --- Query: videos downloaded today with gap since channel's previous upload ---
+TODAYS_VIDEOS=$(sqlite3 "$DB" "
+  WITH today AS (
+    SELECT channel, title, upload_date
+    FROM videos
+    WHERE date(download_date, 'unixepoch', 'localtime') = date('now', 'localtime')
+      AND status = 'downloaded'
+      AND julianday('now') - julianday(
+            substr(upload_date,1,4)||'-'||substr(upload_date,5,2)||'-'||substr(upload_date,7,2)
+          ) <= 3
+  ),
+  with_gap AS (
+    SELECT t.channel, t.title, t.upload_date,
+      (SELECT MAX(v2.upload_date) FROM videos v2
+       WHERE v2.channel = t.channel
+         AND v2.upload_date < t.upload_date
+         AND v2.status = 'downloaded') as prev_date
+    FROM today t
+  )
+  SELECT g.channel,
+         g.title,
+         g.upload_date,
+         CASE WHEN g.prev_date IS NOT NULL THEN
+           CAST(julianday(
+             substr(g.upload_date,1,4)||'-'||substr(g.upload_date,5,2)||'-'||substr(g.upload_date,7,2)
+           ) - julianday(
+             substr(g.prev_date,1,4)||'-'||substr(g.prev_date,5,2)||'-'||substr(g.prev_date,7,2)
+           ) AS INTEGER)
+         ELSE -1 END as gap_days
+  FROM with_gap g
+  ORDER BY g.upload_date DESC, g.channel
+")
+
+# Count non-empty lines
+VIDEO_COUNT=0
+if [ -n "$TODAYS_VIDEOS" ]; then
+  VIDEO_COUNT=$(printf '%s\n' "$TODAYS_VIDEOS" | grep -c '|')
+fi
+
+# --- Categorize into priority / rare / regular ---
+TMP_PRI="/tmp/rpt_pri_$$"
+TMP_RARE="/tmp/rpt_rare_$$"
+TMP_REG="/tmp/rpt_reg_$$"
+: > "$TMP_PRI"
+: > "$TMP_RARE"
+: > "$TMP_REG"
+
+is_priority_channel() {
+  # $1 = channel name to check against priority list
+  # Normalizes: lowercase, strip @, spaces, underscores, apostrophes, trailing punctuation
+  [ -z "$PRIORITY_LIST" ] && return 1
+  local chan_norm
+  chan_norm=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed "s/[@ _'\"]//g")
+  local matched=1
+  printf '%s\n' "$PRIORITY_LIST" | tr '|' '\n' | while IFS= read -r pch; do
+    pch_norm=$(printf '%s' "$pch" | tr '[:upper:]' '[:lower:]' | sed "s/[@ _'\"]//g")
+    # Check exact match or if one contains the other (handles "asmongoldtv" vs "asmongold")
+    if [ "$chan_norm" = "$pch_norm" ]; then
+      echo "Y"; break
+    elif printf '%s' "$chan_norm" | grep -q "$pch_norm"; then
+      echo "Y"; break
+    elif printf '%s' "$pch_norm" | grep -q "$chan_norm"; then
+      echo "Y"; break
+    fi
+  done | grep -q "Y" && matched=0
+  return $matched
+}
+
+printf '%s\n' "$TODAYS_VIDEOS" | while IFS='|' read -r chan title upload gap; do
+  [ -z "$chan" ] && continue
+
+  # Clean display name (strip leading @, trailing spaces)
+  display_chan=$(printf '%s' "$chan" | sed 's/^@//; s/ *$//')
+
+  # Gap annotation
+  gap_note=""
+  is_rare=0
+  if [ "$gap" -ge "$RARE_THRESHOLD" ] 2>/dev/null; then
+    gap_note=" — *${gap} days since their last upload*"
+    is_rare=1
+  fi
+
+  line="- **$title** — *$display_chan*$gap_note"
+
+  if is_priority_channel "$chan"; then
+    echo "$line" >> "$TMP_PRI"
+  elif [ "$is_rare" -eq 1 ]; then
+    echo "$line" >> "$TMP_RARE"
+  else
+    echo "$line" >> "$TMP_REG"
+  fi
+done
+
+PRI_N=$(wc -l < "$TMP_PRI" | tr -d ' ')
+RARE_N=$(wc -l < "$TMP_RARE" | tr -d ' ')
+REG_N=$(wc -l < "$TMP_REG" | tr -d ' ')
+
+# --- Write report ---
+cat > "$TODAY_REPORT" <<HEADER
+# What to Watch — $TODAY
+
+> *$greeting! Here's what landed on $DAY_OF_WEEK, $NOW_HUMAN.*
+
+HEADER
+
+if [ "$VIDEO_COUNT" -eq 0 ]; then
+  cat >> "$TODAY_REPORT" <<QUIET
+Nothing new today. All channels scanned — nobody posted. Check back later.
+
+QUIET
+else
+  # --- Priority ---
+  if [ "$PRI_N" -gt 0 ]; then
+    cat >> "$TODAY_REPORT" <<SEC
+## Watch First
+
+$(cat "$TMP_PRI")
+
+---
+
+SEC
+  fi
+
+  # --- Rare drops ---
+  if [ "$RARE_N" -gt 0 ]; then
+    cat >> "$TODAY_REPORT" <<SEC
+## Rare Drops
+
+These channels have been quiet for a while — worth a look.
+
+$(cat "$TMP_RARE")
+
+---
+
+SEC
+  fi
+
+  # --- Regular ---
+  if [ "$REG_N" -gt 0 ]; then
+    cat >> "$TODAY_REPORT" <<SEC
+## Also New
+
+$(cat "$TMP_REG")
+
+---
+
+SEC
+  fi
+fi
+
+# --- Compact health footer ---
+CHAN_TOTAL=$(sqlite3 "$DB" "SELECT COUNT(DISTINCT channel) FROM videos WHERE status='downloaded'")
+TOTAL_VIDEOS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status='downloaded'")
+LAST_SCAN=$(grep "^updated=" "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+ERR_TODAY=$(grep "^errors_today=" "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+ERR_TODAY=${ERR_TODAY:-0}
+
+STATUS_ICON="✓"
+[ "$ERR_TODAY" -gt 0 ] && STATUS_ICON="⚠"
+
+printf '\n' >> "$TODAY_REPORT"
+printf '%s **Pipeline** — %s scan | %s channels | %s videos' \
+  "$STATUS_ICON" "$LAST_SCAN" "$CHAN_TOTAL" "$TOTAL_VIDEOS" >> "$TODAY_REPORT"
+
+if [ "$ERR_TODAY" -gt 0 ]; then
+  ERR_LIST=$(grep "^errors_list=" "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+  printf ' | %s error(s): %s' "$ERR_TODAY" "$(echo "$ERR_LIST" | tr '|' ', ')" >> "$TODAY_REPORT"
+fi
+
+printf '\n' >> "$TODAY_REPORT"
+
+# --- Cleanup ---
+rm -f "$TMP_PRI" "$TMP_RARE" "$TMP_REG"
+
+echo "  report written to todayReport.md"
