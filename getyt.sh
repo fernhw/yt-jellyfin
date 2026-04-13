@@ -52,7 +52,7 @@ next_episode() {
   local dir="$1"
   [ ! -d "$dir" ] && { echo 1; return; }
   local max
-  max=$(find "$dir" -maxdepth 1 -name '*.mp4' -exec basename {} \; 2>/dev/null | grep -oE 'E[0-9]+' | sed 's/E//' | sort -n | tail -1)
+  max=$(find "$dir" -maxdepth 1 -name '*.mp4' -exec basename {} \; 2>/dev/null | grep -oE 'E[0-9]+\.' | sed 's/E//; s/\.//' | sort -n | tail -1)
   echo $(( ${max:-0} + 1 ))
 }
 
@@ -139,7 +139,7 @@ print(f'upload_date={shlex.quote(d.get(\"upload_date\",\"\"))}')
 
   # Check if a file with the same normalized title already exists on disk
   local existing_file
-  existing_file=$(ls "$dest_dir" 2>/dev/null | grep -F "_${title_norm}.mp4" | head -1)
+  existing_file=$(ls "$dest_dir" 2>/dev/null | grep -F "${title_norm}_S" | grep -F '.mp4' | head -1)
   if [ -n "$existing_file" ]; then
     echo "  EXISTS: $dest_dir/$existing_file"
     db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$existing_file" "downloaded"
@@ -149,7 +149,7 @@ print(f'upload_date={shlex.quote(d.get(\"upload_date\",\"\"))}')
   local ep
   ep=$(next_episode "$dest_dir")
   local filename
-  filename=$(printf 'S%02dE%02d_%s' "$season" "$ep" "$title_norm")
+  filename=$(printf '%s_S%02dE%02d' "$title_norm" "$season" "$ep")
 
   echo "  -> $channel_norm/$filename.mp4"
 

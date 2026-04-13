@@ -117,6 +117,8 @@ enforce_limit() {
     | while IFS= read -r f; do
         echo "  DELETE: $(basename "$f")"
         rm -f "$f"
+        # Also remove matching thumbnail
+        rm -f "${f%.mp4}-thumb.jpg"
       done
 }
 
@@ -344,6 +346,24 @@ for channel_dir in "$YT_ROOT"/*/; do
     enforce_limit "$channel_dir" "$limit"
   fi
 done
+
+# Generate missing thumbnails for Jellyfin (-thumb.jpg next to each .mp4)
+echo ""
+echo "--- Checking video thumbnails ---"
+thumb_count=0
+find "$YT_ROOT" -name '*.mp4' -type f | while IFS= read -r mp4; do
+  thumb="${mp4%.mp4}-thumb.jpg"
+  [ -f "$thumb" ] && continue
+  # Extract frame at 10s (or 1s for short videos) as thumbnail
+  duration=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$mp4" 2>/dev/null | cut -d. -f1)
+  seek=10
+  [ "${duration:-0}" -lt 15 ] && seek=1
+  if ffmpeg -y -ss "$seek" -i "$mp4" -vframes 1 -update 1 -q:v 2 "$thumb" -loglevel quiet 2>/dev/null; then
+    echo "  THUMB: $(basename "$thumb")"
+    thumb_count=$((thumb_count + 1))
+  fi
+done
+[ "$thumb_count" -eq 0 ] && echo "  all thumbnails present"
 
 update_vars
 echo "=== Done ==="
