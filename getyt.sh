@@ -104,6 +104,9 @@ print(f'vid={shlex.quote(d.get(\"id\",\"\"))}')
 print(f'raw_channel={shlex.quote(d.get(\"channel\",\"Unknown\"))}')
 print(f'raw_title={shlex.quote(d.get(\"title\",\"Untitled\"))}')
 print(f'upload_date={shlex.quote(d.get(\"upload_date\",\"\"))}')
+handle = d.get('uploader_id','') or d.get('channel_id','') or ''
+if handle.startswith('@'): handle = handle[1:]
+print(f'yt_handle={shlex.quote(handle)}')
 ")"
 
   if [ -z "$vid" ]; then
@@ -115,7 +118,7 @@ print(f'upload_date={shlex.quote(d.get(\"upload_date\",\"\"))}')
   if [ "$SKIP_DB_CHECK" != "1" ]; then
     local exists
     exists=$(db_check "$vid")
-    if [ -n "$exists" ]; then
+    if [ -n "$exists" ] && [ "$exists" != "force-download" ]; then
       echo "  SKIP ($exists): $raw_title"
       return 0
     fi
@@ -125,6 +128,13 @@ print(f'upload_date={shlex.quote(d.get(\"upload_date\",\"\"))}')
   channel_name=$(apply_filter "$raw_channel")
   local channel_norm
   channel_norm=$(normalize "$channel_name" "$MAX_CHANNEL")
+
+  # Store handle→display_name alias if we got a handle
+  if [ -n "$yt_handle" ] && [ "$raw_channel" != "Unknown" ]; then
+    sqlite3 "$DB" "INSERT OR REPLACE INTO channel_aliases (handle, display_name) VALUES (
+      '$(printf '%s' "$yt_handle" | sed "s/'/''/g")',
+      '$(printf '%s' "$raw_channel" | sed "s/'/''/g")');"
+  fi
   local title_norm
   title_norm=$(normalize "$raw_title" "$MAX_TITLE")
 

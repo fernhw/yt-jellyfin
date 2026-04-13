@@ -36,6 +36,10 @@ init_db() {
     upload_date TEXT, download_date INTEGER, file_path TEXT,
     status TEXT DEFAULT 'downloaded'
   );"
+  sqlite3 "$DB" "CREATE TABLE IF NOT EXISTS channel_aliases (
+    handle TEXT PRIMARY KEY,
+    display_name TEXT
+  );"
 }
 
 # Mark a video as seen in DB without downloading
@@ -260,12 +264,17 @@ while IFS= read -r channel_url <&3; do
   fi
 
   # Check if this is a brand new channel (no entries in DB)
-  # Match both @handle (from scan label) and channel name (from yt-dlp metadata)
-  local bare_label
-  bare_label=$(printf '%s' "$label" | sed 's/^@//')
-  known_count=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE channel='$(printf '%s' "$label" | sed "s/'/''/g")' OR channel LIKE '%$(printf '%s' "$bare_label" | sed "s/'/''/g")%';" 2>/dev/null)
+  bare_label=$(handle_bare "$label")
   is_new_channel=0
-  [ "${known_count:-0}" -eq 0 ] && is_new_channel=1
+
+  # Priority channels are never treated as "new" — always download everything
+  pri_match=$(get_priority_handles | tr '[:upper:]' '[:lower:]' | grep -ix "$bare_label" || true)
+  if [ -z "$pri_match" ]; then
+    # Check by @handle, bare handle, and any known display name alias
+    alias_name=$(sqlite3 "$DB" "SELECT display_name FROM channel_aliases WHERE handle='$(printf '%s' "$bare_label" | sed "s/'/''/g")';" 2>/dev/null)
+    known_count=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE channel='$(printf '%s' "$label" | sed "s/'/''/g")' OR channel='$(printf '%s' "$bare_label" | sed "s/'/''/g")' OR channel='$(printf '%s' "${alias_name:-___none___}" | sed "s/'/''/g")';" 2>/dev/null)
+    [ "${known_count:-0}" -eq 0 ] && is_new_channel=1
+  fi
 
   new_for_channel=0
   first_vid=""
@@ -274,6 +283,13 @@ while IFS= read -r channel_url <&3; do
 
     exists=$(db_exists "$vid")
     if [ -n "$exists" ]; then
+      # Pick up force-download entries and queue them
+      fd_status=$(sqlite3 "$DB" "SELECT status FROM videos WHERE id='$(printf '%s' "$vid" | sed "s/'/''/g")';")
+      if [ "$fd_status" = "force-download" ]; then
+        echo "  FORCE: $vid"
+        printf '%s\t%s\n' "https://www.youtube.com/watch?v=$vid" "$label" >> "$QUEUE"
+        new_for_channel=$(( new_for_channel + 1 ))
+      fi
       continue
     fi
 
