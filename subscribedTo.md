@@ -42,3 +42,7 @@
 - https://www.youtube.com/@AsmonTV
 - https://www.youtube.com/@TechnologyConnections
 - https://www.youtube.com/@early-tv
+- https://www.youtube.com/@mkbhd
+- https://www.youtube.com/@NintendoAmerica
+- https://www.youtube.com/@SpawnWave
+- https://www.youtube.com/@BellularNews

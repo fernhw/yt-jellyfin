@@ -59,7 +59,7 @@ python3 scrapeYT.py "https://www.youtube.com/@Channel" /Volumes/Darrel4tb/YT --f
 ## Cron
 
 ```
-# downloadSubs — 14 runs/day at fixed strategic times
+# downloadSubs — 13 runs/day at fixed strategic times
 # 00:30, 03:30, 07:00, 09:30, 11:30, 15:00, 17:00, 18-22:00 hourly, 23:30
 0 * * * *          rsync_jellyfin.sh   # Backup hourly
 0 */2 * * *        git-sync.sh         # Auto-commit + push every 2h
