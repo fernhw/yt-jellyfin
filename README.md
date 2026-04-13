@@ -67,7 +67,7 @@ python3 scrapeYT.py "https://www.youtube.com/@Channel" /Volumes/Darrel4tb/YT --f
 ## Requirements
 
 ```sh
-brew install yt-dlp ffmpeg sqlite3 python3
+brew install yt-dlp ffmpeg sqlite3 python3 imagemagick
 ```
 
 ## Notes
@@ -77,5 +77,5 @@ brew install yt-dlp ffmpeg sqlite3 python3
 - Scraper skips channels that already have `tvshow.nfo` (no network hit)
 - Lock file prevents overlapping `downloadSubs.sh` runs
 - Videos named `Title_S{YY}E{##}.mp4` — title first for readability, Jellyfin parses season/episode
-- Thumbnails extracted from video as `-thumb.jpg` next to each `.mp4`
+- Thumbnails: 4 candidate frames extracted (15/35/55/75%), scored by ImageMagick grayscale std deviation, best picked
 - All videos stored directly in channel folder (no year subdirectories)

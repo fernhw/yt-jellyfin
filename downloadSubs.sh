@@ -348,9 +348,9 @@ for channel_dir in "$YT_ROOT"/*/; do
 done
 
 # Generate missing thumbnails for Jellyfin (-thumb.jpg next to each .mp4)
+# Extracts 4 candidate frames, scores with ImageMagick, picks the best
 echo ""
 echo "--- Checking video thumbnails ---"
-# Collect videos missing thumbs first (fast check, no ffmpeg yet)
 thumb_queue=""
 thumb_needed=0
 for mp4 in "$YT_ROOT"/*/*.mp4; do
@@ -368,19 +368,45 @@ else
   echo "$thumb_queue" | while IFS= read -r mp4; do
     [ -z "$mp4" ] && continue
     thumb="${mp4%.mp4}-thumb.jpg"
-    # Quick check: can ffprobe read the file at all?
     duration=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$mp4" 2>/dev/null | cut -d. -f1)
     if [ -z "$duration" ] || [ "${duration:-0}" -lt 1 ]; then
       echo "  SKIP (unreadable): $(basename "$mp4")"
       continue
     fi
-    seek=10
-    [ "$duration" -lt 15 ] && seek=1
-    if ffmpeg -y -ss "$seek" -i "$mp4" -vframes 1 -update 1 -q:v 2 "$thumb" -loglevel quiet 2>/dev/null; then
-      echo "  THUMB: $(basename "$thumb")"
+
+    tmpdir=$(mktemp -d)
+    best_score=0
+    best_file=""
+
+    # Sample 4 frames at 15%, 35%, 55%, 75% of duration
+    for pct in 15 35 55 75; do
+      seek=$(( duration * pct / 100 ))
+      [ "$seek" -lt 1 ] && seek=1
+      candidate="$tmpdir/frame_${pct}.jpg"
+      ffmpeg -y -ss "$seek" -i "$mp4" -vframes 1 -update 1 -q:v 2 "$candidate" -loglevel quiet 2>/dev/null || continue
+      [ -f "$candidate" ] || continue
+
+      # Score: grayscale std deviation (higher = more visual contrast/interest)
+      score=$(magick "$candidate" -colorspace Gray -format "%[fx:standard_deviation*1000]" info: 2>/dev/null)
+      score=${score:-0}
+      # Integer comparison (strip decimal)
+      score_int=$(printf '%.0f' "$score" 2>/dev/null || echo 0)
+      if [ "$score_int" -gt "$best_score" ] 2>/dev/null; then
+        best_score=$score_int
+        best_file=$candidate
+      fi
+    done
+
+    if [ -n "$best_file" ] && [ -f "$best_file" ]; then
+      mv "$best_file" "$thumb"
+      echo "  THUMB: $(basename "$thumb") (score: $best_score)"
     else
-      echo "  SKIP (no frame): $(basename "$mp4")"
+      # Fallback: single frame at 10s
+      ffmpeg -y -ss 10 -i "$mp4" -vframes 1 -update 1 -q:v 2 "$thumb" -loglevel quiet 2>/dev/null \
+        && echo "  THUMB (fallback): $(basename "$thumb")" \
+        || echo "  SKIP (no frame): $(basename "$mp4")"
     fi
+    rm -rf "$tmpdir"
   done
 fi
 
