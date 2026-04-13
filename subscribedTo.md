@@ -40,3 +40,5 @@
 - https://www.youtube.com/@Razbuten
 - https://www.youtube.com/@hbomberguy
 - https://www.youtube.com/@AsmonTV
+- https://www.youtube.com/@TechnologyConnections
+- https://www.youtube.com/@early-tv

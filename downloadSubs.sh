@@ -233,7 +233,11 @@ NEW_COUNT=0
 QUEUE="$YT_ROOT/.download_queue"
 rm -f "$QUEUE"
 
-get_channels | while IFS= read -r channel_url; do
+# Write channel list to file to avoid stdin conflicts with sqlite3/yt-dlp in the loop
+CHANNEL_LIST="$YT_ROOT/.channel_list"
+get_channels > "$CHANNEL_LIST"
+
+while IFS= read -r channel_url <&3; do
   [ -z "$channel_url" ] && continue
 
   # Ensure /videos tab (chronological, no shorts)
@@ -311,7 +315,8 @@ EOF
     sqlite3 "$DB" "DELETE FROM videos WHERE id='$(printf '%s' "$first_vid" | sed "s/'/''/g")';" 
     echo "  POPPED latest: $first_vid (will download on next run)"
   fi
-done
+done 3< "$CHANNEL_LIST"
+rm -f "$CHANNEL_LIST"
 
 echo ""
 if [ "$MODE" = "init" ]; then
