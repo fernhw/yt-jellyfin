@@ -350,20 +350,39 @@ done
 # Generate missing thumbnails for Jellyfin (-thumb.jpg next to each .mp4)
 echo ""
 echo "--- Checking video thumbnails ---"
-thumb_count=0
-find "$YT_ROOT" -name '*.mp4' -type f | while IFS= read -r mp4; do
-  thumb="${mp4%.mp4}-thumb.jpg"
-  [ -f "$thumb" ] && continue
-  # Extract frame at 10s (or 1s for short videos) as thumbnail
-  duration=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$mp4" 2>/dev/null | cut -d. -f1)
-  seek=10
-  [ "${duration:-0}" -lt 15 ] && seek=1
-  if ffmpeg -y -ss "$seek" -i "$mp4" -vframes 1 -update 1 -q:v 2 "$thumb" -loglevel quiet 2>/dev/null; then
-    echo "  THUMB: $(basename "$thumb")"
-    thumb_count=$((thumb_count + 1))
-  fi
+# Collect videos missing thumbs first (fast check, no ffmpeg yet)
+thumb_queue=""
+thumb_needed=0
+for mp4 in "$YT_ROOT"/*/*.mp4; do
+  [ -f "$mp4" ] || continue
+  [ -f "${mp4%.mp4}-thumb.jpg" ] && continue
+  thumb_queue="$thumb_queue
+$mp4"
+  thumb_needed=$((thumb_needed + 1))
 done
-[ "$thumb_count" -eq 0 ] && echo "  all thumbnails present"
+
+if [ "$thumb_needed" -eq 0 ]; then
+  echo "  all thumbnails present"
+else
+  echo "  $thumb_needed video(s) missing thumbnails"
+  echo "$thumb_queue" | while IFS= read -r mp4; do
+    [ -z "$mp4" ] && continue
+    thumb="${mp4%.mp4}-thumb.jpg"
+    # Quick check: can ffprobe read the file at all?
+    duration=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$mp4" 2>/dev/null | cut -d. -f1)
+    if [ -z "$duration" ] || [ "${duration:-0}" -lt 1 ]; then
+      echo "  SKIP (unreadable): $(basename "$mp4")"
+      continue
+    fi
+    seek=10
+    [ "$duration" -lt 15 ] && seek=1
+    if ffmpeg -y -ss "$seek" -i "$mp4" -vframes 1 -update 1 -q:v 2 "$thumb" -loglevel quiet 2>/dev/null; then
+      echo "  THUMB: $(basename "$thumb")"
+    else
+      echo "  SKIP (no frame): $(basename "$mp4")"
+    fi
+  done
+fi
 
 update_vars
 echo "=== Done ==="
