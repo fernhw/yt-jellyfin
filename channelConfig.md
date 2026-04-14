@@ -13,6 +13,7 @@ supereyepatchwolf0
 Fireship
 GMTK
 CaptainDisillusion
+KBash
 
 # LIMITS - max videos kept on disk per channel
 # When a new video downloads and count exceeds limit,

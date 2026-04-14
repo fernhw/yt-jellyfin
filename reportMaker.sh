@@ -180,6 +180,15 @@ $(cat "$TMP_PRI")
 ---
 
 SEC
+  else
+    cat >> "$TODAY_REPORT" <<SEC
+## Watch First
+
+No priority uploads today — your favorites are taking a break.
+
+---
+
+SEC
   fi
 
   # --- Rare drops ---
@@ -208,27 +217,6 @@ $(cat "$TMP_REG")
 SEC
   fi
 fi
-
-# --- Compact health footer ---
-CHAN_TOTAL=$(sqlite3 "$DB" "SELECT COUNT(DISTINCT channel) FROM videos WHERE status='downloaded'")
-TOTAL_VIDEOS=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status='downloaded'")
-LAST_SCAN=$(grep "^updated=" "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
-ERR_TODAY=$(grep "^errors_today=" "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
-ERR_TODAY=${ERR_TODAY:-0}
-
-STATUS_ICON="✓"
-[ "$ERR_TODAY" -gt 0 ] && STATUS_ICON="⚠"
-
-printf '\n' >> "$TODAY_REPORT"
-printf '%s **Pipeline** — %s scan | %s channels | %s videos' \
-  "$STATUS_ICON" "$LAST_SCAN" "$CHAN_TOTAL" "$TOTAL_VIDEOS" >> "$TODAY_REPORT"
-
-if [ "$ERR_TODAY" -gt 0 ]; then
-  ERR_LIST=$(grep "^errors_list=" "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
-  printf ' | %s error(s): %s' "$ERR_TODAY" "$(echo "$ERR_LIST" | tr '|' ', ')" >> "$TODAY_REPORT"
-fi
-
-printf '\n' >> "$TODAY_REPORT"
 
 # --- Cleanup ---
 rm -f "$TMP_PRI" "$TMP_RARE" "$TMP_REG"

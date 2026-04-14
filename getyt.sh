@@ -49,11 +49,15 @@ apply_filter() {
 
 # Return next episode number for a channel directory
 next_episode() {
-  local dir="$1"
+  local dir="$1" season="$2"
   [ ! -d "$dir" ] && { echo 1; return; }
   local max
-  max=$(find "$dir" -maxdepth 1 -name '*.mp4' -exec basename {} \; 2>/dev/null | grep -oE 'E[0-9]+\.' | sed 's/E//; s/\.//' | sort -n | tail -1)
-  echo $(( ${max:-0} + 1 ))
+  if [ -n "$season" ]; then
+    max=$(find "$dir" -maxdepth 1 -name "*_S${season}E*.mp4" -exec basename {} \; 2>/dev/null | grep -oE 'E[0-9]+\.' | sed 's/E//; s/\.//' | sort -n | tail -1)
+  else
+    max=$(find "$dir" -maxdepth 1 -name '*.mp4' -exec basename {} \; 2>/dev/null | grep -oE 'E[0-9]+\.' | sed 's/E//; s/\.//' | sort -n | tail -1)
+  fi
+  echo $(( $(echo "${max:-0}" | sed 's/^0*//; s/^$/0/') + 1 ))
 }
 
 db_check() {
@@ -74,25 +78,131 @@ db_insert() {
     );"
 }
 
+# Fetch video title and upload date from YouTube page (for failed yt-dlp downloads)
+# Outputs two lines: title, then upload_date (YYYYMMDD or empty)
+fetch_page_info() {
+  local page
+  page=$(curl -sL --max-time 5 "$1" < /dev/null 2>/dev/null)
+  printf '%s' "$page" | sed -n 's/.*<title>\(.*\) - YouTube<\/title>.*/\1/p' | head -1
+  printf '%s' "$page" | grep -oE '"uploadDate":"[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1 | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | tr -d '-'
+}
+
+# Generate a placeholder video via external script, then record in DB
+generate_placeholder() {
+  local reason="$1" url="$2" vid_id="$3" channel_hint="$4" vid_title="$5" upload_date="$6"
+
+  # Resolve channel folder from hint
+  local handle_bare
+  handle_bare=$(printf '%s' "$channel_hint" | sed 's/^@//')
+  [ -z "$handle_bare" ] && return 1
+
+  # Look up display name from DB, fall back to handle
+  local display_name
+  display_name=$(sqlite3 "$DB" "SELECT display_name FROM channel_aliases WHERE handle='$(printf '%s' "$handle_bare" | sed "s/'/''/g")';" 2>/dev/null)
+  [ -z "$display_name" ] && display_name="$handle_bare"
+
+  local channel_name
+  channel_name=$(apply_filter "$display_name")
+  local channel_norm
+  channel_norm=$(normalize "$channel_name" "$MAX_CHANNEL")
+
+  local dest_dir="$YT_ROOT/$channel_norm"
+  mkdir -p "$dest_dir"
+
+  local year season ep filename title_norm
+  # Use upload year if available, fall back to current year
+  year=$(printf '%s' "$upload_date" | cut -c1-4)
+  [ -z "$year" ] && year=$(date +%Y)
+  season=$(printf '%s' "$year" | cut -c3-4)
+  ep=$(next_episode "$dest_dir" "$season")
+
+  # Use video title for filename if available, fall back to reason
+  if [ -n "$vid_title" ]; then
+    title_norm=$(normalize "$vid_title" "$MAX_TITLE")
+  else
+    title_norm=$(normalize "$reason" 30)
+  fi
+  filename=$(printf '%s_S%02dE%02d' "$title_norm" "$season" "$ep")
+
+  local outfile="$dest_dir/$filename.mp4"
+
+  "$SCRIPT_DIR/generatePlaceholder.sh" "$reason" "$url" "$outfile" "$vid_title"
+
+  if [ -f "$outfile" ]; then
+    echo "  PLACEHOLDER: $channel_norm/$filename.mp4"
+    db_insert "$vid_id" "$url" "$display_name" "$reason" "$upload_date" "$(date +%s)" "$channel_norm/$filename.mp4" "$reason"
+    return 0
+  else
+    echo "  WARN: placeholder generation failed"
+    return 1
+  fi
+}
+
 download_video() {
   local url="$1"
+  local channel_hint="$2"  # optional @handle from downloadSubs queue
   echo ""
   echo "--- $url"
 
+  # Extract video ID from URL early (before any network calls)
+  local vid_from_url
+  vid_from_url=$(printf '%s' "$url" | grep -oE '[a-zA-Z0-9_-]{11}$')
+
+  # Single yt-dlp call: stdout->temp file (json), stderr->variable (errors)
+  local tmpjson="/tmp/ytdl_$$"
   local info errmsg
-  errmsg=$(yt-dlp --no-playlist --extractor-args "youtube:lang=en" --dump-json "$url" 2>&1 >/dev/null) || true
-  info=$(yt-dlp --no-playlist --extractor-args "youtube:lang=en" --dump-json "$url" 2>/dev/null) || true
+  errmsg=$(yt-dlp --no-playlist --extractor-args "youtube:lang=en" --dump-json "$url" 2>&1 >"$tmpjson") || true
+  info=$(cat "$tmpjson" 2>/dev/null)
+  rm -f "$tmpjson"
 
   if [ -z "$info" ]; then
+    local esc_id esc_url skip_title skip_upload_date page_info
+    esc_id=$(printf '%s' "$vid_from_url" | sed "s/'/''/g")
+    esc_url=$(printf '%s' "$url" | sed "s/'/''/g")
+    page_info=$(fetch_page_info "$url")
+    skip_title=$(printf '%s' "$page_info" | sed -n '1p')
+    skip_upload_date=$(printf '%s' "$page_info" | sed -n '2p')
+
     # Check for age restriction
-    if printf '%s' "$errmsg" | grep -qi "Sign in to confirm your age"; then
+    if printf '%s' "$errmsg" | grep -qi "Sign in to confirm your age\|age.gate\|age.restricted"; then
       echo "  SKIP (age-restricted): $url"
-      local skip_id
-      skip_id=$(printf '%s' "$url" | grep -oE '[a-zA-Z0-9_-]{11}$')
-      [ -n "$skip_id" ] && sqlite3 "$DB" "INSERT OR IGNORE INTO videos (id,url,status) VALUES ('$skip_id','$url','age-restricted');"
+      if [ -n "$channel_hint" ] && [ -n "$vid_from_url" ]; then
+        generate_placeholder "age-restricted" "$url" "$vid_from_url" "$channel_hint" "$skip_title" "$skip_upload_date"
+      else
+        [ -n "$vid_from_url" ] && sqlite3 "$DB" "INSERT INTO videos (id,url,status) VALUES ('$esc_id','$esc_url','age-restricted') ON CONFLICT(id) DO UPDATE SET status='age-restricted';"
+      fi
       return 0
     fi
+
+    # Check for members-only / premium content
+    if printf '%s' "$errmsg" | grep -qi "Join this channel\|members.only\|member.exclusive\|requires payment"; then
+      echo "  SKIP (members-only): $url"
+      if [ -n "$channel_hint" ] && [ -n "$vid_from_url" ]; then
+        generate_placeholder "members-only" "$url" "$vid_from_url" "$channel_hint" "$skip_title" "$skip_upload_date"
+      else
+        [ -n "$vid_from_url" ] && sqlite3 "$DB" "INSERT INTO videos (id,url,status) VALUES ('$esc_id','$esc_url','members-only') ON CONFLICT(id) DO UPDATE SET status='members-only';"
+      fi
+      return 0
+    fi
+
+    # Check for private/deleted/unavailable
+    if printf '%s' "$errmsg" | grep -qi "Private video\|Video unavailable\|has been removed\|does not exist"; then
+      echo "  SKIP (unavailable): $url"
+      if [ -n "$channel_hint" ] && [ -n "$vid_from_url" ]; then
+        generate_placeholder "unavailable" "$url" "$vid_from_url" "$channel_hint" "$skip_title" "$skip_upload_date"
+      else
+        [ -n "$vid_from_url" ] && sqlite3 "$DB" "INSERT INTO videos (id,url,status) VALUES ('$esc_id','$esc_url','unavailable') ON CONFLICT(id) DO UPDATE SET status='unavailable';"
+      fi
+      return 0
+    fi
+
+    # Generic error — still save to prevent infinite retries
     echo "  ERROR: could not fetch metadata"
+    if [ -n "$channel_hint" ] && [ -n "$vid_from_url" ]; then
+      generate_placeholder "errored" "$url" "$vid_from_url" "$channel_hint" "$skip_title" "$skip_upload_date"
+    else
+      [ -n "$vid_from_url" ] && sqlite3 "$DB" "INSERT INTO videos (id,url,status) VALUES ('$esc_id','$esc_url','errored') ON CONFLICT(id) DO UPDATE SET status='errored';"
+    fi
     return 1
   fi
 
@@ -157,7 +267,7 @@ print(f'yt_handle={shlex.quote(handle)}')
   fi
 
   local ep
-  ep=$(next_episode "$dest_dir")
+  ep=$(next_episode "$dest_dir" "$season")
   local filename
   filename=$(printf '%s_S%02dE%02d' "$title_norm" "$season" "$ep")
 
@@ -238,11 +348,14 @@ init_db
 
 SKIP_DB_CHECK=0
 if [ "$1" = "-f" ] && [ -n "$2" ]; then
-  while IFS= read -r line; do
+  while IFS= read -r line <&3; do
     line=$(printf '%s' "$line" | sed 's/#.*//' | tr -s ' ' | sed 's/^ *//; s/ *$//')
     [ -z "$line" ] && continue
-    download_video "$line"
-  done < "$2"
+    # Queue lines may be tab-separated: URL\t@handle
+    local_url=$(printf '%s' "$line" | cut -f1)
+    local_handle=$(printf '%s' "$line" | cut -sf2)
+    download_video "$local_url" "$local_handle"
+  done 3< "$2"
 else
   SKIP_DB_CHECK=1
   for url in "$@"; do

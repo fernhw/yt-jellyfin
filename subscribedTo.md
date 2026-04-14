@@ -46,3 +46,8 @@
 - https://www.youtube.com/@NintendoAmerica
 - https://www.youtube.com/@SpawnWave
 - https://www.youtube.com/@BellularNews
+- https://www.youtube.com/@StudioWrong
+- https://www.youtube.com/channel/UC9Q2mxRddjdsbOk_8NRdFkQ
+- https://www.youtube.com/@Lowart
+- https://www.youtube.com/@KBash
+- https://www.youtube.com/@DouchebagChocolat

@@ -68,25 +68,27 @@ update_vars() {
   today=$(date '+%Y-%m-%d')
 
   # Read existing daily counters if same day, otherwise reset
-  local prev_date prev_dl prev_del prev_err prev_dl_list prev_del_list prev_err_list
+  local prev_date prev_dl prev_del prev_err prev_skip prev_dl_list prev_del_list prev_err_list prev_skip_list
   prev_date=""
-  prev_dl=0; prev_del=0; prev_err=0
-  prev_dl_list=""; prev_del_list=""; prev_err_list=""
+  prev_dl=0; prev_del=0; prev_err=0; prev_skip=0
+  prev_dl_list=""; prev_del_list=""; prev_err_list=""; prev_skip_list=""
   if [ -f "$VARS_FILE" ]; then
     prev_date=$(grep '^report_date=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
     if [ "$prev_date" = "$today" ]; then
       prev_dl=$(grep '^downloaded_today=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
       prev_del=$(grep '^deleted_today=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
       prev_err=$(grep '^errors_today=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+      prev_skip=$(grep '^skipped_today=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
       prev_dl_list=$(grep '^downloaded_list=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
       prev_del_list=$(grep '^deleted_list=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
       prev_err_list=$(grep '^errors_list=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+      prev_skip_list=$(grep '^skipped_list=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
     fi
   fi
-  prev_dl=${prev_dl:-0}; prev_del=${prev_del:-0}; prev_err=${prev_err:-0}
+  prev_dl=${prev_dl:-0}; prev_del=${prev_del:-0}; prev_err=${prev_err:-0}; prev_skip=${prev_skip:-0}
 
   # Merge new items with existing daily lists
-  local final_dl_list final_del_list final_err_list
+  local final_dl_list final_del_list final_err_list final_skip_list
   if [ -n "$prev_dl_list" ] && [ -n "$DL_ITEMS" ]; then
     final_dl_list="${prev_dl_list}|${DL_ITEMS}"
   else
@@ -102,6 +104,11 @@ update_vars() {
   else
     final_err_list="${prev_err_list}${ERR_ITEMS}"
   fi
+  if [ -n "$prev_skip_list" ] && [ -n "$SKIP_ITEMS" ]; then
+    final_skip_list="${prev_skip_list}|${SKIP_ITEMS}"
+  else
+    final_skip_list="${prev_skip_list}${SKIP_ITEMS}"
+  fi
 
   cat > "$VARS_FILE" <<EOF
 last_scan=$now_ms
@@ -111,11 +118,13 @@ report_date=$today
 downloaded_today=$(( prev_dl + DL_COUNT ))
 deleted_today=$(( prev_del + DEL_COUNT ))
 errors_today=$(( prev_err + ERR_COUNT ))
+skipped_today=$(( prev_skip + SKIP_COUNT ))
 channels_scanned=$CHAN_SCANNED
 channels_total=$CHAN_TOTAL
 downloaded_list=$final_dl_list
 deleted_list=$final_del_list
 errors_list=$final_err_list
+skipped_list=$final_skip_list
 EOF
 }
 
@@ -198,9 +207,9 @@ reorder_queue() {
   while IFS="$(printf '\t')" read -r url handle; do
     bare=$(handle_bare "$handle" | tr '[:upper:]' '[:lower:]')
     if printf '%s\n' "$pri_handles" | grep -qix "$bare"; then
-      echo "$url" >> "$priority_queue"
+      printf '%s\t%s\n' "$url" "$handle" >> "$priority_queue"
     else
-      echo "$url" >> "$normal_queue"
+      printf '%s\t%s\n' "$url" "$handle" >> "$normal_queue"
     fi
   done < "$queue_file"
 
@@ -258,11 +267,13 @@ echo "=== downloadSubs [$MODE] $(date '+%Y-%m-%d %H:%M:%S') ==="
 DL_COUNT=0
 DEL_COUNT=0
 ERR_COUNT=0
+SKIP_COUNT=0
 CHAN_SCANNED=0
 CHAN_TOTAL=0
 DL_ITEMS=""
 DEL_ITEMS=""
 ERR_ITEMS=""
+SKIP_ITEMS=""
 REPORT_MAKER="$SCRIPT_DIR/reportMaker.sh"
 
 if [ ! -d "/Volumes/Darrel4tb" ]; then
@@ -426,16 +437,13 @@ elif [ -f "$QUEUE" ] && [ -s "$QUEUE" ]; then
   # Reorder queue: priority channels first
   reorder_queue "$QUEUE"
 
-  # Strip handle tags for getyt (only needs URLs)
-  tmp_urls="$QUEUE.urls"
-  cut -f1 "$QUEUE" > "$tmp_urls"
-
   # Snapshot DB before downloads to detect what got added
   dl_before=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status='downloaded';" 2>/dev/null || echo 0)
+  skip_before=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status IN ('age-restricted','members-only','unavailable','errored');" 2>/dev/null || echo 0)
 
-  count=$(wc -l < "$tmp_urls" | tr -d ' ')
+  count=$(wc -l < "$QUEUE" | tr -d ' ')
   echo "Downloading $count new video(s)..."
-  "$GETYT" -f "$tmp_urls"
+  "$GETYT" -f "$QUEUE"
 
   # Compute what was actually downloaded this run
   dl_after=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status='downloaded';" 2>/dev/null || echo 0)
@@ -445,10 +453,18 @@ elif [ -f "$QUEUE" ] && [ -s "$QUEUE" ]; then
   # Collect titles of newly downloaded videos
   DL_ITEMS=$(sqlite3 "$DB" "SELECT channel || ':' || title FROM videos WHERE status='downloaded' ORDER BY download_date DESC LIMIT $DL_COUNT;" 2>/dev/null | tr '\n' '|' | sed 's/|$//')
 
+  # Count skipped videos (age-restricted, members-only, etc.)
+  skip_after=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status IN ('age-restricted','members-only','unavailable','errored');" 2>/dev/null || echo 0)
+  SKIP_COUNT=$(( skip_after - skip_before ))
+  [ "$SKIP_COUNT" -lt 0 ] && SKIP_COUNT=0
+  if [ "$SKIP_COUNT" -gt 0 ]; then
+    SKIP_ITEMS=$(sqlite3 "$DB" "SELECT status || ':' || url FROM videos WHERE status IN ('age-restricted','members-only','unavailable','errored') ORDER BY rowid DESC LIMIT $SKIP_COUNT;" 2>/dev/null | tr '\n' '|' | sed 's/|$//')
+  fi
+
   # Count failures from this run
   fail_after=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status='failed';" 2>/dev/null || echo 0)
 
-  rm -f "$QUEUE" "$tmp_urls"
+  rm -f "$QUEUE"
 else
   echo "No new videos."
   rm -f "$QUEUE"
