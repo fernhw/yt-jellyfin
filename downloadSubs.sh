@@ -28,6 +28,7 @@ case "$1" in
   --dry-run)          MODE="dry-run" ;;
   --scrape-only)      MODE="scrape-only" ;;
   --collage-seasons)  MODE="collage-only" ;;
+  --thumbs)           MODE="thumbs-only" ;;
 esac
 
 init_db() {
@@ -281,19 +282,21 @@ if [ ! -d "/Volumes/Darrel4tb" ]; then
   exit 1
 fi
 
-# Prevent overlapping runs
-if [ -f "$LOCKFILE" ]; then
-  lock_pid=$(cat "$LOCKFILE" 2>/dev/null)
-  if kill -0 "$lock_pid" 2>/dev/null; then
-    echo "Already running (pid $lock_pid). Exiting."
-    exit 0
-  else
-    echo "Stale lock found (pid $lock_pid gone). Removing."
-    rm -f "$LOCKFILE"
+# Prevent overlapping runs (skip lock for thumbs-only — read-only safe)
+if [ "$MODE" != "thumbs-only" ]; then
+  if [ -f "$LOCKFILE" ]; then
+    lock_pid=$(cat "$LOCKFILE" 2>/dev/null)
+    if kill -0 "$lock_pid" 2>/dev/null; then
+      echo "Already running (pid $lock_pid). Exiting."
+      exit 0
+    else
+      echo "Stale lock found (pid $lock_pid gone). Removing."
+      rm -f "$LOCKFILE"
+    fi
   fi
+  echo $$ > "$LOCKFILE"
+  trap 'rm -f "$LOCKFILE"' EXIT INT TERM
 fi
-echo $$ > "$LOCKFILE"
-trap 'rm -f "$LOCKFILE"' EXIT INT TERM
 
 init_db
 
@@ -307,6 +310,11 @@ if [ "$MODE" = "scrape-only" ]; then
   echo "=== Scrape-only complete ==="
   exit 0
 fi
+
+if [ "$MODE" = "thumbs-only" ]; then
+  # Jump straight to video thumbnail generation (skip scan/download/limits)
+  :
+else
 
 COLLAGE_MAKER="$SCRIPT_DIR/collageSeasons.py"
 
@@ -487,8 +495,51 @@ for channel_dir in "$YT_ROOT"/*/; do
   fi
 done
 
+fi  # end thumbs-only skip
+
 # Generate missing thumbnails for Jellyfin (-thumb.jpg next to each .mp4)
-# Extracts 4 candidate frames, scores with ImageMagick, picks the best
+# 4-stage fallback: scored frames → first frame → YouTube thumb → text card
+# All thumbs get title + channel text overlay for clarity
+THUMB_FONT="/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+
+# Helper: overlay video title + channel name centered on a base image → final thumb
+# Usage: thumb_overlay <base_image> <video_title> <channel_name> <output>
+thumb_overlay() {
+  _tb_base="$1"; _tb_title="$2"; _tb_chan="$3"; _tb_out="$4"
+  magick "$_tb_base" -resize '1920x1080^' -gravity center -extent '1920x1080' \
+    -brightness-contrast '-15x0' \
+    '(' -size 1920x1080 'radial-gradient:none-#00000099' ')' \
+    -gravity center -compose Over -composite \
+    -font "$THUMB_FONT" \
+    -fill '#00000088' -pointsize 52 -gravity Center -annotate +2-2 "$_tb_title" \
+    -fill white      -pointsize 52 -gravity Center -annotate +0+0  "$_tb_title" \
+    -fill '#ffffffAA' -pointsize 28 -gravity Center -annotate +0+50 "$_tb_chan" \
+    -quality 92 "$_tb_out" 2>/dev/null
+}
+
+# Helper: generate a text-card thumb (no background image, channel color gradient)
+# Usage: thumb_textcard <channel_dir> <channel_name> <video_title> <output>
+thumb_textcard() {
+  _tc_cdir="$1"; _tc_chan="$2"; _tc_title="$3"; _tc_out="$4"
+  # Extract channel color from folder.jpg or fallback
+  _tc_color=""
+  if [ -f "$_tc_cdir/folder.jpg" ]; then
+    _tc_color=$(magick "$_tc_cdir/folder.jpg" -resize 100x100! -colors 8 \
+      -format '%c' histogram:info: 2>/dev/null | grep -oE '#[0-9a-fA-F]{6}' | head -3 | tail -1)
+  fi
+  [ -z "$_tc_color" ] && _tc_color="#5C6BC0"
+  _tc_r=$(printf '%d' "0x$(echo "$_tc_color" | cut -c2-3)")
+  _tc_g=$(printf '%d' "0x$(echo "$_tc_color" | cut -c4-5)")
+  _tc_b=$(printf '%d' "0x$(echo "$_tc_color" | cut -c6-7)")
+  _tc_dark=$(printf '#%02x%02x%02x' $((_tc_r*15/100)) $((_tc_g*15/100)) $((_tc_b*15/100)))
+  magick -size 1920x1080 "gradient:${_tc_color}-${_tc_dark}" \
+    -font "$THUMB_FONT" \
+    -fill '#00000066' -pointsize 52 -gravity Center -annotate +2-2 "$_tc_title" \
+    -fill white      -pointsize 52 -gravity Center -annotate +0+0  "$_tc_title" \
+    -fill '#ffffffAA' -pointsize 28 -gravity Center -annotate +0+50 "$_tc_chan" \
+    -quality 92 "$_tc_out" 2>/dev/null
+}
+
 echo ""
 echo "--- Checking video thumbnails ---"
 thumb_queue=""
@@ -508,63 +559,122 @@ else
   echo "$thumb_queue" | while IFS= read -r mp4; do
     [ -z "$mp4" ] && continue
     thumb="${mp4%.mp4}-thumb.jpg"
+    base_name=$(basename "$mp4" .mp4)
+    # Video title: strip S##E## suffix, replace underscores with spaces
+    vid_title=$(echo "$base_name" | sed 's/_S[0-9]*E[0-9]*$//' | sed 's/_/ /g')
+    # Channel name from parent directory
+    chan_name=$(basename "$(dirname "$mp4")" | sed 's/_/ /g')
+    chan_dir=$(dirname "$mp4")
+
+    got_base=""
+
+    # --- Stage 1: 4-frame scored extraction ---
     duration=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$mp4" 2>/dev/null | cut -d. -f1)
     if [ -z "$duration" ] || [ "${duration:-0}" -lt 1 ]; then
-      # Fallback: try stream-level duration
       duration=$(ffprobe -v quiet -select_streams v:0 -show_entries stream=duration -of csv=p=0 "$mp4" 2>/dev/null | cut -d. -f1)
     fi
     if [ -z "$duration" ] || [ "${duration:-0}" -lt 1 ]; then
-      # Fallback: decode and parse total duration from ffmpeg output
       duration=$(ffmpeg -i "$mp4" -f null - 2>&1 | grep -oE 'Duration: [0-9:.]+' | head -1 \
         | sed 's/Duration: //' | awk -F: '{print int($1*3600+$2*60+$3)}')
     fi
-    if [ -z "$duration" ] || [ "${duration:-0}" -lt 1 ]; then
-      echo "  SKIP (unreadable): $(basename "$mp4")"
+
+    if [ -n "$duration" ] && [ "${duration:-0}" -ge 1 ]; then
+      tmpdir=$(mktemp -d)
+      best_score=0
+      best_file=""
+      for pct in 15 35 55 75; do
+        seek=$(( duration * pct / 100 ))
+        [ "$seek" -lt 1 ] && seek=1
+        candidate="$tmpdir/frame_${pct}.jpg"
+        ffmpeg -y -ss "$seek" -i "$mp4" -vframes 1 -update 1 -q:v 2 "$candidate" -loglevel quiet 2>/dev/null || continue
+        [ -f "$candidate" ] || continue
+        score=$(magick "$candidate" -colorspace Gray -format "%[fx:standard_deviation*1000]" info: 2>/dev/null)
+        score=${score:-0}
+        score_int=$(printf '%.0f' "$score" 2>/dev/null || echo 0)
+        if [ "$score_int" -gt "$best_score" ] 2>/dev/null; then
+          best_score=$score_int
+          best_file=$candidate
+        fi
+      done
+      if [ -n "$best_file" ] && [ -f "$best_file" ]; then
+        got_base="$best_file"
+        thumb_overlay "$got_base" "$vid_title" "$chan_name" "$thumb"
+        if [ -f "$thumb" ]; then
+          echo "  THUMB: $(basename "$thumb") (score: $best_score)"
+        else
+          mv "$got_base" "$thumb"
+          echo "  THUMB (no overlay): $(basename "$thumb") (score: $best_score)"
+        fi
+        rm -rf "$tmpdir"
+        continue
+      fi
+      rm -rf "$tmpdir"
+    fi
+
+    # --- Stage 2: First frame (no duration needed) ---
+    tmp_first="/tmp/thumb_first_$$.jpg"
+    ffmpeg -y -i "$mp4" -vframes 1 -update 1 -q:v 2 "$tmp_first" -loglevel quiet 2>/dev/null
+    if [ -f "$tmp_first" ]; then
+      thumb_overlay "$tmp_first" "$vid_title" "$chan_name" "$thumb"
+      if [ -f "$thumb" ]; then
+        echo "  THUMB (first-frame): $(basename "$thumb")"
+      else
+        mv "$tmp_first" "$thumb"
+        echo "  THUMB (first-frame, no overlay): $(basename "$thumb")"
+      fi
+      rm -f "$tmp_first"
       continue
     fi
 
-    tmpdir=$(mktemp -d)
-    best_score=0
-    best_file=""
-
-    # Sample 4 frames at 15%, 35%, 55%, 75% of duration
-    for pct in 15 35 55 75; do
-      seek=$(( duration * pct / 100 ))
-      [ "$seek" -lt 1 ] && seek=1
-      candidate="$tmpdir/frame_${pct}.jpg"
-      ffmpeg -y -ss "$seek" -i "$mp4" -vframes 1 -update 1 -q:v 2 "$candidate" -loglevel quiet 2>/dev/null || continue
-      [ -f "$candidate" ] || continue
-
-      # Score: grayscale std deviation (higher = more visual contrast/interest)
-      score=$(magick "$candidate" -colorspace Gray -format "%[fx:standard_deviation*1000]" info: 2>/dev/null)
-      score=${score:-0}
-      # Integer comparison (strip decimal)
-      score_int=$(printf '%.0f' "$score" 2>/dev/null || echo 0)
-      if [ "$score_int" -gt "$best_score" ] 2>/dev/null; then
-        best_score=$score_int
-        best_file=$candidate
+    # --- Stage 3: YouTube thumbnail download ---
+    # Look up video ID from DB using file_path
+    rel_path="$(basename "$chan_dir")/$(basename "$mp4")"
+    vid_id=$(sqlite3 "$DB" "SELECT id FROM videos WHERE file_path='$(printf '%s' "$rel_path" | sed "s/'/''/g")';" 2>/dev/null)
+    if [ -n "$vid_id" ]; then
+      tmp_yt="/tmp/thumb_yt_$$.jpg"
+      curl -s -f -o "$tmp_yt" "https://img.youtube.com/vi/${vid_id}/maxresdefault.jpg" 2>/dev/null
+      # Verify it's a real image (>1KB)
+      if [ -f "$tmp_yt" ] && [ "$(wc -c < "$tmp_yt" | tr -d ' ')" -gt 1000 ]; then
+        thumb_overlay "$tmp_yt" "$vid_title" "$chan_name" "$thumb"
+        if [ -f "$thumb" ]; then
+          echo "  THUMB (youtube): $(basename "$thumb")"
+        else
+          mv "$tmp_yt" "$thumb"
+          echo "  THUMB (youtube, no overlay): $(basename "$thumb")"
+        fi
+        rm -f "$tmp_yt"
+        continue
       fi
-    done
-
-    if [ -n "$best_file" ] && [ -f "$best_file" ]; then
-      mv "$best_file" "$thumb"
-      echo "  THUMB: $(basename "$thumb") (score: $best_score)"
-    else
-      # Fallback: single frame at 10% of duration
-      local fb_seek=$(( duration / 10 ))
-      [ "$fb_seek" -lt 2 ] && fb_seek=2
-      ffmpeg -y -ss "$fb_seek" -i "$mp4" -vframes 1 -update 1 -q:v 2 "$thumb" -loglevel quiet 2>/dev/null
-      if [ -f "$thumb" ]; then
-        echo "  THUMB (fallback): $(basename "$thumb")"
-      else
-        # Last resort: grab the very first frame
-        ffmpeg -y -i "$mp4" -vframes 1 -update 1 -q:v 2 "$thumb" -loglevel quiet 2>/dev/null \
-          && echo "  THUMB (first-frame): $(basename "$thumb")" \
-          || echo "  SKIP (no frame): $(basename "$mp4")"
+      rm -f "$tmp_yt"
+      # Try lower-res fallback
+      curl -s -f -o "$tmp_yt" "https://img.youtube.com/vi/${vid_id}/hqdefault.jpg" 2>/dev/null
+      if [ -f "$tmp_yt" ] && [ "$(wc -c < "$tmp_yt" | tr -d ' ')" -gt 1000 ]; then
+        thumb_overlay "$tmp_yt" "$vid_title" "$chan_name" "$thumb"
+        if [ -f "$thumb" ]; then
+          echo "  THUMB (youtube-hq): $(basename "$thumb")"
+        else
+          mv "$tmp_yt" "$thumb"
+          echo "  THUMB (youtube-hq, no overlay): $(basename "$thumb")"
+        fi
+        rm -f "$tmp_yt"
+        continue
       fi
+      rm -f "$tmp_yt"
     fi
-    rm -rf "$tmpdir"
+
+    # --- Stage 4: Text card (channel color gradient + title) ---
+    thumb_textcard "$chan_dir" "$chan_name" "$vid_title" "$thumb"
+    if [ -f "$thumb" ]; then
+      echo "  THUMB (textcard): $(basename "$thumb")"
+    else
+      echo "  SKIP (all stages failed): $(basename "$mp4")"
+    fi
   done
+fi
+
+if [ "$MODE" = "thumbs-only" ]; then
+  echo "=== Thumbs-only complete ==="
+  exit 0
 fi
 
 # Collect delete tracking from temp file (written by enforce_limit subshell)

@@ -30,6 +30,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 YT_ROOT = '/Volumes/Darrel4tb/YT'
 POSTER_W, POSTER_H = 1000, 1500
 BACKDROP_W, BACKDROP_H = 1920, 1080
+THUMB_W, THUMB_H = 1920, 1080
 FONT_BOLD = '/System/Library/Fonts/Supplemental/Arial Bold.ttf'
 
 # --- Color extraction ---
@@ -483,6 +484,137 @@ def build_backdrop(channel_dir, channel_name, color):
     return os.path.exists(out_path)
 
 
+# --- Thumb generation (series horizontal thumbnail for Jellyfin) ---
+
+def build_thumb(channel_dir, channel_name, color):
+    """Generate thumb.jpg (1920x1080) from banner + avatar + channel color.
+
+    Layout: channel-color gradient background, banner across top half,
+    large circular avatar centered, channel name below.
+    """
+    W, H = THUMB_W, THUMB_H
+    out_path = os.path.join(channel_dir, 'thumb.jpg')
+    dark = darker_shade(color, 0.15)
+
+    banner_path = os.path.join(channel_dir, 'banner.jpg')
+    logo_path = os.path.join(channel_dir, 'folder.jpg')
+
+    # Need at least folder.jpg
+    if not os.path.exists(logo_path):
+        return False
+
+    tmp_base = f'/tmp/thumb_{channel_name}'
+
+    # 1) Solid channel-color gradient canvas (top lighter, bottom darker)
+    tmp_canvas = f'{tmp_base}_canvas.jpg'
+    magick(
+        '-size', f'{W}x{H}',
+        f'gradient:{color}-{dark}',
+        tmp_canvas
+    )
+    if not os.path.exists(tmp_canvas):
+        return False
+
+    # 2) If banner exists, overlay it across the top ~40% with fade-out
+    tmp_with_banner = f'{tmp_base}_banner.jpg'
+    if os.path.exists(banner_path):
+        banner_h = int(H * 0.4)  # 432px
+        tmp_ban_resized = f'{tmp_base}_ban_rsz.jpg'
+        # Stretch banner to full width, crop to banner_h
+        crop_fill(banner_path, W, banner_h, tmp_ban_resized)
+
+        # Create a fade mask: white at top, transparent at bottom
+        tmp_fade = f'{tmp_base}_fade.png'
+        magick(
+            '-size', f'{W}x{banner_h}',
+            'gradient:white-none',
+            tmp_fade
+        )
+
+        # Apply fade mask to banner
+        tmp_ban_faded = f'{tmp_base}_ban_faded.png'
+        magick(
+            tmp_ban_resized,
+            tmp_fade,
+            '-compose', 'CopyOpacity', '-composite',
+            tmp_ban_faded
+        )
+
+        # Composite faded banner onto canvas at top
+        magick(
+            tmp_canvas,
+            tmp_ban_faded,
+            '-gravity', 'North',
+            '-compose', 'Over', '-composite',
+            tmp_with_banner
+        )
+        _cleanup(tmp_ban_resized, tmp_fade, tmp_ban_faded)
+    else:
+        tmp_with_banner = tmp_canvas
+
+    if not os.path.exists(tmp_with_banner):
+        tmp_with_banner = tmp_canvas
+
+    # 3) Large circular avatar centered (350px diameter)
+    avatar_size = 350
+    ring_size = avatar_size + 16  # white border
+    tmp_rsz = f'{tmp_base}_rsz.png'
+    tmp_msk = f'{tmp_base}_msk.png'
+    tmp_mskd = f'{tmp_base}_mskd.png'
+    tmp_circ = f'{tmp_base}_circ.png'
+
+    r = avatar_size // 2
+    magick(logo_path, '-resize', f'{avatar_size}x{avatar_size}^',
+           '-gravity', 'center', '-extent', f'{avatar_size}x{avatar_size}', tmp_rsz)
+    magick('-size', f'{avatar_size}x{avatar_size}', 'xc:black',
+           '-fill', 'white', '-draw', f'circle {r},{r} {r},1', tmp_msk)
+    subprocess.run(['magick', 'composite', '-compose', 'CopyOpacity',
+                    tmp_msk, tmp_rsz, tmp_mskd],
+                   capture_output=True, timeout=10)
+    rr = ring_size // 2
+    magick(tmp_mskd,
+           '-background', 'none', '-gravity', 'center',
+           '-extent', f'{ring_size}x{ring_size}',
+           '(', '-size', f'{ring_size}x{ring_size}', 'xc:none',
+           '-fill', 'none', '-stroke', 'white', '-strokewidth', '5',
+           '-draw', f'circle {rr},{rr} {rr},3', ')',
+           '-compose', 'DstOver', '-composite',
+           tmp_circ)
+    _cleanup(tmp_rsz, tmp_msk, tmp_mskd)
+
+    # Place avatar above center (offset up by 80px to leave room for text)
+    tmp_with_avatar = f'{tmp_base}_avatar.jpg'
+    if os.path.exists(tmp_circ):
+        magick(
+            tmp_with_banner,
+            tmp_circ,
+            '-gravity', 'Center', '-geometry', '+0-80',
+            '-compose', 'Over', '-composite',
+            tmp_with_avatar
+        )
+        _cleanup(tmp_circ)
+    else:
+        tmp_with_avatar = tmp_with_banner
+
+    if not os.path.exists(tmp_with_avatar):
+        tmp_with_avatar = tmp_with_banner
+
+    # 4) Channel name text below avatar
+    display_name = channel_name.replace('_', ' ')
+    # Shadow + main text
+    magick(
+        tmp_with_avatar,
+        '-gravity', 'Center',
+        '-font', FONT_BOLD, '-pointsize', '56',
+        '-fill', f'{dark}CC', '-annotate', '+2+182', display_name,
+        '-fill', 'white', '-annotate', '+0+180', display_name,
+        '-quality', '92', out_path
+    )
+
+    _cleanup(tmp_canvas, tmp_with_banner, tmp_with_avatar)
+    return os.path.exists(out_path)
+
+
 def _cleanup(*paths):
     for p in paths:
         try:
@@ -521,6 +653,7 @@ def main():
     mode = 'generate'
     do_seasons = True
     do_backdrops = True
+    do_thumbs = True
 
     for arg in sys.argv[1:]:
         if arg == '--force':
@@ -529,7 +662,12 @@ def main():
             mode = 'dry-run'
         elif arg == '--backdrops':
             do_seasons = False
+            do_thumbs = False
         elif arg == '--seasons':
+            do_backdrops = False
+            do_thumbs = False
+        elif arg == '--thumbs':
+            do_seasons = False
             do_backdrops = False
 
     if not os.path.isdir(YT_ROOT):
@@ -538,6 +676,7 @@ def main():
 
     poster_count = 0
     backdrop_count = 0
+    thumb_count = 0
     skip_count = 0
 
     print('--- Season poster collages ---')
@@ -549,13 +688,51 @@ def main():
             continue
         channel = os.path.basename(channel_dir.rstrip('/'))
 
+        # Extract channel color once per channel
+        color = get_channel_color(channel_dir, channel)
+
+        # --- Thumb (series horizontal thumbnail) ---
+        if do_thumbs:
+            thumb_path = os.path.join(channel_dir, 'thumb.jpg')
+            if mode != 'force' and os.path.exists(thumb_path):
+                # Only rebuild if folder.jpg or banner.jpg is newer
+                needs_rebuild = False
+                for src in ['folder.jpg', 'banner.jpg']:
+                    src_path = os.path.join(channel_dir, src)
+                    if os.path.exists(src_path) and os.path.getmtime(src_path) > os.path.getmtime(thumb_path):
+                        needs_rebuild = True
+                        break
+                if not needs_rebuild:
+                    skip_count += 1
+                else:
+                    if mode == 'dry-run':
+                        print(f'  WOULD BUILD: {channel}/thumb.jpg (updated source)')
+                        thumb_count += 1
+                    else:
+                        ok = build_thumb(channel_dir, channel, color)
+                        if ok:
+                            print(f'  THUMB: {channel}/thumb.jpg (color: {color})')
+                            thumb_count += 1
+                        else:
+                            print(f'  FAIL: {channel}/thumb.jpg')
+            elif not os.path.exists(os.path.join(channel_dir, 'thumb.jpg')):
+                if mode == 'dry-run':
+                    print(f'  WOULD BUILD: {channel}/thumb.jpg')
+                    thumb_count += 1
+                else:
+                    ok = build_thumb(channel_dir, channel, color)
+                    if ok:
+                        print(f'  THUMB: {channel}/thumb.jpg (color: {color})')
+                        thumb_count += 1
+                    else:
+                        print(f'  FAIL: {channel}/thumb.jpg')
+
         # Get all thumbs in this channel
         all_thumbs = sorted(glob.glob(os.path.join(channel_dir, '*-thumb.jpg')))
         if not all_thumbs:
             continue
 
-        # Extract channel color once per channel
-        color = get_channel_color(channel_dir, channel)
+        # Channel color already extracted above
 
         # --- Season posters ---
         if do_seasons:
@@ -641,10 +818,10 @@ def main():
 
     print()
     if mode == 'dry-run':
-        print(f'  {poster_count} poster(s) + {backdrop_count} backdrop(s) would be generated '
+        print(f'  {poster_count} poster(s) + {backdrop_count} backdrop(s) + {thumb_count} thumb(s) would be generated '
               f'({skip_count} up to date)')
     else:
-        print(f'  {poster_count} poster(s) + {backdrop_count} backdrop(s) generated '
+        print(f'  {poster_count} poster(s) + {backdrop_count} backdrop(s) + {thumb_count} thumb(s) generated '
               f'({skip_count} up to date)')
     print('--- Collages complete ---')
 

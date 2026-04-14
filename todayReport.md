@@ -1,6 +1,6 @@
-# What to Watch — 2026-04-13
+# What to Watch — 2026-04-14
 
-> *Good evening! Here's what landed on Monday, April 13, 2026 at 11:50 PM.*
+> *Good morning! Here's what landed on Tuesday, April 14, 2026 at 11:08 AM.*
 
 ## Watch First
 
@@ -10,9 +10,8 @@ No priority uploads today — your favorites are taking a break.
 
 ## Also New
 
-- **Wtf is Trump doing..** — *Asmongold TV*
-- **Sykkuno is done..** — *Asmongold TV*
-- **Fat acceptance has gone too far..** — *Asmongold TV*
+- **Trump Depicts Himself as Jesus Christ** — *Internet Today*
+- **This $80 Handheld Has a Lot of Potential** — *Retro Game Corps*
 
 ---
 
