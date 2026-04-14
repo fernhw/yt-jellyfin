@@ -239,6 +239,21 @@ print(f'yt_handle={shlex.quote(handle)}')
   local channel_norm
   channel_norm=$(normalize "$channel_name" "$MAX_CHANNEL")
 
+  # If normalized folder doesn't exist, check for an existing folder that matches
+  # when underscores are stripped (prevents scraper vs downloader name mismatches)
+  if [ ! -d "$YT_ROOT/$channel_norm" ]; then
+    local _stripped _existing _e_stripped
+    _stripped=$(printf '%s' "$channel_norm" | tr -d '_' | tr '[:upper:]' '[:lower:]')
+    for _existing in "$YT_ROOT"/*/; do
+      [ ! -d "$_existing" ] && continue
+      _e_stripped=$(basename "$_existing" | tr -d '_' | tr '[:upper:]' '[:lower:]')
+      if [ "$_stripped" = "$_e_stripped" ]; then
+        channel_norm=$(basename "$_existing")
+        break
+      fi
+    done
+  fi
+
   # Store handle→display_name alias if we got a handle
   if [ -n "$yt_handle" ] && [ "$raw_channel" != "Unknown" ]; then
     sqlite3 "$DB" "INSERT OR REPLACE INTO channel_aliases (handle, display_name) VALUES (
