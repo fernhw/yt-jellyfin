@@ -1,6 +1,6 @@
 # What to Watch — 2026-04-14
 
-> *Good evening! Here's what landed on Tuesday, April 14, 2026 at 05:07 PM.*
+> *Good evening! Here's what landed on Tuesday, April 14, 2026 at 06:06 PM.*
 
 ## Watch First
 
@@ -15,6 +15,7 @@ No priority uploads today — your favorites are taking a break.
 - **Everyone instantly called her out..** — *Asmongold TV*
 - **Trump Depicts Himself as Jesus Christ** — *Internet Today*
 - **The Unreleased Rollable Smartphone!** — *Marques Brownlee*
+- **Overwatch – Season 2: Summit Official Trailer – Nintendo Switch 2** — *Nintendo of America*
 - **This $80 Handheld Has a Lot of Potential** — *Retro Game Corps*
 - **I recommend: Pragmata (Review)** — *Skill Up*
 - **Nintendo Responds To A Major Switch 2 Problem & Big Changes Are Coming To Xbox ** — *Spawn Wave*
