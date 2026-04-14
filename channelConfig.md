@@ -21,7 +21,10 @@ KBash
 # Channels not listed here: unlimited (keep all)
 # Format: handle = number
 [limits]
-Asmongold = 10
-CDawgVA = 10
-GarntM = 10
-ConnorDawg = 10
+Asmongold = 20
+CDawgVA = 20
+GarntM = 20
+ConnorDawg = 20
+GameLinked = 20
+techlinked = 20
+TechDweeb = 20

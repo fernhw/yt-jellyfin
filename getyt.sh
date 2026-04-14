@@ -310,9 +310,9 @@ for s in d.get('streams', []):
         echo "  audio: $audio_lang (ok)"
         ;;
       *)
-        echo "  WRONG AUDIO: $audio_lang — deleting and marking failed"
+        echo "  WRONG AUDIO: $audio_lang — deleting and marking no-english"
         rm -f "$dest_dir/$filename.mp4"
-        db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$filename.mp4" "failed"
+        db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$filename.mp4" "no-english"
         return 1
         ;;
     esac

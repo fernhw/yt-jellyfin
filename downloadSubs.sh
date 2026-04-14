@@ -380,6 +380,11 @@ while IFS= read -r channel_url <&3; do
         echo "  FORCE: $vid"
         printf '%s\t%s\n' "https://www.youtube.com/watch?v=$vid" "$label" >> "$QUEUE"
         new_for_channel=$(( new_for_channel + 1 ))
+      elif [ "$fd_status" = "failed" ] || [ "$fd_status" = "errored" ]; then
+        echo "  RETRY: $vid (was $fd_status)"
+        sqlite3 "$DB" "UPDATE videos SET status='force-download' WHERE id='$(printf '%s' "$vid" | sed "s/'/''/g")';"
+        printf '%s\t%s\n' "https://www.youtube.com/watch?v=$vid" "$label" >> "$QUEUE"
+        new_for_channel=$(( new_for_channel + 1 ))
       fi
       continue
     fi
@@ -439,7 +444,7 @@ elif [ -f "$QUEUE" ] && [ -s "$QUEUE" ]; then
 
   # Snapshot DB before downloads to detect what got added
   dl_before=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status='downloaded';" 2>/dev/null || echo 0)
-  skip_before=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status IN ('age-restricted','members-only','unavailable','errored');" 2>/dev/null || echo 0)
+  skip_before=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status IN ('age-restricted','members-only','unavailable','errored','no-english');" 2>/dev/null || echo 0)
 
   count=$(wc -l < "$QUEUE" | tr -d ' ')
   echo "Downloading $count new video(s)..."
@@ -454,11 +459,11 @@ elif [ -f "$QUEUE" ] && [ -s "$QUEUE" ]; then
   DL_ITEMS=$(sqlite3 "$DB" "SELECT channel || ':' || title FROM videos WHERE status='downloaded' ORDER BY download_date DESC LIMIT $DL_COUNT;" 2>/dev/null | tr '\n' '|' | sed 's/|$//')
 
   # Count skipped videos (age-restricted, members-only, etc.)
-  skip_after=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status IN ('age-restricted','members-only','unavailable','errored');" 2>/dev/null || echo 0)
+  skip_after=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status IN ('age-restricted','members-only','unavailable','errored','no-english');" 2>/dev/null || echo 0)
   SKIP_COUNT=$(( skip_after - skip_before ))
   [ "$SKIP_COUNT" -lt 0 ] && SKIP_COUNT=0
   if [ "$SKIP_COUNT" -gt 0 ]; then
-    SKIP_ITEMS=$(sqlite3 "$DB" "SELECT status || ':' || url FROM videos WHERE status IN ('age-restricted','members-only','unavailable','errored') ORDER BY rowid DESC LIMIT $SKIP_COUNT;" 2>/dev/null | tr '\n' '|' | sed 's/|$//')
+    SKIP_ITEMS=$(sqlite3 "$DB" "SELECT status || ':' || url FROM videos WHERE status IN ('age-restricted','members-only','unavailable','errored','no-english') ORDER BY rowid DESC LIMIT $SKIP_COUNT;" 2>/dev/null | tr '\n' '|' | sed 's/|$//')
   fi
 
   # Count failures from this run
