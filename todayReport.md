@@ -1,6 +1,6 @@
 # What to Watch — 2026-04-14
 
-> *Good afternoon! Here's what landed on Tuesday, April 14, 2026 at 03:24 PM.*
+> *Good afternoon! Here's what landed on Tuesday, April 14, 2026 at 04:34 PM.*
 
 ## Watch First
 
@@ -22,10 +22,12 @@ No priority uploads today — your favorites are taking a break.
 - **OMG THE HIDDEN ENDING! 2X2 LOVE HARD MODE & HIDDEN ENDING ** — *Yessenia*
 - **This is everything wrong with society..** — *Asmongold TV*
 - **We're Blockading The Blockade** — *Big A*
+- **DF Direct Weekly #259: Pragmata Tested, Forza Horizon 6, Samson Disappointment, Nvidia N1 Leaks** — *Digital Foundry*
 - **The New RPCS3 PS3 Emulator Update Is Insane** — *Modern Vintage Gamer*
 - **Final Fantasy 7's Beautiful & Baffling Designs ** — *Second Wind*
 - **Vim Has A 0-Day????** — *The PrimeTime*
 - **It’s time to start over.** — *jakkuh*
+- **System Shock Remake Review** — *MandaloreGaming*
 
 ---
 

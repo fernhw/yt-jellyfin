@@ -239,19 +239,17 @@ print(f'yt_handle={shlex.quote(handle)}')
   local channel_norm
   channel_norm=$(normalize "$channel_name" "$MAX_CHANNEL")
 
-  # If normalized folder doesn't exist, check for an existing folder that matches
-  # when underscores are stripped (prevents scraper vs downloader name mismatches)
-  if [ ! -d "$YT_ROOT/$channel_norm" ]; then
-    local _stripped _existing _e_stripped
-    _stripped=$(printf '%s' "$channel_norm" | tr -d '_' | tr '[:upper:]' '[:lower:]')
-    for _existing in "$YT_ROOT"/*/; do
-      [ ! -d "$_existing" ] && continue
-      _e_stripped=$(basename "$_existing" | tr -d '_' | tr '[:upper:]' '[:lower:]')
-      if [ "$_stripped" = "$_e_stripped" ]; then
-        channel_norm=$(basename "$_existing")
-        break
-      fi
-    done
+  # When called from downloadSubs with a handle hint, use the folder the scraper
+  # already created (single source of truth) instead of re-deriving from yt-dlp
+  if [ -n "$channel_hint" ]; then
+    local _hint_bare _hint_display _hint_filtered _hint_norm
+    _hint_bare=$(printf '%s' "$channel_hint" | sed 's/^@//')
+    _hint_display=$(sqlite3 "$DB" "SELECT display_name FROM channel_aliases WHERE handle='$(printf '%s' "$_hint_bare" | sed "s/'/''/g")';" 2>/dev/null)
+    [ -n "$_hint_display" ] && {
+      _hint_filtered=$(apply_filter "$_hint_display")
+      _hint_norm=$(normalize "$_hint_filtered" "$MAX_CHANNEL")
+      [ -d "$YT_ROOT/$_hint_norm" ] && channel_norm="$_hint_norm"
+    }
   fi
 
   # Store handle→display_name alias if we got a handle
