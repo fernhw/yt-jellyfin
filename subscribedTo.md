@@ -51,11 +51,11 @@
 - https://www.youtube.com/@Lowart
 - https://www.youtube.com/@KBash
 - https://www.youtube.com/@DouchebagChocolat
-- https://www.youtube.com/@tested
 - https://www.youtube.com/@GameLinked
 - https://www.youtube.com/@techlinked
 - https://www.youtube.com/@GamersNexus
 - https://www.youtube.com/@ModernVintageGamer
 - https://www.youtube.com/@TechDweeb
-- https://www.youtube.com/@runebladegaming
 - https://www.youtube.com/@GamingHistorian
+- https://www.youtube.com/@SsethTzeentach
+- https://www.youtube.com/@SecondWindGroup

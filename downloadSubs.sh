@@ -227,6 +227,10 @@ SCRAPED_HANDLES="$YT_ROOT/.scraped_handles"
 is_scraped() {
   local handle
   handle=$(printf '%s' "$1" | grep -oE '@[^/]+' | sed 's/^@//' | tr '[:upper:]' '[:lower:]')
+  # Fallback: raw /channel/UCID URLs — match by channel ID
+  if [ -z "$handle" ]; then
+    handle=$(printf '%s' "$1" | grep -oE 'UC[A-Za-z0-9_-]+' | tr '[:upper:]' '[:lower:]')
+  fi
   [ -z "$handle" ] && return 1
   [ -f "$SCRAPED_HANDLES" ] && grep -qix "$handle" "$SCRAPED_HANDLES" 2>/dev/null
 }
@@ -507,34 +511,29 @@ THUMB_FONT="/System/Library/Fonts/Supplemental/Arial Bold.ttf"
 thumb_overlay() {
   _tb_base="$1"; _tb_title="$2"; _tb_chan="$3"; _tb_out="$4"
   magick "$_tb_base" -resize '1920x1080^' -gravity center -extent '1920x1080' \
-    -brightness-contrast '-15x0' \
-    '(' -size 1920x1080 'radial-gradient:none-#00000099' ')' \
-    -gravity center -compose Over -composite \
     -font "$THUMB_FONT" \
-    -fill '#00000088' -pointsize 52 -gravity Center -annotate +2-2 "$_tb_title" \
-    -fill white      -pointsize 52 -gravity Center -annotate +0+0  "$_tb_title" \
-    -fill '#ffffffAA' -pointsize 28 -gravity Center -annotate +0+50 "$_tb_chan" \
+    -fill '#00000099' -pointsize 52 -gravity Center \
+    -annotate +0-6 "$_tb_title" \
+    -annotate +6+0 "$_tb_title" \
+    -annotate +0+6 "$_tb_title" \
+    -annotate -6+0 "$_tb_title" \
+    -annotate +4-4 "$_tb_title" \
+    -annotate +4+4 "$_tb_title" \
+    -annotate -4-4 "$_tb_title" \
+    -annotate -4+4 "$_tb_title" \
+    -fill white -pointsize 52 -gravity Center -annotate +0+0 "$_tb_title" \
+    -fill '#00000099' -pointsize 28 -gravity South -annotate +0+22 "$_tb_chan" \
+    -fill '#ffffffAA' -pointsize 28 -gravity South -annotate +0+24 "$_tb_chan" \
     -quality 92 "$_tb_out" 2>/dev/null
 }
 
-# Helper: generate a text-card thumb (no background image, channel color gradient)
-# Usage: thumb_textcard <channel_dir> <channel_name> <video_title> <output>
+# Helper: generate a text-card thumb (plain black gradient + white text, always works)
+# Usage: thumb_textcard <channel_name> <video_title> <output>
 thumb_textcard() {
-  _tc_cdir="$1"; _tc_chan="$2"; _tc_title="$3"; _tc_out="$4"
-  # Extract channel color from folder.jpg or fallback
-  _tc_color=""
-  if [ -f "$_tc_cdir/folder.jpg" ]; then
-    _tc_color=$(magick "$_tc_cdir/folder.jpg" -resize 100x100! -colors 8 \
-      -format '%c' histogram:info: 2>/dev/null | grep -oE '#[0-9a-fA-F]{6}' | head -3 | tail -1)
-  fi
-  [ -z "$_tc_color" ] && _tc_color="#5C6BC0"
-  _tc_r=$(printf '%d' "0x$(echo "$_tc_color" | cut -c2-3)")
-  _tc_g=$(printf '%d' "0x$(echo "$_tc_color" | cut -c4-5)")
-  _tc_b=$(printf '%d' "0x$(echo "$_tc_color" | cut -c6-7)")
-  _tc_dark=$(printf '#%02x%02x%02x' $((_tc_r*15/100)) $((_tc_g*15/100)) $((_tc_b*15/100)))
-  magick -size 1920x1080 "gradient:${_tc_color}-${_tc_dark}" \
+  _tc_chan="$1"; _tc_title="$2"; _tc_out="$3"
+  magick -size 1920x1080 'gradient:#1a1a2e-#0a0a0f' \
     -font "$THUMB_FONT" \
-    -fill '#00000066' -pointsize 52 -gravity Center -annotate +2-2 "$_tc_title" \
+    -fill '#ffffff22' -pointsize 52 -gravity Center -annotate +2-2 "$_tc_title" \
     -fill white      -pointsize 52 -gravity Center -annotate +0+0  "$_tc_title" \
     -fill '#ffffffAA' -pointsize 28 -gravity Center -annotate +0+50 "$_tc_chan" \
     -quality 92 "$_tc_out" 2>/dev/null
@@ -560,23 +559,42 @@ else
     [ -z "$mp4" ] && continue
     thumb="${mp4%.mp4}-thumb.jpg"
     base_name=$(basename "$mp4" .mp4)
-    # Video title: strip S##E## suffix, replace underscores with spaces
-    vid_title=$(echo "$base_name" | sed 's/_S[0-9]*E[0-9]*$//' | sed 's/_/ /g')
     # Channel name from parent directory
-    chan_name=$(basename "$(dirname "$mp4")" | sed 's/_/ /g')
     chan_dir=$(dirname "$mp4")
+    chan_name=$(basename "$chan_dir" | sed 's/_/ /g')
+
+    # Get real title from DB (clean, with proper symbols)
+    rel_path="$(basename "$chan_dir")/$(basename "$mp4")"
+    vid_title=$(sqlite3 "$DB" "SELECT title FROM videos WHERE file_path='$(printf '%s' "$rel_path" | sed "s/'/''/g")';" 2>/dev/null)
+    # Fallback: parse from filename if DB has no title or placeholder text
+    if [ -z "$vid_title" ] || [ "$vid_title" = "age-restricted" ] || [ "$vid_title" = "members-only" ] || [ "$vid_title" = "unavailable" ]; then
+      vid_title=$(echo "$base_name" | sed 's/_S[0-9]*E[0-9]*$//' | sed 's/_/ /g')
+    fi
+    # Decode HTML entities for display
+    vid_title=$(printf '%s' "$vid_title" | sed "s/&#39;/'/g; s/&amp;/\&/g; s/&lt;/</g; s/&gt;/>/g; s/&quot;/\"/g")
 
     got_base=""
 
-    # --- Stage 1: 4-frame scored extraction ---
-    duration=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$mp4" 2>/dev/null | cut -d. -f1)
-    if [ -z "$duration" ] || [ "${duration:-0}" -lt 1 ]; then
-      duration=$(ffprobe -v quiet -select_streams v:0 -show_entries stream=duration -of csv=p=0 "$mp4" 2>/dev/null | cut -d. -f1)
-    fi
-    if [ -z "$duration" ] || [ "${duration:-0}" -lt 1 ]; then
-      duration=$(ffmpeg -i "$mp4" -f null - 2>&1 | grep -oE 'Duration: [0-9:.]+' | head -1 \
-        | sed 's/Duration: //' | awk -F: '{print int($1*3600+$2*60+$3)}')
-    fi
+    # --- Stage 1: 4-frame scored extraction (with I/O retry) ---
+    _try=0
+    while [ "$_try" -lt 2 ]; do
+      duration=$(ffprobe -v quiet -show_entries format=duration -of csv=p=0 "$mp4" 2>/dev/null | cut -d. -f1)
+      if [ -z "$duration" ] || [ "${duration:-0}" -lt 1 ]; then
+        duration=$(ffprobe -v quiet -select_streams v:0 -show_entries stream=duration -of csv=p=0 "$mp4" 2>/dev/null | cut -d. -f1)
+      fi
+      if [ -z "$duration" ] || [ "${duration:-0}" -lt 1 ]; then
+        duration=$(ffmpeg -i "$mp4" -f null - 2>&1 | grep -oE 'Duration: [0-9:.]+' | head -1 \
+          | sed 's/Duration: //' | awk -F: '{print int($1*3600+$2*60+$3)}')
+      fi
+      if [ -n "$duration" ] && [ "${duration:-0}" -ge 1 ]; then
+        break
+      fi
+      # I/O might be busy — wait and retry once
+      if [ "$_try" -eq 0 ]; then
+        sleep 3
+      fi
+      _try=$((_try + 1))
+    done
 
     if [ -n "$duration" ] && [ "${duration:-0}" -ge 1 ]; then
       tmpdir=$(mktemp -d)
@@ -611,19 +629,22 @@ else
       rm -rf "$tmpdir"
     fi
 
-    # --- Stage 2: First frame (no duration needed) ---
+    # --- Stage 2: First frame with I/O retry ---
     tmp_first="/tmp/thumb_first_$$.jpg"
-    ffmpeg -y -i "$mp4" -vframes 1 -update 1 -q:v 2 "$tmp_first" -loglevel quiet 2>/dev/null
+    _ftry=0
+    while [ "$_ftry" -lt 2 ]; do
+      ffmpeg -y -i "$mp4" -vframes 1 -update 1 -q:v 2 "$tmp_first" -loglevel quiet 2>/dev/null
+      [ -f "$tmp_first" ] && break
+      if [ "$_ftry" -eq 0 ]; then sleep 3; fi
+      _ftry=$((_ftry + 1))
+    done
     if [ -f "$tmp_first" ]; then
       thumb_overlay "$tmp_first" "$vid_title" "$chan_name" "$thumb"
+      rm -f "$tmp_first"
       if [ -f "$thumb" ]; then
         echo "  THUMB (first-frame): $(basename "$thumb")"
-      else
-        mv "$tmp_first" "$thumb"
-        echo "  THUMB (first-frame, no overlay): $(basename "$thumb")"
+        continue
       fi
-      rm -f "$tmp_first"
-      continue
     fi
 
     # --- Stage 3: YouTube thumbnail download ---
@@ -633,42 +654,33 @@ else
     if [ -n "$vid_id" ]; then
       tmp_yt="/tmp/thumb_yt_$$.jpg"
       curl -s -f -o "$tmp_yt" "https://img.youtube.com/vi/${vid_id}/maxresdefault.jpg" 2>/dev/null
-      # Verify it's a real image (>1KB)
       if [ -f "$tmp_yt" ] && [ "$(wc -c < "$tmp_yt" | tr -d ' ')" -gt 1000 ]; then
         thumb_overlay "$tmp_yt" "$vid_title" "$chan_name" "$thumb"
+        rm -f "$tmp_yt"
         if [ -f "$thumb" ]; then
           echo "  THUMB (youtube): $(basename "$thumb")"
-        else
-          mv "$tmp_yt" "$thumb"
-          echo "  THUMB (youtube, no overlay): $(basename "$thumb")"
+          continue
         fi
+      else
         rm -f "$tmp_yt"
-        continue
       fi
-      rm -f "$tmp_yt"
       # Try lower-res fallback
       curl -s -f -o "$tmp_yt" "https://img.youtube.com/vi/${vid_id}/hqdefault.jpg" 2>/dev/null
       if [ -f "$tmp_yt" ] && [ "$(wc -c < "$tmp_yt" | tr -d ' ')" -gt 1000 ]; then
         thumb_overlay "$tmp_yt" "$vid_title" "$chan_name" "$thumb"
+        rm -f "$tmp_yt"
         if [ -f "$thumb" ]; then
           echo "  THUMB (youtube-hq): $(basename "$thumb")"
-        else
-          mv "$tmp_yt" "$thumb"
-          echo "  THUMB (youtube-hq, no overlay): $(basename "$thumb")"
+          continue
         fi
+      else
         rm -f "$tmp_yt"
-        continue
       fi
-      rm -f "$tmp_yt"
     fi
 
-    # --- Stage 4: Text card (channel color gradient + title) ---
-    thumb_textcard "$chan_dir" "$chan_name" "$vid_title" "$thumb"
-    if [ -f "$thumb" ]; then
-      echo "  THUMB (textcard): $(basename "$thumb")"
-    else
-      echo "  SKIP (all stages failed): $(basename "$mp4")"
-    fi
+    # --- Stage 4: Text card (black gradient + white text, cannot fail) ---
+    thumb_textcard "$chan_name" "$vid_title" "$thumb"
+    echo "  THUMB (textcard): $(basename "$thumb")"
   done
 fi
 
@@ -697,3 +709,10 @@ if [ -x "$REPORT_MAKER" ]; then
 fi
 
 echo "=== Done ==="
+
+# Sync repo
+cd "$SCRIPT_DIR"
+git add .
+git commit -m "auto: $(date '+%Y-%m-%d %H:%M')" --allow-empty-message -q 2>/dev/null
+git pull --rebase -q 2>/dev/null
+git push -q 2>/dev/null
