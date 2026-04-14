@@ -261,9 +261,14 @@ def scrape_channel(channel_url, yt_root, filter_file=None, force=False):
 def append_handle(channel_url, yt_root):
     """Record handle in .scraped_handles so shell can skip next time."""
     match = re.search(r'@([^/]+)', channel_url)
-    if not match:
-        return
-    handle = match.group(1).lower()
+    if match:
+        handle = match.group(1).lower()
+    else:
+        # Fallback: raw /channel/UCID URLs
+        match = re.search(r'(UC[A-Za-z0-9_-]+)', channel_url)
+        if not match:
+            return
+        handle = match.group(1).lower()
     handles_file = os.path.join(yt_root, '.scraped_handles')
     existing = set()
     if os.path.exists(handles_file):

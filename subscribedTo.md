@@ -59,3 +59,14 @@
 - https://www.youtube.com/@GamingHistorian
 - https://www.youtube.com/@SsethTzeentach
 - https://www.youtube.com/@SecondWindGroup
+- https://www.youtube.com/@AtriocClips
+- https://www.youtube.com/@atrioc
+- https://www.youtube.com/@ScottsStash
+- https://www.youtube.com/@ScottTheWoz
+- https://www.youtube.com/@jakkuh_t
+- https://www.youtube.com/@ThePrimeTimeagen
+- https://www.youtube.com/@BoyMetGirl
+- https://www.youtube.com/@GirlfriendReviews
+- https://www.youtube.com/@TeamCherry
+- https://www.youtube.com/@FromSoftwareInc
+- https://www.youtube.com/@Playdead
