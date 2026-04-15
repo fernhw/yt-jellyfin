@@ -8,12 +8,14 @@
 #   2. "Rare drops" — channels that haven't uploaded in 30+ days get highlighted
 #   3. Everything else grouped by channel
 #
-# Two files:
+# Files:
 #   todayReport.md               - Current day (updated each run)
+#   dailyReport.md               - Today + yesterday combined view
 #   reportsArchive/YYYYMMDD.md   - Past days (archived on day change)
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
 TODAY_REPORT="$SCRIPT_DIR/todayReport.md"
+DAILY_REPORT="$SCRIPT_DIR/dailyReport.md"
 ARCHIVE_DIR="$SCRIPT_DIR/reportsArchive"
 DB="$SCRIPT_DIR/ytdb.db"
 CONFIG="$SCRIPT_DIR/channelConfig.md"
@@ -255,3 +257,36 @@ SEC
 fi
 
 echo "  report written to todayReport.md"
+
+# --- Build dailyReport.md: today + yesterday combined ---
+YESTERDAY=$(date -v-1d '+%Y%m%d' 2>/dev/null || date -d 'yesterday' '+%Y%m%d' 2>/dev/null)
+YESTERDAY_FILE="$ARCHIVE_DIR/${YESTERDAY}.md"
+
+cat > "$DAILY_REPORT" <<DAILY_HDR
+# Daily Report
+
+DAILY_HDR
+
+# Today section — inline the full todayReport content with bumped headers
+if [ -f "$TODAY_REPORT" ]; then
+  # Replace leading "# " with "## " so top heading becomes h2, subsections h3
+  sed 's/^# /## /; s/^## Watch/### Watch/; s/^## Rare/### Rare/; s/^## Also/### Also/; s/^## Heads/### Heads/' "$TODAY_REPORT" >> "$DAILY_REPORT"
+fi
+
+# Yesterday section
+if [ -f "$YESTERDAY_FILE" ]; then
+  printf '\n---\n\n' >> "$DAILY_REPORT"
+  sed 's/^# /## /; s/^## Watch/### Watch/; s/^## Rare/### Rare/; s/^## Also/### Also/; s/^## Heads/### Heads/' "$YESTERDAY_FILE" >> "$DAILY_REPORT"
+else
+  cat >> "$DAILY_REPORT" <<NO_YEST
+
+---
+
+## Yesterday
+
+No archived report for yesterday.
+
+NO_YEST
+fi
+
+echo "  daily report written to dailyReport.md"

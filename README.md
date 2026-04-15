@@ -1,6 +1,6 @@
 # yt-jellyfin
 
-> **[What's new today?](todayReport.md)**
+> **[What's new today?](dailyReport.md)**
 
 YouTube → Jellyfin pipeline. Auto-downloads new videos from subscribed channels, organizes them into a Jellyfin-compatible library with scraped metadata, artwork, thumbnails, season posters, and daily reports.
 
@@ -28,7 +28,7 @@ Channel_Name/
 | `getyt.sh` | Downloads a single video (or list) with proper naming |
 | `scrapeYT.py` | Scrapes channel artwork + NFO for Jellyfin |
 | `collageSeasons.py` | Generates season posters, backdrops, and channel thumb.jpg |
-| `reportMaker.sh` | Generates daily [todayReport.md](todayReport.md) — what's new, what to watch |
+| `reportMaker.sh` | Generates [dailyReport.md](dailyReport.md) — today + yesterday combined, and [todayReport.md](todayReport.md) per-run |
 | `normalizeBackNames.sh` | Renames backdrop files to match Jellyfin conventions |
 | `rsync_jellyfin.sh` | Backs up Jellyfin data + music library |
 | `generatePlaceholder.sh` | Generates placeholder videos for age-restricted/unavailable content |
@@ -81,8 +81,8 @@ All thumbnails get a text overlay: video title (centered, 8-pass shadow halo) + 
 
 ## Daily Report
 
-[todayReport.md](todayReport.md) — auto-generated each run with priority uploads, new videos, errors, and library stats.
-Past days archived to `reportsArchive/YYYYMMDD.md` automatically on day change.
+[dailyReport.md](dailyReport.md) — auto-generated each run. Shows today's uploads and yesterday's side by side.
+[todayReport.md](todayReport.md) — current day only, archived to `reportsArchive/YYYYMMDD.md` on day change.
 
 ## Database
 
