@@ -19,6 +19,7 @@ import urllib.error
 import argparse
 import time
 import subprocess
+import sqlite3
 
 MAX_CHANNEL = 50
 
@@ -113,10 +114,9 @@ def extract_channel_info(data):
 
 
 def normalize(name, max_len=MAX_CHANNEL):
-    """Match getyt.sh normalize(): strip special chars, spaces→underscores."""
+    """Strip special chars, remove spaces and underscores for clean folder names."""
     result = re.sub(r'[^a-zA-Z0-9 _-]', '', name)
-    result = re.sub(r' +', ' ', result).strip()
-    result = result.replace(' ', '_')
+    result = re.sub(r'[ _]+', '', result)
     result = result[:max_len]
     return result or 'Untitled'
 
@@ -203,7 +203,7 @@ def folder_from_handle(channel_url, filter_file=None):
 
 
 def scrape_channel(channel_url, yt_root, filter_file=None, force=False):
-    """Scrape a single channel. Returns (folder_name, status_str)."""
+    """Scrape a single channel. Returns (folder_name, status_str, handle, display_name)."""
     # Clean URL
     clean = channel_url.rstrip('/')
     for suffix in ('/videos', '/streams', '/shorts', '/playlists', '/featured'):
@@ -211,19 +211,25 @@ def scrape_channel(channel_url, yt_root, filter_file=None, force=False):
             clean = clean[:-len(suffix)]
             break
 
+    # Extract handle from URL for alias tracking
+    handle_match = re.search(r'@([^/]+)', clean)
+    url_handle = handle_match.group(1) if handle_match else None
+
     print(f"  fetching {clean} ...")
     try:
         html = fetch_page(clean)
     except Exception as e:
-        return None, f"ERROR: fetch failed: {e}"
+        return None, f"ERROR: fetch failed: {e}", url_handle, None
 
     data = extract_initial_data(html)
     if not data:
-        return None, "ERROR: no ytInitialData found"
+        return None, "ERROR: no ytInitialData found", url_handle, None
 
     info = extract_channel_info(data)
     if not info.get('title'):
-        return None, "ERROR: no channel title found"
+        return None, "ERROR: no channel title found", url_handle, None
+
+    display_name = info['title']
 
     # Resolve folder name (same logic as getyt.sh)
     filtered = apply_filter(info['title'], filter_file)
@@ -235,7 +241,7 @@ def scrape_channel(channel_url, yt_root, filter_file=None, force=False):
     # Double-check after resolving real name (handle may differ from channel name)
     nfo_path = os.path.join(folder_path, 'tvshow.nfo')
     if os.path.exists(nfo_path) and not force:
-        return folder_name, "SKIP (already scraped)"
+        return folder_name, "SKIP (already scraped)", url_handle, display_name
 
     # Create folder if needed
     os.makedirs(folder_path, exist_ok=True)
@@ -255,7 +261,22 @@ def scrape_channel(channel_url, yt_root, filter_file=None, force=False):
     write_nfo(info, nfo_path)
     got.append('tvshow.nfo')
 
-    return folder_name, f"SCRAPED ({', '.join(got)})"
+    return folder_name, f"SCRAPED ({', '.join(got)})", url_handle, display_name
+
+
+def upsert_alias(db_path, handle, display_name):
+    """Store handle→display_name in channel_aliases so getyt.sh uses the same folder."""
+    if not handle or not display_name or not db_path:
+        return
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.execute(
+            "INSERT OR REPLACE INTO channel_aliases (handle, display_name) VALUES (?, ?)",
+            (handle, display_name))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
 
 
 def append_handle(channel_url, yt_root):
@@ -286,13 +307,15 @@ def main():
                         help='Root directory for YT library (e.g. /Volumes/Darrel4tb/YT)')
     parser.add_argument('--filter', dest='filter_file', default=None,
                         help='Path to filterYT.md for channel name remapping')
+    parser.add_argument('--db', dest='db_path', default=None,
+                        help='Path to ytdb.db for channel_aliases')
     parser.add_argument('--force', action='store_true',
                         help='Re-scrape even if already scraped')
     args = parser.parse_args()
 
     errors = 0
     for url in args.channel_url:
-        folder_name, status = scrape_channel(
+        folder_name, status, handle, display_name = scrape_channel(
             url, args.yt_root,
             filter_file=args.filter_file, force=args.force)
         print(f"  {status}")
@@ -301,6 +324,9 @@ def main():
         else:
             # Record handle so shell skips this channel next run
             append_handle(url, args.yt_root)
+            # Store handle→display_name alias for getyt.sh folder matching
+            if args.db_path and handle and display_name:
+                upsert_alias(args.db_path, handle, display_name)
         if not status.startswith('SKIP') and not status.startswith('ERROR'):
             time.sleep(1)
 

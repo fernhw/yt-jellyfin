@@ -259,7 +259,7 @@ scrape_all_channels() {
   echo "  $to_scrape new channel(s) to scrape..."
 
   # Single Python call with all URLs (brew python for modern TLS)
-  /opt/homebrew/bin/python3 "$SCRAPER" --yt-root "$YT_ROOT" --filter "$FILTER_FILE" $(cat "$scrape_list")
+  /opt/homebrew/bin/python3 "$SCRAPER" --yt-root "$YT_ROOT" --filter "$FILTER_FILE" --db "$DB" $(cat "$scrape_list")
   rm -f "$scrape_list"
 
   echo "--- Scraping complete ---"
@@ -581,9 +581,11 @@ else
     [ -z "$mp4" ] && continue
     thumb="${mp4%.mp4}-thumb.jpg"
     base_name=$(basename "$mp4" .mp4)
-    # Channel name from parent directory
+    # Channel name from parent directory (look up display name from DB)
     chan_dir=$(dirname "$mp4")
-    chan_name=$(basename "$chan_dir" | sed 's/_/ /g')
+    chan_folder=$(basename "$chan_dir")
+    chan_name=$(sqlite3 "$DB" "SELECT display_name FROM channel_aliases WHERE REPLACE(REPLACE(display_name,' ',''),'_','')='$chan_folder' LIMIT 1;" 2>/dev/null)
+    [ -z "$chan_name" ] && chan_name="$chan_folder"
 
     # Get real title from DB (clean, with proper symbols)
     rel_path="$(basename "$chan_dir")/$(basename "$mp4")"

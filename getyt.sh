@@ -32,7 +32,7 @@ init_db() {
 # Strip non-filesystem-safe chars, spaces to underscores, truncate
 normalize() {
   local result
-  result=$(printf '%s' "$1" | sed 's/[^a-zA-Z0-9 _-]//g; s/  */ /g; s/^ *//; s/ *$//' | tr ' ' '_' | cut -c1-"$2")
+  result=$(printf '%s' "$1" | sed 's/[^a-zA-Z0-9 _-]//g; s/  */ /g; s/^ *//; s/ *$//' | tr -d ' _' | cut -c1-"$2")
   [ -z "$result" ] && result="Untitled"
   printf '%s' "$result"
 }
