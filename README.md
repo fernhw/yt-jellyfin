@@ -82,6 +82,7 @@ All thumbnails get a text overlay: video title (centered, 8-pass shadow halo) + 
 ## Daily Report
 
 [todayReport.md](todayReport.md) — auto-generated each run with priority uploads, new videos, errors, and library stats.
+Past days archived to `reportsArchive/YYYYMMDD.md` automatically on day change.
 
 ## Database
 

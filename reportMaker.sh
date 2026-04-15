@@ -9,12 +9,12 @@
 #   3. Everything else grouped by channel
 #
 # Two files:
-#   todayReport.md     - Current day (updated each run)
-#   yesterdayReport.md  - Previous day (rolled over at midnight)
+#   todayReport.md               - Current day (updated each run)
+#   reportsArchive/YYYYMMDD.md   - Past days (archived on day change)
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
 TODAY_REPORT="$SCRIPT_DIR/todayReport.md"
-YESTERDAY_REPORT="$SCRIPT_DIR/yesterdayReport.md"
+ARCHIVE_DIR="$SCRIPT_DIR/reportsArchive"
 DB="$SCRIPT_DIR/ytdb.db"
 CONFIG="$SCRIPT_DIR/channelConfig.md"
 VARS_FILE="$SCRIPT_DIR/varsYT.md"
@@ -24,11 +24,13 @@ NOW_HUMAN=$(date '+%B %d, %Y at %I:%M %p')
 DAY_OF_WEEK=$(date '+%A')
 RARE_THRESHOLD=30
 
-# --- Day rollover ---
+# --- Day rollover: archive previous day's report ---
+mkdir -p "$ARCHIVE_DIR"
 if [ -f "$TODAY_REPORT" ]; then
   old_date=$(head -5 "$TODAY_REPORT" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)
   if [ -n "$old_date" ] && [ "$old_date" != "$TODAY" ]; then
-    mv "$TODAY_REPORT" "$YESTERDAY_REPORT"
+    archive_name=$(printf '%s' "$old_date" | tr -d '-')
+    mv "$TODAY_REPORT" "$ARCHIVE_DIR/${archive_name}.md"
   fi
 fi
 
