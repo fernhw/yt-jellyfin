@@ -1,6 +1,6 @@
 # What to Watch — 2026-04-14
 
-> *Good evening! Here's what landed on Tuesday, April 14, 2026 at 07:06 PM.*
+> *Good evening! Here's what landed on Tuesday, April 14, 2026 at 08:06 PM.*
 
 ## Watch First
 
