@@ -1,24 +1,29 @@
 #!/bin/sh
 # download.sh - Universal downloader
-# YouTube videos → /Volumes/Darrel4tb/YT/ (via getyt.sh)
-# Torrents/magnets → /Volumes/Jellyfin/Movies/ or /Volumes/Jellyfin/Shows/
+# YouTube videos -> /Volumes/Darrel4tb/YT/ (via getyt.sh)
+# Torrents/magnets -> /Volumes/Jellyfin/Movies/ or /Volumes/Jellyfin/Shows/
 #
 # Usage:
-#   ./download.sh <youtube-url|video-id|magnet|torrent-url>
+#   download <youtube-url|video-id>         YouTube video
+#   download s                              Show torrent (paste magnet, auto-match folder)
+#   download m                              Movie torrent (paste magnet)
+#   download episode                        Same as s
+#   download movie                          Same as m
+#   download                                Paste any URL, auto-detect type
+#   download --help                         Show this help
 #
 # INSTALL: brew install yt-dlp ffmpeg aria2
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
+. "$SCRIPT_DIR/locations.md"
 GETYT="$SCRIPT_DIR/getyt.sh"
 LOG="$SCRIPT_DIR/downloader.log"
-MOVIES_DIR="/Volumes/Jellyfin/Movies"
-SHOWS_DIR="/Volumes/Jellyfin/Shows"
 
 log_msg() {
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M')" "$1" >> "$LOG"
 }
 
-# ── Detect input type ──────────────────────────────────────────────
+# --- Detect input type ---
 
 is_youtube() {
   case "$1" in
@@ -36,7 +41,7 @@ is_torrent() {
   esac
 }
 
-# ── YouTube download ───────────────────────────────────────────────
+# --- YouTube download ---
 
 do_youtube() {
   local input="$1"
@@ -53,7 +58,61 @@ do_youtube() {
   fi
 }
 
-# ── Show folder picker ─────────────────────────────────────────────
+# --- Extract torrent name from magnet dn= parameter ---
+
+torrent_name() {
+  # Extract dn= value and URL-decode it
+  printf '%s' "$1" | grep -oE 'dn=[^&]+' | sed 's/^dn=//' \
+    | python3 -c "import sys, urllib.parse; print(urllib.parse.unquote(sys.stdin.read().strip()))" 2>/dev/null
+}
+
+# --- Fuzzy match torrent name against show folders ---
+
+fuzzy_match_show() {
+  local tname="$1"
+  # Strip common noise: group tags [xxx], resolution, codec, source info
+  local cleaned
+  cleaned=$(printf '%s' "$tname" | sed -E '
+    s/\[[^]]*\]//g
+    s/\([^)]*\)//g
+    s/[._-]/ /g
+    s/ (S[0-9]+|E[0-9]+|Season|1080p|2160p|720p|480p|WEB|WEBRip|BluRay|BDRip|HEVC|x265|x264|AAC|FLAC|DDP|MultiSub|Dual Audio|COMPLETE|Batch|10bit|CR|NF|DSNP|HULU|MAX|HDR|DV|H264|H265|Opus|EAC3|MP4|MKV)//gi
+    s/  */ /g
+    s/^ *//; s/ *$//
+  ')
+  [ -z "$cleaned" ] && return 1
+
+  # Extract key words (3+ chars), try matching against folder names
+  local best="" best_score=0
+  for d in "$SHOWS_DIR"/*/; do
+    [ ! -d "$d" ] && continue
+    local fname
+    fname=$(basename "$d")
+    local score=0
+
+    # Check each word from cleaned torrent name against folder name (case-insensitive)
+    for word in $cleaned; do
+      [ ${#word} -lt 3 ] && continue
+      if printf '%s' "$fname" | grep -qi "$word"; then
+        score=$((score + 1))
+      fi
+    done
+
+    if [ "$score" -gt "$best_score" ]; then
+      best_score=$score
+      best="$fname"
+    fi
+  done
+
+  # Need at least 2 matching words to be confident
+  if [ "$best_score" -ge 2 ] && [ -n "$best" ]; then
+    printf '%s' "$best"
+    return 0
+  fi
+  return 1
+}
+
+# --- Show folder picker ---
 
 pick_show_folder() {
   echo ""
@@ -100,34 +159,79 @@ $name"
   return 0
 }
 
-# ── Torrent download ──────────────────────────────────────────────
+# --- Torrent download ---
 
 do_torrent() {
   local input="$1"
+  local mode="$2"  # optional: s, m, or empty (prompt)
   echo "Torrent: $input"
-  echo ""
-  echo "  s) Show"
-  echo "  m) Movie"
-  echo "  sc) Show (select folder)"
-  echo "  n) Cancel"
-  echo ""
-  printf 'Type [s/m/sc/n]: '
-  read -r choice
+
+  local choice="$mode"
+  if [ -z "$choice" ]; then
+    echo ""
+    echo "  s) Show (auto-match folder)"
+    echo "  sf) Show (full show, dump in Shows/)"
+    echo "  m) Movie"
+    echo "  sc) Show (pick folder)"
+    echo "  n) Cancel"
+    echo ""
+    printf 'Type [s/sf/m/sc/n]: '
+    read -r choice
+  fi
 
   case "$choice" in
     m|M)
       DEST="$MOVIES_DIR"
-      echo "→ Movies: $DEST"
+      echo "-> Movies: $DEST"
+      ;;
+    sf|SF)
+      DEST="$SHOWS_DIR"
+      echo "-> Shows (full): $DEST"
       ;;
     s|S)
-      DEST="$SHOWS_DIR"
-      echo "→ Shows: $DEST"
+      # Fast mode: auto-detect, no confirm, just go
+      local tname match
+      tname=$(torrent_name "$input")
+      if [ -n "$tname" ]; then
+        match=$(fuzzy_match_show "$tname")
+      fi
+
+      if [ -n "$match" ]; then
+        DEST="$SHOWS_DIR/$match"
+        echo "  -> $match"
+      else
+        echo "  No match found."
+        if ! pick_show_folder; then return 1; fi
+      fi
+      echo "-> Show folder: $DEST"
       ;;
     sc|SC)
-      if ! pick_show_folder; then
-        return 1
+      # Interactive mode: detect + confirm + picker
+      local tname match
+      tname=$(torrent_name "$input")
+      if [ -n "$tname" ]; then
+        match=$(fuzzy_match_show "$tname")
       fi
-      echo "→ Show folder: $DEST"
+
+      if [ -n "$match" ]; then
+        echo ""
+        echo "  Detected: $match"
+        printf '  Correct? [Y/n/pick]: '
+        read -r confirm
+        case "$confirm" in
+          n|N|p|pick)
+            if ! pick_show_folder; then return 1; fi
+            ;;
+          *)
+            DEST="$SHOWS_DIR/$match"
+            ;;
+        esac
+      else
+        echo ""
+        echo "  No match found."
+        if ! pick_show_folder; then return 1; fi
+      fi
+      echo "-> Show folder: $DEST"
       ;;
     n|N|"")
       echo "Cancelled."
@@ -162,21 +266,59 @@ do_torrent() {
   fi
 }
 
-# ── Main ──────────────────────────────────────────────────────────
+# --- Help ---
 
-if [ $# -eq 0 ]; then
-  echo "Usage: $0 <youtube-url|video-id|magnet-link|torrent-url>"
-  exit 1
+show_help() {
+  echo "download - Universal downloader (YouTube + torrents)"
+  echo ""
+  echo "Usage:"
+  echo "  download <youtube-url>        Download YouTube video"
+  echo "  download <video-id>           Download YouTube video by ID"
+  echo "  download s                    Show torrent (paste magnet, auto-match folder)"
+  echo "  download m                    Movie torrent (paste magnet)"
+  echo "  download episode              Same as s"
+  echo "  download movie                Same as m"
+  echo "  download                      Paste any URL, auto-detect type"
+  echo ""
+  echo "YouTube  -> $YT_ROOT/<Channel>/"
+  echo "Movies   -> $MOVIES_DIR/"
+  echo "Shows    -> $SHOWS_DIR/<folder>/"
+  echo ""
+  echo "Tip: magnets have & so always quote them or use: download s (then paste)"
+}
+
+# --- Main ---
+
+case "${1:-}" in
+  -h|--help|help) show_help; exit 0 ;;
+esac
+
+torrent_mode=""
+if [ $# -ge 1 ]; then
+  case "$1" in
+    s|S|show|episode) torrent_mode="s"; shift ;;
+    sc|SC)            torrent_mode="sc"; shift ;;
+    sf|SF)            torrent_mode="sf"; shift ;;
+    m|M|movie)        torrent_mode="m"; shift ;;
+  esac
 fi
 
-input="$1"
+# If no URL arg left, prompt (avoids $* expanding & in magnets)
+if [ $# -eq 0 ]; then
+  printf 'Paste URL: '
+  read -r input
+  [ -z "$input" ] && { echo "No input."; exit 1; }
+else
+  input="$1"
+fi
 
 if is_youtube "$input"; then
   do_youtube "$input"
 elif is_torrent "$input"; then
-  do_torrent "$input"
+  do_torrent "$input" "$torrent_mode"
 else
   echo "Unrecognized input: $input"
   echo "Expected: YouTube URL/ID, magnet link, or .torrent URL"
+  echo "Run 'download --help' for usage."
   exit 1
 fi

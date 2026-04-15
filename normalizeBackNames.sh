@@ -22,7 +22,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
-YT_ROOT="/Volumes/Darrel4tb/YT"
+. "$SCRIPT_DIR/locations.md"
 DB="$SCRIPT_DIR/ytdb.db"
 MODE="dry-run"
 

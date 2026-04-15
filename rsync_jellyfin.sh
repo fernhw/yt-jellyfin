@@ -1,7 +1,10 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
+. "$SCRIPT_DIR/locations.md"
+
 DATA_SRC="/Users/alexander-highground/Library/Application Support/jellyfin/data"
-MUSIC_SRC="/Volumes/Jellyfin/Music"
+MUSIC_SRC="$MUSIC_DIR"
 
 DATA_DEST="/Volumes/Darrel4tb/rsync/data"
 MUSIC_DEST="/Volumes/Darrel4tb/rsync/music"

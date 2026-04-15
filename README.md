@@ -26,11 +26,13 @@ Channel_Name/
 |---|---|
 | `downloadSubs.sh` | Main runner — scrapes, scans, downloads, generates thumbnails, collages, reports, auto-commits |
 | `getyt.sh` | Downloads a single video (or list) with proper naming |
+| `download.sh` | Universal downloader — YouTube, magnets, torrents. `download s` / `download m` / `download sf` |
 | `scrapeYT.py` | Scrapes channel artwork + NFO for Jellyfin |
 | `collageSeasons.py` | Generates season posters, backdrops, and channel thumb.jpg |
 | `reportMaker.sh` | Generates [dailyReport.md](dailyReport.md) — today + yesterday combined, and [todayReport.md](todayReport.md) per-run |
 | `normalizeBackNames.sh` | Renames backdrop files to match Jellyfin conventions |
 | `rsync_jellyfin.sh` | Backs up Jellyfin data + music library |
+| `filterMusic.sh` | Moves audio files under 60s to a mirror folder (non-music cleanup) |
 | `generatePlaceholder.sh` | Generates placeholder videos for age-restricted/unavailable content |
 
 ## Usage
@@ -51,8 +53,17 @@ Channel_Name/
 # Regenerate all video thumbnails (safe to run alongside downloads)
 ./downloadSubs.sh --thumbs
 
-# Download a specific video
+# Download a specific video (auto-detects channel, auto-scrapes if new)
 ./getyt.sh https://www.youtube.com/watch?v=VIDEO_ID
+
+# Universal downloader
+download VIDEO_ID                           # YouTube by ID
+download https://www.youtube.com/watch?v=X  # YouTube by URL
+download s                                  # Show torrent (paste magnet, auto-match folder)
+download sf                                 # Full show torrent (paste magnet, dump in Shows/)
+download m                                  # Movie torrent (paste magnet)
+download sc                                 # Show torrent (pick folder interactively)
+download --help                             # Show all options
 ```
 
 ## Video Thumbnails
@@ -75,8 +86,16 @@ All thumbnails get a text overlay: video title (centered, 8-pass shadow halo) + 
 
 ## Config Files
 
+- **`locations.md`** — Storage paths for all scripts. Edit this for your setup:
+  ```
+  YT_ROOT=/Volumes/Darrel4tb/YT        # YouTube library (HDD)
+  MOVIES_DIR=/Volumes/Jellyfin/Movies   # Jellyfin movies (SSD)
+  SHOWS_DIR=/Volumes/Jellyfin/Shows     # Jellyfin shows (SSD)
+  MUSIC_DIR=/Volumes/Jellyfin/Music     # Music library
+  MUSIC_MIRROR_DIR=/Volumes/Jellyfin/non-music
+  ```
 - **`subscribedTo.md`** — Channel URLs (supports `@handle` and `/channel/UCID` formats)
-- **`channelConfig.md`** — Priority download order + per-channel rolling limits
+- **`channelConfig.md`** — Priority download order, per-channel rolling limits, per-channel quality caps
 - **`filterYT.md`** — Channel name → folder name remapping
 
 ## Daily Report
@@ -105,13 +124,13 @@ Each run auto-commits and pushes changes to git.
 ## Requirements
 
 ```sh
-brew install yt-dlp ffmpeg sqlite3 python3 imagemagick
+brew install yt-dlp ffmpeg sqlite3 python3 imagemagick aria2
 pip3 install Pillow
 ```
 
 ## Notes
 
-- Library root: `/Volumes/Darrel4tb/YT`
+- Library root: set `YT_ROOT` in `locations.md`
 - Lock file prevents overlapping `downloadSubs.sh` runs (`--thumbs` bypasses lock — read-only safe)
 - Videos named `Title_S{YY}E{##}.mp4` — title first for readability, Jellyfin parses season/episode
 - I/O retry on thumbnail extraction when concurrent downloads cause disk contention

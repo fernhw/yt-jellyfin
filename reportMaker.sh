@@ -161,7 +161,7 @@ RARE_N=$(wc -l < "$TMP_RARE" | tr -d ' ')
 REG_N=$(wc -l < "$TMP_REG" | tr -d ' ')
 
 # --- Disk usage (precise, no rounding) ---
-YT_ROOT="/Volumes/Darrel4tb/YT"
+. "$SCRIPT_DIR/locations.md"
 YT_USED=$(du -sk "$YT_ROOT" 2>/dev/null | awk '{printf "%.2f GB", $1/1048576}')
 DISK_FREE=$(df /Volumes/Darrel4tb 2>/dev/null | awk 'NR==2{printf "%.2f TB", ($4*512)/1099511627776}')
 YT_USED=${YT_USED:-"?"}

@@ -11,8 +11,9 @@
 #   ./filterMusic.sh              # move short files
 #   ./filterMusic.sh --dry-run    # preview what would move
 
-MUSIC_DIR="/Volumes/Jellyfin/Music"
-MIRROR_DIR="/Volumes/Jellyfin/non-music"
+SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
+. "$SCRIPT_DIR/locations.md"
+MIRROR_DIR="$MUSIC_MIRROR_DIR"
 
 DRY_RUN=0
 [ "$1" = "--dry-run" ] && DRY_RUN=1

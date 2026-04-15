@@ -27,7 +27,17 @@ import subprocess
 import struct
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-YT_ROOT = '/Volumes/Darrel4tb/YT'
+
+# Read YT_ROOT from locations.md
+YT_ROOT = '/Volumes/Darrel4tb/YT'  # default
+_loc = os.path.join(SCRIPT_DIR, 'locations.md')
+if os.path.isfile(_loc):
+    with open(_loc) as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if _line.startswith('YT_ROOT='):
+                YT_ROOT = _line.split('=', 1)[1].strip()
+                break
 POSTER_W, POSTER_H = 1000, 1500
 BACKDROP_W, BACKDROP_H = 1920, 1080
 THUMB_W, THUMB_H = 1920, 1080

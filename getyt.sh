@@ -8,7 +8,7 @@
 #   ./getyt.sh -f FILE_WITH_URLS
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
-YT_ROOT="/Volumes/Darrel4tb/YT"
+. "$SCRIPT_DIR/locations.md"
 DB="$SCRIPT_DIR/ytdb.db"
 FILTER_FILE="$SCRIPT_DIR/filterYT.md"
 MAX_CHANNEL=50
