@@ -153,6 +153,15 @@ get_limit() {
   ' "$CONFIG_FILE"
 }
 
+# Get quality cap for a channel handle (bare, no @). Empty = best available
+get_quality() {
+  [ ! -f "$CONFIG_FILE" ] && return
+  awk -F ' *= *' -v h="$1" '
+    /^\[quality\]/{found=1; next} /^\[/{found=0}
+    found && tolower($1)==tolower(h) {print $2; exit}
+  ' "$CONFIG_FILE"
+}
+
 # Enforce rolling limit: delete oldest files if over limit
 enforce_limit() {
   local channel_dir="$1" limit="$2"
@@ -198,13 +207,13 @@ reorder_queue() {
   [ -z "$pri_handles" ] && return
 
   # We need video->channel mapping. For now, tag queue entries during scan.
-  # Queue lines are: URL [TAB] @handle
-  while IFS="$(printf '\t')" read -r url handle; do
+  # Queue lines are: URL [TAB] @handle [TAB] max_res
+  while IFS="$(printf '\t')" read -r url handle max_res; do
     bare=$(handle_bare "$handle" | tr '[:upper:]' '[:lower:]')
     if printf '%s\n' "$pri_handles" | grep -qix "$bare"; then
-      printf '%s\t%s\n' "$url" "$handle" >> "$priority_queue"
+      printf '%s\t%s\t%s\n' "$url" "$handle" "$max_res" >> "$priority_queue"
     else
-      printf '%s\t%s\n' "$url" "$handle" >> "$normal_queue"
+      printf '%s\t%s\t%s\n' "$url" "$handle" "$max_res" >> "$normal_queue"
     fi
   done < "$queue_file"
 
@@ -384,6 +393,7 @@ while IFS= read -r channel_url <&3; do
 
   # Check if this is a brand new channel (no entries in DB)
   bare_label=$(handle_bare "$label")
+  max_res=$(get_quality "$bare_label")
   is_new_channel=0
 
   # Priority channels are never treated as "new" — always download everything
@@ -406,7 +416,7 @@ while IFS= read -r channel_url <&3; do
       fd_status=$(sqlite3 "$DB" "SELECT status FROM videos WHERE id='$(printf '%s' "$vid" | sed "s/'/''/g")';")
       if [ "$fd_status" = "force-download" ]; then
         echo "  FORCE: $vid"
-        printf '%s\t%s\n' "https://www.youtube.com/watch?v=$vid" "$label" >> "$QUEUE"
+        printf '%s\t%s\t%s\n' "https://www.youtube.com/watch?v=$vid" "$label" "$max_res" >> "$QUEUE"
         new_for_channel=$(( new_for_channel + 1 ))
       elif [ "$fd_status" = "failed" ] || [ "$fd_status" = "errored" ] || [ "$fd_status" = "downloading" ]; then
         echo "  RETRY: $vid (was $fd_status)"
@@ -414,7 +424,7 @@ while IFS= read -r channel_url <&3; do
         old_path=$(sqlite3 "$DB" "SELECT file_path FROM videos WHERE id='$(printf '%s' "$vid" | sed "s/'/''/g")';" 2>/dev/null)
         [ -n "$old_path" ] && [ -f "$YT_ROOT/$old_path" ] && rm -f "$YT_ROOT/$old_path"
         sqlite3 "$DB" "DELETE FROM videos WHERE id='$(printf '%s' "$vid" | sed "s/'/''/g")';"
-        printf '%s\t%s\n' "https://www.youtube.com/watch?v=$vid" "$label" >> "$QUEUE"
+        printf '%s\t%s\t%s\n' "https://www.youtube.com/watch?v=$vid" "$label" "$max_res" >> "$QUEUE"
         new_for_channel=$(( new_for_channel + 1 ))
       fi
       continue
@@ -440,7 +450,7 @@ while IFS= read -r channel_url <&3; do
       else
         [ -z "$first_vid" ] && first_vid="$vid"
         echo "  NEW: $vid"
-        printf '%s\t%s\n' "https://www.youtube.com/watch?v=$vid" "$label" >> "$QUEUE"
+        printf '%s\t%s\t%s\n' "https://www.youtube.com/watch?v=$vid" "$label" "$max_res" >> "$QUEUE"
       fi
     fi
   done <<EOF

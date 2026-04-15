@@ -141,6 +141,7 @@ generate_placeholder() {
 download_video() {
   local url="$1"
   local channel_hint="$2"  # optional @handle from downloadSubs queue
+  local max_res="$3"       # optional resolution cap (e.g. 1080)
   echo ""
   echo "--- $url"
 
@@ -290,10 +291,15 @@ print(f'yt_handle={shlex.quote(handle)}')
   # 1) bv+ba (never bv* or b — forces separate streams so language filter works)
   # 2) -S "lang:en" sorts audio preferring English
   # 3) Post-download ffprobe verification
+  local sort_spec="lang:en,res,br,acodec,vcodec"
+  if [ -n "$max_res" ]; then
+    sort_spec="lang:en,res:${max_res},br,acodec,vcodec"
+    echo "  quality cap: ${max_res}p"
+  fi
   yt-dlp \
     --no-playlist \
     --extractor-args "youtube:lang=en" \
-    -S "lang:en,res,br,acodec,vcodec" \
+    -S "$sort_spec" \
     -f "bv+ba[language^=en]/bv+ba[language=en]/bv+ba" \
     --merge-output-format mp4 \
     --throttled-rate 100K \
@@ -363,10 +369,11 @@ if [ "$1" = "-f" ] && [ -n "$2" ]; then
   while IFS= read -r line <&3; do
     line=$(printf '%s' "$line" | sed 's/#.*//' | tr -s ' ' | sed 's/^ *//; s/ *$//')
     [ -z "$line" ] && continue
-    # Queue lines may be tab-separated: URL\t@handle
+    # Queue lines may be tab-separated: URL\t@handle\tmax_res
     local_url=$(printf '%s' "$line" | cut -f1)
     local_handle=$(printf '%s' "$line" | cut -sf2)
-    download_video "$local_url" "$local_handle"
+    local_maxres=$(printf '%s' "$line" | cut -sf3)
+    download_video "$local_url" "$local_handle" "$local_maxres"
   done 3< "$2"
 else
   SKIP_DB_CHECK=1

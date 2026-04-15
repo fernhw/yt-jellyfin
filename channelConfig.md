@@ -43,3 +43,14 @@ ConnorDawg = 20
 GameLinked = 20
 techlinked = 20
 TechDweeb = 20
+
+# QUALITY - max resolution per channel
+# Channels not listed here: best available (default)
+# Format: handle = max_height (e.g. 1080, 720, 480)
+[quality]
+KBash = 1080
+Yessenia = 1080
+ConnorDawg = 1080
+DigitalFoundry = 1080
+TrashTaste = 1080
+NeverKnowsBest = 1080
