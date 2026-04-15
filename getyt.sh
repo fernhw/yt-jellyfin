@@ -337,6 +337,13 @@ for s in d.get('streams', []):
   if [ $dl_rc -eq 0 ] || [ -f "$dest_dir/$filename.mp4" ]; then
     db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$filename.mp4" "downloaded"
     echo "  DONE"
+
+    # Auto-scrape if channel has no tvshow.nfo (e.g. manual download from unsubscribed channel)
+    if [ ! -f "$dest_dir/tvshow.nfo" ] && [ -n "$yt_handle" ]; then
+      echo "  no tvshow.nfo — scraping channel metadata..."
+      python3 "$SCRIPT_DIR/scrapeYT.py" "https://www.youtube.com/@$yt_handle" \
+        --yt-root "$YT_ROOT" --filter "$FILTER_FILE" --db "$DB" 2>/dev/null || true
+    fi
   elif [ $dl_rc -eq 130 ]; then
     # SIGINT — keep as 'interrupted' so it won't re-queue
     db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$filename.mp4" "interrupted"
