@@ -1,6 +1,6 @@
 # What to Watch — 2026-04-14
 
-> *Good evening! Here's what landed on Tuesday, April 14, 2026 at 06:06 PM.*
+> *Good evening! Here's what landed on Tuesday, April 14, 2026 at 07:06 PM.*
 
 ## Watch First
 
@@ -29,7 +29,6 @@ No priority uploads today — your favorites are taking a break.
 - **Final Fantasy 7's Beautiful & Baffling Designs ** — *Second Wind*
 - **Vim Has A 0-Day????** — *The PrimeTime*
 - **It’s time to start over.** — *jakkuh*
-- **System Shock Remake Review** — *MandaloreGaming*
 
 ---
 

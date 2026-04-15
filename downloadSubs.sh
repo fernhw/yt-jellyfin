@@ -462,6 +462,9 @@ elif [ -f "$QUEUE" ] && [ -s "$QUEUE" ]; then
   echo "Downloading $count new video(s)..."
   "$GETYT" -f "$QUEUE"
 
+  # Flush external drive so files are fully written before thumbnail extraction
+  sync 2>/dev/null
+
   # Compute what was actually downloaded this run
   dl_after=$(sqlite3 "$DB" "SELECT COUNT(*) FROM videos WHERE status='downloaded';" 2>/dev/null || echo 0)
   DL_COUNT=$(( dl_after - dl_before ))
@@ -506,10 +509,25 @@ fi  # end thumbs-only skip
 # All thumbs get title + channel text overlay for clarity
 THUMB_FONT="/System/Library/Fonts/Supplemental/Arial Bold.ttf"
 
+# Copy a local temp file to external drive with retry
+# Usage: _safe_copy <src> <dst>
+_safe_copy() {
+  _sc_src="$1"; _sc_dst="$2"; _sc_try=0
+  while [ "$_sc_try" -lt 3 ]; do
+    cp "$_sc_src" "$_sc_dst" 2>/dev/null && { rm -f "$_sc_src"; return 0; }
+    sleep 2
+    _sc_try=$((_sc_try + 1))
+  done
+  rm -f "$_sc_src"
+  return 1
+}
+
 # Helper: overlay video title + channel name centered on a base image → final thumb
+# Generates locally in /tmp/ first, then copies to external drive
 # Usage: thumb_overlay <base_image> <video_title> <channel_name> <output>
 thumb_overlay() {
   _tb_base="$1"; _tb_title="$2"; _tb_chan="$3"; _tb_out="$4"
+  _tb_tmp="/tmp/thumb_overlay_$$.jpg"
   magick "$_tb_base" -resize '1920x1080^' -gravity center -extent '1920x1080' \
     -font "$THUMB_FONT" \
     -fill '#00000099' -pointsize 52 -gravity Center \
@@ -524,19 +542,23 @@ thumb_overlay() {
     -fill white -pointsize 52 -gravity Center -annotate +0+0 "$_tb_title" \
     -fill '#00000099' -pointsize 28 -gravity South -annotate +0+22 "$_tb_chan" \
     -fill '#ffffffAA' -pointsize 28 -gravity South -annotate +0+24 "$_tb_chan" \
-    -quality 92 "$_tb_out" 2>/dev/null
+    -quality 92 "$_tb_tmp" 2>/dev/null
+  [ -f "$_tb_tmp" ] && _safe_copy "$_tb_tmp" "$_tb_out"
 }
 
 # Helper: generate a text-card thumb (plain black gradient + white text, always works)
+# Generates locally in /tmp/ first, then copies to external drive
 # Usage: thumb_textcard <channel_name> <video_title> <output>
 thumb_textcard() {
   _tc_chan="$1"; _tc_title="$2"; _tc_out="$3"
+  _tc_tmp="/tmp/thumb_textcard_$$.jpg"
   magick -size 1920x1080 'gradient:#1a1a2e-#0a0a0f' \
     -font "$THUMB_FONT" \
     -fill '#ffffff22' -pointsize 52 -gravity Center -annotate +2-2 "$_tc_title" \
     -fill white      -pointsize 52 -gravity Center -annotate +0+0  "$_tc_title" \
     -fill '#ffffffAA' -pointsize 28 -gravity Center -annotate +0+50 "$_tc_chan" \
-    -quality 92 "$_tc_out" 2>/dev/null
+    -quality 92 "$_tc_tmp" 2>/dev/null
+  [ -f "$_tc_tmp" ] && _safe_copy "$_tc_tmp" "$_tc_out"
 }
 
 echo ""
@@ -620,11 +642,13 @@ else
         if [ -f "$thumb" ]; then
           echo "  THUMB: $(basename "$thumb") (score: $best_score)"
         else
-          mv "$got_base" "$thumb"
-          echo "  THUMB (no overlay): $(basename "$thumb") (score: $best_score)"
+          _safe_copy "$got_base" "$thumb"
+          if [ -f "$thumb" ]; then
+            echo "  THUMB (no overlay): $(basename "$thumb") (score: $best_score)"
+          fi
         fi
         rm -rf "$tmpdir"
-        continue
+        [ -f "$thumb" ] && continue
       fi
       rm -rf "$tmpdir"
     fi
@@ -678,9 +702,13 @@ else
       fi
     fi
 
-    # --- Stage 4: Text card (black gradient + white text, cannot fail) ---
+    # --- Stage 4: Text card (black gradient + white text) ---
     thumb_textcard "$chan_name" "$vid_title" "$thumb"
-    echo "  THUMB (textcard): $(basename "$thumb")"
+    if [ -f "$thumb" ]; then
+      echo "  THUMB (textcard): $(basename "$thumb")"
+    else
+      echo "  FAILED: could not generate any thumbnail for $(basename "$mp4")"
+    fi
   done
 fi
 
