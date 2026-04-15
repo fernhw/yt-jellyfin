@@ -172,7 +172,7 @@ cat > "$TODAY_REPORT" <<HEADER
 # What to Watch — $TODAY
 
 > *$greeting! Here's what landed on $DAY_OF_WEEK, $NOW_HUMAN.*
-> **Library:** ${YT_USED} used · ${DISK_FREE} free
+> **YT Mirror:** ${YT_USED} used · ${DISK_FREE} free
 
 HEADER
 
