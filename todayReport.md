@@ -1,6 +1,6 @@
 # What to Watch — 2026-04-14
 
-> *Good evening! Here's what landed on Tuesday, April 14, 2026 at 08:06 PM.*
+> *Good evening! Here's what landed on Tuesday, April 14, 2026 at 09:07 PM.*
 
 ## Watch First
 
@@ -10,6 +10,7 @@ No priority uploads today — your favorites are taking a break.
 
 ## Also New
 
+- **Thank GOD we have body cams..** — *Asmongold TV*
 - **Adam Savage Stunned by These Marvelous Creature Masks!** — *Adam Savage’s Tested*
 - **We're being invaded by Indians..** — *Asmongold TV*
 - **Everyone instantly called her out..** — *Asmongold TV*
