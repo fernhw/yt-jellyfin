@@ -224,19 +224,34 @@ fi
 rm -f "$TMP_PRI" "$TMP_RARE" "$TMP_REG"
 
 # --- Error summary (one message for connection/rate-limit issues) ---
-ERRORS_TODAY=0
+ERR_LAST=0
+SCANNED=0
 if [ -f "$VARS_FILE" ]; then
-  ERRORS_TODAY=$(grep '^errors_today=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+  ERR_LAST=$(grep '^errors_last_run=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+  SCANNED=$(grep '^channels_scanned=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
 fi
-ERRORS_TODAY=${ERRORS_TODAY:-0}
-if [ "$ERRORS_TODAY" -gt 0 ]; then
-  cat >> "$TODAY_REPORT" <<SEC
+ERR_LAST=${ERR_LAST:-0}
+SCANNED=${SCANNED:-0}
+# Only show if a significant portion of channels failed (>50% = likely IP ban)
+if [ "$ERR_LAST" -gt 0 ] && [ "$SCANNED" -gt 0 ]; then
+  half=$(( SCANNED / 2 ))
+  if [ "$ERR_LAST" -gt "$half" ]; then
+    cat >> "$TODAY_REPORT" <<SEC
 
 ## Heads Up
 
-$ERRORS_TODAY channel(s) returned nothing during scan — likely an IP rate-limit or connection issue from YouTube. These channels will be retried on the next run automatically.
+Last scan hit a wall — $ERR_LAST of $SCANNED channels returned nothing. YouTube is likely rate-limiting or IP-blocking. Will retry next run.
 
 SEC
+  elif [ "$ERR_LAST" -gt 3 ]; then
+    cat >> "$TODAY_REPORT" <<SEC
+
+## Heads Up
+
+$ERR_LAST channel(s) timed out during the last scan. Could be a flaky connection — will retry next run.
+
+SEC
+  fi
 fi
 
 echo "  report written to todayReport.md"

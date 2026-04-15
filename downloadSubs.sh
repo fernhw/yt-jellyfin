@@ -69,10 +69,10 @@ update_vars() {
   today=$(date '+%Y-%m-%d')
 
   # Read existing daily counters if same day, otherwise reset
-  local prev_date prev_dl prev_del prev_err prev_skip prev_dl_list prev_del_list prev_err_list prev_skip_list
+  local prev_date prev_dl prev_del prev_skip prev_dl_list prev_del_list prev_skip_list
   prev_date=""
-  prev_dl=0; prev_del=0; prev_err=0; prev_skip=0
-  prev_dl_list=""; prev_del_list=""; prev_err_list=""; prev_skip_list=""
+  prev_dl=0; prev_del=0; prev_skip=0
+  prev_dl_list=""; prev_del_list=""; prev_skip_list=""
   if [ -f "$VARS_FILE" ]; then
     prev_date=$(grep '^report_date=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
     if [ "$prev_date" = "$today" ]; then
@@ -82,14 +82,13 @@ update_vars() {
       prev_skip=$(grep '^skipped_today=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
       prev_dl_list=$(grep '^downloaded_list=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
       prev_del_list=$(grep '^deleted_list=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
-      prev_err_list=$(grep '^errors_list=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
       prev_skip_list=$(grep '^skipped_list=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
     fi
   fi
-  prev_dl=${prev_dl:-0}; prev_del=${prev_del:-0}; prev_err=${prev_err:-0}; prev_skip=${prev_skip:-0}
+  prev_dl=${prev_dl:-0}; prev_del=${prev_del:-0}; prev_skip=${prev_skip:-0}
 
-  # Merge new items with existing daily lists
-  local final_dl_list final_del_list final_err_list final_skip_list
+  # Merge new items with existing daily lists (downloads, deletions, skips accumulate)
+  local final_dl_list final_del_list final_skip_list
   if [ -n "$prev_dl_list" ] && [ -n "$DL_ITEMS" ]; then
     final_dl_list="${prev_dl_list}|${DL_ITEMS}"
   else
@@ -99,11 +98,6 @@ update_vars() {
     final_del_list="${prev_del_list}|${DEL_ITEMS}"
   else
     final_del_list="${prev_del_list}${DEL_ITEMS}"
-  fi
-  if [ -n "$prev_err_list" ] && [ -n "$ERR_ITEMS" ]; then
-    final_err_list="${prev_err_list}|${ERR_ITEMS}"
-  else
-    final_err_list="${prev_err_list}${ERR_ITEMS}"
   fi
   if [ -n "$prev_skip_list" ] && [ -n "$SKIP_ITEMS" ]; then
     final_skip_list="${prev_skip_list}|${SKIP_ITEMS}"
@@ -118,13 +112,13 @@ updated=$(date '+%Y-%m-%d %H:%M:%S')
 report_date=$today
 downloaded_today=$(( prev_dl + DL_COUNT ))
 deleted_today=$(( prev_del + DEL_COUNT ))
-errors_today=$(( prev_err + ERR_COUNT ))
 skipped_today=$(( prev_skip + SKIP_COUNT ))
 channels_scanned=$CHAN_SCANNED
 channels_total=$CHAN_TOTAL
+errors_last_run=$ERR_COUNT
+errors_list=$ERR_ITEMS
 downloaded_list=$final_dl_list
 deleted_list=$final_del_list
-errors_list=$final_err_list
 skipped_list=$final_skip_list
 EOF
 }
