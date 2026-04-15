@@ -221,18 +221,40 @@ reorder_queue() {
   rm -f "$priority_queue" "$normal_queue"
 }
 
-SCRAPED_HANDLES="$YT_ROOT/.scraped_handles"
-
-# Check if a handle is already scraped (single file lookup)
+# Check if a channel is already scraped (folder + tvshow.nfo exists on disk)
 is_scraped() {
-  local handle
-  handle=$(printf '%s' "$1" | grep -oE '@[^/]+' | sed 's/^@//' | tr '[:upper:]' '[:lower:]')
-  # Fallback: raw /channel/UCID URLs — match by channel ID
+  local url="$1"
+  local handle folder_name display filtered
+  # Extract @handle from URL
+  handle=$(printf '%s' "$url" | grep -oE '@[^/]+' | sed 's/^@//')
   if [ -z "$handle" ]; then
-    handle=$(printf '%s' "$1" | grep -oE 'UC[A-Za-z0-9_-]+' | tr '[:upper:]' '[:lower:]')
+    # /channel/UCID URLs
+    handle=$(printf '%s' "$url" | grep -oE 'UC[A-Za-z0-9_-]+')
+    [ -z "$handle" ] && return 1
   fi
-  [ -z "$handle" ] && return 1
-  [ -f "$SCRAPED_HANDLES" ] && grep -qix "$handle" "$SCRAPED_HANDLES" 2>/dev/null
+
+  # 1) Check channel_aliases: handle → display_name → normalize → folder
+  display=$(sqlite3 "$DB" "SELECT display_name FROM channel_aliases WHERE handle='$(printf '%s' "$handle" | sed "s/'/''/g")';" 2>/dev/null)
+  if [ -n "$display" ]; then
+    filtered="$display"
+    if [ -f "$FILTER_FILE" ]; then
+      local fmatch
+      fmatch=$(awk -F ' *-> *' -v ch="$display" 'tolower($1)==tolower(ch) && NF>=2 {print $2; exit}' "$FILTER_FILE")
+      [ -n "$fmatch" ] && filtered="$fmatch"
+    fi
+    folder_name=$(printf '%s' "$filtered" | sed 's/[^a-zA-Z0-9 _-]//g' | tr -d ' _')
+    [ -f "$YT_ROOT/$folder_name/tvshow.nfo" ] && return 0
+  fi
+
+  # 2) Fallback: handle directly (apply filter, normalize)
+  filtered="$handle"
+  if [ -f "$FILTER_FILE" ]; then
+    local fmatch
+    fmatch=$(awk -F ' *-> *' -v ch="$handle" 'tolower($1)==tolower(ch) && NF>=2 {print $2; exit}' "$FILTER_FILE")
+    [ -n "$fmatch" ] && filtered="$fmatch"
+  fi
+  folder_name=$(printf '%s' "$filtered" | sed 's/[^a-zA-Z0-9 _-]//g' | tr -d ' _')
+  [ -f "$YT_ROOT/$folder_name/tvshow.nfo" ]
 }
 
 scrape_all_channels() {
@@ -392,9 +414,12 @@ while IFS= read -r channel_url <&3; do
         echo "  FORCE: $vid"
         printf '%s\t%s\n' "https://www.youtube.com/watch?v=$vid" "$label" >> "$QUEUE"
         new_for_channel=$(( new_for_channel + 1 ))
-      elif [ "$fd_status" = "failed" ] || [ "$fd_status" = "errored" ]; then
+      elif [ "$fd_status" = "failed" ] || [ "$fd_status" = "errored" ] || [ "$fd_status" = "downloading" ]; then
         echo "  RETRY: $vid (was $fd_status)"
-        sqlite3 "$DB" "UPDATE videos SET status='force-download' WHERE id='$(printf '%s' "$vid" | sed "s/'/''/g")';"
+        # Remove old placeholder/partial file before retry
+        old_path=$(sqlite3 "$DB" "SELECT file_path FROM videos WHERE id='$(printf '%s' "$vid" | sed "s/'/''/g")';" 2>/dev/null)
+        [ -n "$old_path" ] && [ -f "$YT_ROOT/$old_path" ] && rm -f "$YT_ROOT/$old_path"
+        sqlite3 "$DB" "DELETE FROM videos WHERE id='$(printf '%s' "$vid" | sed "s/'/''/g")';"
         printf '%s\t%s\n' "https://www.youtube.com/watch?v=$vid" "$label" >> "$QUEUE"
         new_for_channel=$(( new_for_channel + 1 ))
       fi

@@ -223,4 +223,20 @@ fi
 # --- Cleanup ---
 rm -f "$TMP_PRI" "$TMP_RARE" "$TMP_REG"
 
+# --- Error summary (one message for connection/rate-limit issues) ---
+ERRORS_TODAY=0
+if [ -f "$VARS_FILE" ]; then
+  ERRORS_TODAY=$(grep '^errors_today=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+fi
+ERRORS_TODAY=${ERRORS_TODAY:-0}
+if [ "$ERRORS_TODAY" -gt 0 ]; then
+  cat >> "$TODAY_REPORT" <<SEC
+
+## Heads Up
+
+$ERRORS_TODAY channel(s) returned nothing during scan — likely an IP rate-limit or connection issue from YouTube. These channels will be retried on the next run automatically.
+
+SEC
+fi
+
 echo "  report written to todayReport.md"

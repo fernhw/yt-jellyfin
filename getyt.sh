@@ -196,13 +196,10 @@ download_video() {
       return 0
     fi
 
-    # Generic error — still save to prevent infinite retries
-    echo "  ERROR: could not fetch metadata"
-    if [ -n "$channel_hint" ] && [ -n "$vid_from_url" ]; then
-      generate_placeholder "errored" "$url" "$vid_from_url" "$channel_hint" "$skip_title" "$skip_upload_date"
-    else
-      [ -n "$vid_from_url" ] && sqlite3 "$DB" "INSERT INTO videos (id,url,status) VALUES ('$esc_id','$esc_url','errored') ON CONFLICT(id) DO UPDATE SET status='errored';"
-    fi
+    # Transient error (rate-limit, IP ban, connection) — do NOT create placeholder
+    # Leave video out of DB so it retries naturally next run
+    echo "  ERROR: could not fetch metadata (will retry next run)"
+    echo "  errmsg: $(printf '%s' "$errmsg" | head -1)"
     return 1
   fi
 
@@ -340,8 +337,10 @@ for s in d.get('streams', []):
     echo "  INTERRUPTED"
     return 1
   else
-    db_insert "$vid" "$url" "$raw_channel" "$raw_title" "$upload_date" "$(date +%s)" "$channel_norm/$filename.mp4" "failed"
-    echo "  FAILED"
+    # Transient failure — remove from DB so video retries as new next run
+    sqlite3 "$DB" "DELETE FROM videos WHERE id='$(printf '%s' "$vid" | sed "s/'/''/g")';"
+    rm -f "$dest_dir/$filename.mp4"
+    echo "  FAILED (will retry next run)"
     return 1
   fi
 
