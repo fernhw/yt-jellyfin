@@ -88,3 +88,5 @@
 - https://www.youtube.com/@ThinMatrix
 - https://www.youtube.com/@sora_sakurai_en
 - https://www.youtube.com/@shoe0nhead
+- https://www.youtube.com/@NitroRad
+- https://www.youtube.com/@AlphaBetaGamer

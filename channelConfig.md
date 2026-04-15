@@ -14,6 +14,21 @@ Fireship
 GMTK
 CaptainDisillusion
 KBash
+hbomberguy
+Matthewmatosis
+NakeyJakey
+ActionButton
+SsethTzeentach
+RedLetterMedia
+MichaelReeves
+Nerdwriter1
+GLITCH
+Nerrel
+Echidnut
+SchaffrillasProductions
+IHincognitoMode
+StudioWrong
+AlphaBetaGamer
 
 # LIMITS - max videos kept on disk per channel
 # When a new video downloads and count exceeds limit,
