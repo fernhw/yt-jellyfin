@@ -5,9 +5,11 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
 
 DATA_SRC="/Users/alexander-highground/Library/Application Support/jellyfin/data"
 MUSIC_SRC="$MUSIC_DIR"
+BOOKS_SRC="/Volumes/Jellyfin/Books"
 
 DATA_DEST="/Volumes/Darrel4tb/rsync/data"
 MUSIC_DEST="/Volumes/Darrel4tb/rsync/music"
+BOOKS_DEST="/Volumes/Darrel4tb/rsync/books"
 
 LOG_FILE="/Volumes/Darrel4tb/rsync/sync.log"
 
@@ -17,7 +19,7 @@ log() {
 
 # ---- CHECKS ----
 
-if [ ! -d "$DATA_SRC" ] || [ ! -d "$MUSIC_SRC" ]; then
+if [ ! -d "$DATA_SRC" ] || [ ! -d "$MUSIC_SRC" ] || [ ! -d "$BOOKS_SRC" ]; then
   log "Source missing — aborting sync"
   exit 1
 fi
@@ -39,5 +41,6 @@ log "Starting safe mirror sync"
 
 rsync -avh --delete "$DATA_SRC/" "$DATA_DEST/" >> "$LOG_FILE" 2>&1
 rsync -avh --delete "$MUSIC_SRC/" "$MUSIC_DEST/" >> "$LOG_FILE" 2>&1
+rsync -avh --delete "$BOOKS_SRC/" "$BOOKS_DEST/" >> "$LOG_FILE" 2>&1
 
 log "Sync complete"
