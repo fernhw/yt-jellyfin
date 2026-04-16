@@ -29,14 +29,23 @@ init_db() {
   );"
 }
 
-# Strip non-filesystem-safe chars, spaces to underscores, split camelCase, truncate
+# Strip non-filesystem-safe chars, remove spaces/underscores, truncate
+# Used for channel names — keeps them compact (e.g. AsmongoldTV)
 normalize() {
   local result
-  # Remove unsafe chars, collapse whitespace, convert spaces to underscores
+  result=$(printf '%s' "$1" | sed 's/[^a-zA-Z0-9 _-]//g; s/  */ /g; s/^ *//; s/ *$//' | tr -d ' _' | cut -c1-"$2")
+  [ -z "$result" ] && result="Untitled"
+  printf '%s' "$result"
+}
+
+# Like normalize but keeps underscores between words and splits camelCase
+# Used for video titles — keeps them readable (e.g. Why_I_got_banned)
+normalize_title() {
+  local result
   result=$(printf '%s' "$1" | sed 's/[^a-zA-Z0-9 _-]//g; s/  */ /g; s/^ *//; s/ *$//' | tr ' ' '_')
-  # Split camelCase boundaries: insert _ before uppercase preceded by lowercase/digit
+  # Split camelCase: insert _ before uppercase preceded by lowercase/digit
   result=$(printf '%s' "$result" | sed 's/\([a-z0-9]\)\([A-Z]\)/\1_\2/g')
-  # Collapse repeated underscores, trim leading/trailing underscores, truncate
+  # Collapse repeated underscores, trim leading/trailing
   result=$(printf '%s' "$result" | sed 's/__*/_/g; s/^_//; s/_$//' | cut -c1-"$2")
   [ -z "$result" ] && result="Untitled"
   printf '%s' "$result"
@@ -123,9 +132,9 @@ generate_placeholder() {
 
   # Use video title for filename if available, fall back to reason
   if [ -n "$vid_title" ]; then
-    title_norm=$(normalize "$vid_title" "$MAX_TITLE")
+    title_norm=$(normalize_title "$vid_title" "$MAX_TITLE")
   else
-    title_norm=$(normalize "$reason" 30)
+    title_norm=$(normalize_title "$reason" 30)
   fi
   filename=$(printf '%s_S%02dE%02d' "$title_norm" "$season" "$ep")
 
@@ -262,7 +271,7 @@ print(f'yt_handle={shlex.quote(handle)}')
       '$(printf '%s' "$raw_channel" | sed "s/'/''/g")');"
   fi
   local title_norm
-  title_norm=$(normalize "$raw_title" "$MAX_TITLE")
+  title_norm=$(normalize_title "$raw_title" "$MAX_TITLE")
 
   local dest_dir="$YT_ROOT/$channel_norm"
   mkdir -p "$dest_dir"

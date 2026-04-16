@@ -1,7 +1,7 @@
 # What to Watch — 2026-04-16
 
-> *Good afternoon! Here's what landed on Thursday, April 16, 2026 at 03:14 PM.*
-> **YT Mirror:** 596.27 GB used · 2.00 TB free
+> *Good evening! Here's what landed on Thursday, April 16, 2026 at 05:08 PM.*
+> **YT Mirror:** 596.61 GB used · 2.00 TB free
 
 ## Watch First
 
@@ -15,6 +15,7 @@
 - **Johnny Somali finally in prison..** — *Asmongold TV*
 - **These body cams are wild** — *Asmongold TV*
 - **Windrose is genuinely cool** — *Asmongold TV*
+- **He dodged all of it..** — *Asmongold TV*
 - **Gaming CEO Tells Staff To Keep Quiet. They Went Public.** — *Bellular News*
 - **Well This Is Dumb** — *Big A*
 - **This Game is Not Exciting...** — *ConnorDawg*
