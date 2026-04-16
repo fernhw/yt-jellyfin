@@ -769,6 +769,12 @@ fi
 
 echo "=== Done ==="
 
+# Extract audio for podcastable channels
+PODCAST_TRANSFER="$SCRIPT_DIR/podcastableTransfer.sh"
+if [ -x "$PODCAST_TRANSFER" ]; then
+  "$PODCAST_TRANSFER"
+fi
+
 # Sync repo
 cd "$SCRIPT_DIR"
 git add .

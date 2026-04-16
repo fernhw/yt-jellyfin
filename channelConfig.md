@@ -54,3 +54,23 @@ ConnorDawg = 1080
 DigitalFoundry = 1080
 TrashTaste = 1080
 NeverKnowsBest = 1080
+
+# PODCASTABLE - channels whose videos work well as audio-only
+# Audio extracted to /Volumes/Jellyfin/Podcasts/<channel>/
+# for Audiobookshelf podcast library
+[podcastable]
+TrashTaste
+RedLetterMedia
+Fireship
+hbomberguy
+Nerdwriter1
+SuperEyepatchWolf
+TechnologyConnections
+WritingonGames
+PauseandSelect
+Razbuten
+NeverKnowsBest
+ThePrimeTime
+BellularNews
+SecondWind
+TheCosmonautVarietyHour

@@ -2,11 +2,15 @@
 # download.sh - Universal downloader
 # YouTube videos -> /Volumes/Darrel4tb/YT/ (via getyt.sh)
 # Torrents/magnets -> /Volumes/Jellyfin/Movies/ or /Volumes/Jellyfin/Shows/
+# Audiobooks       -> /Volumes/Jellyfin/Books/
+# Books (ebooks)   -> /Volumes/Jellyfin/Books/
 #
 # Usage:
 #   download <youtube-url|video-id>         YouTube video
 #   download s                              Show torrent (paste magnet, auto-match folder)
 #   download m                              Movie torrent (paste magnet)
+#   download a                              Audiobook torrent (paste magnet)
+#   download b                              Book/ebook torrent (paste magnet)
 #   download episode                        Same as s
 #   download movie                          Same as m
 #   download                                Paste any URL, auto-detect type
@@ -172,10 +176,12 @@ do_torrent() {
     echo "  s) Show (auto-match folder)"
     echo "  sf) Show (full show, dump in Shows/)"
     echo "  m) Movie"
+    echo "  a) Audiobook"
+    echo "  b) Book / ebook"
     echo "  sc) Show (pick folder)"
     echo "  n) Cancel"
     echo ""
-    printf 'Type [s/sf/m/sc/n]: '
+    printf 'Type [s/sf/m/a/b/sc/n]: '
     read -r choice
   fi
 
@@ -183,6 +189,14 @@ do_torrent() {
     m|M)
       DEST="$MOVIES_DIR"
       echo "-> Movies: $DEST"
+      ;;
+    a|A)
+      DEST="$BOOKS_DIR"
+      echo "-> Audiobooks: $DEST"
+      ;;
+    b|B)
+      DEST="$BOOKS_DIR"
+      echo "-> Books: $DEST"
       ;;
     sf|SF)
       DEST="$SHOWS_DIR"
@@ -276,13 +290,18 @@ show_help() {
   echo "  download <video-id>           Download YouTube video by ID"
   echo "  download s                    Show torrent (paste magnet, auto-match folder)"
   echo "  download m                    Movie torrent (paste magnet)"
+  echo "  download a                    Audiobook torrent (paste magnet)"
+  echo "  download b                    Book/ebook torrent (paste magnet)"
   echo "  download episode              Same as s"
   echo "  download movie                Same as m"
+  echo "  download audiobook            Same as a"
+  echo "  download book                 Same as b"
   echo "  download                      Paste any URL, auto-detect type"
   echo ""
   echo "YouTube  -> $YT_ROOT/<Channel>/"
   echo "Movies   -> $MOVIES_DIR/"
   echo "Shows    -> $SHOWS_DIR/<folder>/"
+  echo "Books    -> $BOOKS_DIR/"
   echo ""
   echo "Tip: magnets have & so always quote them or use: download s (then paste)"
 }
@@ -300,6 +319,8 @@ if [ $# -ge 1 ]; then
     sc|SC)            torrent_mode="sc"; shift ;;
     sf|SF)            torrent_mode="sf"; shift ;;
     m|M|movie)        torrent_mode="m"; shift ;;
+    a|A|audiobook)    torrent_mode="a"; shift ;;
+    b|B|book|ebook)    torrent_mode="b"; shift ;;
   esac
 fi
 

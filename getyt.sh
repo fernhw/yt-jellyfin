@@ -29,10 +29,15 @@ init_db() {
   );"
 }
 
-# Strip non-filesystem-safe chars, spaces to underscores, truncate
+# Strip non-filesystem-safe chars, spaces to underscores, split camelCase, truncate
 normalize() {
   local result
-  result=$(printf '%s' "$1" | sed 's/[^a-zA-Z0-9 _-]//g; s/  */ /g; s/^ *//; s/ *$//' | tr -d ' _' | cut -c1-"$2")
+  # Remove unsafe chars, collapse whitespace, convert spaces to underscores
+  result=$(printf '%s' "$1" | sed 's/[^a-zA-Z0-9 _-]//g; s/  */ /g; s/^ *//; s/ *$//' | tr ' ' '_')
+  # Split camelCase boundaries: insert _ before uppercase preceded by lowercase/digit
+  result=$(printf '%s' "$result" | sed 's/\([a-z0-9]\)\([A-Z]\)/\1_\2/g')
+  # Collapse repeated underscores, trim leading/trailing underscores, truncate
+  result=$(printf '%s' "$result" | sed 's/__*/_/g; s/^_//; s/_$//' | cut -c1-"$2")
   [ -z "$result" ] && result="Untitled"
   printf '%s' "$result"
 }
