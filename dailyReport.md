@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-15
 
-> *Good evening! Here's what landed on Wednesday, April 15, 2026 at 06:05 PM.*
-> **YT Mirror:** 581.97 GB used · 2.05 TB free
+> *Good evening! Here's what landed on Wednesday, April 15, 2026 at 07:07 PM.*
+> **YT Mirror:** 582.44 GB used · 2.05 TB free
 
 ### Watch First
 
@@ -14,6 +14,7 @@
 
 ### Also New
 
+- **Overhated Game Consoles** — *Scott's Stash*
 - **This is so f***ing stupid..** — *Asmongold TV*
 - **The best pirate game is finally out..** — *Asmongold TV*
 - **This is a game from 2009. What happened?** — *Asmongold TV*
