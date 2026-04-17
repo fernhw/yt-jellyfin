@@ -1,11 +1,12 @@
 # What to Watch — 2026-04-17
 
-> *Good afternoon! Here's what landed on Friday, April 17, 2026 at 03:28 PM.*
-> **YT Mirror:** 610.54 GB used · 1.98 TB free
+> *Good evening! Here's what landed on Friday, April 17, 2026 at 05:14 PM.*
+> **YT Mirror:** 612.11 GB used · 1.99 TB free
 
 ## Watch First
 
 - **The Best Sports Game Nobody Played** — *NakeyJakey* — *137 days since their last upload*
+- **We Found the Best Era of Anime & Gaming ** — *Trash Taste*
 - **Mouse P.I. For Hire** — *videogamedunkey*
 
 ---
@@ -26,6 +27,7 @@ These channels have been quiet for a while — worth a look.
 - **Pete Hegseth's Doomed Holy Crusade - News Dump** — *Internet Today*
 - **PRAGMATA – Launch Trailer – Nintendo Switch 2** — *Nintendo of America*
 - **The Splatoon 3 North American League Show 2026 – Episode 3** — *Nintendo of America*
+- **Fortnite – Save the World Trailer – Nintendo Switch 2** — *Nintendo of America*
 - **I'll Take All the Friendslop, Thanks ** — *Second Wind*
 - **Chill Gaming for Busy Adults** — *TechDweeb*
 - **It's all fake** — *The PrimeTime*
