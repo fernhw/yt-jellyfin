@@ -1,11 +1,20 @@
 # What to Watch — 2026-04-17
 
-> *Good morning! Here's what landed on Friday, April 17, 2026 at 11:45 AM.*
-> **YT Mirror:** 604.15 GB used · 1.99 TB free
+> *Good afternoon! Here's what landed on Friday, April 17, 2026 at 03:28 PM.*
+> **YT Mirror:** 610.54 GB used · 1.98 TB free
 
 ## Watch First
 
-No priority uploads today — your favorites are taking a break.
+- **The Best Sports Game Nobody Played** — *NakeyJakey* — *137 days since their last upload*
+- **Mouse P.I. For Hire** — *videogamedunkey*
+
+---
+
+## Rare Drops
+
+These channels have been quiet for a while — worth a look.
+
+- **Why was I invited to Beast Studios?** — *Folding Ideas* — *81 days since their last upload*
 
 ---
 
@@ -15,6 +24,8 @@ No priority uploads today — your favorites are taking a break.
 - **Metro Exodus looks great** — *Asmongold TV*
 - **Death Stranding 2 PC Review + Optimised Settings - Sony's Last Big PC Single-Player Game?** — *Digital Foundry*
 - **Pete Hegseth's Doomed Holy Crusade - News Dump** — *Internet Today*
+- **PRAGMATA – Launch Trailer – Nintendo Switch 2** — *Nintendo of America*
+- **The Splatoon 3 North American League Show 2026 – Episode 3** — *Nintendo of America*
 - **I'll Take All the Friendslop, Thanks ** — *Second Wind*
 - **Chill Gaming for Busy Adults** — *TechDweeb*
 - **It's all fake** — *The PrimeTime*
