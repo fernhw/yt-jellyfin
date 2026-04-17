@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-16
 
-> *Good evening! Here's what landed on Thursday, April 16, 2026 at 08:07 PM.*
-> **YT Mirror:** 597.35 GB used · 2.00 TB free
+> *Good evening! Here's what landed on Thursday, April 16, 2026 at 09:15 PM.*
+> **YT Mirror:** 597.88 GB used · 2.00 TB free
 
 ### Watch First
 
@@ -14,6 +14,7 @@
 
 ### Also New
 
+- **It’s Time To Save Xbox.** — *GameLinked*
 - **Nintendo and "Artificial Scarcity"** — *Scott's Stash*
 - **Johnny Somali finally in prison..** — *Asmongold TV*
 - **These body cams are wild** — *Asmongold TV*
