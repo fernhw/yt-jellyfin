@@ -1,7 +1,7 @@
 # What to Watch — 2026-04-16
 
-> *Good evening! Here's what landed on Thursday, April 16, 2026 at 06:10 PM.*
-> **YT Mirror:** 596.59 GB used · 2.00 TB free
+> *Good evening! Here's what landed on Thursday, April 16, 2026 at 07:10 PM.*
+> **YT Mirror:** 597.36 GB used · 2.00 TB free
 
 ## Watch First
 
@@ -12,6 +12,7 @@
 
 ## Also New
 
+- **Nintendo and "Artificial Scarcity"** — *Scott's Stash*
 - **Johnny Somali finally in prison..** — *Asmongold TV*
 - **These body cams are wild** — *Asmongold TV*
 - **Windrose is genuinely cool** — *Asmongold TV*
@@ -24,6 +25,7 @@
 - **Let's Just Make Our Own Steam Machine** — *Retro Game Corps*
 - **Announcing the Second Wind Games Showcase - April 23, 2026** — *Second Wind*
 - **An 'Impossible' Port Just Leaked For Switch 2 & PS5 Price Increase Spikes The Market ** — *Spawn Wave*
+- **Live Service Games Won’t Like This...** — *Spawn Wave*
 - **HEADPATS & KISSES! ARCANA: FORTUNE MATE & SNOW CRANE BOND STORY ** — *Yessenia*
 
 ---
