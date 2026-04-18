@@ -2,11 +2,12 @@
 
 ## What to Watch — 2026-04-17
 
-> *Good evening! Here's what landed on Friday, April 17, 2026 at 07:10 PM.*
-> **YT Mirror:** 612.37 GB used · 1.98 TB free
+> *Good evening! Here's what landed on Friday, April 17, 2026 at 08:07 PM.*
+> **YT Mirror:** 612.84 GB used · 1.98 TB free
 
 ### Watch First
 
+- **オリジナルアニメ『New Style』** — *Studio Wrong*
 - **The Best Sports Game Nobody Played** — *NakeyJakey* — *137 days since their last upload*
 - **We Found the Best Era of Anime & Gaming ** — *Trash Taste*
 - **Mouse P.I. For Hire** — *videogamedunkey*
@@ -25,6 +26,7 @@ These channels have been quiet for a while — worth a look.
 
 - **MOUSE: P.I. For Hire – Launch Trailer – Nintendo Switch 2** — *Nintendo of America*
 - **Deal or No Deal (DS) - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash*
+- **You Can Turn Them OFF…** — *TechLinked*
 - **The Mouse P.I. game is CINEMA** — *Asmongold TV*
 - **Metro Exodus looks great** — *Asmongold TV*
 - **Death Stranding 2 PC Review + Optimised Settings - Sony's Last Big PC Single-Player Game?** — *Digital Foundry*
