@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-17
 
-> *Good evening! Here's what landed on Friday, April 17, 2026 at 09:11 PM.*
-> **YT Mirror:** 612.83 GB used · 1.98 TB free
+> *Good evening! Here's what landed on Friday, April 17, 2026 at 10:08 PM.*
+> **YT Mirror:** 613.33 GB used · 1.98 TB free
 
 ### Watch First
 
@@ -24,6 +24,7 @@ These channels have been quiet for a while — worth a look.
 
 ### Also New
 
+- **I Was Challenged By An RTS Legend...** — *Atrioc*
 - **MOUSE: P.I. For Hire – Launch Trailer – Nintendo Switch 2** — *Nintendo of America*
 - **Deal or No Deal (DS) - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash*
 - **You Can Turn Them OFF…** — *TechLinked*
