@@ -1,7 +1,7 @@
 # What to Watch — 2026-04-18
 
-> *Good afternoon! Here's what landed on Saturday, April 18, 2026 at 03:34 PM.*
-> **YT Mirror:** 629.60 GB used · 1.96 TB free
+> *Good evening! Here's what landed on Saturday, April 18, 2026 at 05:06 PM.*
+> **YT Mirror:** 629.86 GB used · 1.97 TB free
 
 ## Watch First
 
@@ -15,6 +15,7 @@ No priority uploads today — your favorites are taking a break.
 - **Thank f***ing God we have bodycams..** — *Asmongold TV*
 - **Huge win for gamers** — *Asmongold TV*
 - **So I Tried Pragmata..** — *Asmongold TV*
+- **They can't hide this sh*t anymore..** — *Asmongold TV*
 - **The RAM Crisis Looks Over. It's About To Get a LOT Worse** — *Bellular News*
 - **This Is So Obvious** — *Big A*
 - **Stuntmen React to Bad & Great Hollywood Stunts 46** — *Corridor Crew*
