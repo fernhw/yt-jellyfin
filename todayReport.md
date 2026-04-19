@@ -1,11 +1,11 @@
 # What to Watch — 2026-04-19
 
-> *Good afternoon! Here's what landed on Sunday, April 19, 2026 at 03:28 PM.*
-> **YT Mirror:** 653.34 GB used · 1.94 TB free
+> *Good evening! Here's what landed on Sunday, April 19, 2026 at 05:12 PM.*
+> **YT Mirror:** 653.86 GB used · 1.94 TB free
 
 ## Watch First
 
-No priority uploads today — your favorites are taking a break.
+- **Red Letter Media's Half in the Bag's Blumhouse's Lee Cronin's The Mummy Review** — *RedLetterMedia*
 
 ---
 
