@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-19
 
-> *Good morning! Here's what landed on Sunday, April 19, 2026 at 11:48 AM.*
-> **YT Mirror:** 642.30 GB used · 1.95 TB free
+> *Good afternoon! Here's what landed on Sunday, April 19, 2026 at 03:28 PM.*
+> **YT Mirror:** 653.34 GB used · 1.94 TB free
 
 ### Watch First
 
@@ -15,10 +15,16 @@ No priority uploads today — your favorites are taking a break.
 
 - **No one saw this coming..** — *Asmongold TV*
 - **I’ve NEVER seen anything like this..** — *Asmongold TV*
+- **Twitter HATES This Game..** — *Asmongold TV*
+- **Amazon Just Locked People Out Of Games They Own** — *Bellular News*
 - **The Gen Alpha Tragedy** — *Big A*
 - **My Girlfriend asked me if Bioshock 2 was any good** — *Boy Meets Girl*
+- **I Completed Plants vs. Zombies 2** — *ConnorDawg*
 - **DF Retro Super Show #012 - Game Boy Advance 25th Anniversary - Every Launch Game Revisited!** — *Digital Foundry*
+- **Pragmata - PS5/PS5 Pro/Xbox Series X** — *Digital Foundry*
+- **HW News - Valve Improves VRAM Usage, NVIDIA N1 CPU Spotted, Data Center Tax Parasites, GPU Prices** — *Gamers Nexus*
 - **I Am Jesus Christ, Cursed Words, Windrose, and Demon Tides ** — *Second Wind*
+- **This 10 Year Old System Is An Emulation Beast In 2026** — *Spawn Wave*
 - **This is the Most Popular Retro Handheld on Amazon** — *TechDweeb*
 - **The Mythos Situation ** — *The PrimeTime*
 
