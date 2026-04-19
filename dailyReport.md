@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-18
 
-> *Good evening! Here's what landed on Saturday, April 18, 2026 at 10:04 PM.*
-> **YT Mirror:** 630.20 GB used · 1.97 TB free
+> *Good evening! Here's what landed on Saturday, April 18, 2026 at 11:48 PM.*
+> **YT Mirror:** 636.18 GB used · 1.96 TB free
 
 ### Watch First
 
@@ -13,6 +13,8 @@ No priority uploads today — your favorites are taking a break.
 
 ### Also New
 
+- **Kash Patel is a Paranoid Drunk Who Sucks at His Job - Weekly Weird News** — *Internet Today*
+- **I'M SO PROUD OF OUR GIRLS!! 3.5 ANNIVERSARY LIVESTREAM REACTION ** — *Yessenia*
 - **This judge made it illegal to defend your home** — *Asmongold TV*
 - **Thank f***ing God we have bodycams..** — *Asmongold TV*
 - **Huge win for gamers** — *Asmongold TV*
