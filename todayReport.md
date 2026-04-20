@@ -1,7 +1,18 @@
 # What to Watch — 2026-04-20
 
-> *Good morning! Here's what landed on Monday, April 20, 2026 at 03:34 AM.*
-> **YT Mirror:** 654.37 GB used · 1.94 TB free
+> *Good morning! Here's what landed on Monday, April 20, 2026 at 07:08 AM.*
+> **YT Mirror:** 655.88 GB used · 1.94 TB free
 
-Nothing new today. All channels scanned — nobody posted. Check back later.
+## Watch First
+
+No priority uploads today — your favorites are taking a break.
+
+---
+
+## Also New
+
+- **The retail theft situation is crazy** — *Asmongold TV*
+- **I made a new Amiga Game - Zippy Race!** — *Modern Vintage Gamer*
+
+---
 
