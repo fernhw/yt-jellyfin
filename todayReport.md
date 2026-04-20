@@ -1,7 +1,7 @@
 # What to Watch — 2026-04-19
 
-> *Good evening! Here's what landed on Sunday, April 19, 2026 at 07:05 PM.*
-> **YT Mirror:** 653.85 GB used · 1.94 TB free
+> *Good evening! Here's what landed on Sunday, April 19, 2026 at 08:10 PM.*
+> **YT Mirror:** 654.25 GB used · 1.94 TB free
 
 ## Watch First
 
@@ -11,6 +11,7 @@
 
 ## Also New
 
+- **Israel is done..** — *Asmongold TV*
 - **No one saw this coming..** — *Asmongold TV*
 - **I’ve NEVER seen anything like this..** — *Asmongold TV*
 - **Twitter HATES This Game..** — *Asmongold TV*
