@@ -1,7 +1,7 @@
 # What to Watch — 2026-04-20
 
-> *Good evening! Here's what landed on Monday, April 20, 2026 at 08:04 PM.*
-> **YT Mirror:** 670.54 GB used · 1.93 TB free
+> *Good evening! Here's what landed on Monday, April 20, 2026 at 09:05 PM.*
+> **YT Mirror:** 670.98 GB used · 1.93 TB free
 
 ## Watch First
 
@@ -12,6 +12,7 @@ No priority uploads today — your favorites are taking a break.
 ## Also New
 
 - **Remember the Online Pass Epidemic?** — *Scott's Stash*
+- **End of an Era at Apple** — *TechLinked*
 - **The retail theft situation is crazy** — *Asmongold TV*
 - **The Onlyfans empire is done..** — *Asmongold TV*
 - **This game f***ed me up..** — *Asmongold TV*
