@@ -1,6 +1,7 @@
 # Subscribed Channels
 # Add YouTube channel URLs below (one per line)
 # Checked hourly by downloadSubs.sh
+# unsubbed http://youtube.com/@LegendaryDrops
 
 - https://www.youtube.com/@TrashTaste
 - https://www.youtube.com/@yesseniavo
@@ -49,7 +50,6 @@
 - https://www.youtube.com/@StudioWrong
 - https://www.youtube.com/channel/UC9Q2mxRddjdsbOk_8NRdFkQ
 - https://www.youtube.com/@Lowart
-- https://www.youtube.com/@KBash
 - https://www.youtube.com/@DouchebagChocolat
 - https://www.youtube.com/@GameLinked
 - https://www.youtube.com/@techlinked
@@ -90,3 +90,6 @@
 - https://www.youtube.com/@shoe0nhead
 - https://www.youtube.com/@NitroRad
 - https://www.youtube.com/@drewisgooden
+- https://www.youtube.com/@Cupcake4all
+- https://www.youtube.com/@FLEEKAZOID
+- http://youtube.com/@LegendaryDrops
