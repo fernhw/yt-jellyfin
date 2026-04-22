@@ -1,7 +1,7 @@
 # What to Watch — 2026-04-21
 
-> *Good evening! Here's what landed on Tuesday, April 21, 2026 at 06:04 PM.*
-> **YT Mirror:** 680.79 GB used · 1.91 TB free
+> *Good evening! Here's what landed on Tuesday, April 21, 2026 at 07:08 PM.*
+> **YT Mirror:** 682.23 GB used · 1.91 TB free
 
 ## Watch First
 
@@ -12,6 +12,8 @@
 
 ## Also New
 
+- **Mario on Handhelds vs. Consoles** — *Scott's Stash*
+- **"Stop Nick Shirley Act"** — *Asmongold TV*
 - **The EU Just Took Stop Killing Games Seriously** — *Bellular News*
 - **DF Direct Q+A: Will PSSR Lower Game Resolutions? Starfield Switch 2, Is RTX 5080 OK For Path Tracing** — *Digital Foundry*
 - **BLACKLISTED by AMD ** — *Gamers Nexus*
