@@ -7,11 +7,13 @@ DATA_SRC="/Users/alexander-highground/Library/Application Support/jellyfin/data"
 MUSIC_SRC="$MUSIC_DIR"
 BOOKS_SRC="/Volumes/Jellyfin/Books"
 PODCASTS_SRC="/Volumes/Jellyfin/Podcasts"
+MANGA_SRC="/Volumes/Jellyfin/Manga"
 
 DATA_DEST="/Volumes/Darrel4tb/rsync/data"
 MUSIC_DEST="/Volumes/Darrel4tb/rsync/music"
 BOOKS_DEST="/Volumes/Darrel4tb/rsync/books"
 PODCASTS_DEST="/Volumes/Darrel4tb/rsync/podcasts"
+MANGA_DEST="/Volumes/Darrel4tb/rsync/manga"
 
 LOG_FILE="/Volumes/Darrel4tb/rsync/sync.log"
 
@@ -19,31 +21,45 @@ log() {
   echo "$(date '+%Y-%m-%d %H:%M:%S') | $1" | tee -a "$LOG_FILE"
 }
 
-# ---- CHECKS ----
+# ---- PER-LIBRARY SYNC (simple rule: src exists + dest exists/creatable = sync) ----
 
-if [ ! -d "$DATA_SRC" ] || [ ! -d "$MUSIC_SRC" ] || [ ! -d "$BOOKS_SRC" ] || [ ! -d "$PODCASTS_SRC" ]; then
-  log "Source missing — aborting sync"
-  exit 1
-fi
+sync_library() {
+  local label="$1" src="$2" dest="$3" dest_parent rc
 
-if [ -z "$(ls -A "$MUSIC_SRC")" ]; then
-  log "Music source is EMPTY — possible mount failure — aborting"
-  exit 1
-fi
+  if [ ! -d "$src" ]; then
+    log "SKIP $label — source not found: $src"
+    return
+  fi
 
-FILE_COUNT=$(find "$MUSIC_SRC" -type f | wc -l)
-if [ "$FILE_COUNT" -lt 100 ]; then
-  log "File count too low ($FILE_COUNT) — suspicious — aborting"
-  exit 1
-fi
+  if [ ! -d "$dest" ]; then
+    dest_parent=$(dirname "$dest")
+    if [ ! -d "$dest_parent" ]; then
+      log "SKIP $label — destination parent missing: $dest_parent"
+      return
+    fi
+    mkdir -p "$dest"
+    if [ $? -ne 0 ]; then
+      log "SKIP $label — failed to create destination: $dest"
+      return
+    fi
+  fi
 
-# ---- SYNC ----
+  log "Syncing $label ..."
+  rsync -avh --delete "$src/" "$dest/" >> "$LOG_FILE" 2>&1
+  rc=$?
+  if [ $rc -eq 0 ]; then
+    log "OK $label"
+  else
+    log "ERROR $label — rsync failed (exit $rc)"
+  fi
+}
 
-log "Starting safe mirror sync"
+log "=== Sync started ==="
 
-rsync -avh --delete "$DATA_SRC/" "$DATA_DEST/" >> "$LOG_FILE" 2>&1
-rsync -avh --delete "$MUSIC_SRC/" "$MUSIC_DEST/" >> "$LOG_FILE" 2>&1
-rsync -avh --delete "$BOOKS_SRC/" "$BOOKS_DEST/" >> "$LOG_FILE" 2>&1
-rsync -avh --delete "$PODCASTS_SRC/" "$PODCASTS_DEST/" >> "$LOG_FILE" 2>&1
+sync_library "data"     "$DATA_SRC"     "$DATA_DEST"
+sync_library "music"    "$MUSIC_SRC"    "$MUSIC_DEST"
+sync_library "books"    "$BOOKS_SRC"    "$BOOKS_DEST"
+sync_library "podcasts" "$PODCASTS_SRC" "$PODCASTS_DEST"
+sync_library "manga"    "$MANGA_SRC"    "$MANGA_DEST"
 
-log "Sync complete"
+log "=== Sync complete ==="
