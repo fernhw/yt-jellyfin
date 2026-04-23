@@ -79,3 +79,8 @@ RetroGameCorps
 shoe0nhead
 DrewGooden
 NakeyJakey
+Asmongold
+FritangaPlays
+techlinked
+TechDweeb
+GameLinked
