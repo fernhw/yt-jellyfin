@@ -1,14 +1,14 @@
-last_scan=1776922592396
-total_videos=2008
-updated=2026-04-23 00:36:32
+last_scan=1776933544430
+total_videos=2010
+updated=2026-04-23 03:39:04
 report_date=2026-04-23
 downloaded_today=0
 deleted_today=0
-skipped_today=0
+skipped_today=2
 channels_scanned=91
 channels_total=91
 errors_last_run=0
 errors_list=
 downloaded_list=
 deleted_list=
-skipped_list=
+skipped_list=members-only:https://www.youtube.com/watch?v=x1_dFveCEyA|members-only:https://www.youtube.com/watch?v=OIGjimuj37Q
