@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-24
 
-> *Good morning! Here's what landed on Friday, April 24, 2026 at 07:10 AM.*
-> **YT Mirror:** 700.99 GB used · 1.75 TB free
+> *Good morning! Here's what landed on Friday, April 24, 2026 at 09:58 AM.*
+> **YT Mirror:** 707.72 GB used · 1.74 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,12 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **Orbitals – Gameplay Reveal Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 09:49 AM · not podcastable
+- **Finally, a good f***ing remake** — *Asmongold TV* · downloaded 09:47 AM · not podcastable
+- **I strongly recommend: Saros (Review)** — *Skill Up* · downloaded 09:45 AM · not podcastable
+- **My Favorite Game in Every Major Category** — *Retro Game Corps* · downloaded 09:40 AM · podcastable
+- **U.S. Soldier Arrested For Insider Trading on Polymarket; Winning $400k - News Dump** — *Internet Today* · downloaded 09:37 AM · not podcastable
+- **How do they keep letting this happen** — *Legendary Drops* · downloaded 09:36 AM · not podcastable
 - **Perfect COFFEE BREAK Games** — *TechDweeb* · downloaded 07:07 AM · podcastable
 - **This is the funniest sh*t on the Internet** — *Asmongold TV* · downloaded 07:06 AM · not podcastable
 - **Saros Review - PlayStation 5/PS5 Pro - Beautiful Visuals, Polished And Approachable** — *Digital Foundry* · downloaded 03:36 AM · not podcastable
