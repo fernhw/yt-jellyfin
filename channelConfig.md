@@ -36,7 +36,7 @@ AlphaBetaGamer
 # Channels not listed here: unlimited (keep all)
 # Format: handle = number
 [limits]
-Asmongold = 20
+AsmonTV = 20
 CDawgVA = 20
 GarntM = 20
 ConnorDawg = 20
@@ -84,3 +84,4 @@ FritangaPlays
 techlinked
 TechDweeb
 GameLinked
+SchaffrillasProductions

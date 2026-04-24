@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#111"/>
+  <!-- play triangle -->
+  <polygon points="11,8 11,24 26,16" fill="#e0e0e0" opacity="0.92"/>
+  <!-- notification dot -->
+  <circle cx="25" cy="7" r="4.5" fill="#e05252"/>
+  <circle cx="25" cy="7" r="3" fill="#ff6b6b"/>
+</svg>

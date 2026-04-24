@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Report">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/icon.png">
   <title>What to Watch</title>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <script>
@@ -13,105 +19,921 @@
   </script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
-    #gate{display:none;position:fixed;inset:0;background:#0f0f0f;z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:16px}
+    :root{--bg:#101317;--panel:#171c21;--panel-soft:#1d242b;--line:#2a323b;--text:#ecf2f8;--muted:#97a6b4;--soft:#627384;--accent:#d7a847;--accent-soft:#2e2411;--pod:#72c7a2;--pod-soft:#163126;--rare:#86b9d9;--rare-soft:#172734;--warn:#f07f64;--warn-soft:#2b1916}
+    body{background:radial-gradient(circle at top,#1b2430 0,#101317 45%,#0c0f13 100%);color:var(--text);font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;min-height:100vh}
+    #gate{display:none;position:fixed;inset:0;background:#0c0f13;z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:16px}
     #gate h2{color:#fff;font-size:1.2rem;font-weight:500}
-    #gate input{background:#1a1a1a;border:1px solid #333;color:#fff;padding:10px 16px;border-radius:8px;font-size:1rem;width:220px;text-align:center;outline:none}
-    #gate input:focus{border-color:#555}
-    #gate button{background:#222;border:1px solid #444;color:#ccc;padding:8px 24px;border-radius:8px;cursor:pointer;font-size:.9rem}
-    #gate button:hover{background:#2a2a2a}
-    #gate .err{color:#e05252;font-size:.85rem}
+    #gate input{background:#151a1f;border:1px solid #303844;color:#fff;padding:10px 16px;border-radius:8px;font-size:1rem;width:220px;text-align:center;outline:none}
+    #gate input:focus{border-color:#59687a}
+    #gate button{background:#1a2026;border:1px solid #36404c;color:#d0dae3;padding:8px 24px;border-radius:8px;cursor:pointer;font-size:.9rem}
+    #gate button:hover{background:#202730}
+    #gate .err{color:#f07f64;font-size:.85rem}
     #app{display:none}
-    header{padding:24px 32px 0;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px}
-    header h1{font-size:1.4rem;font-weight:600;color:#fff}
-    header .meta{font-size:.8rem;color:#666;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-    header .meta span{color:#888}
-    .disk{font-size:.75rem;color:#555;margin-top:2px}
-    .notify-btn{background:#1a1a1a;border:1px solid #333;color:#aaa;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:.78rem;transition:all .2s}
-    .notify-btn:hover{border-color:#555;color:#ddd}
-    .section{margin:28px 32px 0}
-    .section h2{font-size:.7rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px}
-    .section h2.warn{color:#c0392b}
-    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-    .card{background:#161616;border:1px solid #222;border-radius:10px;padding:14px;display:flex;gap:12px;align-items:flex-start;transition:border-color .15s}
-    .card:hover{border-color:#333}
-    .card.priority{border-color:#2a2316;background:#191510}
-    .card.rare{border-color:#162226;background:#101518}
-    .card img{width:48px;height:48px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#1a1a1a}
-    .card .info{min-width:0}
-    .card .title{font-size:.88rem;font-weight:500;color:#ddd;line-height:1.35;word-break:break-word}
-    .card .channel{font-size:.75rem;color:#666;margin-top:4px}
-    .card .gap{font-size:.7rem;color:#4a7a8a;margin-top:3px}
-    .card .badge{display:inline-block;font-size:.6rem;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle}
-    .badge.priority{background:#2a1e0a;color:#c8872a;border:1px solid #3a2a0a}
-    .badge.rare{background:#0a1e22;color:#2a8a9a;border:1px solid #0a2a30}
-    .empty{color:#444;font-size:.85rem;padding:8px 0}
-    .warn-banner{background:#1a0a0a;border:1px solid #3a1818;border-radius:8px;padding:12px 16px;color:#c05050;font-size:.82rem;margin:28px 32px 0}
-    .warn-banner strong{color:#e05050}
-    hr{border:none;border-top:1px solid #1a1a1a;margin:28px 32px}
-    footer{padding:20px 32px;font-size:.72rem;color:#333}
-    @media(max-width:600px){
-      header,hr,.section,.warn-banner,footer{padding-left:16px;padding-right:16px}
-      header{flex-direction:column}
-      header .meta{align-items:flex-start}
+    .shell{max-width:1320px;margin:0 auto;padding:28px 24px 48px}
+    header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap}
+    .title-wrap{max-width:760px}
+    .kicker{font:600 .72rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#c2a365;margin-bottom:10px}
+    header h1{font-size:clamp(2.1rem,3vw,3.5rem);line-height:.95;color:#fff;font-weight:600}
+    .lede{margin-top:12px;color:#c9d3dc;font-size:1rem;line-height:1.6;max-width:58ch}
+    .top-meta{display:grid;gap:12px;justify-items:end}
+    .meta-card{background:rgba(23,28,33,.88);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:14px 16px;min-width:220px;backdrop-filter:blur(10px)}
+    .meta-card strong{display:block;font:600 .72rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#92a0af;margin-bottom:6px}
+    .meta-card span{display:block;color:#fff;font-size:1rem}
+    .notify-btn{background:transparent;border:1px solid #495563;color:#d8e1ea;padding:9px 16px;border-radius:999px;cursor:pointer;font:600 .78rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:all .2s}
+    .notify-btn:hover{border-color:#c2a365;color:#fff}
+    .summary-bar{margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    .summary-tile{background:rgba(23,28,33,.72);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:16px 18px}
+    .summary-tile strong{display:block;font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#92a0af;margin-bottom:8px}
+    .summary-tile span{font-size:1.05rem;color:#fff}
+    .warn-stack{display:grid;gap:10px;margin-top:20px}
+    .warn-banner{display:flex;gap:12px;align-items:flex-start;background:var(--warn-soft);border:1px solid rgba(240,127,100,.35);border-radius:14px;padding:14px 16px;color:#ffd3c8}
+    .warn-banner strong{color:#fff;font:600 .78rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;min-width:max-content}
+    main{margin-top:30px;display:grid;gap:24px}
+    .day-section{background:rgba(23,28,33,.78);border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:22px 20px 20px;box-shadow:0 18px 60px rgba(0,0,0,.16)}
+    .day-header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.07)}
+    .day-header h2{font-size:1.5rem;color:#fff;font-weight:600}
+    .day-header h2 span{display:inline-block;margin-left:10px;color:var(--muted);font-size:.95rem;font-weight:400}
+    .category+.category{margin-top:18px}
+    .category h3{font:600 .74rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#8fa0b1;margin-bottom:12px}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+    .card{display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px;min-height:144px}
+    .card.priority{border-color:rgba(215,168,71,.45);background:linear-gradient(180deg,rgba(46,36,17,.96),rgba(23,28,33,.96))}
+    .card.podcast{border-color:rgba(114,199,162,.45);background:linear-gradient(180deg,rgba(22,49,38,.96),rgba(23,28,33,.96))}
+    .card.rare{border-color:rgba(134,185,217,.4);background:linear-gradient(180deg,rgba(23,39,52,.96),rgba(23,28,33,.96))}
+    .card img{width:64px;height:64px;border-radius:12px;object-fit:cover;flex-shrink:0;background:var(--panel-soft)}
+    .info{min-width:0;display:grid;gap:8px;width:100%}
+    .eyebrow{font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#8ea0b2}
+    .eyebrow span{padding:0 6px;color:#59697a}
+    .title{font-size:1rem;line-height:1.35;color:#f6f8fb;word-break:break-word}
+    .channel-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+    .channel{font:600 .84rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#d6dee6}
+    .badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+    .badge{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font:600 .64rem/1.1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.1em;text-transform:uppercase;border:1px solid transparent}
+    .badge.priority{background:var(--accent-soft);color:#f0c671;border-color:rgba(215,168,71,.35)}
+    .badge.podcast{background:var(--pod-soft);color:#9ae0bc;border-color:rgba(114,199,162,.35)}
+    .badge.rare{background:var(--rare-soft);color:#a8d3ec;border-color:rgba(134,185,217,.35)}
+    .meta-row{font:500 .76rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted)}
+    .card-note{font:500 .76rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#a8d3ec}
+    .empty{color:var(--muted);font-size:1rem;line-height:1.6}
+    footer{padding-top:22px;color:#7d8d9d;font:500 .76rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    @media(max-width:720px){
+      .shell{padding:20px 14px 34px}
+      header{gap:16px}
+      .top-meta{width:100%;justify-items:stretch}
+      .meta-card{min-width:0}
+      .day-section{padding:18px 14px}
+      .cards{grid-template-columns:1fr}
+      .channel-row{flex-direction:column;align-items:flex-start}
+      .badges{justify-content:flex-start}
     }
   </style>
 </head>
 <body>
-
-<!-- Password gate -->
 <div id="gate">
   <h2>report.fernhw.com</h2>
-  <input type="password" id="pw" placeholder="password" autocomplete="current-password"/>
+  <input type="password" id="pw" placeholder="password" autocomplete="current-password">
   <button onclick="tryAuth()">Enter</button>
   <span class="err" id="err"></span>
 </div>
 
 <div id="app">
+  <div class="shell">
+    <header>
+      <div class="title-wrap">
+        <div class="kicker">Recent Download Report</div>
+        <h1>What landed, when it landed, and what turns into podcasts.</h1>
+        <p class="lede">Good morning. This view keeps the latest 4 days in download order, split into priority, podcastable, rare drops, and everything else.</p>
+      </div>
+      <div class="top-meta">
+        <div class="meta-card">
+          <strong>Report Date</strong>
+          <span>2026-04-24</span>
+        </div>
+        <div class="meta-card">
+          <strong>Updated</strong>
+          <span>2026-04-24 00:54</span>
+        </div>
+        <button class="notify-btn" onclick="subscribeNotify()">Get notified</button>
+      </div>
+    </header>
 
-<header>
-  <div>
-    <h1>What to Watch</h1>
-    <div class="disk"><!-- DISK_STATS --></div>
+    <section class="summary-bar">
+      <div class="summary-tile">
+        <strong>Library Storage</strong>
+        <span>727.72 GB used &middot; 1.72 TB free</span>
+      </div>
+      <div class="summary-tile">
+        <strong>Recent Downloads</strong>
+        <span>60 items across 4 days</span>
+      </div>
+      <div class="summary-tile">
+        <strong>Today</strong>
+        <span>8 downloads on Friday</span>
+      </div>
+    </section>
+
+    <div class="warn-stack"></div>
+
+    <main>
+      <section class="day-section"><div class="day-header"><h2>Today <span>Friday, April 24</span></h2></div><section class="category"><h3>Podcastable</h3><div class="cards"><article class="card podcast">
+  <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 12:06 AM <span>&middot;</span> Podcastable</div>
+    <div class="title">Go Ahead, Make Me Cry | Semi-Ramblomatic</div>
+    <div class="channel-row">
+      <div class="channel">Second Wind</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
   </div>
-  <div class="meta">
-    <span><!-- REPORT_DATE --></span>
-    <span><!-- GREETING --></span>
-    <button class="notify-btn" onclick="subscribeNotify()">Get notified</button>
+</article>
+<article class="card podcast">
+  <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 12:05 AM <span>&middot;</span> Podcastable</div>
+    <div class="title">The Second Wind Games Showcase - Spring 2026 Edition</div>
+    <div class="channel-row">
+      <div class="channel">Second Wind</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
   </div>
-</header>
+</article></div></section><section class="category"><h3>Everything Else</h3><div class="cards"><article class="card">
+  <img src="thumbs/digitalfoundry.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 12:12 AM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Boost Pragmata PS5 Resolution: How To Play At 1440p Instead Of Standard 1080p</div>
+    <div class="channel-row">
+      <div class="channel">Digital Foundry</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/digitalfoundry.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 12:11 AM <span>&middot;</span> Not podcastable</div>
+    <div class="title">DF Retro EX: Outlive 25 - The Cult Classic PC RTS Remastered [Sponsored]</div>
+    <div class="channel-row">
+      <div class="channel">Digital Foundry</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/scottsstash.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 12:10 AM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Wii U vs. PlayStation Vita</div>
+    <div class="channel-row">
+      <div class="channel">Scott's Stash</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/scottsstash.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 12:08 AM <span>&middot;</span> Not podcastable</div>
+    <div class="title">The Most Useless amiibo Figures</div>
+    <div class="channel-row">
+      <div class="channel">Scott's Stash</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 24, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/biga.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 12:07 AM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Tim Is Finally Cooked</div>
+    <div class="channel-row">
+      <div class="channel">Big A</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/biga.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 12:06 AM <span>&middot;</span> Not podcastable</div>
+    <div class="title">He Apologized</div>
+    <div class="channel-row">
+      <div class="channel">Big A</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 24, 2026</div>
+    
+  </div>
+</article></div></section></section><section class="day-section"><div class="day-header"><h2>Yesterday <span>Thursday, April 23</span></h2></div><section class="category"><h3>Watch First</h3><div class="cards"><article class="card priority">
+  <img src="thumbs/schaffrillasproductions.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:00 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Invincible S4 - IT'S (almost) PEAK</div>
+    <div class="channel-row">
+      <div class="channel">Schaffrillas Productions</div>
+      <div class="badges"><span class="badge priority">Watch First</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card priority">
+  <img src="thumbs/echidnut.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 10:59 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Subaru as a Villain | Re:ZERO Season 4 Episode 3 Reaction/Analysis</div>
+    <div class="channel-row">
+      <div class="channel">Echidnut</div>
+      <div class="badges"><span class="badge priority">Watch First</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card priority">
+  <img src="thumbs/fireship.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 10:59 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">I finally found a use case for OpenClaw…</div>
+    <div class="channel-row">
+      <div class="channel">Fireship</div>
+      <div class="badges"><span class="badge priority">Watch First</span><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article></div></section><section class="category"><h3>Podcastable</h3><div class="cards"><article class="card podcast">
+  <img src="thumbs/techlinked.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:41 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">Uh, Is AMD Ok?</div>
+    <div class="channel-row">
+      <div class="channel">TechLinked</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:34 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">what the f*ck..</div>
+    <div class="channel-row">
+      <div class="channel">Asmongold TV</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:33 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">Alex Jones was right..</div>
+    <div class="channel-row">
+      <div class="channel">Asmongold TV</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:29 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">This is embarrassing..</div>
+    <div class="channel-row">
+      <div class="channel">Asmongold TV</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:28 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">Not again..</div>
+    <div class="channel-row">
+      <div class="channel">Asmongold TV</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:27 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">So I Tried Vampire Crawlers..</div>
+    <div class="channel-row">
+      <div class="channel">Asmongold TV</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:20 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">Johnny Somali is done for good..</div>
+    <div class="channel-row">
+      <div class="channel">Asmongold TV</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:20 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">The UK government is evil</div>
+    <div class="channel-row">
+      <div class="channel">Asmongold TV</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:18 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">He's been having a BAD time..</div>
+    <div class="channel-row">
+      <div class="channel">Asmongold TV</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 24, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:09 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">Handheld Streaming Guide (Apollo, Moonlight, etc)</div>
+    <div class="channel-row">
+      <div class="channel">Retro Game Corps</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article></div></section><section class="category"><h3>Everything Else</h3><div class="cards"><article class="card">
+  <img src="thumbs/gamersnexus.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:44 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">DO NOT BUY: AMD Ryzen 9 9950X3D2 CPU Review &amp; Benchmarks | 24 Charts in 24 Hours</div>
+    <div class="channel-row">
+      <div class="channel">Gamers Nexus</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/gamelinked.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:40 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Where’s Our Money, Nintendo?</div>
+    <div class="channel-row">
+      <div class="channel">GameLinked</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 24, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/spawnwave.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:38 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Gamers Are Suing Nintendo</div>
+    <div class="channel-row">
+      <div class="channel">Spawn Wave</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:38 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Overwatch – Nintendo Switch 2 Comparison Trailer</div>
+    <div class="channel-row">
+      <div class="channel">Nintendo of America</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:37 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">LEGO Fortnite NINJAGO – Embers of Chaos Trailer – Nintendo Switch 2</div>
+    <div class="channel-row">
+      <div class="channel">Nintendo of America</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:37 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Yoshi and the Mysterious Book – Overview Trailer – Nintendo Switch 2</div>
+    <div class="channel-row">
+      <div class="channel">Nintendo of America</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:35 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Annapurna Interactive – 2026 Lineup Trailer – Nintendo Switch 2</div>
+    <div class="channel-row">
+      <div class="channel">Nintendo of America</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/skillup.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:17 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">I recommend: Diablo IV - Lord of Hatred (Review)</div>
+    <div class="channel-row">
+      <div class="channel">Skill Up</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/connordawg.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:05 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">These YouTubers Weren't Happy that I Watched Their First Videos...</div>
+    <div class="channel-row">
+      <div class="channel">ConnorDawg</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/garnt.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:02 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">1 GAMER VS 100 WOMEN</div>
+    <div class="channel-row">
+      <div class="channel">Garnt</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/internettoday.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:01 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Gerrymandering: The GOP Gets a Taste of Its Own Medicine</div>
+    <div class="channel-row">
+      <div class="channel">Internet Today</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 23, 2026</div>
+    
+  </div>
+</article></div></section></section><section class="day-section"><div class="day-header"><h2>Wednesday, April 22</h2></div><section class="category"><h3>Watch First</h3><div class="cards"><article class="card priority">
+  <img src="thumbs/videogamedunkey.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 03:05 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Pragmata</div>
+    <div class="channel-row">
+      <div class="channel">videogamedunkey</div>
+      <div class="badges"><span class="badge priority">Watch First</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article></div></section><section class="category"><h3>Podcastable</h3><div class="cards"><article class="card podcast">
+  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 03:10 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">This reviewer should never touch another video game..</div>
+    <div class="channel-row">
+      <div class="channel">Asmongold TV</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:34 AM <span>&middot;</span> Podcastable</div>
+    <div class="title">Atari Versus Nintendo: The Curse of the Rabbit | Fully Ramblomatic</div>
+    <div class="channel-row">
+      <div class="channel">Second Wind</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:34 AM <span>&middot;</span> Podcastable</div>
+    <div class="title">Doordash girl got what she deserved..</div>
+    <div class="channel-row">
+      <div class="channel">Asmongold TV</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 09:38 AM <span>&middot;</span> Podcastable</div>
+    <div class="title">What a stupid idiot..</div>
+    <div class="channel-row">
+      <div class="channel">Asmongold TV</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 07:04 AM <span>&middot;</span> Podcastable</div>
+    <div class="title">Everyone expected this..</div>
+    <div class="channel-row">
+      <div class="channel">Asmongold TV</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article></div></section><section class="category"><h3>Everything Else</h3><div class="cards"><article class="card">
+  <img src="thumbs/cupcake4all.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 03:13 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Pragmata is a problem</div>
+    <div class="channel-row">
+      <div class="channel">Cupcake4all</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/papameat.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 03:09 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Coachella Is The Worst...</div>
+    <div class="channel-row">
+      <div class="channel">Papa Meat</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/legendarydrops.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 03:06 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">This game is everything they hate</div>
+    <div class="channel-row">
+      <div class="channel">Legendary Drops</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/lgr.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 09:44 AM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Digisette Duo - Odd Cassette Tape MP3 Player from 2000</div>
+    <div class="channel-row">
+      <div class="channel">LGR</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/yessenia.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 09:37 AM <span>&middot;</span> Not podcastable</div>
+    <div class="title">THIS PATCH LOOKS INSANE! 3.3 SPECIAL PROGRAM REACTION | Wuthering Waves VOD</div>
+    <div class="channel-row">
+      <div class="channel">Yessenia</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article></div></section></section><section class="day-section"><div class="day-header"><h2>Tuesday, April 21</h2></div><section class="category"><h3>Watch First</h3><div class="cards"><article class="card priority">
+  <img src="thumbs/schaffrillasproductions.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 03:05 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Every Smiling Friends Episode Ranked (All 3 Seasons)</div>
+    <div class="channel-row">
+      <div class="channel">Schaffrillas Productions</div>
+      <div class="badges"><span class="badge priority">Watch First</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card priority">
+  <img src="thumbs/fireship.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 03:04 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">Claude just got another superpower...</div>
+    <div class="channel-row">
+      <div class="channel">Fireship</div>
+      <div class="badges"><span class="badge priority">Watch First</span><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article></div></section><section class="category"><h3>Podcastable</h3><div class="cards"><article class="card podcast">
+  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 07:06 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">&quot;Stop Nick Shirley Act&quot;</div>
+    <div class="channel-row">
+      <div class="channel">Asmongold TV</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/theprimetime.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 03:10 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">We are near peak hype</div>
+    <div class="channel-row">
+      <div class="channel">The PrimeTime</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/bellularnews.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 03:09 PM <span>&middot;</span> Podcastable</div>
+    <div class="title">The EU Just Took Stop Killing Games Seriously</div>
+    <div class="channel-row">
+      <div class="channel">Bellular News</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 11:34 AM <span>&middot;</span> Podcastable</div>
+    <div class="title">Exit 8 Thoughts About Liminal Horror | The Backdrop</div>
+    <div class="channel-row">
+      <div class="channel">Second Wind</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 09:37 AM <span>&middot;</span> Podcastable</div>
+    <div class="title">There's a New PS2 Emulator Fork on Android</div>
+    <div class="channel-row">
+      <div class="channel">Retro Game Corps</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card podcast">
+  <img src="thumbs/techdweeb.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 07:05 AM <span>&middot;</span> Podcastable</div>
+    <div class="title">The EASY Mini PC Steam &amp; Retro Console</div>
+    <div class="channel-row">
+      <div class="channel">TechDweeb</div>
+      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article></div></section><section class="category"><h3>Everything Else</h3><div class="cards"><article class="card">
+  <img src="thumbs/spawnwave.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 08:04 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Wait...The Price Actually Went Down?!</div>
+    <div class="channel-row">
+      <div class="channel">Spawn Wave</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/scottsstash.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 07:07 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Mario on Handhelds vs. Consoles</div>
+    <div class="channel-row">
+      <div class="channel">Scott's Stash</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 22, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 03:07 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">OPUS: Prism Peak – Launch Trailer – Nintendo Switch 2</div>
+    <div class="channel-row">
+      <div class="channel">Nintendo of America</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/marquesbrownlee.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 03:06 PM <span>&middot;</span> Not podcastable</div>
+    <div class="title">So This is Peak Smartphone</div>
+    <div class="channel-row">
+      <div class="channel">Marques Brownlee</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/digitalfoundry.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 09:43 AM <span>&middot;</span> Not podcastable</div>
+    <div class="title">DF Direct Q+A: Will PSSR Lower Game Resolutions? Starfield Switch 2, Is RTX 5080 OK For Path Tracing</div>
+    <div class="channel-row">
+      <div class="channel">Digital Foundry</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/gamersnexus.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 09:41 AM <span>&middot;</span> Not podcastable</div>
+    <div class="title">BLACKLISTED by AMD | AMD's Dirty Tactics</div>
+    <div class="channel-row">
+      <div class="channel">Gamers Nexus</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 09:38 AM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Splatoon Raiders — Release Date Revealed — Nintendo Switch 2</div>
+    <div class="channel-row">
+      <div class="channel">Nintendo of America</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/yessenia.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 09:35 AM <span>&middot;</span> Not podcastable</div>
+    <div class="title">I HAVE MORE QUESTIONS! GOOD WORLD HARD MODE | Goddess of Victory: NIKKE VOD</div>
+    <div class="channel-row">
+      <div class="channel">Yessenia</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article>
+<article class="card">
+  <img src="thumbs/internettoday.jpg" onerror="this.style.display='none'" alt="">
+  <div class="info">
+    <div class="eyebrow">Downloaded 07:04 AM <span>&middot;</span> Not podcastable</div>
+    <div class="title">Desperate Trump Clears Path for Legal Psychedelics?!</div>
+    <div class="channel-row">
+      <div class="channel">Internet Today</div>
+      <div class="badges"></div>
+    </div>
+    <div class="meta-row">Uploaded Apr 21, 2026</div>
+    
+  </div>
+</article></div></section></section>
+    </main>
 
-<!-- WARN_BANNER -->
-
-<!-- SECTIONS -->
-
-<footer>report.fernhw.com &middot; updated <!-- UPDATED --></footer>
+    <footer>report.fernhw.com &middot; updated 2026-04-24 00:54</footer>
+  </div>
 </div>
 
 <script>
-// --- Auth ---
 const PW_HASH = "5e7601a1ac99c87a65120283ae1b380901ca55bb402dce34e1a4ec51c20d29bb";
-const COOKIE  = "rauth";
+const COOKIE = "rauth";
 
 async function sha256hex(str) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
 function getCookie(name) {
-  return document.cookie.split(";").map(c=>c.trim()).filter(c=>c.startsWith(name+"=")).map(c=>c.slice(name.length+1))[0] || "";
+  return document.cookie.split(";").map(c => c.trim()).filter(c => c.startsWith(name + "=")).map(c => c.slice(name.length + 1))[0] || "";
 }
 
 function setCookie(name, val, days) {
-  const exp = new Date(Date.now() + days*864e5).toUTCString();
-  document.cookie = `${name}=${val};expires=${exp};path=/;SameSite=Strict`;
+  const exp = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = name + "=" + val + ";expires=" + exp + ";path=/;SameSite=Strict";
 }
 
 async function tryAuth(auto) {
   const input = auto || document.getElementById("pw").value;
   const h = await sha256hex(input);
   if (h === PW_HASH) {
-    setCookie(COOKIE, h.slice(0,16), 365);
+    setCookie(COOKIE, h.slice(0, 16), 365);
     showApp();
   } else if (!auto) {
     document.getElementById("err").textContent = "wrong password";
@@ -123,13 +945,13 @@ function showApp() {
   document.getElementById("app").style.display = "block";
 }
 
-document.getElementById("pw").addEventListener("keydown", e => { if(e.key==="Enter") tryAuth(); });
+document.getElementById("pw").addEventListener("keydown", e => {
+  if (e.key === "Enter") tryAuth();
+});
 
-// Check cookie or ?p= param on load
 (async () => {
   const stored = getCookie(COOKIE);
   if (stored) {
-    // Verify stored token still matches (first 16 chars of real hash)
     const expected = PW_HASH.slice(0, 16);
     if (stored === expected) { showApp(); return; }
   }
@@ -145,28 +967,45 @@ document.getElementById("pw").addEventListener("keydown", e => { if(e.key==="Ent
   document.getElementById("gate").style.display = "flex";
 })();
 
-// --- OneSignal subscribe button ---
-async function subscribeNotify() {
-  if (!window.OneSignal) { alert("OneSignal not loaded"); return; }
-  try {
-    const perm = await OneSignal.Notifications.requestPermission();
-    if (perm) {
-      const btn = document.querySelector(".notify-btn");
-      btn.textContent = "Subscribed!";
-      btn.style.color = "#5a9a5a";
-      btn.style.borderColor = "#2a5a2a";
-      btn.disabled = true;
-    }
-  } catch(e) { console.warn("OneSignal:", e); }
+function waitForOneSignal() {
+  return new Promise(resolve => {
+    if (window.OneSignal && window.OneSignal.Notifications) { resolve(window.OneSignal); return; }
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(os => resolve(os));
+  });
 }
 
-// Auto-prompt after 3s if not yet subscribed
-setTimeout(async () => {
-  if (!window.OneSignal) return;
-  const subbed = await OneSignal.User.PushSubscription.optedIn;
-  if (!subbed) OneSignal.Notifications.requestPermission();
-}, 3000);
-</script>
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.navigator.standalone === true;
 
+async function subscribeNotify() {
+  if (isIOS && !isStandalone) {
+    alert('On iPhone: tap the Share button then "Add to Home Screen", then open the app and tap Get Notified.');
+    return;
+  }
+  try {
+    const os = await waitForOneSignal();
+    const perm = await os.Notifications.requestPermission();
+    if (perm) {
+      const btn = document.querySelector('.notify-btn');
+      btn.textContent = 'Subscribed!';
+      btn.style.color = '#9ae0bc';
+      btn.style.borderColor = '#3d7c5d';
+      btn.disabled = true;
+    }
+  } catch (e) {
+    console.warn('OneSignal:', e);
+  }
+}
+
+setTimeout(async () => {
+  if (isIOS && !isStandalone) return;
+  try {
+    const os = await waitForOneSignal();
+    const subbed = os.User.PushSubscription.optedIn;
+    if (!subbed) os.Notifications.requestPermission();
+  } catch (e) {}
+}, 4000);
+</script>
 </body>
 </html>

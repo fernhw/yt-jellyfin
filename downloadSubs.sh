@@ -826,26 +826,99 @@ if [ -x "$REPORT_MAKER" ]; then
   "$REPORT_MAKER"
 fi
 
-# OneSignal push notification (fires only when videos were downloaded)
+# OneSignal push notification
 ONESIGNAL_KEY=$(grep '^ONESIGNAL_REST_KEY=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
-if [ -n "$ONESIGNAL_KEY" ] && [ "$DL_COUNT" -gt 0 ]; then
-  # Build message — include 403 warning if flag exists
-  msg="${DL_COUNT} new video(s) downloaded."
+onesignal_push() {
+  local heading="$1" body="$2"
+  [ -z "$ONESIGNAL_KEY" ] && return
+  local players
+  players=$(curl -s --resolve "onesignal.com:443:104.17.111.223" \
+    "https://onesignal.com/api/v1/players?app_id=c88ae5a3-36df-4301-945f-9da65e63d87c&limit=50" \
+    -H "Authorization: Basic ${ONESIGNAL_KEY}" \
+    | python3 -c "import sys,json; d=json.load(sys.stdin); print(','.join('\"'+p['id']+'\"' for p in d.get('players',[])))" 2>/dev/null)
+  [ -z "$players" ] && return
+  curl -s -o /dev/null --resolve "onesignal.com:443:104.17.111.223" \
+    -X POST "https://onesignal.com/api/v1/notifications" \
+    -H "Authorization: Basic ${ONESIGNAL_KEY}" \
+    -H "Content-Type: application/json" \
+    -d "{\"app_id\":\"c88ae5a3-36df-4301-945f-9da65e63d87c\",\"include_player_ids\":[${players}],\"headings\":{\"en\":\"${heading}\"},\"contents\":{\"en\":\"${body}\"},\"url\":\"https://report.fernhw.com\"}"
+}
+
+if [ -n "$ONESIGNAL_KEY" ]; then
+  # 403 ban alert (always fires regardless of downloads)
   if [ -f "$YT_ROOT/.ban_detected" ]; then
-    msg="${msg} ⚠ HTTP 403 detected — check for IP ban."
+    onesignal_push "⚠ YT Mirror" "Possible IP ban detected — please change VPN and retry."
+    echo "  push: 403 ban alert sent"
   fi
-  curl -s -o /dev/null -X POST "https://onesignal.com/api/v1/notifications" \
-    -H "Authorization: Basic ${ONESIGNAL_KEY}" \
-    -H "Content-Type: application/json; charset=utf-8" \
-    -d "{\"app_id\":\"c88ae5a3-36df-4301-945f-9da65e63d87c\",\"included_segments\":[\"Subscribed Users\"],\"headings\":{\"en\":\"What to Watch\"},\"contents\":{\"en\":\"${msg}\"},\"url\":\"https://report.fernhw.com\"}"
-  echo "  push notification sent ($DL_COUNT new)"
-elif [ -n "$ONESIGNAL_KEY" ] && [ -f "$YT_ROOT/.ban_detected" ]; then
-  # Send ban alert even with no downloads
-  curl -s -o /dev/null -X POST "https://onesignal.com/api/v1/notifications" \
-    -H "Authorization: Basic ${ONESIGNAL_KEY}" \
-    -H "Content-Type: application/json; charset=utf-8" \
-    -d "{\"app_id\":\"c88ae5a3-36df-4301-945f-9da65e63d87c\",\"included_segments\":[\"Subscribed Users\"],\"headings\":{\"en\":\"⚠ YT Mirror\"},\"contents\":{\"en\":\"HTTP 403 detected — possible IP ban. No new downloads.\"},\"url\":\"https://report.fernhw.com\"}"
-  echo "  push notification sent (403 alert)"
+
+  if [ "$DL_COUNT" -gt 0 ]; then
+    # --- Build lists of priority / podcastable / regular channel names from DL_ITEMS ---
+    # DL_ITEMS format: channel:title|channel:title|...
+    PRI_NOTIF_CHANS=""
+    POD_NOTIF_CHANS=""
+    REG_COUNT=0
+
+    # Read priority and podcastable lists (lowercase, pipe-separated)
+    pri_handles=$(awk '/^\[priority\]/{f=1;next} /^\[/{f=0} f && /^[^#]/ && NF{print tolower($1)}' "$CONFIG_FILE" | tr '\n' '|' | sed 's/|$//')
+    pod_handles=$(awk '/^\[podcastable\]/{f=1;next} /^\[/{f=0} f && /^[^#]/ && NF{print tolower($1)}' "$CONFIG_FILE" | tr '\n' '|' | sed 's/|$//')
+
+    printf '%s\n' "$DL_ITEMS" | tr '|' '\n' | while IFS=: read -r ch _rest; do
+      [ -z "$ch" ] && continue
+      ch_norm=$(printf '%s' "$ch" | tr '[:upper:]' '[:lower:]' | sed "s/[@ _'\"]//g")
+      is_pri=$(printf '%s\n' "$pri_handles" | tr '|' '\n' | while IFS= read -r p; do
+        p_norm=$(printf '%s' "$p" | tr '[:upper:]' '[:lower:]' | sed "s/[@ _'\"]//g")
+        [ "$ch_norm" = "$p_norm" ] && echo "Y"
+      done | head -1)
+      if [ "$is_pri" = "Y" ]; then
+        echo "PRI:$ch"
+      else
+        is_pod=$(printf '%s\n' "$pod_handles" | tr '|' '\n' | while IFS= read -r p; do
+          p_norm=$(printf '%s' "$p" | tr '[:upper:]' '[:lower:]' | sed "s/[@ _'\"]//g")
+          [ "$ch_norm" = "$p_norm" ] && echo "Y"
+        done | head -1)
+        if [ "$is_pod" = "Y" ]; then
+          echo "POD:$ch"
+        else
+          echo "REG:$ch"
+        fi
+      fi
+    done > "/tmp/notif_cats_$$"
+
+    pri_chans=$(grep '^PRI:' "/tmp/notif_cats_$$" | sed 's/^PRI://' | sort -u | tr '\n' ',' | sed 's/,$//')
+    pod_chans=$(grep '^POD:' "/tmp/notif_cats_$$" | sed 's/^POD://' | sort -u | tr '\n' ',' | sed 's/,$//')
+    reg_count=$(grep -c '^REG:' "/tmp/notif_cats_$$" 2>/dev/null || echo 0)
+    rm -f "/tmp/notif_cats_$$"
+
+    # Priority channels → notify immediately
+    if [ -n "$pri_chans" ]; then
+      onesignal_push "What to Watch" "New from ${pri_chans}."
+      echo "  push: priority channels — $pri_chans"
+    fi
+
+    # Podcastable channels (not already priority) → notify as podcasts
+    if [ -n "$pod_chans" ]; then
+      onesignal_push "New Podcasts In" "${pod_chans} posted."
+      echo "  push: podcast channels — $pod_chans"
+    fi
+
+    # Regular channels → at most once per day
+    if [ "$reg_count" -gt 0 ]; then
+      last_batch=$(grep '^last_batch_notify=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+      today=$(date '+%Y-%m-%d')
+      if [ "${last_batch:-}" != "$today" ]; then
+        onesignal_push "What to Watch" "${reg_count} new video(s) from your other channels."
+        echo "  push: regular batch ($reg_count)"
+        # Update last batch date
+        if grep -q '^last_batch_notify=' "$VARS_FILE" 2>/dev/null; then
+          sed -i '' "s/^last_batch_notify=.*/last_batch_notify=$today/" "$VARS_FILE"
+        else
+          printf '\nlast_batch_notify=%s\n' "$today" >> "$VARS_FILE"
+        fi
+      else
+        echo "  push: regular batch skipped (already sent today)"
+      fi
+    fi
+  fi
 fi
 # Clear 403 flag after reporting
 rm -f "$YT_ROOT/.ban_detected"

@@ -1,15 +1,14 @@
-last_scan=1777001868455
-total_videos=2011
-updated=2026-04-23 22:37:48
-report_date=2026-04-23
+last_scan=1777009449192
+total_videos=2043
+updated=2026-04-24 00:44:09
+report_date=2026-04-24
 downloaded_today=0
 deleted_today=0
-skipped_today=3
+skipped_today=0
 channels_scanned=91
 channels_total=91
 errors_last_run=0
 errors_list=
 downloaded_list=
 deleted_list=
-skipped_list=members-only:https://www.youtube.com/watch?v=x1_dFveCEyA|members-only:https://www.youtube.com/watch?v=OIGjimuj37Q|members-only:https://www.youtube.com/watch?v=ZANFhJ9HYsM
-ONESIGNAL_REST_KEY=
+skipped_list=
