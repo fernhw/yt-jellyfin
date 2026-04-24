@@ -87,8 +87,20 @@ find_cover() {
 
 emit() {
   # Add to display cache only if this item isn't tracked yet; keep original added_at
+  # Exception: if cached item has no thumb but we now have one, update it
   local cat="$1" title="$2" sub="$3" thumb="$4"
-  _in_cache "$cat" "$title" && return
+  if _in_cache "$cat" "$title"; then
+    # If we now have a thumb and the cached entry doesn't, update it
+    if [ -n "$thumb" ]; then
+      local cached_thumb
+      cached_thumb=$(awk -F'\037' -v c="$cat" -v t="$title" '$1==c && $2==t{print $4; exit}' "$_cache_tmp")
+      if [ -z "$cached_thumb" ]; then
+        local _fs; _fs=$(printf '\037')
+        awk -F'\037' -v c="$cat" -v t="$title" -v th="$thumb" 'BEGIN{OFS="\037"} $1==c && $2==t{$4=th} {print}' "$_cache_tmp" > "${_cache_tmp}.new" && mv "${_cache_tmp}.new" "$_cache_tmp"
+      fi
+    fi
+    return
+  fi
   printf '%s\037%s\037%s\037%s\037%s\n' "$cat" "$title" "$sub" "$thumb" "$now" >> "$_cache_tmp"
 }
 
@@ -134,6 +146,7 @@ ep_code() {
 
 # ── MOVIES ────────────────────────────────────────────────────────────────────
 if [ -d "$MOVIES_DIR" ]; then
+  # Subdirectory-based movies
   find "$MOVIES_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | while IFS= read -r d; do
     is_new "$d" || continue
     name=$(basename "$d")
@@ -141,6 +154,27 @@ if [ -d "$MOVIES_DIR" ]; then
     cover=$(find_cover "$d")
     thumb=""; [ -n "$cover" ] && thumb=$(copy_thumb "$cover" "movie-$(safe_key "$name")")
     emit "movie" "$(safe_html "$t")" "" "$thumb" "$(fmtime "$d")"
+  done
+  # Loose video files in Movies root (e.g. Name.Year.mkv with optional poster.jpg)
+  find "$MOVIES_DIR" -mindepth 1 -maxdepth 1 -type f \( -iname "*.mkv" -o -iname "*.mp4" -o -iname "*.m4v" -o -iname "*.avi" \) 2>/dev/null | sort | while IFS= read -r f; do
+    ft=$(fmtime "$f")
+    # Detect if within display window OR has a newer poster alongside it
+    base="${f%.*}"
+    cover=""
+    for suffix in "-poster.jpg" ".jpg" "-thumb.jpg"; do
+      [ -f "${base}${suffix}" ] && cover="${base}${suffix}" && break
+    done
+    cover_mt=0; [ -n "$cover" ] && cover_mt=$(fmtime "$cover")
+    # Include if file or poster is new since last scan, or file is within 30h window
+    _recent=0
+    [ "$ft" -gt "$last_scan" ] && _recent=1
+    [ "$cover_mt" -gt "$last_scan" ] && _recent=1
+    [ $(( now - ft )) -le $DISPLAY_WINDOW ] && _recent=1
+    [ "$_recent" -eq 0 ] && continue
+    name=$(basename "$f")
+    t=$(clean_movie "${name%.*}"); [ -z "$t" ] && t="${name%.*}"
+    thumb=""; [ -n "$cover" ] && thumb=$(copy_thumb "$cover" "movie-$(safe_key "${name%.*}")")
+    emit "movie" "$(safe_html "$t")" "" "$thumb" "$ft"
   done
 fi
 
@@ -201,11 +235,26 @@ fi
 # ── AUDIOBOOKS ────────────────────────────────────────────────────────────────
 if [ -d "$BOOKS_DIR" ]; then
   find "$BOOKS_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | while IFS= read -r d; do
-    is_new "$d" || continue
     name=$(basename "$d")
     t=$(clean_book "$name"); [ -z "$t" ] && t="$name"
+    key="book-$(safe_key "$name")"
+    # Skip only if not new AND thumb already extracted (nothing to do)
+    if ! is_new "$d" && [ -f "$THUMBS_DIR/${key}.jpg" ]; then continue; fi
     cover=$(find_cover "$d")
-    thumb=""; [ -n "$cover" ] && thumb=$(copy_thumb "$cover" "book-$(safe_key "$name")")
+    # No folder art — try extracting embedded cover from audio file
+    if [ -z "$cover" ]; then
+      _audio=$(find "$d" -maxdepth 1 -type f \( -iname "*.m4b" -o -iname "*.mp3" -o -iname "*.m4a" \) 2>/dev/null | head -1)
+      if [ -n "$_audio" ]; then
+        _extracted="$THUMBS_DIR/${key}.jpg"
+        ffmpeg -y -i "$_audio" -an -vcodec copy "$_extracted" -loglevel error 2>/dev/null && cover="$_extracted"
+      fi
+    fi
+    thumb=""
+    if [ -n "$cover" ] && [ "$cover" != "$THUMBS_DIR/${key}.jpg" ]; then
+      thumb=$(copy_thumb "$cover" "$key")
+    elif [ -f "$THUMBS_DIR/${key}.jpg" ]; then
+      thumb="media-thumbs/${key}.jpg"
+    fi
     emit "book" "$(safe_html "$t")" "" "$thumb" "$(fmtime "$d")"
   done
 fi
@@ -216,7 +265,6 @@ if [ -d "$MANGA_DIR" ]; then
   find "$MANGA_DIR" -maxdepth 2 \( -iname "*.cbz" -o -iname "*.epub" -o -iname "*.pdf" \) 2>/dev/null \
     | sort | while IFS= read -r f; do
     mt=$(fmtime "$f")
-    [ "$mt" -le "$last_scan" ] && continue
     series=$(clean_manga_series "$(basename "$f")")
     [ -z "$series" ] && continue
     printf '%s\t%s\n' "$series" "$mt"
@@ -230,7 +278,27 @@ if [ -d "$MANGA_DIR" ]; then
       for (s in count) printf "%s\t%d\t%s\n", s, count[s], mtime[s]
     }' "$manga_raw" | sort | while IFS=$'\t' read -r series count mt; do
       [ "$count" -gt 1 ] && sub="${count} volumes" || sub="1 volume"
-      emit "manga" "$(safe_html "$series")" "$(safe_html "$sub")" "" "$mt"
+      key="manga-$(safe_key "$series")"
+      # Extract cover from first volume's first page if not already cached
+      _mthumb=""
+      # Remove empty/broken thumb so we retry
+      if [ -f "$THUMBS_DIR/${key}.jpg" ] && [ ! -s "$THUMBS_DIR/${key}.jpg" ]; then
+        rm -f "$THUMBS_DIR/${key}.jpg"
+      fi
+      if [ ! -f "$THUMBS_DIR/${key}.jpg" ]; then
+        _first_cbz=$(find "$MANGA_DIR" -maxdepth 1 -iname "*.cbz" 2>/dev/null | sort | grep -i "$(printf '%s' "$series" | cut -c1-20)" | head -1)
+        if [ -n "$_first_cbz" ]; then
+          # zipinfo -1 gives one clean filename per line (handles spaces correctly)
+          _page=$(zipinfo -1 "$_first_cbz" 2>/dev/null | grep -iE '\.(jpg|jpeg|png)$' | sort | head -1)
+          if [ -n "$_page" ]; then
+            unzip -p "$_first_cbz" "$_page" > "$THUMBS_DIR/${key}.jpg" 2>/dev/null
+            # Remove if extraction failed (0 bytes)
+            [ -s "$THUMBS_DIR/${key}.jpg" ] || rm -f "$THUMBS_DIR/${key}.jpg"
+          fi
+        fi
+      fi
+      [ -f "$THUMBS_DIR/${key}.jpg" ] && _mthumb="media-thumbs/${key}.jpg"
+      emit "manga" "$(safe_html "$series")" "$(safe_html "$sub")" "$_mthumb" "$mt"
     done
   fi
   rm -f "$manga_raw"
@@ -238,7 +306,8 @@ fi
 
 # ── Save state ─────────────────────────────────────────────────────────────
 cp "$_cache_tmp" "$CACHE_FILE"
-cat "$_cache_tmp" > "$SCAN_OUT"
+# Sort by added_at (field 5) descending so newest items appear first in each category
+awk -F'\037' 'BEGIN{OFS="\037"} {print $5, $0}' "$_cache_tmp" | sort -t"$(printf '\037')" -k1,1rn | cut -d"$(printf '\037')" -f2- > "$SCAN_OUT"
 rm -f "$_cache_tmp"
 printf 'last_scan=%s\n' "$now" > "$STATE_FILE"
 total=$(wc -l < "$SCAN_OUT" | tr -d ' ')

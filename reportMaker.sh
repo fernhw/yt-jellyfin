@@ -22,7 +22,8 @@ CONFIG="$SCRIPT_DIR/channelConfig.md"
 VARS_FILE="$SCRIPT_DIR/varsYT.md"
 JELLYFIN_APP_URLS="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"
 ABS_APP_URLS="audiobooth://"
-STILL_APP_URLS="still://"
+STILL_APP_URLS="Still://"
+FINER_APP_URLS="Finer://"
 
 TODAY=$(date '+%Y-%m-%d')
 NOW_HUMAN=$(date '+%B %d, %Y at %I:%M %p')
@@ -449,6 +450,7 @@ if [ -n "$RECENT_VIDEOS" ]; then
       is_podcast=1
       if [ "$bucket" = "nonpriority" ]; then
         card_classes=" podcast"
+        bucket="podcast"
       elif [ "$bucket" = "priority" ]; then
         card_classes=" priority podcast"
       fi
@@ -492,8 +494,12 @@ if [ -n "$RECENT_VIDEOS" ]; then
       card_link_attrs='data-app-urls="'"${app_hrefs}"'"'
     fi
 
+    # Podcast cards keep data-bucket=nonpriority so the Non-Priority filter chip includes them
+    filter_bucket="${bucket}"
+    [ "$bucket" = "podcast" ] && filter_bucket="nonpriority"
+
     cat >> "$WEB_TMP_DIR/${download_day}.${bucket}.html" <<CARD
-<a class="card-link" href="#" ${card_link_attrs} data-filter-text="${safe_filter_text}" data-bucket="${bucket}" aria-label="${launch_label}: ${safe_title}">
+<a class="card-link" href="#" ${card_link_attrs} data-filter-text="${safe_filter_text}" data-bucket="${filter_bucket}" aria-label="${launch_label}: ${safe_title}">
   <article class="card${card_classes}">
     <img src="${thumb_path}" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -518,8 +524,11 @@ for download_day in $(printf '%s' "$DAY_ORDER"); do
   if [ -s "$WEB_TMP_DIR/${download_day}.priority.html" ]; then
     day_blocks="${day_blocks}<section class=\"category\"><h3>Priority Videos</h3><div class=\"cards\">$(cat "$WEB_TMP_DIR/${download_day}.priority.html")</div></section>"
   fi
+  if [ -s "$WEB_TMP_DIR/${download_day}.podcast.html" ]; then
+    day_blocks="${day_blocks}<section class=\"category\"><h3>Podcasts</h3><div class=\"cards\">$(cat "$WEB_TMP_DIR/${download_day}.podcast.html")</div></section>"
+  fi
   if [ -s "$WEB_TMP_DIR/${download_day}.nonpriority.html" ]; then
-    day_blocks="${day_blocks}<section class=\"category\"><h3>Non-Priority</h3><div class=\"cards\">$(cat "$WEB_TMP_DIR/${download_day}.nonpriority.html")</div></section>"
+    day_blocks="${day_blocks}<section class=\"category\"><h3>Other Videos</h3><div class=\"cards\">$(cat "$WEB_TMP_DIR/${download_day}.nonpriority.html")</div></section>"
   fi
 
   [ -z "$day_blocks" ] && continue
@@ -548,7 +557,7 @@ UPDATED_AT=$(date '+%Y-%m-%d %H:%M')
 
 # Run media library scan
 bash "$SCRIPT_DIR/mediaScan.sh" "$MEDIA_SCAN_OUT" 2>/dev/null || true
-MEDIA_SECTIONS_HTML=$(build_media_sections_html "$MEDIA_SCAN_OUT" "$JELLYFIN_APP_URLS" "$ABS_APP_URLS" "$STILL_APP_URLS")
+MEDIA_SECTIONS_HTML=$(build_media_sections_html "$MEDIA_SCAN_OUT" "$JELLYFIN_APP_URLS" "$ABS_APP_URLS" "$STILL_APP_URLS" "$FINER_APP_URLS")
 
 cat > "$HTML_OUT" <<HTML
 <!DOCTYPE html>
@@ -823,7 +832,8 @@ function waitForOneSignal() {
   });
 }
 
-const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isIpadOS = /Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || isIpadOS;
 const isStandalone = window.navigator.standalone === true;
 const rootStyle = document.documentElement.style;
 const themeMeta = document.querySelector('meta[name="theme-color"]');
@@ -832,14 +842,14 @@ function tryAppUrls(appUrls) {
   const allUrls = appUrls.split('|').filter(Boolean);
   if (!allUrls.length) return;
 
-  // On non-mobile, skip app schemes and go straight to the https:// fallback
-  const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent);
+  // iPadOS 13+ reports Macintosh UA — detect via touch points
+  const isIpadOS = /Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
+  const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent) || isIpadOS;
   const httpUrls = allUrls.filter(u => u.startsWith('http'));
-  const urls = (isMobile || !httpUrls.length) ? allUrls : httpUrls;
-  if (!urls.length) return;
-
-  // On non-mobile a plain http URL just navigates directly
-  if (!isMobile) { window.open(urls[0], '_blank'); return; }
+  // Desktop: http-only, open new tab immediately
+  if (!isMobile) { if (httpUrls.length) window.open(httpUrls[0], '_blank'); return; }
+  // All iOS (iPhone + iPad) and Android: try every URL in order, fall through to http
+  const urls = allUrls;
 
   let i = 0;
 
@@ -1067,3 +1077,130 @@ HTML
 rm -rf "$WEB_TMP_DIR"
 
 echo "  web report written to web/index.html"
+
+# ── Push notifications ────────────────────────────────────────────────────────
+SECRETS_FILE="$SCRIPT_DIR/secrets.md"
+ONESIGNAL_KEY=$(grep '^ONESIGNAL_REST_KEY=' "$SECRETS_FILE" 2>/dev/null | cut -d= -f2-)
+onesignal_push() {
+  local heading="$1" body="$2"
+  [ -z "$ONESIGNAL_KEY" ] && return
+  local os_ip; os_ip=$(dig +short onesignal.com @8.8.8.8 2>/dev/null | grep -E '^[0-9]+\.' | head -1)
+  [ -z "$os_ip" ] && os_ip="104.16.160.145"
+  local players
+  players=$(curl -s --resolve "onesignal.com:443:${os_ip}" \
+    "https://onesignal.com/api/v1/players?app_id=c88ae5a3-36df-4301-945f-9da65e63d87c&limit=50" \
+    -H "Authorization: Basic ${ONESIGNAL_KEY}" \
+    | python3 -c "import sys,json; d=json.load(sys.stdin); print(','.join('\"'+p['id']+'\"' for p in d.get('players',[])))" 2>/dev/null)
+  [ -z "$players" ] && return
+  curl -s -o /dev/null --resolve "onesignal.com:443:${os_ip}" \
+    -X POST "https://onesignal.com/api/v1/notifications" \
+    -H "Authorization: Basic ${ONESIGNAL_KEY}" \
+    -H "Content-Type: application/json" \
+    -d "{\"app_id\":\"c88ae5a3-36df-4301-945f-9da65e63d87c\",\"include_player_ids\":[${players}],\"headings\":{\"en\":\"${heading}\"},\"contents\":{\"en\":\"${body}\"},\"url\":\"https://report.fernhw.com\"}"
+}
+
+if [ -n "$ONESIGNAL_KEY" ]; then
+  # 403 ban alert
+  if [ -f "$YT_ROOT/.ban_detected" ]; then
+    onesignal_push "⚠ YT Mirror" "Possible IP ban detected — please change VPN and retry."
+    echo "  push: 403 ban alert sent"
+    rm -f "$YT_ROOT/.ban_detected"
+  fi
+
+  # ── Parse media scan ───────────────────────────────────────────────────────
+  _MEDIA_NOTIF_SEEN="$SCRIPT_DIR/.media_notif_seen"
+  notif_new_shows="" notif_new_movies="" notif_new_eps="" notif_low_media=""
+  _notif_seen_new=""
+  _now_epoch=$(date +%s)
+  if [ -f "$MEDIA_SCAN_OUT" ] && [ -s "$MEDIA_SCAN_OUT" ]; then
+    _fs=$(printf '\037')
+    if [ -f "$_MEDIA_NOTIF_SEEN" ]; then
+      awk -F'\037' -v now="$_now_epoch" '($3+0) > (now - 115200)' "$_MEDIA_NOTIF_SEEN" > "$_MEDIA_NOTIF_SEEN.tmp" && mv "$_MEDIA_NOTIF_SEEN.tmp" "$_MEDIA_NOTIF_SEEN"
+    fi
+    while IFS="$_fs" read -r _mcat _mtitle _msub _mthumb _mtime; do
+      [ -z "$_mcat" ] && continue
+      _seen_key=$(printf '%s\037%s' "$_mcat" "$_mtitle")
+      if [ -f "$_MEDIA_NOTIF_SEEN" ] && grep -qF "$_seen_key" "$_MEDIA_NOTIF_SEEN" 2>/dev/null; then
+        continue
+      fi
+      _notif_seen_new="${_notif_seen_new}${_seen_key}\037${_now_epoch}\n"
+      case "$_mcat" in
+        show)
+          _kind=$(printf '%s' "$_msub" | cut -d: -f1)
+          if [ "$_kind" = "newshow" ]; then
+            notif_new_shows="${notif_new_shows:+$notif_new_shows, }${_mtitle}"
+          else
+            notif_new_eps="${notif_new_eps:+$notif_new_eps, }${_mtitle}"
+          fi
+          ;;
+        movie) notif_new_movies="${notif_new_movies:+$notif_new_movies, }${_mtitle}" ;;
+        music|book|manga) notif_low_media="${notif_low_media:+$notif_low_media, }${_mtitle}" ;;
+      esac
+    done < "$MEDIA_SCAN_OUT"
+  fi
+
+  # ── Categorize today's YT videos (dedup against seen list) ──────────────────
+  _YT_NOTIF_SEEN="$SCRIPT_DIR/.yt_notif_seen"
+  # Prune stale entries (48h)
+  if [ -f "$_YT_NOTIF_SEEN" ]; then
+    awk -F'\037' -v now="$_now_epoch" '($3+0) > (now - 172800)' "$_YT_NOTIF_SEEN" > "$_YT_NOTIF_SEEN.tmp" && mv "$_YT_NOTIF_SEEN.tmp" "$_YT_NOTIF_SEEN"
+  fi
+  pri_chans="" pod_chans=""
+  _yt_seen_new=""
+  if [ -n "$TODAYS_VIDEOS" ]; then
+    while IFS="$FIELD_SEP" read -r _chan _title _upload _dl_ts _gap; do
+      [ -z "$_chan" ] && continue
+      _yt_key=$(printf '%s\037%s' "$_chan" "$_title")
+      # Skip if already notified
+      if [ -f "$_YT_NOTIF_SEEN" ] && grep -qF "$_yt_key" "$_YT_NOTIF_SEEN" 2>/dev/null; then
+        continue
+      fi
+      _yt_seen_new="${_yt_seen_new}${_yt_key}\037${_now_epoch}\n"
+      _cn=$(printf '%s' "$_chan" | sed 's/^@//;s/ *$//')
+      if is_priority_channel "$_chan"; then
+        case "$pri_chans" in *"$_cn"*) ;; *) pri_chans="${pri_chans:+$pri_chans, }$_cn" ;; esac
+      elif is_podcastable_channel "$_chan"; then
+        case "$pod_chans" in *"$_cn"*) ;; *) pod_chans="${pod_chans:+$pod_chans, }$_cn" ;; esac
+      fi
+    done <<EOF
+$TODAYS_VIDEOS
+EOF
+  fi
+
+  # Tier A: priority YT + new shows + movies → immediate, once per item
+  _tier_a=""
+  [ -n "$pri_chans" ]        && _tier_a="${_tier_a:+$_tier_a · }New from ${pri_chans}"
+  [ -n "$notif_new_shows" ]  && _tier_a="${_tier_a:+$_tier_a · }New show: ${notif_new_shows}"
+  [ -n "$notif_new_movies" ] && _tier_a="${_tier_a:+$_tier_a · }Movie: ${notif_new_movies}"
+  if [ -n "$_tier_a" ]; then
+    onesignal_push "What to Watch" "$_tier_a"
+    echo "  push: tier A — $_tier_a"
+  fi
+
+  # Tier B: podcast YT + new episodes → immediate, once per item
+  _tier_b=""
+  [ -n "$pod_chans" ]     && _tier_b="${_tier_b:+$_tier_b · }${pod_chans} posted"
+  [ -n "$notif_new_eps" ] && _tier_b="${_tier_b:+$_tier_b · }New eps: ${notif_new_eps}"
+  if [ -n "$_tier_b" ]; then
+    onesignal_push "New in Queue" "$_tier_b"
+    echo "  push: tier B — $_tier_b"
+  fi
+
+  # Commit newly-notified YT videos to seen file (after A+B so partial sends aren't lost)
+  if [ -n "$_yt_seen_new" ]; then
+    printf '%b' "$_yt_seen_new" >> "$_YT_NOTIF_SEEN"
+  fi
+
+  # Tier C: regular non-priority YT — no notification (priority + shows/movies only)
+
+  # Tier D: music / books / manga → once per unseen item (deduped by .media_notif_seen)
+  if [ -n "$notif_low_media" ]; then
+    onesignal_push "Library Update" "New: ${notif_low_media}"
+    echo "  push: tier D library — $notif_low_media"
+  fi
+
+  # Commit newly-notified media items to seen file
+  if [ -n "$_notif_seen_new" ]; then
+    printf '%b' "$_notif_seen_new" >> "$_MEDIA_NOTIF_SEEN"
+  fi
+fi

@@ -105,6 +105,13 @@ update_vars() {
     final_skip_list="${prev_skip_list}${SKIP_ITEMS}"
   fi
 
+  # Preserve keys/config lines that must survive a rewrite
+  _preserved=""
+  for _key in last_batch_notify last_media_notify; do
+    _val=$(grep "^${_key}=" "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+    [ -n "$_val" ] && _preserved="${_preserved}${_key}=${_val}\n"
+  done
+
   cat > "$VARS_FILE" <<EOF
 last_scan=$now_ms
 total_videos=$total
@@ -121,6 +128,8 @@ downloaded_list=$final_dl_list
 deleted_list=$final_del_list
 skipped_list=$final_skip_list
 EOF
+  # Restore preserved keys
+  [ -n "$_preserved" ] && printf '%b' "$_preserved" >> "$VARS_FILE"
 }
 
 get_channels() {
@@ -821,148 +830,10 @@ if [ -f "$COLLAGE_MAKER" ]; then
   python3 "$COLLAGE_MAKER"
 fi
 
-# Generate daily report
+# Generate daily report (also handles push notifications)
 if [ -x "$REPORT_MAKER" ]; then
   "$REPORT_MAKER"
 fi
-
-# OneSignal push notification
-ONESIGNAL_KEY=$(grep '^ONESIGNAL_REST_KEY=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
-onesignal_push() {
-  local heading="$1" body="$2"
-  [ -z "$ONESIGNAL_KEY" ] && return
-  local players
-  players=$(curl -s --resolve "onesignal.com:443:104.17.111.223" \
-    "https://onesignal.com/api/v1/players?app_id=c88ae5a3-36df-4301-945f-9da65e63d87c&limit=50" \
-    -H "Authorization: Basic ${ONESIGNAL_KEY}" \
-    | python3 -c "import sys,json; d=json.load(sys.stdin); print(','.join('\"'+p['id']+'\"' for p in d.get('players',[])))" 2>/dev/null)
-  [ -z "$players" ] && return
-  curl -s -o /dev/null --resolve "onesignal.com:443:104.17.111.223" \
-    -X POST "https://onesignal.com/api/v1/notifications" \
-    -H "Authorization: Basic ${ONESIGNAL_KEY}" \
-    -H "Content-Type: application/json" \
-    -d "{\"app_id\":\"c88ae5a3-36df-4301-945f-9da65e63d87c\",\"include_player_ids\":[${players}],\"headings\":{\"en\":\"${heading}\"},\"contents\":{\"en\":\"${body}\"},\"url\":\"https://report.fernhw.com\"}"
-}
-
-if [ -n "$ONESIGNAL_KEY" ]; then
-  # 403 ban alert (always fires regardless of downloads)
-  if [ -f "$YT_ROOT/.ban_detected" ]; then
-    onesignal_push "⚠ YT Mirror" "Possible IP ban detected — please change VPN and retry."
-    echo "  push: 403 ban alert sent"
-  fi
-
-  # ── Parse media library scan (written by reportMaker.sh) ──────────────────
-  _MEDIA_SCAN="/tmp/media_scan_items.txt"
-  notif_new_shows="" notif_new_movies="" notif_new_eps="" notif_low_media=""
-  if [ -f "$_MEDIA_SCAN" ] && [ -s "$_MEDIA_SCAN" ]; then
-    _fs=$(printf '\037')
-    while IFS="$_fs" read -r _mcat _mtitle _msub _mthumb _mtime; do
-      [ -z "$_mcat" ] && continue
-      case "$_mcat" in
-        show)
-          _kind=$(printf '%s' "$_msub" | cut -d: -f1)
-          if [ "$_kind" = "newshow" ]; then
-            notif_new_shows="${notif_new_shows:+$notif_new_shows, }${_mtitle}"
-          else
-            notif_new_eps="${notif_new_eps:+$notif_new_eps, }${_mtitle}"
-          fi
-          ;;
-        movie) notif_new_movies="${notif_new_movies:+$notif_new_movies, }${_mtitle}" ;;
-        music|book|manga) notif_low_media="${notif_low_media:+$notif_low_media, }${_mtitle}" ;;
-      esac
-    done < "$_MEDIA_SCAN"
-  fi
-
-  if [ "$DL_COUNT" -gt 0 ] || [ -n "$notif_new_shows$notif_new_movies" ]; then
-    # --- Build lists of priority / podcastable / regular channel names from DL_ITEMS ---
-    # DL_ITEMS format: channel:title|channel:title|...
-    # Read priority and podcastable lists (lowercase, pipe-separated)
-    pri_handles=$(awk '/^\[priority\]/{f=1;next} /^\[/{f=0} f && /^[^#]/ && NF{print tolower($1)}' "$CONFIG_FILE" | tr '\n' '|' | sed 's/|$//')
-    pod_handles=$(awk '/^\[podcastable\]/{f=1;next} /^\[/{f=0} f && /^[^#]/ && NF{print tolower($1)}' "$CONFIG_FILE" | tr '\n' '|' | sed 's/|$//')
-
-    printf '%s\n' "$DL_ITEMS" | tr '|' '\n' | while IFS=: read -r ch _rest; do
-      [ -z "$ch" ] && continue
-      ch_norm=$(printf '%s' "$ch" | tr '[:upper:]' '[:lower:]' | sed "s/[@ _'\"]//g")
-      is_pri=$(printf '%s\n' "$pri_handles" | tr '|' '\n' | while IFS= read -r p; do
-        p_norm=$(printf '%s' "$p" | tr '[:upper:]' '[:lower:]' | sed "s/[@ _'\"]//g")
-        [ "$ch_norm" = "$p_norm" ] && echo "Y"
-      done | head -1)
-      if [ "$is_pri" = "Y" ]; then
-        echo "PRI:$ch"
-      else
-        is_pod=$(printf '%s\n' "$pod_handles" | tr '|' '\n' | while IFS= read -r p; do
-          p_norm=$(printf '%s' "$p" | tr '[:upper:]' '[:lower:]' | sed "s/[@ _'\"]//g")
-          [ "$ch_norm" = "$p_norm" ] && echo "Y"
-        done | head -1)
-        if [ "$is_pod" = "Y" ]; then
-          echo "POD:$ch"
-        else
-          echo "REG:$ch"
-        fi
-      fi
-    done > "/tmp/notif_cats_$$"
-
-    pri_chans=$(grep '^PRI:' "/tmp/notif_cats_$$" | sed 's/^PRI://' | sort -u | tr '\n' ',' | sed 's/,$//')
-    pod_chans=$(grep '^POD:' "/tmp/notif_cats_$$" | sed 's/^POD://' | sort -u | tr '\n' ',' | sed 's/,$//')
-    reg_count=$(grep -c '^REG:' "/tmp/notif_cats_$$" 2>/dev/null || echo 0)
-    rm -f "/tmp/notif_cats_$$"
-
-    # Tier A: Priority YT + new shows + new movies → immediate every run
-    _tier_a=""
-    [ -n "$pri_chans" ]         && _tier_a="${_tier_a:+$_tier_a · }New from ${pri_chans}"
-    [ -n "$notif_new_shows" ]   && _tier_a="${_tier_a:+$_tier_a · }New show: ${notif_new_shows}"
-    [ -n "$notif_new_movies" ]  && _tier_a="${_tier_a:+$_tier_a · }Movie: ${notif_new_movies}"
-    if [ -n "$_tier_a" ]; then
-      onesignal_push "What to Watch" "$_tier_a"
-      echo "  push: tier A — $_tier_a"
-    fi
-
-    # Tier B: Podcast YT + new episodes → immediate every run
-    _tier_b=""
-    [ -n "$pod_chans" ]       && _tier_b="${_tier_b:+$_tier_b · }${pod_chans} posted"
-    [ -n "$notif_new_eps" ]   && _tier_b="${_tier_b:+$_tier_b · }New eps: ${notif_new_eps}"
-    if [ -n "$_tier_b" ]; then
-      onesignal_push "New in Queue" "$_tier_b"
-      echo "  push: tier B — $_tier_b"
-    fi
-
-    # Tier C: Regular YT → at most once per day
-    if [ "$reg_count" -gt 0 ]; then
-      last_batch=$(grep '^last_batch_notify=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
-      today=$(date '+%Y-%m-%d')
-      if [ "${last_batch:-}" != "$today" ]; then
-        onesignal_push "What to Watch" "${reg_count} new video(s) from your other channels."
-        echo "  push: tier C regular batch ($reg_count)"
-        if grep -q '^last_batch_notify=' "$VARS_FILE" 2>/dev/null; then
-          sed -i '' "s/^last_batch_notify=.*/last_batch_notify=$today/" "$VARS_FILE"
-        else
-          printf '\nlast_batch_notify=%s\n' "$today" >> "$VARS_FILE"
-        fi
-      else
-        echo "  push: tier C regular batch skipped (already sent today)"
-      fi
-    fi
-  fi
-
-  # Tier D: Music / books / manga → at most once per day
-  if [ -n "$notif_low_media" ]; then
-    last_media=$(grep '^last_media_notify=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
-    today=$(date '+%Y-%m-%d')
-    if [ "${last_media:-}" != "$today" ]; then
-      onesignal_push "Library Update" "New: ${notif_low_media}"
-      echo "  push: tier D library — $notif_low_media"
-      if grep -q '^last_media_notify=' "$VARS_FILE" 2>/dev/null; then
-        sed -i '' "s/^last_media_notify=.*/last_media_notify=$today/" "$VARS_FILE"
-      else
-        printf '\nlast_media_notify=%s\n' "$today" >> "$VARS_FILE"
-      fi
-    else
-      echo "  push: tier D library skipped (already sent today)"
-    fi
-  fi
-fi
-# Clear 403 flag after reporting
-rm -f "$YT_ROOT/.ban_detected"
 
 echo "=== Done ==="
 

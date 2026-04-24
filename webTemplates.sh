@@ -15,11 +15,10 @@ MEDIA_CSS=$(cat <<'MEDIA_CSS_EOF'
     .msec-icon{font-size:.7rem;opacity:.5;flex-shrink:0}
     .msec-head h3{font:600 .6rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#536170}
     .mcards{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
-    .mcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;flex:0 0 64px;width:64px;text-decoration:none;color:inherit}
+    .mcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;flex:0 0 64px;width:64px;height:124px;text-decoration:none;color:inherit}
     .mcard:active{border-color:#5c6977}
-    .mcard img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--panel-soft)}
-    .mcard img.sq{aspect-ratio:1}
-    .mcard-nothumb{width:100%;aspect-ratio:2/3;background:var(--panel-soft);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:rgba(255,255,255,.15)}
+    .mcard img{width:100%;flex:1;min-height:0;object-fit:cover;display:block;background:var(--panel-soft)}
+    .mcard-nothumb{width:100%;flex:1;min-height:0;background:var(--panel-soft);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:rgba(255,255,255,.15)}
     .mcard-body{padding:4px 5px 5px;display:grid;gap:1px}
     .mcard-title{font-size:.58rem;line-height:1.2;color:#b0bfcc;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .mcard-sub{font:500 .54rem/1.1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -36,9 +35,14 @@ _mcard_html() {
 
   if [ -n "$thumb" ]; then
     case "$cat" in
-      music) thtml="<img class=\"sq\" src=\"${thumb}\" onerror=\"this.style.display='none'\" alt=\"\">" ;;
-      *)     thtml="<img src=\"${thumb}\" onerror=\"this.style.display='none'\" alt=\"\">" ;;
+      show)  _fe='&#9654;' ;;
+      movie) _fe='&#127909;' ;;
+      music) _fe='&#9835;' ;;
+      book)  _fe='&#128218;' ;;
+      manga) _fe='&#128217;' ;;
+      *)     _fe='&#9632;' ;;
     esac
+    thtml="<img src=\"${thumb}\" onerror=\"this.outerHTML='<div class=&quot;mcard-nothumb&quot;>${_fe}</div>'\" alt=\"\">"
   else
     case "$cat" in
       show)  thtml="<div class=\"mcard-nothumb\">&#9654;</div>" ;;
@@ -95,7 +99,7 @@ _msection_html() {
 
 # ── Main builder: call after mediaScan.sh has run ────────────────────────────
 build_media_sections_html() {
-  local scan_file="$1" jf_url="$2" abs_url="$3" still_url="$4"
+  local scan_file="$1" jf_url="$2" abs_url="$3" still_url="$4" finer_url="$5"
   [ -f "$scan_file" ] && [ -s "$scan_file" ] || return
 
   local fs; fs=$(printf '\037')
@@ -120,7 +124,7 @@ build_media_sections_html() {
         movies="${movies}$(_mcard_html "$cat" "$title" "New Movie" "$thumb" "$jf_url")"
         movies_c=$((movies_c+1))
         ;;
-      music) [ "$music_c" -lt "$MAX" ] && { music="${music}$(_mcard_html "$cat" "$title" "$subtitle" "$thumb" "")";           music_c=$((music_c+1)); } ;;
+      music) [ "$music_c" -lt "$MAX" ] && { music="${music}$(_mcard_html "$cat" "$title" "$subtitle" "$thumb" "$finer_url")"; music_c=$((music_c+1)); } ;;
       book)  [ "$books_c" -lt "$MAX" ] && { books="${books}$(_mcard_html "$cat" "$title" "$subtitle" "$thumb" "$abs_url")";   books_c=$((books_c+1)); } ;;
       manga) [ "$manga_c" -lt "$MAX" ] && { manga="${manga}$(_mcard_html "$cat" "$title" "$subtitle" "$thumb" "$still_url")"; manga_c=$((manga_c+1)); } ;;
     esac

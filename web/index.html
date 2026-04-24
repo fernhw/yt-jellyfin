@@ -120,30 +120,17 @@
     .media-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
     .media-bar-label{font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#8fa0b1}
     .media-bar-note{font:500 .62rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#4a5a68}
-    .mpills{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
     .media-scroll{max-height:40vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-    .mpill{display:flex;align-items:center;gap:10px;background:rgba(14,18,23,.7);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:7px 10px;text-decoration:none;color:inherit;transition:border-color .15s}
-    .mpill:active{border-color:#5c6977}
-    .mpill-thumb{width:32px;height:32px;border-radius:7px;overflow:hidden;flex-shrink:0;background:var(--panel-soft)}
-    .mpill-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-    .mpill-nothumb{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:rgba(255,255,255,.2)}
-    .mpill-body{display:flex;align-items:baseline;gap:7px;min-width:0;flex-wrap:wrap}
-    .mpill-badge{font:600 .58rem/1.1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:999px;flex-shrink:0;white-space:nowrap}
-    .mpill-badge.newshow{background:rgba(86,180,255,.12);color:#7dc8f5;border:1px solid rgba(86,180,255,.25)}
-    .mpill-badge.neweps{background:rgba(114,199,162,.1);color:#82d4b0;border:1px solid rgba(114,199,162,.2)}
-    .mpill-badge.movie{background:rgba(215,168,71,.1);color:#d7a847;border:1px solid rgba(215,168,71,.2)}
-    .mpill-title{font:600 .78rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#d8e1ea;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
-    .mpill-ep{font:500 .65rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#5a6e7e;white-space:nowrap}
-    .media-secondary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
-    .msec{flex:1 1 160px;background:rgba(14,18,23,.5);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:9px 10px 10px}
+    .media-secondary{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;margin-bottom:4px}
+    .msec{flex:0 0 auto;background:rgba(14,18,23,.5);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:9px 10px 10px}
     .msec-head{display:flex;align-items:center;gap:5px;margin-bottom:8px}
     .msec-icon{font-size:.7rem;opacity:.5;flex-shrink:0}
     .msec-head h3{font:600 .6rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#536170}
     .mcards{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
-    .mcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;flex:0 0 64px;width:64px}
-    .mcard img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--panel-soft)}
-    .mcard img.sq{aspect-ratio:1}
-    .mcard-nothumb{width:100%;aspect-ratio:2/3;background:var(--panel-soft);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:rgba(255,255,255,.15)}
+    .mcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;flex:0 0 64px;width:64px;height:124px;text-decoration:none;color:inherit}
+    .mcard:active{border-color:#5c6977}
+    .mcard img{width:100%;flex:1;min-height:0;object-fit:cover;display:block;background:var(--panel-soft)}
+    .mcard-nothumb{width:100%;flex:1;min-height:0;background:var(--panel-soft);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:rgba(255,255,255,.15)}
     .mcard-body{padding:4px 5px 5px;display:grid;gap:1px}
     .mcard-title{font-size:.58rem;line-height:1.2;color:#b0bfcc;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .mcard-sub{font:500 .54rem/1.1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -174,25 +161,95 @@
       </div>
     </header>
 
-    <div class="media-bar"><span class="media-bar-label">&#9654;&#xFE0E; Library</span><span class="media-bar-note">last 30 hours</span></div><div class="media-scroll"><div class="mpills"><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/show-a-knight-of-the-seven-kingdoms-s01-complete-2160p-max-web-dl-dv-p5-ddp5-1-atmos-h265-mp4-ben-the-men.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge newshow">New Show</span><span class="mpill-title">A Knight Of The Seven Kingdoms</span><span class="mpill-ep">6 new episodes</span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/show-anohana-the-flower-we-saw-that-day-s01-bd-1080p-hevc-opus-derpie.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge newshow">New Show</span><span class="mpill-title">Anohana - The Flower We Saw That Day - S01 (BD 1080p HEVC Opus) [derpie]</span><span class="mpill-ep">11 new episodes</span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/show-chernobyl.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge newshow">New Show</span><span class="mpill-title">Chernobyl</span><span class="mpill-ep">5 new episodes</span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/show-dark-season-01-s01-complete-dual-audio-ger-eng-1080p-10bit-webrip-6ch-x265-hevc-psa.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge newshow">New Show</span><span class="mpill-title">Dark SEASON 01</span><span class="mpill-ep">10 new episodes</span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/show-devs-season-1-mp4-1080p.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge newshow">New Show</span><span class="mpill-title">Devs Season 1 Mp4 1080p</span><span class="mpill-ep">8 new episodes</span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/movie-12-angry-men-1957.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge movie">New Movie</span><span class="mpill-title">12 Angry Men</span><span class="mpill-ep"></span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/movie-a-fistful-of-dollars-1964.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge movie">New Movie</span><span class="mpill-title">A Fistful of Dollars 1964</span><span class="mpill-ep"></span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/movie-a-silent-voice-2016-1080p-bluray-x264-haiku-ethd.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge movie">New Movie</span><span class="mpill-title">A Silent Voice</span><span class="mpill-ep"></span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><div class="mpill-nothumb">&#9654;</div></div><div class="mpill-body"><span class="mpill-badge movie">New Movie</span><span class="mpill-title">ALFRED HiTCHCOCK The Masterpiece Collection Multi Bluray 1080p x264 DTS-HDMA 6 1-DTOne</span><span class="mpill-ep"></span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/movie-akira-kurosawa-the-quiet-duel-1949-1080p-jpn-bluray-flac2-0-hevc-ddr-ethd.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge movie">New Movie</span><span class="mpill-title">Akira Kurosawa - The Quiet Duel</span><span class="mpill-ep"></span></div></a></div><div class="media-secondary"><section class="msec"><div class="msec-head"><span class="msec-icon">&#9835;</span><h3>Music</h3></div><div class="mcards"><div class="mcard"><img class="sq" src="media-thumbs/music-bravely-default-ii-original-soundtrack-mp3.jpg" onerror="this.style.display='none'" alt=""><div class="mcard-body"><div class="mcard-title">BRAVELY DEFAULT II</div></div></div><div class="mcard"><img class="sq" src="media-thumbs/music-belle-original-motion-picture-soundtrack-english-edition-mp3.jpg" onerror="this.style.display='none'" alt=""><div class="mcard-body"><div class="mcard-title">Belle [English Edition]</div></div></div><div class="mcard"><img class="sq" src="media-thumbs/music-belle-original-soundtrack-mp3.jpg" onerror="this.style.display='none'" alt=""><div class="mcard-body"><div class="mcard-title">Belle</div></div></div><div class="mcard"><div class="mcard-nothumb">&#9835;</div><div class="mcard-body"><div class="mcard-title">Benjamin Button Alexander Desplat</div></div></div><div class="mcard"><img class="sq" src="media-thumbs/music-bocchi-the-rock-original-soundtrack-bocchi-the-track-vol-1-mp3.jpg" onerror="this.style.display='none'" alt=""><div class="mcard-body"><div class="mcard-title">Bocchi the Rock! Bocchi the Track! Vol.1</div></div></div></div></section><section class="msec"><div class="msec-head"><span class="msec-icon">&#128218;</span><h3>Audiobooks</h3></div><div class="mcards"><a class="mcard" href="#" data-app-urls="audiobooth://"><div class="mcard-nothumb">&#128218;</div><div class="mcard-body"><div class="mcard-title">12 Rules for Life</div></div></a><a class="mcard" href="#" data-app-urls="audiobooth://"><div class="mcard-nothumb">&#128218;</div><div class="mcard-body"><div class="mcard-title">33 Strategies of War</div></div></a><a class="mcard" href="#" data-app-urls="audiobooth://"><div class="mcard-nothumb">&#128218;</div><div class="mcard-body"><div class="mcard-title">48 Laws of Power</div></div></a><a class="mcard" href="#" data-app-urls="audiobooth://"><div class="mcard-nothumb">&#128218;</div><div class="mcard-body"><div class="mcard-title">Approach Anxiety Killer</div></div></a><a class="mcard" href="#" data-app-urls="audiobooth://"><div class="mcard-nothumb">&#128218;</div><div class="mcard-body"><div class="mcard-title">Art of Seduction</div></div></a></div></section><section class="msec"><div class="msec-head"><span class="msec-icon">&#128217;</span><h3>Manga</h3></div><div class="mcards"><a class="mcard" href="#" data-app-urls="still://"><div class="mcard-nothumb">&#128217;</div><div class="mcard-body"><div class="mcard-title">BLAME! Master Edition</div><div class="mcard-sub">6 volumes</div></div></a><a class="mcard" href="#" data-app-urls="still://"><div class="mcard-nothumb">&#128217;</div><div class="mcard-body"><div class="mcard-title">Berserk</div><div class="mcard-sub">40 volumes</div></div></a><a class="mcard" href="#" data-app-urls="still://"><div class="mcard-nothumb">&#128217;</div><div class="mcard-body"><div class="mcard-title">Dorohedoro</div><div class="mcard-sub">23 volumes</div></div></a><a class="mcard" href="#" data-app-urls="still://"><div class="mcard-nothumb">&#128217;</div><div class="mcard-body"><div class="mcard-title">Eden of Witches</div><div class="mcard-sub">6 volumes</div></div></a><a class="mcard" href="#" data-app-urls="still://"><div class="mcard-nothumb">&#128217;</div><div class="mcard-body"><div class="mcard-title">Fire Punch</div><div class="mcard-sub">8 volumes</div></div></a></div></section></div></div>
+    <div class="media-bar"><span class="media-bar-label">&#9654;&#xFE0E; Library</span><span class="media-bar-note">last 30 hours</span></div><div class="media-scroll"><div class="media-secondary"><section class="msec"><div class="msec-head"><span class="msec-icon">&#9654;</span><h3>Shows</h3></div><div class="mcards"><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/show-a-knight-of-the-seven-kingdoms-s01-complete-2160p-max-web-dl-dv-p5-ddp5-1-atmos-h265-mp4-ben-the-men.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9654;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">A Knight Of The Seven Kingdoms</div><div class="mcard-sub">New Show · 6 new episodes</div></div></a><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/show-anohana-the-flower-we-saw-that-day-s01-bd-1080p-hevc-opus-derpie.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9654;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Anohana - The Flower We Saw That Day - S01 (BD 1080p HEVC Opus) [derpie]</div><div class="mcard-sub">New Show · 11 new episodes</div></div></a><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/show-chernobyl.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9654;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Chernobyl</div><div class="mcard-sub">New Show · 5 new episodes</div></div></a><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/show-dark-season-01-s01-complete-dual-audio-ger-eng-1080p-10bit-webrip-6ch-x265-hevc-psa.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9654;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Dark SEASON 01</div><div class="mcard-sub">New Show · 10 new episodes</div></div></a><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/show-devs-season-1-mp4-1080p.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9654;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Devs Season 1 Mp4 1080p</div><div class="mcard-sub">New Show · 8 new episodes</div></div></a></div></section><section class="msec"><div class="msec-head"><span class="msec-icon">&#127909;</span><h3>Movies</h3></div><div class="mcards"><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/movie-one-battle-after-another-2025-1080p-amzn-web-dl-ddp5-1-h-264-kyogo.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#127909;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">One Battle After Another</div><div class="mcard-sub">New Movie</div></div></a><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/movie-12-angry-men-1957.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#127909;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">12 Angry Men</div><div class="mcard-sub">New Movie</div></div></a><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/movie-a-fistful-of-dollars-1964.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#127909;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">A Fistful of Dollars 1964</div><div class="mcard-sub">New Movie</div></div></a><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/movie-a-silent-voice-2016-1080p-bluray-x264-haiku-ethd.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#127909;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">A Silent Voice</div><div class="mcard-sub">New Movie</div></div></a><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mcard-nothumb">&#127909;</div><div class="mcard-body"><div class="mcard-title">ALFRED HiTCHCOCK The Masterpiece Collection Multi Bluray 1080p x264 DTS-HDMA 6 1-DTOne</div><div class="mcard-sub">New Movie</div></div></a></div></section><section class="msec"><div class="msec-head"><span class="msec-icon">&#9835;</span><h3>Music</h3></div><div class="mcards"><a class="mcard" href="#" data-app-urls="Finer://"><img src="media-thumbs/music-bravely-default-ii-original-soundtrack-mp3.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9835;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">BRAVELY DEFAULT II</div></div></a><a class="mcard" href="#" data-app-urls="Finer://"><img src="media-thumbs/music-belle-original-motion-picture-soundtrack-english-edition-mp3.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9835;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Belle [English Edition]</div></div></a><a class="mcard" href="#" data-app-urls="Finer://"><img src="media-thumbs/music-belle-original-soundtrack-mp3.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9835;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Belle</div></div></a><a class="mcard" href="#" data-app-urls="Finer://"><div class="mcard-nothumb">&#9835;</div><div class="mcard-body"><div class="mcard-title">Benjamin Button Alexander Desplat</div></div></a><a class="mcard" href="#" data-app-urls="Finer://"><img src="media-thumbs/music-bocchi-the-rock-original-soundtrack-bocchi-the-track-vol-1-mp3.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9835;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Bocchi the Rock! Bocchi the Track! Vol.1</div></div></a></div></section><section class="msec"><div class="msec-head"><span class="msec-icon">&#128218;</span><h3>Audiobooks</h3></div><div class="mcards"><a class="mcard" href="#" data-app-urls="audiobooth://"><img src="media-thumbs/book-12-rules-for-life-b0797ybp7n.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#128218;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">12 Rules for Life</div></div></a><a class="mcard" href="#" data-app-urls="audiobooth://"><img src="media-thumbs/book-33-strategies-of-war-b012bdn5tg.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#128218;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">33 Strategies of War</div></div></a><a class="mcard" href="#" data-app-urls="audiobooth://"><img src="media-thumbs/book-48-laws-of-power-b00wydj2yq.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#128218;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">48 Laws of Power</div></div></a><a class="mcard" href="#" data-app-urls="audiobooth://"><img src="media-thumbs/book-approach-anxiety-killer-for-men-b07t3h4czt.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#128218;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Approach Anxiety Killer</div></div></a><a class="mcard" href="#" data-app-urls="audiobooth://"><img src="media-thumbs/book-art-of-seduction-b00wydhifg.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#128218;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Art of Seduction</div></div></a></div></section><section class="msec"><div class="msec-head"><span class="msec-icon">&#128217;</span><h3>Manga</h3></div><div class="mcards"><a class="mcard" href="#" data-app-urls="Still://"><img src="media-thumbs/manga-blame-master-edition.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#128217;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">BLAME! Master Edition</div><div class="mcard-sub">6 volumes</div></div></a><a class="mcard" href="#" data-app-urls="Still://"><img src="media-thumbs/manga-berserk.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#128217;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Berserk</div><div class="mcard-sub">40 volumes</div></div></a><a class="mcard" href="#" data-app-urls="Still://"><img src="media-thumbs/manga-dorohedoro.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#128217;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Dorohedoro</div><div class="mcard-sub">23 volumes</div></div></a><a class="mcard" href="#" data-app-urls="Still://"><img src="media-thumbs/manga-eden-of-witches.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#128217;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Eden of Witches</div><div class="mcard-sub">6 volumes</div></div></a><a class="mcard" href="#" data-app-urls="Still://"><img src="media-thumbs/manga-fire-punch.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#128217;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Fire Punch</div><div class="mcard-sub">8 volumes</div></div></a></div></section></div></div>
 
     <section class="controls" id="feedControls">
       <input id="feedFilter" class="filter-input" type="search" placeholder="Search title or channel..." autocomplete="off" spellcheck="false">
       <button class="filter-chip active" type="button" data-filter-bucket="all">All</button>
       <button class="filter-chip" type="button" data-filter-bucket="priority">Priority</button>
       <button class="filter-chip" type="button" data-filter-bucket="nonpriority">Non-Priority</button>
-      <div class="filter-status" id="filterStatus">Showing all 71 videos.</div>
+      <div class="filter-status" id="filterStatus">Showing all 75 videos.</div>
     </section>
 
     <div id="filterResults"><div class="cards" id="filterCards"></div></div>
 
     <main id="feedMain">
-      <section class="day-section"><div class="day-header"><h2>Today <span>Friday, April 24</span></h2></div><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="xbox, identity, and the power of exclusives | unpacked second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Xbox, Identity, and the Power of Exclusives | Unpacked">
+      <section class="day-section"><div class="day-header"><h2>Today <span>Friday, April 24</span></h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="fitting in at school glitch" data-bucket="priority" aria-label="Open in Jellyfin: Fitting In at School">
+  <article class="card priority">
+    <img src="thumbs/glitch.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Fitting In at School</div>
+      <div class="meta-row">GLITCH <span>&middot;</span> Apr 24, 2026</div>
+    </div>
+  </article>
+</a></div></section><section class="category"><h3>Podcasts</h3><div class="cards"><a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="xbox, identity, and the power of exclusives | unpacked second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Xbox, Identity, and the Power of Exclusives | Unpacked">
   <article class="card podcast">
     <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
       <div class="title">Xbox, Identity, and the Power of Exclusives | Unpacked</div>
       <div class="meta-row">Second Wind <span>&middot;</span> Apr 24, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="my favorite game in every major category retro game corps" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: My Favorite Game in Every Major Category">
+  <article class="card podcast">
+    <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">My Favorite Game in Every Major Category</div>
+      <div class="meta-row">Retro Game Corps <span>&middot;</span> Apr 24, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="perfect coffee break games techdweeb" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Perfect COFFEE BREAK Games">
+  <article class="card podcast">
+    <img src="thumbs/techdweeb.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Perfect COFFEE BREAK Games</div>
+      <div class="meta-row">TechDweeb <span>&middot;</span> Apr 24, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="go ahead, make me cry | semi-ramblomatic second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Go Ahead, Make Me Cry | Semi-Ramblomatic">
+  <article class="card podcast">
+    <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Go Ahead, Make Me Cry | Semi-Ramblomatic</div>
+      <div class="meta-row">Second Wind <span>&middot;</span> Apr 23, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="the second wind games showcase - spring 2026 edition second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: The Second Wind Games Showcase - Spring 2026 Edition">
+  <article class="card podcast">
+    <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">The Second Wind Games Showcase - Spring 2026 Edition</div>
+      <div class="meta-row">Second Wind <span>&middot;</span> Apr 23, 2026</div>
+    </div>
+  </article>
+</a></div></section><section class="category"><h3>Other Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="beast games 2 strong/smart: an exhaustive review folding ideas" data-bucket="nonpriority" aria-label="Open in Jellyfin: Beast Games 2 Strong/Smart: an Exhaustive Review">
+  <article class="card">
+    <img src="thumbs/foldingideas.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Beast Games 2 Strong/Smart: an Exhaustive Review</div>
+      <div class="meta-row">Folding Ideas <span>&middot;</span> Apr 24, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="the splatoon 3 north american league show 2026 – episode 4 nintendo of america" data-bucket="nonpriority" aria-label="Open in Jellyfin: The Splatoon 3 North American League Show 2026 – Episode 4">
+  <article class="card">
+    <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">The Splatoon 3 North American League Show 2026 – Episode 4</div>
+      <div class="meta-row">Nintendo of America <span>&middot;</span> Apr 24, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="this is bigger than you think asmongold tv  " data-bucket="nonpriority" aria-label="Open in Jellyfin: This is bigger than you think">
+  <article class="card">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">This is bigger than you think</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 24, 2026</div>
     </div>
   </article>
 </a>
@@ -232,15 +289,6 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="my favorite game in every major category retro game corps" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: My Favorite Game in Every Major Category">
-  <article class="card podcast">
-    <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
-    <div class="info">
-      <div class="title">My Favorite Game in Every Major Category</div>
-      <div class="meta-row">Retro Game Corps <span>&middot;</span> Apr 24, 2026</div>
-    </div>
-  </article>
-</a>
 <a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="u.s. soldier arrested for insider trading on polymarket; winning $400k - news dump internet today" data-bucket="nonpriority" aria-label="Open in Jellyfin: U.S. Soldier Arrested For Insider Trading on Polymarket; Winning $400k - News Dump">
   <article class="card">
     <img src="thumbs/internettoday.jpg" onerror="this.style.display='none'" alt="">
@@ -256,15 +304,6 @@
     <div class="info">
       <div class="title">How do they keep letting this happen</div>
       <div class="meta-row">Legendary Drops <span>&middot;</span> Apr 24, 2026</div>
-    </div>
-  </article>
-</a>
-<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="perfect coffee break games techdweeb" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Perfect COFFEE BREAK Games">
-  <article class="card podcast">
-    <img src="thumbs/techdweeb.jpg" onerror="this.style.display='none'" alt="">
-    <div class="info">
-      <div class="title">Perfect COFFEE BREAK Games</div>
-      <div class="meta-row">TechDweeb <span>&middot;</span> Apr 24, 2026</div>
     </div>
   </article>
 </a>
@@ -339,24 +378,6 @@
       <div class="meta-row">Big A <span>&middot;</span> Apr 24, 2026</div>
     </div>
   </article>
-</a>
-<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="go ahead, make me cry | semi-ramblomatic second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Go Ahead, Make Me Cry | Semi-Ramblomatic">
-  <article class="card podcast">
-    <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
-    <div class="info">
-      <div class="title">Go Ahead, Make Me Cry | Semi-Ramblomatic</div>
-      <div class="meta-row">Second Wind <span>&middot;</span> Apr 23, 2026</div>
-    </div>
-  </article>
-</a>
-<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="the second wind games showcase - spring 2026 edition second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: The Second Wind Games Showcase - Spring 2026 Edition">
-  <article class="card podcast">
-    <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
-    <div class="info">
-      <div class="title">The Second Wind Games Showcase - Spring 2026 Edition</div>
-      <div class="meta-row">Second Wind <span>&middot;</span> Apr 23, 2026</div>
-    </div>
-  </article>
 </a></div></section></section><section class="day-section"><div class="day-header"><h2>Yesterday <span>Thursday, April 23</span></h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="invincible s4 - it's (almost) peak schaffrillas productions" data-bucket="priority" aria-label="Open in Jellyfin or AudioBooth: Invincible S4 - IT'S (almost) PEAK">
   <article class="card priority podcast">
     <img src="thumbs/schaffrillasproductions.jpg" onerror="this.style.display='none'" alt="">
@@ -383,16 +404,7 @@
       <div class="meta-row">Fireship <span>&middot;</span> Apr 23, 2026 <span class="pod-cap">&clubsuit; podcast</span></div>
     </div>
   </article>
-</a></div></section><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="do not buy: amd ryzen 9 9950x3d2 cpu review &amp; benchmarks | 24 charts in 24 hours gamers nexus" data-bucket="nonpriority" aria-label="Open in Jellyfin: DO NOT BUY: AMD Ryzen 9 9950X3D2 CPU Review &amp; Benchmarks | 24 Charts in 24 Hours">
-  <article class="card">
-    <img src="thumbs/gamersnexus.jpg" onerror="this.style.display='none'" alt="">
-    <div class="info">
-      <div class="title">DO NOT BUY: AMD Ryzen 9 9950X3D2 CPU Review &amp; Benchmarks | 24 Charts in 24 Hours</div>
-      <div class="meta-row">Gamers Nexus <span>&middot;</span> Apr 23, 2026</div>
-    </div>
-  </article>
-</a>
-<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="uh, is amd ok? techlinked" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Uh, Is AMD Ok?">
+</a></div></section><section class="category"><h3>Podcasts</h3><div class="cards"><a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="uh, is amd ok? techlinked" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Uh, Is AMD Ok?">
   <article class="card podcast">
     <img src="thumbs/techlinked.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -407,6 +419,23 @@
     <div class="info">
       <div class="title">Where’s Our Money, Nintendo?</div>
       <div class="meta-row">GameLinked <span>&middot;</span> Apr 24, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="handheld streaming guide (apollo, moonlight, etc) retro game corps" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Handheld Streaming Guide (Apollo, Moonlight, etc)">
+  <article class="card podcast">
+    <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Handheld Streaming Guide (Apollo, Moonlight, etc)</div>
+      <div class="meta-row">Retro Game Corps <span>&middot;</span> Apr 23, 2026</div>
+    </div>
+  </article>
+</a></div></section><section class="category"><h3>Other Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="do not buy: amd ryzen 9 9950x3d2 cpu review &amp; benchmarks | 24 charts in 24 hours gamers nexus" data-bucket="nonpriority" aria-label="Open in Jellyfin: DO NOT BUY: AMD Ryzen 9 9950X3D2 CPU Review &amp; Benchmarks | 24 Charts in 24 Hours">
+  <article class="card">
+    <img src="thumbs/gamersnexus.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">DO NOT BUY: AMD Ryzen 9 9950X3D2 CPU Review &amp; Benchmarks | 24 Charts in 24 Hours</div>
+      <div class="meta-row">Gamers Nexus <span>&middot;</span> Apr 23, 2026</div>
     </div>
   </article>
 </a>
@@ -536,15 +565,6 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="handheld streaming guide (apollo, moonlight, etc) retro game corps" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Handheld Streaming Guide (Apollo, Moonlight, etc)">
-  <article class="card podcast">
-    <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
-    <div class="info">
-      <div class="title">Handheld Streaming Guide (Apollo, Moonlight, etc)</div>
-      <div class="meta-row">Retro Game Corps <span>&middot;</span> Apr 23, 2026</div>
-    </div>
-  </article>
-</a>
 <a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="these youtubers weren't happy that i watched their first videos... connordawg" data-bucket="nonpriority" aria-label="Open in Jellyfin: These YouTubers Weren't Happy that I Watched Their First Videos...">
   <article class="card">
     <img src="thumbs/connordawg.jpg" onerror="this.style.display='none'" alt="">
@@ -579,7 +599,15 @@
       <div class="meta-row">videogamedunkey <span>&middot;</span> Apr 22, 2026</div>
     </div>
   </article>
-</a></div></section><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="pragmata is a problem cupcake4all" data-bucket="nonpriority" aria-label="Open in Jellyfin: Pragmata is a problem">
+</a></div></section><section class="category"><h3>Podcasts</h3><div class="cards"><a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="atari versus nintendo: the curse of the rabbit | fully ramblomatic second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Atari Versus Nintendo: The Curse of the Rabbit | Fully Ramblomatic">
+  <article class="card podcast">
+    <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Atari Versus Nintendo: The Curse of the Rabbit | Fully Ramblomatic</div>
+      <div class="meta-row">Second Wind <span>&middot;</span> Apr 22, 2026</div>
+    </div>
+  </article>
+</a></div></section><section class="category"><h3>Other Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="pragmata is a problem cupcake4all" data-bucket="nonpriority" aria-label="Open in Jellyfin: Pragmata is a problem">
   <article class="card">
     <img src="thumbs/cupcake4all.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -612,15 +640,6 @@
     <div class="info">
       <div class="title">This game is everything they hate</div>
       <div class="meta-row">Legendary Drops <span>&middot;</span> Apr 21, 2026</div>
-    </div>
-  </article>
-</a>
-<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="atari versus nintendo: the curse of the rabbit | fully ramblomatic second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Atari Versus Nintendo: The Curse of the Rabbit | Fully Ramblomatic">
-  <article class="card podcast">
-    <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
-    <div class="info">
-      <div class="title">Atari Versus Nintendo: The Curse of the Rabbit | Fully Ramblomatic</div>
-      <div class="meta-row">Second Wind <span>&middot;</span> Apr 22, 2026</div>
     </div>
   </article>
 </a>
@@ -685,7 +704,51 @@
       <div class="meta-row">Fireship <span>&middot;</span> Apr 21, 2026 <span class="pod-cap">&clubsuit; podcast</span></div>
     </div>
   </article>
-</a></div></section><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="wait...the price actually went down?! spawn wave" data-bucket="nonpriority" aria-label="Open in Jellyfin: Wait...The Price Actually Went Down?!">
+</a></div></section><section class="category"><h3>Podcasts</h3><div class="cards"><a class="card-link" href="#" data-app-urls="audiobooth://" data-filter-text="we are near peak hype the primetime" data-bucket="nonpriority" aria-label="Open in AudioBooth: We are near peak hype">
+  <article class="card podcast">
+    <img src="thumbs/theprimetime.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">We are near peak hype</div>
+      <div class="meta-row">The PrimeTime <span>&middot;</span> Apr 21, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="audiobooth://" data-filter-text="the eu just took stop killing games seriously bellular news" data-bucket="nonpriority" aria-label="Open in AudioBooth: The EU Just Took Stop Killing Games Seriously">
+  <article class="card podcast">
+    <img src="thumbs/bellularnews.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">The EU Just Took Stop Killing Games Seriously</div>
+      <div class="meta-row">Bellular News <span>&middot;</span> Apr 21, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="exit 8 thoughts about liminal horror | the backdrop second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Exit 8 Thoughts About Liminal Horror | The Backdrop">
+  <article class="card podcast">
+    <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Exit 8 Thoughts About Liminal Horror | The Backdrop</div>
+      <div class="meta-row">Second Wind <span>&middot;</span> Apr 21, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="there's a new ps2 emulator fork on android retro game corps" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: There's a New PS2 Emulator Fork on Android">
+  <article class="card podcast">
+    <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">There's a New PS2 Emulator Fork on Android</div>
+      <div class="meta-row">Retro Game Corps <span>&middot;</span> Apr 21, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="the easy mini pc steam &amp; retro console techdweeb" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: The EASY Mini PC Steam &amp; Retro Console">
+  <article class="card podcast">
+    <img src="thumbs/techdweeb.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">The EASY Mini PC Steam &amp; Retro Console</div>
+      <div class="meta-row">TechDweeb <span>&middot;</span> Apr 21, 2026</div>
+    </div>
+  </article>
+</a></div></section><section class="category"><h3>Other Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="wait...the price actually went down?! spawn wave" data-bucket="nonpriority" aria-label="Open in Jellyfin: Wait...The Price Actually Went Down?!">
   <article class="card">
     <img src="thumbs/spawnwave.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -712,24 +775,6 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="audiobooth://" data-filter-text="we are near peak hype the primetime" data-bucket="nonpriority" aria-label="Open in AudioBooth: We are near peak hype">
-  <article class="card podcast">
-    <img src="thumbs/theprimetime.jpg" onerror="this.style.display='none'" alt="">
-    <div class="info">
-      <div class="title">We are near peak hype</div>
-      <div class="meta-row">The PrimeTime <span>&middot;</span> Apr 21, 2026</div>
-    </div>
-  </article>
-</a>
-<a class="card-link" href="#" data-app-urls="audiobooth://" data-filter-text="the eu just took stop killing games seriously bellular news" data-bucket="nonpriority" aria-label="Open in AudioBooth: The EU Just Took Stop Killing Games Seriously">
-  <article class="card podcast">
-    <img src="thumbs/bellularnews.jpg" onerror="this.style.display='none'" alt="">
-    <div class="info">
-      <div class="title">The EU Just Took Stop Killing Games Seriously</div>
-      <div class="meta-row">Bellular News <span>&middot;</span> Apr 21, 2026</div>
-    </div>
-  </article>
-</a>
 <a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="opus: prism peak – launch trailer – nintendo switch 2 nintendo of america" data-bucket="nonpriority" aria-label="Open in Jellyfin: OPUS: Prism Peak – Launch Trailer – Nintendo Switch 2">
   <article class="card">
     <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
@@ -745,15 +790,6 @@
     <div class="info">
       <div class="title">So This is Peak Smartphone</div>
       <div class="meta-row">Marques Brownlee <span>&middot;</span> Apr 21, 2026</div>
-    </div>
-  </article>
-</a>
-<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="exit 8 thoughts about liminal horror | the backdrop second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Exit 8 Thoughts About Liminal Horror | The Backdrop">
-  <article class="card podcast">
-    <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
-    <div class="info">
-      <div class="title">Exit 8 Thoughts About Liminal Horror | The Backdrop</div>
-      <div class="meta-row">Second Wind <span>&middot;</span> Apr 21, 2026</div>
     </div>
   </article>
 </a>
@@ -784,30 +820,12 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="there's a new ps2 emulator fork on android retro game corps" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: There's a New PS2 Emulator Fork on Android">
-  <article class="card podcast">
-    <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
-    <div class="info">
-      <div class="title">There's a New PS2 Emulator Fork on Android</div>
-      <div class="meta-row">Retro Game Corps <span>&middot;</span> Apr 21, 2026</div>
-    </div>
-  </article>
-</a>
 <a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="i have more questions! good world hard mode | goddess of victory: nikke vod yessenia " data-bucket="nonpriority" aria-label="Open in Jellyfin: I HAVE MORE QUESTIONS! GOOD WORLD HARD MODE | Goddess of Victory: NIKKE VOD">
   <article class="card">
     <img src="thumbs/yessenia.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
       <div class="title">I HAVE MORE QUESTIONS! GOOD WORLD HARD MODE | Goddess of Victory: NIKKE VOD</div>
       <div class="meta-row">Yessenia <span>&middot;</span> Apr 21, 2026</div>
-    </div>
-  </article>
-</a>
-<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="the easy mini pc steam &amp; retro console techdweeb" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: The EASY Mini PC Steam &amp; Retro Console">
-  <article class="card podcast">
-    <img src="thumbs/techdweeb.jpg" onerror="this.style.display='none'" alt="">
-    <div class="info">
-      <div class="title">The EASY Mini PC Steam &amp; Retro Console</div>
-      <div class="meta-row">TechDweeb <span>&middot;</span> Apr 21, 2026</div>
     </div>
   </article>
 </a>
@@ -825,7 +843,7 @@
     <section class="bottom-panel">
       <div class="bottom-head">
         <h2>Report details</h2>
-        <p>Good afternoon. 71 items from the last 4 days.</p>
+        <p>Good afternoon. 75 items from the last 4 days.</p>
       </div>
 
       <div class="warn-stack"></div>
@@ -837,24 +855,24 @@
         </div>
         <div class="summary-tile">
           <strong>Updated</strong>
-          <span>2026-04-24 13:55</span>
+          <span>2026-04-24 15:39</span>
         </div>
         <div class="summary-tile">
           <strong>Today</strong>
-          <span>19 downloads on Friday</span>
+          <span>23 downloads on Friday</span>
         </div>
         <div class="summary-tile">
           <strong>Recent Downloads</strong>
-          <span>71 items across 4 days</span>
+          <span>75 items across 4 days</span>
         </div>
         <div class="summary-tile">
           <strong>Library Storage</strong>
-          <span>708.16 GB used &middot; 1.74 TB free</span>
+          <span>706.69 GB used &middot; 1.74 TB free</span>
         </div>
       </section>
     </section>
 
-    <footer>report.fernhw.com &middot; updated 2026-04-24 13:55</footer>
+    <footer>report.fernhw.com &middot; updated 2026-04-24 15:39</footer>
   </div>
 </div>
 
@@ -934,7 +952,8 @@ function waitForOneSignal() {
   });
 }
 
-const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isIpadOS = /Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || isIpadOS;
 const isStandalone = window.navigator.standalone === true;
 const rootStyle = document.documentElement.style;
 const themeMeta = document.querySelector('meta[name="theme-color"]');
@@ -943,14 +962,14 @@ function tryAppUrls(appUrls) {
   const allUrls = appUrls.split('|').filter(Boolean);
   if (!allUrls.length) return;
 
-  // On non-mobile, skip app schemes and go straight to the https:// fallback
-  const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent);
+  // iPadOS 13+ reports Macintosh UA — detect via touch points
+  const isIpadOS = /Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
+  const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent) || isIpadOS;
   const httpUrls = allUrls.filter(u => u.startsWith('http'));
-  const urls = (isMobile || !httpUrls.length) ? allUrls : httpUrls;
-  if (!urls.length) return;
-
-  // On non-mobile a plain http URL just navigates directly
-  if (!isMobile) { window.open(urls[0], '_blank'); return; }
+  // Desktop: http-only, open new tab immediately
+  if (!isMobile) { if (httpUrls.length) window.open(httpUrls[0], '_blank'); return; }
+  // All iOS (iPhone + iPad) and Android: try every URL in order, fall through to http
+  const urls = allUrls;
 
   let i = 0;
 
@@ -1015,7 +1034,7 @@ document.addEventListener('click', event => {
 
   const link = event.target.closest('.card-link');
   if (!link) {
-    const media = event.target.closest('.mpill[data-app-urls], .mcard[data-app-urls]');
+    const media = event.target.closest('.mcard[data-app-urls]');
     if (media) { event.preventDefault(); tryAppUrls(media.dataset.appUrls || ''); }
     return;
   }

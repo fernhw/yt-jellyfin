@@ -2,17 +2,20 @@
 
 ## What to Watch — 2026-04-24
 
-> *Good afternoon! Here's what landed on Friday, April 24, 2026 at 01:59 PM.*
-> **YT Mirror:** 708.16 GB used · 1.74 TB free
+> *Good afternoon! Here's what landed on Friday, April 24, 2026 at 03:38 PM.*
+> **YT Mirror:** 706.69 GB used · 1.74 TB free
 
 ### Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **Fitting In at School** — *GLITCH* · downloaded 03:05 PM · not podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **Beast Games 2 Strong/Smart: an Exhaustive Review** — *Folding Ideas* · downloaded 03:11 PM · not podcastable
+- **The Splatoon 3 North American League Show 2026 – Episode 4** — *Nintendo of America* · downloaded 03:08 PM · not podcastable
+- **This is bigger than you think** — *Asmongold TV* · downloaded 03:07 PM · not podcastable
 - **Xbox, Identity, and the Power of Exclusives | Unpacked** — *Second Wind* · downloaded 11:36 AM · podcastable
 - **WWE 2K26 – Official Season 2 Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 11:35 AM · not podcastable
 - **Orbitals – Gameplay Reveal Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 09:49 AM · not podcastable
