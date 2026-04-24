@@ -20,6 +20,8 @@ ARCHIVE_DIR="$SCRIPT_DIR/reportsArchive"
 DB="$SCRIPT_DIR/ytdb.db"
 CONFIG="$SCRIPT_DIR/channelConfig.md"
 VARS_FILE="$SCRIPT_DIR/varsYT.md"
+JELLYFIN_APP_URLS="org.jellyfin.expo://|jellyfin://"
+ABS_APP_URLS="me.jgrenier.AudioBS://|audiobookshelf://"
 
 TODAY=$(date '+%Y-%m-%d')
 NOW_HUMAN=$(date '+%B %d, %Y at %I:%M %p')
@@ -215,15 +217,11 @@ if [ -n "$TODAYS_VIDEOS" ]; then
   VIDEO_COUNT=$(printf '%s\n' "$TODAYS_VIDEOS" | grep -c '.')
 fi
 
-# --- Categorize into priority / podcastable / rare / regular ---
+# --- Categorize into priority / non-priority ---
 TMP_PRI="/tmp/rpt_pri_$$"
-TMP_POD="/tmp/rpt_pod_$$"
-TMP_RARE="/tmp/rpt_rare_$$"
-TMP_REG="/tmp/rpt_reg_$$"
+TMP_NONPRI="/tmp/rpt_nonpri_$$"
 : > "$TMP_PRI"
-: > "$TMP_POD"
-: > "$TMP_RARE"
-: > "$TMP_REG"
+: > "$TMP_NONPRI"
 
 printf '%s\n' "$TODAYS_VIDEOS" | while IFS="$FIELD_SEP" read -r chan title upload download_ts gap; do
   [ -z "$chan" ] && continue
@@ -248,19 +246,13 @@ printf '%s\n' "$TODAYS_VIDEOS" | while IFS="$FIELD_SEP" read -r chan title uploa
 
   if is_priority_channel "$chan"; then
     echo "$line" >> "$TMP_PRI"
-  elif [ "$is_podcast" -eq 1 ]; then
-    echo "$line" >> "$TMP_POD"
-  elif [ "$is_rare" -eq 1 ]; then
-    echo "$line" >> "$TMP_RARE"
   else
-    echo "$line" >> "$TMP_REG"
+    echo "$line" >> "$TMP_NONPRI"
   fi
 done
 
 PRI_N=$(wc -l < "$TMP_PRI" | tr -d ' ')
-POD_N=$(wc -l < "$TMP_POD" | tr -d ' ')
-RARE_N=$(wc -l < "$TMP_RARE" | tr -d ' ')
-REG_N=$(wc -l < "$TMP_REG" | tr -d ' ')
+NONPRI_N=$(wc -l < "$TMP_NONPRI" | tr -d ' ')
 
 # --- Disk usage (precise, no rounding) ---
 . "$SCRIPT_DIR/locations.md"
@@ -287,7 +279,7 @@ else
   # --- Priority ---
   if [ "$PRI_N" -gt 0 ]; then
     cat >> "$TODAY_REPORT" <<SEC
-## Watch First
+## Priority Videos
 
 $(cat "$TMP_PRI")
 
@@ -296,7 +288,7 @@ $(cat "$TMP_PRI")
 SEC
   else
     cat >> "$TODAY_REPORT" <<SEC
-## Watch First
+## Priority Videos
 
 No priority uploads today — your favorites are taking a break.
 
@@ -305,38 +297,12 @@ No priority uploads today — your favorites are taking a break.
 SEC
   fi
 
-  # --- Podcastable ---
-  if [ "$POD_N" -gt 0 ]; then
+  # --- Non-priority ---
+  if [ "$NONPRI_N" -gt 0 ]; then
     cat >> "$TODAY_REPORT" <<SEC
-## Podcastable
+## Non-Priority Videos
 
-$(cat "$TMP_POD")
-
----
-
-SEC
-  fi
-
-  # --- Rare drops ---
-  if [ "$RARE_N" -gt 0 ]; then
-    cat >> "$TODAY_REPORT" <<SEC
-## Rare Drops
-
-These channels have been quiet for a while — worth a look.
-
-$(cat "$TMP_RARE")
-
----
-
-SEC
-  fi
-
-  # --- Regular ---
-  if [ "$REG_N" -gt 0 ]; then
-    cat >> "$TODAY_REPORT" <<SEC
-## Also New
-
-$(cat "$TMP_REG")
+$(cat "$TMP_NONPRI")
 
 ---
 
@@ -345,7 +311,7 @@ SEC
 fi
 
 # --- Cleanup ---
-rm -f "$TMP_PRI" "$TMP_POD" "$TMP_RARE" "$TMP_REG"
+rm -f "$TMP_PRI" "$TMP_NONPRI"
 
 # --- Error summary (one message for connection/rate-limit issues) ---
 ERR_LAST=0
@@ -392,13 +358,13 @@ DAILY_HDR
 # Today section — inline the full todayReport content with bumped headers
 if [ -f "$TODAY_REPORT" ]; then
   # Replace leading "# " with "## " so top heading becomes h2, subsections h3
-  sed 's/^# /## /; s/^## Watch/### Watch/; s/^## Podcastable/### Podcastable/; s/^## Rare/### Rare/; s/^## Also/### Also/; s/^## Heads/### Heads/' "$TODAY_REPORT" >> "$DAILY_REPORT"
+  sed 's/^# /## /; s/^## Priority/### Priority/; s/^## Non-Priority/### Non-Priority/; s/^## Heads/### Heads/' "$TODAY_REPORT" >> "$DAILY_REPORT"
 fi
 
 # Yesterday section
 if [ -f "$YESTERDAY_FILE" ]; then
   printf '\n---\n\n' >> "$DAILY_REPORT"
-  sed 's/^# /## /; s/^## Watch/### Watch/; s/^## Podcastable/### Podcastable/; s/^## Rare/### Rare/; s/^## Also/### Also/; s/^## Heads/### Heads/' "$YESTERDAY_FILE" >> "$DAILY_REPORT"
+  sed 's/^# /## /; s/^## Priority/### Priority/; s/^## Non-Priority/### Non-Priority/; s/^## Heads/### Heads/' "$YESTERDAY_FILE" >> "$DAILY_REPORT"
 else
   cat >> "$DAILY_REPORT" <<NO_YEST
 
@@ -455,7 +421,7 @@ if [ -n "$RECENT_VIDEOS" ]; then
 
     card_classes=""
     badge_html=""
-    bucket="regular"
+    bucket="nonpriority"
     is_rare=0
     is_podcast=0
 
@@ -471,16 +437,14 @@ if [ -n "$RECENT_VIDEOS" ]; then
 
     if is_podcastable_channel "$chan"; then
       is_podcast=1
-      if [ "$bucket" = "regular" ]; then
-        bucket="podcast"
+      if [ "$bucket" = "nonpriority" ]; then
         card_classes=" podcast"
       fi
       badge_html="${badge_html}<span class=\"badge podcast\">Podcastable</span>"
     fi
 
     if [ "$is_rare" -eq 1 ]; then
-      if [ "$bucket" = "regular" ]; then
-        bucket="rare"
+      if [ "$bucket" = "nonpriority" ] && [ "$is_podcast" -eq 0 ]; then
         card_classes=" rare"
       fi
       badge_html="${badge_html}<span class=\"badge rare\">Rare Drop</span>"
@@ -492,25 +456,27 @@ if [ -n "$RECENT_VIDEOS" ]; then
       podcast_label="Not podcastable"
     fi
 
-    gap_html=""
-    if [ "$is_rare" -eq 1 ]; then
-      gap_html="<div class=\"card-note\">${gap} days since last upload</div>"
+    if [ "$is_podcast" -eq 1 ]; then
+      app_hrefs="${ABS_APP_URLS}"
+      launch_label="Open in Audiobookshelf"
+    else
+      app_hrefs="${JELLYFIN_APP_URLS}"
+      launch_label="Open in Jellyfin"
     fi
 
+    filter_text=$(printf '%s %s %s %s' "$title" "$chan" "$upload_label" "$bucket" | tr '[:upper:]' '[:lower:]')
+    safe_filter_text=$(html_escape "$filter_text")
+
     cat >> "$WEB_TMP_DIR/${download_day}.${bucket}.html" <<CARD
-<article class="card${card_classes}">
-  <img src="${thumb_path}" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded ${download_time} <span>&middot;</span> ${podcast_label}</div>
-    <div class="title">${safe_title}</div>
-    <div class="channel-row">
-      <div class="channel">${safe_chan}</div>
-      <div class="badges">${badge_html}</div>
+<a class="card-link" href="#" data-app-urls="${app_hrefs}" data-filter-text="${safe_filter_text}" data-bucket="${bucket}" aria-label="${launch_label}: ${safe_title}">
+  <article class="card${card_classes}">
+    <img src="${thumb_path}" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">${safe_title}</div>
+      <div class="meta-row">${safe_chan} <span>&middot;</span> ${upload_label}</div>
     </div>
-    <div class="meta-row">Uploaded ${upload_label}</div>
-    ${gap_html}
-  </div>
-</article>
+  </article>
+</a>
 CARD
   done <<EOF
 $RECENT_VIDEOS
@@ -525,16 +491,10 @@ for download_day in $(printf '%s' "$DAY_ORDER"); do
   day_blocks=""
 
   if [ -s "$WEB_TMP_DIR/${download_day}.priority.html" ]; then
-    day_blocks="${day_blocks}<section class=\"category\"><h3>Watch First</h3><div class=\"cards\">$(cat "$WEB_TMP_DIR/${download_day}.priority.html")</div></section>"
+    day_blocks="${day_blocks}<section class=\"category\"><h3>Priority Videos</h3><div class=\"cards\">$(cat "$WEB_TMP_DIR/${download_day}.priority.html")</div></section>"
   fi
-  if [ -s "$WEB_TMP_DIR/${download_day}.podcast.html" ]; then
-    day_blocks="${day_blocks}<section class=\"category\"><h3>Podcastable</h3><div class=\"cards\">$(cat "$WEB_TMP_DIR/${download_day}.podcast.html")</div></section>"
-  fi
-  if [ -s "$WEB_TMP_DIR/${download_day}.rare.html" ]; then
-    day_blocks="${day_blocks}<section class=\"category\"><h3>Rare Drops</h3><div class=\"cards\">$(cat "$WEB_TMP_DIR/${download_day}.rare.html")</div></section>"
-  fi
-  if [ -s "$WEB_TMP_DIR/${download_day}.regular.html" ]; then
-    day_blocks="${day_blocks}<section class=\"category\"><h3>Everything Else</h3><div class=\"cards\">$(cat "$WEB_TMP_DIR/${download_day}.regular.html")</div></section>"
+  if [ -s "$WEB_TMP_DIR/${download_day}.nonpriority.html" ]; then
+    day_blocks="${day_blocks}<section class=\"category\"><h3>Non-Priority</h3><div class=\"cards\">$(cat "$WEB_TMP_DIR/${download_day}.nonpriority.html")</div></section>"
   fi
 
   [ -z "$day_blocks" ] && continue
@@ -567,6 +527,7 @@ cat > "$HTML_OUT" <<HTML
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0e11">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Report">
@@ -583,8 +544,9 @@ cat > "$HTML_OUT" <<HTML
   </script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    :root{--bg:#101317;--panel:#171c21;--panel-soft:#1d242b;--line:#2a323b;--text:#ecf2f8;--muted:#97a6b4;--soft:#627384;--accent:#d7a847;--accent-soft:#2e2411;--pod:#72c7a2;--pod-soft:#163126;--rare:#86b9d9;--rare-soft:#172734;--warn:#f07f64;--warn-soft:#2b1916}
-    body{background:linear-gradient(180deg,#0b0e11 0,#0f1419 220px,#101317 100%);color:var(--text);font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;min-height:100vh}
+    :root{--bg:#101317;--panel:#171c21;--panel-soft:#1d242b;--line:#2a323b;--text:#ecf2f8;--muted:#97a6b4;--soft:#627384;--accent:#d7a847;--accent-soft:#2e2411;--pod:#72c7a2;--pod-soft:#163126;--rare:#86b9d9;--rare-soft:#172734;--warn:#f07f64;--warn-soft:#2b1916;--scroll-bg-top:#05070a;--scroll-bg-mid:#0b0e11;--scroll-bg-band:#0f1419;--scroll-bg-base:#101317;--chrome-tint:rgba(10,13,16,.86);--chrome-line:rgba(255,255,255,.06);--panel-tint:rgba(23,28,33,.78)}
+    html{background:#0b0e11}
+    body{background:linear-gradient(180deg,var(--scroll-bg-top) 0,var(--scroll-bg-mid) 120px,var(--scroll-bg-band) 320px,var(--scroll-bg-base) 100%);color:var(--text);font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;min-height:100vh;min-height:100dvh;padding-top:env(safe-area-inset-top);overflow-x:hidden;transition:background .25s ease,color .25s ease}
     #gate{display:none;position:fixed;inset:0;background:#0c0f13;z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:16px}
     #gate h2{color:#fff;font-size:1.2rem;font-weight:500}
     #gate input{background:#151a1f;border:1px solid #303844;color:#fff;padding:10px 16px;border-radius:8px;font-size:1rem;width:220px;text-align:center;outline:none}
@@ -593,8 +555,8 @@ cat > "$HTML_OUT" <<HTML
     #gate button:hover{background:#202730}
     #gate .err{color:#f07f64;font-size:.85rem}
     #app{display:none}
-    .shell{max-width:1320px;margin:0 auto;padding:14px 18px 48px}
-    header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:12px;padding:10px 12px;background:rgba(10,13,16,.86);border:1px solid rgba(255,255,255,.06);border-radius:18px;backdrop-filter:blur(10px)}
+    .shell{max-width:1320px;margin:0 auto;padding:10px 18px 48px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:12px;padding:10px 12px;background:var(--chrome-tint);border:1px solid var(--chrome-line);border-radius:18px;backdrop-filter:blur(10px);transition:background .25s ease,border-color .25s ease,box-shadow .25s ease}
     .title-wrap{display:flex;align-items:baseline;gap:10px;min-width:0}
     .kicker{font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#c2a365}
     header h1{font-size:1rem;line-height:1.1;color:#d8e1ea;font-weight:600;white-space:nowrap}
@@ -605,6 +567,13 @@ cat > "$HTML_OUT" <<HTML
     .meta-card span{display:block;color:#fff;font-size:1rem}
     .notify-btn{background:transparent;border:1px solid #3b4550;color:#c6d0da;padding:8px 12px;border-radius:999px;cursor:pointer;font:600 .72rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:all .2s;flex-shrink:0}
     .notify-btn:hover{border-color:#c2a365;color:#fff}
+    .controls{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 12px;padding:10px 12px;background:rgba(12,15,19,.72);border:1px solid rgba(255,255,255,.06);border-radius:18px;backdrop-filter:blur(10px);position:sticky;top:calc(env(safe-area-inset-top) + 6px);z-index:20;transition:background .25s ease,border-color .25s ease,transform .25s ease}
+    .controls.compact{transform:translateY(-2px)}
+    .filter-input{flex:1 1 220px;min-width:0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--text);padding:10px 12px;border-radius:999px;font:500 16px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;outline:none}
+    .filter-input::placeholder{color:#7f90a1}
+    .filter-chip{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#c6d0da;padding:9px 12px;border-radius:999px;cursor:pointer;font:600 .7rem/1.1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:background .2s ease,border-color .2s ease,color .2s ease}
+    .filter-chip.active{background:#d7a847;color:#120d05;border-color:#f0c671}
+    .filter-status{flex:1 1 100%;font:500 .72rem/1.25 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted)}
     .summary-bar{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
     .summary-tile{background:rgba(23,28,33,.72);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:16px 18px}
     .summary-tile strong{display:block;font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#92a0af;margin-bottom:8px}
@@ -613,47 +582,46 @@ cat > "$HTML_OUT" <<HTML
     .warn-banner{display:flex;gap:12px;align-items:flex-start;background:var(--warn-soft);border:1px solid rgba(240,127,100,.35);border-radius:14px;padding:14px 16px;color:#ffd3c8}
     .warn-banner strong{color:#fff;font:600 .78rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;min-width:max-content}
     main{margin-top:10px;display:grid;gap:18px}
-    .day-section{background:rgba(23,28,33,.78);border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:22px 20px 20px;box-shadow:0 18px 60px rgba(0,0,0,.16)}
+    .day-section{background:var(--panel-tint);border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:22px 20px 20px;box-shadow:0 18px 60px rgba(0,0,0,.16);transition:background .25s ease,border-color .25s ease,box-shadow .25s ease}
     .day-header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.07)}
     .day-header h2{font-size:1.5rem;color:#fff;font-weight:600}
     .day-header h2 span{display:inline-block;margin-left:10px;color:var(--muted);font-size:.95rem;font-weight:400}
     .category+.category{margin-top:18px}
     .category h3{font:600 .74rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#8fa0b1;margin-bottom:12px}
-    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
-    .card{display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px;min-height:144px}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+    .card-link{text-decoration:none;color:inherit;display:block}
+    .card{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px 12px;min-height:82px}
+    .card-link:active .card,.card-link:focus-visible .card{border-color:#5c6977;transform:translateY(1px)}
     .card.priority{border-color:rgba(215,168,71,.45);background:linear-gradient(180deg,rgba(46,36,17,.96),rgba(23,28,33,.96))}
     .card.podcast{border-color:rgba(114,199,162,.45);background:linear-gradient(180deg,rgba(22,49,38,.96),rgba(23,28,33,.96))}
     .card.rare{border-color:rgba(134,185,217,.4);background:linear-gradient(180deg,rgba(23,39,52,.96),rgba(23,28,33,.96))}
-    .card img{width:64px;height:64px;border-radius:12px;object-fit:cover;flex-shrink:0;background:var(--panel-soft)}
-    .info{min-width:0;display:grid;gap:8px;width:100%}
-    .eyebrow{font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#8ea0b2}
-    .eyebrow span{padding:0 6px;color:#59697a}
-    .title{font-size:1rem;line-height:1.35;color:#f6f8fb;word-break:break-word}
-    .channel-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-    .channel{font:600 .84rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#d6dee6}
-    .badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-    .badge{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font:600 .64rem/1.1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.1em;text-transform:uppercase;border:1px solid transparent}
-    .badge.priority{background:var(--accent-soft);color:#f0c671;border-color:rgba(215,168,71,.35)}
-    .badge.podcast{background:var(--pod-soft);color:#9ae0bc;border-color:rgba(114,199,162,.35)}
-    .badge.rare{background:var(--rare-soft);color:#a8d3ec;border-color:rgba(134,185,217,.35)}
-    .meta-row{font:500 .76rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted)}
-    .card-note{font:500 .76rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#a8d3ec}
+    .card img{width:42px;height:42px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--panel-soft)}
+    .info{min-width:0;display:grid;gap:4px;width:100%}
+    .title{font-size:.92rem;line-height:1.24;color:#f6f8fb;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .meta-row{font:500 .72rem/1.25 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .meta-row span{padding:0 5px;color:#59697a}
     .empty{color:var(--muted);font-size:1rem;line-height:1.6}
+    .day-section.is-filtered-empty,.category.is-filtered-empty{display:none}
     .bottom-panel{margin-top:18px;padding:18px;border:1px solid rgba(255,255,255,.06);border-radius:22px;background:linear-gradient(180deg,rgba(18,22,27,.96),rgba(13,16,20,.96))}
     .bottom-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
     .bottom-head h2{font-size:1rem;color:#dbe4ec;font-weight:600}
     .bottom-head p{font:500 .76rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted)}
     footer{padding-top:16px;color:#7d8d9d;font:500 .76rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
     @media(max-width:720px){
-      .shell{padding:10px 10px 28px}
+      .shell{padding:6px 10px 28px}
       header{padding:10px;gap:10px;align-items:center}
+      .controls{top:calc(env(safe-area-inset-top) + 4px);padding:9px 10px;gap:8px}
       .title-wrap{flex-direction:column;align-items:flex-start;gap:4px}
       header h1{font-size:.92rem;white-space:normal}
       .top-meta{margin-left:auto}
       .day-section{padding:18px 14px}
       .cards{grid-template-columns:1fr}
-      .channel-row{flex-direction:column;align-items:flex-start}
-      .badges{justify-content:flex-start}
+      .card{padding:8px 10px;min-height:74px}
+      .card img{width:38px;height:38px}
+      .title{font-size:.86rem}
+      .meta-row{font-size:.68rem}
+      .filter-input{flex-basis:100%;font-size:16px;padding:9px 11px}
+      .filter-chip{padding:8px 10px;font-size:.64rem}
       .bottom-panel{padding:14px}
       .bottom-head{flex-direction:column;align-items:flex-start}
     }
@@ -679,6 +647,14 @@ cat > "$HTML_OUT" <<HTML
         <button class="notify-btn" onclick="subscribeNotify()">Get notified</button>
       </div>
     </header>
+
+    <section class="controls" id="feedControls">
+      <input id="feedFilter" class="filter-input" type="search" placeholder="Filter by title, channel, date" autocomplete="off" spellcheck="false">
+      <button class="filter-chip active" type="button" data-filter-bucket="all">All</button>
+      <button class="filter-chip" type="button" data-filter-bucket="priority">Priority</button>
+      <button class="filter-chip" type="button" data-filter-bucket="nonpriority">Non-Priority</button>
+      <div class="filter-status" id="filterStatus">Showing all ${RECENT_COUNT} videos.</div>
+    </section>
 
     <main>
       ${DAY_SECTIONS_HTML}
@@ -786,6 +762,129 @@ function waitForOneSignal() {
 
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone = window.navigator.standalone === true;
+const rootStyle = document.documentElement.style;
+const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+function tryAppUrls(appUrls) {
+  const urls = appUrls.split('|').filter(Boolean);
+  let index = 0;
+
+  function attemptNext() {
+    if (index >= urls.length) {
+      return;
+    }
+
+    const startedAt = Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = urls[index++];
+    document.body.appendChild(iframe);
+
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      if (Date.now() - startedAt < 1400) {
+        attemptNext();
+      }
+    }, 700);
+  }
+
+  attemptNext();
+}
+
+document.addEventListener('click', event => {
+  const chip = event.target.closest('.filter-chip');
+  if (chip) {
+    setActiveBucket(chip.dataset.filterBucket || 'all');
+    applyFeedFilter();
+    return;
+  }
+
+  const link = event.target.closest('.card-link');
+  if (!link) return;
+  event.preventDefault();
+  tryAppUrls(link.dataset.appUrls || '');
+});
+
+const filterInput = document.getElementById('feedFilter');
+const filterStatus = document.getElementById('filterStatus');
+const filterChips = Array.from(document.querySelectorAll('.filter-chip'));
+let activeBucket = 'all';
+
+function setActiveBucket(bucket) {
+  activeBucket = bucket;
+  filterChips.forEach(chip => {
+    chip.classList.toggle('active', (chip.dataset.filterBucket || 'all') === bucket);
+  });
+}
+
+function applyFeedFilter() {
+  const query = (filterInput?.value || '').trim().toLowerCase();
+  const cards = Array.from(document.querySelectorAll('.card-link'));
+  let visibleCount = 0;
+
+  cards.forEach(card => {
+    const haystack = card.dataset.filterText || '';
+    const bucket = card.dataset.bucket || 'nonpriority';
+    const matchesBucket = activeBucket === 'all' || bucket === activeBucket;
+    const matchesQuery = !query || haystack.includes(query);
+    const visible = matchesBucket && matchesQuery;
+    card.hidden = !visible;
+    if (visible) visibleCount += 1;
+  });
+
+  document.querySelectorAll('.category').forEach(section => {
+    const hasVisibleCards = Array.from(section.querySelectorAll('.card-link')).some(card => !card.hidden);
+    section.classList.toggle('is-filtered-empty', !hasVisibleCards);
+  });
+
+  document.querySelectorAll('.day-section').forEach(section => {
+    const hasVisibleCategories = Array.from(section.querySelectorAll('.category')).some(category => !category.classList.contains('is-filtered-empty'));
+    section.classList.toggle('is-filtered-empty', !hasVisibleCategories);
+  });
+
+  if (!filterStatus) return;
+
+  if (!query && activeBucket === 'all') {
+    filterStatus.textContent = 'Showing all ' + visibleCount + ' videos.';
+    return;
+  }
+
+  const bucketLabel = activeBucket === 'all' ? 'all sections' : activeBucket === 'priority' ? 'priority' : 'non-priority';
+  const queryLabel = query ? ' matching "' + query + '"' : '';
+  filterStatus.textContent = 'Showing ' + visibleCount + ' videos in ' + bucketLabel + queryLabel + '.';
+}
+
+filterInput?.addEventListener('input', applyFeedFilter);
+
+function mixChannel(from, to, amount) {
+  return Math.round(from + (to - from) * amount);
+}
+
+function setScrollTheme() {
+  const scrollable = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+  const progress = Math.min(window.scrollY / scrollable, 1);
+  const eased = Math.min(progress * 1.18, 1);
+
+  const top = 'rgb(' + mixChannel(5, 23, eased) + ' ' + mixChannel(7, 43, eased) + ' ' + mixChannel(10, 52, eased) + ')';
+  const mid = 'rgb(' + mixChannel(11, 31, eased) + ' ' + mixChannel(14, 59, eased) + ' ' + mixChannel(17, 67, eased) + ')';
+  const band = 'rgb(' + mixChannel(15, 43, eased) + ' ' + mixChannel(20, 76, eased) + ' ' + mixChannel(25, 86, eased) + ')';
+  const base = 'rgb(' + mixChannel(16, 31, eased) + ' ' + mixChannel(19, 53, eased) + ' ' + mixChannel(23, 60, eased) + ')';
+  const chrome = 'rgba(' + mixChannel(10, 18, eased) + ',' + mixChannel(13, 34, eased) + ',' + mixChannel(16, 40, eased) + ',.88)';
+
+  rootStyle.setProperty('--scroll-bg-top', top);
+  rootStyle.setProperty('--scroll-bg-mid', mid);
+  rootStyle.setProperty('--scroll-bg-band', band);
+  rootStyle.setProperty('--scroll-bg-base', base);
+  rootStyle.setProperty('--chrome-tint', chrome);
+  rootStyle.setProperty('--panel-tint', 'rgba(' + mixChannel(23, 20, eased) + ',' + mixChannel(28, 42, eased) + ',' + mixChannel(33, 48, eased) + ',.8)');
+  if (themeMeta) themeMeta.setAttribute('content', mid);
+  document.getElementById('feedControls')?.classList.toggle('compact', progress > 0.08);
+}
+
+setActiveBucket('all');
+applyFeedFilter();
+setScrollTheme();
+window.addEventListener('scroll', setScrollTheme, { passive: true });
 
 async function subscribeNotify() {
   if (isIOS && !isStandalone) {

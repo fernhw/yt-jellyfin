@@ -9,31 +9,65 @@
 SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
 . "$SCRIPT_DIR/locations.md"
 CONFIG_FILE="$SCRIPT_DIR/channelConfig.md"
+DB="$SCRIPT_DIR/ytdb.db"
+FILTER_FILE="$SCRIPT_DIR/filterYT.md"
 
 # Read podcastable channel list from config
 get_podcastable() {
   [ ! -f "$CONFIG_FILE" ] && return
-  awk '/^\[podcastable\]/{found=1; next} /^\[/{found=0} found && /^[^#]/ && NF{print $1}' "$CONFIG_FILE"
+  awk '/^\[podcastable\]/{found=1; next} /^\[/{found=0} found && /^[^#]/ && NF{print $1}' "$CONFIG_FILE" | awk '!seen[tolower($0)]++'
 }
 
-# Find matching YT folder for a channel handle (case-insensitive)
+handle_bare() {
+  printf '%s' "$1" | sed 's/^@//'
+}
+
+normalize_channel_name() {
+  printf '%s' "$1" \
+    | sed 's/[^a-zA-Z0-9 _-]//g; s/  */ /g; s/^ *//; s/ *$//' \
+    | tr -d ' _'
+}
+
+apply_filter() {
+  if [ -f "$FILTER_FILE" ]; then
+    local mapped
+    mapped=$(awk -F ' *-> *' -v ch="$1" 'tolower($1)==tolower(ch) && NF>=2 {print $2; exit}' "$FILTER_FILE")
+    [ -n "$mapped" ] && {
+      printf '%s' "$mapped"
+      return
+    }
+  fi
+  printf '%s' "$1"
+}
+
 find_channel_dir() {
-  local handle="$1"
-  for d in "$YT_ROOT"/*/; do
-    [ ! -d "$d" ] && continue
-    local dname
-    dname=$(basename "$d")
-    if [ "$(printf '%s' "$dname" | tr '[:upper:]' '[:lower:]')" = "$(printf '%s' "$handle" | tr '[:upper:]' '[:lower:]')" ]; then
-      printf '%s' "$d"
-      return 0
-    fi
-  done
+  local handle="$1" bare display filtered folder
+  bare=$(handle_bare "$handle")
+  [ -z "$bare" ] && return 1
+
+  display=$(sqlite3 "$DB" "SELECT display_name FROM channel_aliases WHERE handle='$(printf '%s' "$bare" | sed "s/'/''/g")';" 2>/dev/null)
+
+  filtered=$(apply_filter "${display:-$bare}")
+  folder=$(normalize_channel_name "$filtered")
+  if [ -d "$YT_ROOT/$folder" ]; then
+    printf '%s' "$YT_ROOT/$folder"
+    return 0
+  fi
+
+  filtered=$(apply_filter "$bare")
+  folder=$(normalize_channel_name "$filtered")
+  if [ -d "$YT_ROOT/$folder" ]; then
+    printf '%s' "$YT_ROOT/$folder"
+    return 0
+  fi
+
   return 1
 }
 
 count=0
 skipped=0
 errors=0
+missing_handles=""
 
 # Write handle list to temp file to avoid pipe subshell
 HANDLE_LIST=$(mktemp)
@@ -44,7 +78,7 @@ while IFS= read -r handle; do
 
   src_dir=$(find_channel_dir "$handle")
   if [ -z "$src_dir" ]; then
-    echo "podcast: no YT folder for $handle -- skipping"
+    missing_handles="${missing_handles}${handle}\n"
     continue
   fi
 
@@ -103,4 +137,9 @@ while IFS= read -r handle; do
 done < "$HANDLE_LIST"
 
 rm -f "$HANDLE_LIST"
+if [ -n "$missing_handles" ]; then
+  missing_count=$(printf '%b' "$missing_handles" | sed '/^$/d' | wc -l | tr -d ' ')
+  missing_list=$(printf '%b' "$missing_handles" | sed '/^$/d' | paste -sd ', ' -)
+  echo "podcast: no YT folder yet for ${missing_count} channel(s): $missing_list -- skipping"
+fi
 echo "podcast: done -- extracted=$count skipped=$skipped errors=$errors"

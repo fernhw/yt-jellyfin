@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0e11">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Report">
@@ -19,8 +20,9 @@
   </script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    :root{--bg:#101317;--panel:#171c21;--panel-soft:#1d242b;--line:#2a323b;--text:#ecf2f8;--muted:#97a6b4;--soft:#627384;--accent:#d7a847;--accent-soft:#2e2411;--pod:#72c7a2;--pod-soft:#163126;--rare:#86b9d9;--rare-soft:#172734;--warn:#f07f64;--warn-soft:#2b1916}
-    body{background:radial-gradient(circle at top,#1b2430 0,#101317 45%,#0c0f13 100%);color:var(--text);font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;min-height:100vh}
+    :root{--bg:#101317;--panel:#171c21;--panel-soft:#1d242b;--line:#2a323b;--text:#ecf2f8;--muted:#97a6b4;--soft:#627384;--accent:#d7a847;--accent-soft:#2e2411;--pod:#72c7a2;--pod-soft:#163126;--rare:#86b9d9;--rare-soft:#172734;--warn:#f07f64;--warn-soft:#2b1916;--scroll-bg-top:#05070a;--scroll-bg-mid:#0b0e11;--scroll-bg-band:#0f1419;--scroll-bg-base:#101317;--chrome-tint:rgba(10,13,16,.86);--chrome-line:rgba(255,255,255,.06);--panel-tint:rgba(23,28,33,.78)}
+    html{background:#0b0e11}
+    body{background:linear-gradient(180deg,var(--scroll-bg-top) 0,var(--scroll-bg-mid) 120px,var(--scroll-bg-band) 320px,var(--scroll-bg-base) 100%);color:var(--text);font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;min-height:100vh;min-height:100dvh;padding-top:env(safe-area-inset-top);overflow-x:hidden;transition:background .25s ease,color .25s ease}
     #gate{display:none;position:fixed;inset:0;background:#0c0f13;z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:16px}
     #gate h2{color:#fff;font-size:1.2rem;font-weight:500}
     #gate input{background:#151a1f;border:1px solid #303844;color:#fff;padding:10px 16px;border-radius:8px;font-size:1rem;width:220px;text-align:center;outline:none}
@@ -29,62 +31,75 @@
     #gate button:hover{background:#202730}
     #gate .err{color:#f07f64;font-size:.85rem}
     #app{display:none}
-    .shell{max-width:1320px;margin:0 auto;padding:28px 24px 48px}
-    header{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap}
-    .title-wrap{max-width:760px}
-    .kicker{font:600 .72rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#c2a365;margin-bottom:10px}
-    header h1{font-size:clamp(2.1rem,3vw,3.5rem);line-height:.95;color:#fff;font-weight:600}
-    .lede{margin-top:12px;color:#c9d3dc;font-size:1rem;line-height:1.6;max-width:58ch}
-    .top-meta{display:grid;gap:12px;justify-items:end}
+    .shell{max-width:1320px;margin:0 auto;padding:10px 18px 48px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:12px;padding:10px 12px;background:var(--chrome-tint);border:1px solid var(--chrome-line);border-radius:18px;backdrop-filter:blur(10px);transition:background .25s ease,border-color .25s ease,box-shadow .25s ease}
+    .title-wrap{display:flex;align-items:baseline;gap:10px;min-width:0}
+    .kicker{font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#c2a365}
+    header h1{font-size:1rem;line-height:1.1;color:#d8e1ea;font-weight:600;white-space:nowrap}
+    .lede{display:none}
+    .top-meta{display:flex;gap:10px;align-items:center}
     .meta-card{background:rgba(23,28,33,.88);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:14px 16px;min-width:220px;backdrop-filter:blur(10px)}
     .meta-card strong{display:block;font:600 .72rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#92a0af;margin-bottom:6px}
     .meta-card span{display:block;color:#fff;font-size:1rem}
-    .notify-btn{background:transparent;border:1px solid #495563;color:#d8e1ea;padding:9px 16px;border-radius:999px;cursor:pointer;font:600 .78rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:all .2s}
+    .notify-btn{background:transparent;border:1px solid #3b4550;color:#c6d0da;padding:8px 12px;border-radius:999px;cursor:pointer;font:600 .72rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:all .2s;flex-shrink:0}
     .notify-btn:hover{border-color:#c2a365;color:#fff}
-    .summary-bar{margin-top:28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    .controls{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 12px;padding:10px 12px;background:rgba(12,15,19,.72);border:1px solid rgba(255,255,255,.06);border-radius:18px;backdrop-filter:blur(10px);position:sticky;top:calc(env(safe-area-inset-top) + 6px);z-index:20;transition:background .25s ease,border-color .25s ease,transform .25s ease}
+    .controls.compact{transform:translateY(-2px)}
+    .filter-input{flex:1 1 220px;min-width:0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--text);padding:10px 12px;border-radius:999px;font:500 16px/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;outline:none}
+    .filter-input::placeholder{color:#7f90a1}
+    .filter-chip{border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#c6d0da;padding:9px 12px;border-radius:999px;cursor:pointer;font:600 .7rem/1.1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:background .2s ease,border-color .2s ease,color .2s ease}
+    .filter-chip.active{background:#d7a847;color:#120d05;border-color:#f0c671}
+    .filter-status{flex:1 1 100%;font:500 .72rem/1.25 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted)}
+    .summary-bar{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
     .summary-tile{background:rgba(23,28,33,.72);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:16px 18px}
     .summary-tile strong{display:block;font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#92a0af;margin-bottom:8px}
     .summary-tile span{font-size:1.05rem;color:#fff}
     .warn-stack{display:grid;gap:10px;margin-top:20px}
     .warn-banner{display:flex;gap:12px;align-items:flex-start;background:var(--warn-soft);border:1px solid rgba(240,127,100,.35);border-radius:14px;padding:14px 16px;color:#ffd3c8}
     .warn-banner strong{color:#fff;font:600 .78rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;min-width:max-content}
-    main{margin-top:30px;display:grid;gap:24px}
-    .day-section{background:rgba(23,28,33,.78);border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:22px 20px 20px;box-shadow:0 18px 60px rgba(0,0,0,.16)}
+    main{margin-top:10px;display:grid;gap:18px}
+    .day-section{background:var(--panel-tint);border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:22px 20px 20px;box-shadow:0 18px 60px rgba(0,0,0,.16);transition:background .25s ease,border-color .25s ease,box-shadow .25s ease}
     .day-header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.07)}
     .day-header h2{font-size:1.5rem;color:#fff;font-weight:600}
     .day-header h2 span{display:inline-block;margin-left:10px;color:var(--muted);font-size:.95rem;font-weight:400}
     .category+.category{margin-top:18px}
     .category h3{font:600 .74rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#8fa0b1;margin-bottom:12px}
-    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
-    .card{display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:15px;min-height:144px}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+    .card-link{text-decoration:none;color:inherit;display:block}
+    .card{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px 12px;min-height:82px}
+    .card-link:active .card,.card-link:focus-visible .card{border-color:#5c6977;transform:translateY(1px)}
     .card.priority{border-color:rgba(215,168,71,.45);background:linear-gradient(180deg,rgba(46,36,17,.96),rgba(23,28,33,.96))}
     .card.podcast{border-color:rgba(114,199,162,.45);background:linear-gradient(180deg,rgba(22,49,38,.96),rgba(23,28,33,.96))}
     .card.rare{border-color:rgba(134,185,217,.4);background:linear-gradient(180deg,rgba(23,39,52,.96),rgba(23,28,33,.96))}
-    .card img{width:64px;height:64px;border-radius:12px;object-fit:cover;flex-shrink:0;background:var(--panel-soft)}
-    .info{min-width:0;display:grid;gap:8px;width:100%}
-    .eyebrow{font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#8ea0b2}
-    .eyebrow span{padding:0 6px;color:#59697a}
-    .title{font-size:1rem;line-height:1.35;color:#f6f8fb;word-break:break-word}
-    .channel-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-    .channel{font:600 .84rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#d6dee6}
-    .badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-    .badge{display:inline-flex;align-items:center;border-radius:999px;padding:4px 8px;font:600 .64rem/1.1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.1em;text-transform:uppercase;border:1px solid transparent}
-    .badge.priority{background:var(--accent-soft);color:#f0c671;border-color:rgba(215,168,71,.35)}
-    .badge.podcast{background:var(--pod-soft);color:#9ae0bc;border-color:rgba(114,199,162,.35)}
-    .badge.rare{background:var(--rare-soft);color:#a8d3ec;border-color:rgba(134,185,217,.35)}
-    .meta-row{font:500 .76rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted)}
-    .card-note{font:500 .76rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#a8d3ec}
+    .card img{width:42px;height:42px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--panel-soft)}
+    .info{min-width:0;display:grid;gap:4px;width:100%}
+    .title{font-size:.92rem;line-height:1.24;color:#f6f8fb;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .meta-row{font:500 .72rem/1.25 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .meta-row span{padding:0 5px;color:#59697a}
     .empty{color:var(--muted);font-size:1rem;line-height:1.6}
-    footer{padding-top:22px;color:#7d8d9d;font:500 .76rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+    .day-section.is-filtered-empty,.category.is-filtered-empty{display:none}
+    .bottom-panel{margin-top:18px;padding:18px;border:1px solid rgba(255,255,255,.06);border-radius:22px;background:linear-gradient(180deg,rgba(18,22,27,.96),rgba(13,16,20,.96))}
+    .bottom-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
+    .bottom-head h2{font-size:1rem;color:#dbe4ec;font-weight:600}
+    .bottom-head p{font:500 .76rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted)}
+    footer{padding-top:16px;color:#7d8d9d;font:500 .76rem/1.35 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
     @media(max-width:720px){
-      .shell{padding:20px 14px 34px}
-      header{gap:16px}
-      .top-meta{width:100%;justify-items:stretch}
-      .meta-card{min-width:0}
+      .shell{padding:6px 10px 28px}
+      header{padding:10px;gap:10px;align-items:center}
+      .controls{top:calc(env(safe-area-inset-top) + 4px);padding:9px 10px;gap:8px}
+      .title-wrap{flex-direction:column;align-items:flex-start;gap:4px}
+      header h1{font-size:.92rem;white-space:normal}
+      .top-meta{margin-left:auto}
       .day-section{padding:18px 14px}
       .cards{grid-template-columns:1fr}
-      .channel-row{flex-direction:column;align-items:flex-start}
-      .badges{justify-content:flex-start}
+      .card{padding:8px 10px;min-height:74px}
+      .card img{width:38px;height:38px}
+      .title{font-size:.86rem}
+      .meta-row{font-size:.68rem}
+      .filter-input{flex-basis:100%;font-size:16px;padding:9px 11px}
+      .filter-chip{padding:8px 10px;font-size:.64rem}
+      .bottom-panel{padding:14px}
+      .bottom-head{flex-direction:column;align-items:flex-start}
     }
   </style>
 </head>
@@ -101,813 +116,592 @@
     <header>
       <div class="title-wrap">
         <div class="kicker">Recent Download Report</div>
-        <h1>What landed, when it landed, and what turns into podcasts.</h1>
+        <h1>Latest downloads</h1>
         <p class="lede">Good morning. This view keeps the latest 4 days in download order, split into priority, podcastable, rare drops, and everything else.</p>
       </div>
       <div class="top-meta">
-        <div class="meta-card">
-          <strong>Report Date</strong>
-          <span>2026-04-24</span>
-        </div>
-        <div class="meta-card">
-          <strong>Updated</strong>
-          <span>2026-04-24 00:54</span>
-        </div>
         <button class="notify-btn" onclick="subscribeNotify()">Get notified</button>
       </div>
     </header>
 
-    <section class="summary-bar">
-      <div class="summary-tile">
-        <strong>Library Storage</strong>
-        <span>727.72 GB used &middot; 1.72 TB free</span>
-      </div>
-      <div class="summary-tile">
-        <strong>Recent Downloads</strong>
-        <span>60 items across 4 days</span>
-      </div>
-      <div class="summary-tile">
-        <strong>Today</strong>
-        <span>8 downloads on Friday</span>
-      </div>
+    <section class="controls" id="feedControls">
+      <input id="feedFilter" class="filter-input" type="search" placeholder="Filter by title, channel, date" autocomplete="off" spellcheck="false">
+      <button class="filter-chip active" type="button" data-filter-bucket="all">All</button>
+      <button class="filter-chip" type="button" data-filter-bucket="priority">Priority</button>
+      <button class="filter-chip" type="button" data-filter-bucket="nonpriority">Non-Priority</button>
+      <div class="filter-status" id="filterStatus">Showing all 60 videos.</div>
     </section>
 
-    <div class="warn-stack"></div>
-
     <main>
-      <section class="day-section"><div class="day-header"><h2>Today <span>Friday, April 24</span></h2></div><section class="category"><h3>Podcastable</h3><div class="cards"><article class="card podcast">
-  <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 12:06 AM <span>&middot;</span> Podcastable</div>
-    <div class="title">Go Ahead, Make Me Cry | Semi-Ramblomatic</div>
-    <div class="channel-row">
-      <div class="channel">Second Wind</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+      <section class="day-section"><div class="day-header"><h2>Today <span>Friday, April 24</span></h2></div><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="boost pragmata ps5 resolution: how to play at 1440p instead of standard 1080p digital foundry apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Boost Pragmata PS5 Resolution: How To Play At 1440p Instead Of Standard 1080p">
+  <article class="card">
+    <img src="thumbs/digitalfoundry.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Boost Pragmata PS5 Resolution: How To Play At 1440p Instead Of Standard 1080p</div>
+      <div class="meta-row">Digital Foundry <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 12:05 AM <span>&middot;</span> Podcastable</div>
-    <div class="title">The Second Wind Games Showcase - Spring 2026 Edition</div>
-    <div class="channel-row">
-      <div class="channel">Second Wind</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="df retro ex: outlive 25 - the cult classic pc rts remastered [sponsored] digital foundry apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: DF Retro EX: Outlive 25 - The Cult Classic PC RTS Remastered [Sponsored]">
+  <article class="card">
+    <img src="thumbs/digitalfoundry.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">DF Retro EX: Outlive 25 - The Cult Classic PC RTS Remastered [Sponsored]</div>
+      <div class="meta-row">Digital Foundry <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article></div></section><section class="category"><h3>Everything Else</h3><div class="cards"><article class="card">
-  <img src="thumbs/digitalfoundry.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 12:12 AM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Boost Pragmata PS5 Resolution: How To Play At 1440p Instead Of Standard 1080p</div>
-    <div class="channel-row">
-      <div class="channel">Digital Foundry</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="wii u vs. playstation vita scott's stash apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Wii U vs. PlayStation Vita">
+  <article class="card">
+    <img src="thumbs/scottsstash.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Wii U vs. PlayStation Vita</div>
+      <div class="meta-row">Scott's Stash <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/digitalfoundry.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 12:11 AM <span>&middot;</span> Not podcastable</div>
-    <div class="title">DF Retro EX: Outlive 25 - The Cult Classic PC RTS Remastered [Sponsored]</div>
-    <div class="channel-row">
-      <div class="channel">Digital Foundry</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="the most useless amiibo figures scott's stash apr 24, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: The Most Useless amiibo Figures">
+  <article class="card">
+    <img src="thumbs/scottsstash.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">The Most Useless amiibo Figures</div>
+      <div class="meta-row">Scott's Stash <span>&middot;</span> Apr 24, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/scottsstash.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 12:10 AM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Wii U vs. PlayStation Vita</div>
-    <div class="channel-row">
-      <div class="channel">Scott's Stash</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="tim is finally cooked big a apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Tim Is Finally Cooked">
+  <article class="card">
+    <img src="thumbs/biga.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Tim Is Finally Cooked</div>
+      <div class="meta-row">Big A <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/scottsstash.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 12:08 AM <span>&middot;</span> Not podcastable</div>
-    <div class="title">The Most Useless amiibo Figures</div>
-    <div class="channel-row">
-      <div class="channel">Scott's Stash</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="he apologized big a apr 24, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: He Apologized">
+  <article class="card">
+    <img src="thumbs/biga.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">He Apologized</div>
+      <div class="meta-row">Big A <span>&middot;</span> Apr 24, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 24, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/biga.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 12:07 AM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Tim Is Finally Cooked</div>
-    <div class="channel-row">
-      <div class="channel">Big A</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="go ahead, make me cry | semi-ramblomatic second wind apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Go Ahead, Make Me Cry | Semi-Ramblomatic">
+  <article class="card podcast">
+    <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Go Ahead, Make Me Cry | Semi-Ramblomatic</div>
+      <div class="meta-row">Second Wind <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/biga.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 12:06 AM <span>&middot;</span> Not podcastable</div>
-    <div class="title">He Apologized</div>
-    <div class="channel-row">
-      <div class="channel">Big A</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="the second wind games showcase - spring 2026 edition second wind apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: The Second Wind Games Showcase - Spring 2026 Edition">
+  <article class="card podcast">
+    <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">The Second Wind Games Showcase - Spring 2026 Edition</div>
+      <div class="meta-row">Second Wind <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 24, 2026</div>
-    
-  </div>
-</article></div></section></section><section class="day-section"><div class="day-header"><h2>Yesterday <span>Thursday, April 23</span></h2></div><section class="category"><h3>Watch First</h3><div class="cards"><article class="card priority">
-  <img src="thumbs/schaffrillasproductions.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:00 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Invincible S4 - IT'S (almost) PEAK</div>
-    <div class="channel-row">
-      <div class="channel">Schaffrillas Productions</div>
-      <div class="badges"><span class="badge priority">Watch First</span></div>
+  </article>
+</a></div></section></section><section class="day-section"><div class="day-header"><h2>Yesterday <span>Thursday, April 23</span></h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="invincible s4 - it's (almost) peak schaffrillas productions apr 23, 2026 priority" data-bucket="priority" aria-label="Open in Jellyfin: Invincible S4 - IT'S (almost) PEAK">
+  <article class="card priority">
+    <img src="thumbs/schaffrillasproductions.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Invincible S4 - IT'S (almost) PEAK</div>
+      <div class="meta-row">Schaffrillas Productions <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card priority">
-  <img src="thumbs/echidnut.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 10:59 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Subaru as a Villain | Re:ZERO Season 4 Episode 3 Reaction/Analysis</div>
-    <div class="channel-row">
-      <div class="channel">Echidnut</div>
-      <div class="badges"><span class="badge priority">Watch First</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="subaru as a villain | re:zero season 4 episode 3 reaction/analysis echidnut apr 22, 2026 priority" data-bucket="priority" aria-label="Open in Jellyfin: Subaru as a Villain | Re:ZERO Season 4 Episode 3 Reaction/Analysis">
+  <article class="card priority">
+    <img src="thumbs/echidnut.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Subaru as a Villain | Re:ZERO Season 4 Episode 3 Reaction/Analysis</div>
+      <div class="meta-row">Echidnut <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card priority">
-  <img src="thumbs/fireship.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 10:59 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">I finally found a use case for OpenClaw…</div>
-    <div class="channel-row">
-      <div class="channel">Fireship</div>
-      <div class="badges"><span class="badge priority">Watch First</span><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="i finally found a use case for openclaw… fireship apr 23, 2026 priority" data-bucket="priority" aria-label="Open in Audiobookshelf: I finally found a use case for OpenClaw…">
+  <article class="card priority">
+    <img src="thumbs/fireship.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">I finally found a use case for OpenClaw…</div>
+      <div class="meta-row">Fireship <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article></div></section><section class="category"><h3>Podcastable</h3><div class="cards"><article class="card podcast">
-  <img src="thumbs/techlinked.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:41 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">Uh, Is AMD Ok?</div>
-    <div class="channel-row">
-      <div class="channel">TechLinked</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a></div></section><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="do not buy: amd ryzen 9 9950x3d2 cpu review &amp; benchmarks | 24 charts in 24 hours gamers nexus apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: DO NOT BUY: AMD Ryzen 9 9950X3D2 CPU Review &amp; Benchmarks | 24 Charts in 24 Hours">
+  <article class="card">
+    <img src="thumbs/gamersnexus.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">DO NOT BUY: AMD Ryzen 9 9950X3D2 CPU Review &amp; Benchmarks | 24 Charts in 24 Hours</div>
+      <div class="meta-row">Gamers Nexus <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:34 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">what the f*ck..</div>
-    <div class="channel-row">
-      <div class="channel">Asmongold TV</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="uh, is amd ok? techlinked apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Uh, Is AMD Ok?">
+  <article class="card podcast">
+    <img src="thumbs/techlinked.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Uh, Is AMD Ok?</div>
+      <div class="meta-row">TechLinked <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:33 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">Alex Jones was right..</div>
-    <div class="channel-row">
-      <div class="channel">Asmongold TV</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="where’s our money, nintendo? gamelinked apr 24, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Where’s Our Money, Nintendo?">
+  <article class="card podcast">
+    <img src="thumbs/gamelinked.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Where’s Our Money, Nintendo?</div>
+      <div class="meta-row">GameLinked <span>&middot;</span> Apr 24, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:29 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">This is embarrassing..</div>
-    <div class="channel-row">
-      <div class="channel">Asmongold TV</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="gamers are suing nintendo spawn wave apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Gamers Are Suing Nintendo">
+  <article class="card">
+    <img src="thumbs/spawnwave.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Gamers Are Suing Nintendo</div>
+      <div class="meta-row">Spawn Wave <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:28 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">Not again..</div>
-    <div class="channel-row">
-      <div class="channel">Asmongold TV</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="overwatch – nintendo switch 2 comparison trailer nintendo of america apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Overwatch – Nintendo Switch 2 Comparison Trailer">
+  <article class="card">
+    <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Overwatch – Nintendo Switch 2 Comparison Trailer</div>
+      <div class="meta-row">Nintendo of America <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:27 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">So I Tried Vampire Crawlers..</div>
-    <div class="channel-row">
-      <div class="channel">Asmongold TV</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="lego fortnite ninjago – embers of chaos trailer – nintendo switch 2 nintendo of america apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: LEGO Fortnite NINJAGO – Embers of Chaos Trailer – Nintendo Switch 2">
+  <article class="card">
+    <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">LEGO Fortnite NINJAGO – Embers of Chaos Trailer – Nintendo Switch 2</div>
+      <div class="meta-row">Nintendo of America <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:20 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">Johnny Somali is done for good..</div>
-    <div class="channel-row">
-      <div class="channel">Asmongold TV</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="yoshi and the mysterious book – overview trailer – nintendo switch 2 nintendo of america apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Yoshi and the Mysterious Book – Overview Trailer – Nintendo Switch 2">
+  <article class="card">
+    <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Yoshi and the Mysterious Book – Overview Trailer – Nintendo Switch 2</div>
+      <div class="meta-row">Nintendo of America <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:20 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">The UK government is evil</div>
-    <div class="channel-row">
-      <div class="channel">Asmongold TV</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="annapurna interactive – 2026 lineup trailer – nintendo switch 2 nintendo of america apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Annapurna Interactive – 2026 Lineup Trailer – Nintendo Switch 2">
+  <article class="card">
+    <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Annapurna Interactive – 2026 Lineup Trailer – Nintendo Switch 2</div>
+      <div class="meta-row">Nintendo of America <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:18 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">He's been having a BAD time..</div>
-    <div class="channel-row">
-      <div class="channel">Asmongold TV</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="what the f*ck.. asmongold tv   apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: what the f*ck..">
+  <article class="card podcast">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">what the f*ck..</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 24, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:09 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">Handheld Streaming Guide (Apollo, Moonlight, etc)</div>
-    <div class="channel-row">
-      <div class="channel">Retro Game Corps</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="alex jones was right.. asmongold tv   apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Alex Jones was right..">
+  <article class="card podcast">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Alex Jones was right..</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article></div></section><section class="category"><h3>Everything Else</h3><div class="cards"><article class="card">
-  <img src="thumbs/gamersnexus.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:44 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">DO NOT BUY: AMD Ryzen 9 9950X3D2 CPU Review &amp; Benchmarks | 24 Charts in 24 Hours</div>
-    <div class="channel-row">
-      <div class="channel">Gamers Nexus</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="this is embarrassing.. asmongold tv   apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: This is embarrassing..">
+  <article class="card podcast">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">This is embarrassing..</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/gamelinked.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:40 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Where’s Our Money, Nintendo?</div>
-    <div class="channel-row">
-      <div class="channel">GameLinked</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="not again.. asmongold tv   apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Not again..">
+  <article class="card podcast">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Not again..</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 24, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/spawnwave.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:38 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Gamers Are Suing Nintendo</div>
-    <div class="channel-row">
-      <div class="channel">Spawn Wave</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="so i tried vampire crawlers.. asmongold tv   apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: So I Tried Vampire Crawlers..">
+  <article class="card podcast">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">So I Tried Vampire Crawlers..</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:38 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Overwatch – Nintendo Switch 2 Comparison Trailer</div>
-    <div class="channel-row">
-      <div class="channel">Nintendo of America</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="johnny somali is done for good.. asmongold tv   apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Johnny Somali is done for good..">
+  <article class="card podcast">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Johnny Somali is done for good..</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:37 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">LEGO Fortnite NINJAGO – Embers of Chaos Trailer – Nintendo Switch 2</div>
-    <div class="channel-row">
-      <div class="channel">Nintendo of America</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="the uk government is evil asmongold tv   apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: The UK government is evil">
+  <article class="card podcast">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">The UK government is evil</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:37 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Yoshi and the Mysterious Book – Overview Trailer – Nintendo Switch 2</div>
-    <div class="channel-row">
-      <div class="channel">Nintendo of America</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="he's been having a bad time.. asmongold tv   apr 24, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: He's been having a BAD time..">
+  <article class="card podcast">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">He's been having a BAD time..</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 24, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:35 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Annapurna Interactive – 2026 Lineup Trailer – Nintendo Switch 2</div>
-    <div class="channel-row">
-      <div class="channel">Nintendo of America</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="i recommend: diablo iv - lord of hatred (review) skill up apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: I recommend: Diablo IV - Lord of Hatred (Review)">
+  <article class="card">
+    <img src="thumbs/skillup.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">I recommend: Diablo IV - Lord of Hatred (Review)</div>
+      <div class="meta-row">Skill Up <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/skillup.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:17 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">I recommend: Diablo IV - Lord of Hatred (Review)</div>
-    <div class="channel-row">
-      <div class="channel">Skill Up</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="handheld streaming guide (apollo, moonlight, etc) retro game corps apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Handheld Streaming Guide (Apollo, Moonlight, etc)">
+  <article class="card podcast">
+    <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Handheld Streaming Guide (Apollo, Moonlight, etc)</div>
+      <div class="meta-row">Retro Game Corps <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/connordawg.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:05 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">These YouTubers Weren't Happy that I Watched Their First Videos...</div>
-    <div class="channel-row">
-      <div class="channel">ConnorDawg</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="these youtubers weren't happy that i watched their first videos... connordawg apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: These YouTubers Weren't Happy that I Watched Their First Videos...">
+  <article class="card">
+    <img src="thumbs/connordawg.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">These YouTubers Weren't Happy that I Watched Their First Videos...</div>
+      <div class="meta-row">ConnorDawg <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/garnt.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:02 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">1 GAMER VS 100 WOMEN</div>
-    <div class="channel-row">
-      <div class="channel">Garnt</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="1 gamer vs 100 women garnt apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: 1 GAMER VS 100 WOMEN">
+  <article class="card">
+    <img src="thumbs/garnt.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">1 GAMER VS 100 WOMEN</div>
+      <div class="meta-row">Garnt <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/internettoday.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:01 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Gerrymandering: The GOP Gets a Taste of Its Own Medicine</div>
-    <div class="channel-row">
-      <div class="channel">Internet Today</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="gerrymandering: the gop gets a taste of its own medicine internet today apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Gerrymandering: The GOP Gets a Taste of Its Own Medicine">
+  <article class="card">
+    <img src="thumbs/internettoday.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Gerrymandering: The GOP Gets a Taste of Its Own Medicine</div>
+      <div class="meta-row">Internet Today <span>&middot;</span> Apr 23, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 23, 2026</div>
-    
-  </div>
-</article></div></section></section><section class="day-section"><div class="day-header"><h2>Wednesday, April 22</h2></div><section class="category"><h3>Watch First</h3><div class="cards"><article class="card priority">
-  <img src="thumbs/videogamedunkey.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 03:05 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Pragmata</div>
-    <div class="channel-row">
-      <div class="channel">videogamedunkey</div>
-      <div class="badges"><span class="badge priority">Watch First</span></div>
+  </article>
+</a></div></section></section><section class="day-section"><div class="day-header"><h2>Wednesday, April 22</h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="pragmata videogamedunkey apr 22, 2026 priority" data-bucket="priority" aria-label="Open in Jellyfin: Pragmata">
+  <article class="card priority">
+    <img src="thumbs/videogamedunkey.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Pragmata</div>
+      <div class="meta-row">videogamedunkey <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article></div></section><section class="category"><h3>Podcastable</h3><div class="cards"><article class="card podcast">
-  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 03:10 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">This reviewer should never touch another video game..</div>
-    <div class="channel-row">
-      <div class="channel">Asmongold TV</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a></div></section><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="pragmata is a problem cupcake4all apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Pragmata is a problem">
+  <article class="card">
+    <img src="thumbs/cupcake4all.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Pragmata is a problem</div>
+      <div class="meta-row">Cupcake4all <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:34 AM <span>&middot;</span> Podcastable</div>
-    <div class="title">Atari Versus Nintendo: The Curse of the Rabbit | Fully Ramblomatic</div>
-    <div class="channel-row">
-      <div class="channel">Second Wind</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="this reviewer should never touch another video game.. asmongold tv   apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: This reviewer should never touch another video game..">
+  <article class="card podcast">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">This reviewer should never touch another video game..</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:34 AM <span>&middot;</span> Podcastable</div>
-    <div class="title">Doordash girl got what she deserved..</div>
-    <div class="channel-row">
-      <div class="channel">Asmongold TV</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="coachella is the worst... papa meat apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Coachella Is The Worst...">
+  <article class="card">
+    <img src="thumbs/papameat.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Coachella Is The Worst...</div>
+      <div class="meta-row">Papa Meat <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 09:38 AM <span>&middot;</span> Podcastable</div>
-    <div class="title">What a stupid idiot..</div>
-    <div class="channel-row">
-      <div class="channel">Asmongold TV</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="this game is everything they hate legendary drops apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: This game is everything they hate">
+  <article class="card">
+    <img src="thumbs/legendarydrops.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">This game is everything they hate</div>
+      <div class="meta-row">Legendary Drops <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 07:04 AM <span>&middot;</span> Podcastable</div>
-    <div class="title">Everyone expected this..</div>
-    <div class="channel-row">
-      <div class="channel">Asmongold TV</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="atari versus nintendo: the curse of the rabbit | fully ramblomatic second wind apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Atari Versus Nintendo: The Curse of the Rabbit | Fully Ramblomatic">
+  <article class="card podcast">
+    <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Atari Versus Nintendo: The Curse of the Rabbit | Fully Ramblomatic</div>
+      <div class="meta-row">Second Wind <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article></div></section><section class="category"><h3>Everything Else</h3><div class="cards"><article class="card">
-  <img src="thumbs/cupcake4all.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 03:13 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Pragmata is a problem</div>
-    <div class="channel-row">
-      <div class="channel">Cupcake4all</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="doordash girl got what she deserved.. asmongold tv   apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Doordash girl got what she deserved..">
+  <article class="card podcast">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Doordash girl got what she deserved..</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/papameat.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 03:09 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Coachella Is The Worst...</div>
-    <div class="channel-row">
-      <div class="channel">Papa Meat</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="digisette duo - odd cassette tape mp3 player from 2000 lgr apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Digisette Duo - Odd Cassette Tape MP3 Player from 2000">
+  <article class="card">
+    <img src="thumbs/lgr.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Digisette Duo - Odd Cassette Tape MP3 Player from 2000</div>
+      <div class="meta-row">LGR <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/legendarydrops.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 03:06 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">This game is everything they hate</div>
-    <div class="channel-row">
-      <div class="channel">Legendary Drops</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="what a stupid idiot.. asmongold tv   apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: What a stupid idiot..">
+  <article class="card podcast">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">What a stupid idiot..</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/lgr.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 09:44 AM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Digisette Duo - Odd Cassette Tape MP3 Player from 2000</div>
-    <div class="channel-row">
-      <div class="channel">LGR</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="this patch looks insane! 3.3 special program reaction | wuthering waves vod yessenia  apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: THIS PATCH LOOKS INSANE! 3.3 SPECIAL PROGRAM REACTION | Wuthering Waves VOD">
+  <article class="card">
+    <img src="thumbs/yessenia.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">THIS PATCH LOOKS INSANE! 3.3 SPECIAL PROGRAM REACTION | Wuthering Waves VOD</div>
+      <div class="meta-row">Yessenia <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/yessenia.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 09:37 AM <span>&middot;</span> Not podcastable</div>
-    <div class="title">THIS PATCH LOOKS INSANE! 3.3 SPECIAL PROGRAM REACTION | Wuthering Waves VOD</div>
-    <div class="channel-row">
-      <div class="channel">Yessenia</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="everyone expected this.. asmongold tv   apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Everyone expected this..">
+  <article class="card podcast">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Everyone expected this..</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article></div></section></section><section class="day-section"><div class="day-header"><h2>Tuesday, April 21</h2></div><section class="category"><h3>Watch First</h3><div class="cards"><article class="card priority">
-  <img src="thumbs/schaffrillasproductions.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 03:05 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Every Smiling Friends Episode Ranked (All 3 Seasons)</div>
-    <div class="channel-row">
-      <div class="channel">Schaffrillas Productions</div>
-      <div class="badges"><span class="badge priority">Watch First</span></div>
+  </article>
+</a></div></section></section><section class="day-section"><div class="day-header"><h2>Tuesday, April 21</h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="every smiling friends episode ranked (all 3 seasons) schaffrillas productions apr 21, 2026 priority" data-bucket="priority" aria-label="Open in Jellyfin: Every Smiling Friends Episode Ranked (All 3 Seasons)">
+  <article class="card priority">
+    <img src="thumbs/schaffrillasproductions.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Every Smiling Friends Episode Ranked (All 3 Seasons)</div>
+      <div class="meta-row">Schaffrillas Productions <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card priority">
-  <img src="thumbs/fireship.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 03:04 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">Claude just got another superpower...</div>
-    <div class="channel-row">
-      <div class="channel">Fireship</div>
-      <div class="badges"><span class="badge priority">Watch First</span><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="claude just got another superpower... fireship apr 21, 2026 priority" data-bucket="priority" aria-label="Open in Audiobookshelf: Claude just got another superpower...">
+  <article class="card priority">
+    <img src="thumbs/fireship.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Claude just got another superpower...</div>
+      <div class="meta-row">Fireship <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article></div></section><section class="category"><h3>Podcastable</h3><div class="cards"><article class="card podcast">
-  <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 07:06 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">&quot;Stop Nick Shirley Act&quot;</div>
-    <div class="channel-row">
-      <div class="channel">Asmongold TV</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a></div></section><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="wait...the price actually went down?! spawn wave apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Wait...The Price Actually Went Down?!">
+  <article class="card">
+    <img src="thumbs/spawnwave.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Wait...The Price Actually Went Down?!</div>
+      <div class="meta-row">Spawn Wave <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/theprimetime.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 03:10 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">We are near peak hype</div>
-    <div class="channel-row">
-      <div class="channel">The PrimeTime</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="mario on handhelds vs. consoles scott's stash apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Mario on Handhelds vs. Consoles">
+  <article class="card">
+    <img src="thumbs/scottsstash.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Mario on Handhelds vs. Consoles</div>
+      <div class="meta-row">Scott's Stash <span>&middot;</span> Apr 22, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/bellularnews.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 03:09 PM <span>&middot;</span> Podcastable</div>
-    <div class="title">The EU Just Took Stop Killing Games Seriously</div>
-    <div class="channel-row">
-      <div class="channel">Bellular News</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="&quot;stop nick shirley act&quot; asmongold tv   apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: &quot;Stop Nick Shirley Act&quot;">
+  <article class="card podcast">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">&quot;Stop Nick Shirley Act&quot;</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 11:34 AM <span>&middot;</span> Podcastable</div>
-    <div class="title">Exit 8 Thoughts About Liminal Horror | The Backdrop</div>
-    <div class="channel-row">
-      <div class="channel">Second Wind</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="we are near peak hype the primetime apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: We are near peak hype">
+  <article class="card podcast">
+    <img src="thumbs/theprimetime.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">We are near peak hype</div>
+      <div class="meta-row">The PrimeTime <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 09:37 AM <span>&middot;</span> Podcastable</div>
-    <div class="title">There's a New PS2 Emulator Fork on Android</div>
-    <div class="channel-row">
-      <div class="channel">Retro Game Corps</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="the eu just took stop killing games seriously bellular news apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: The EU Just Took Stop Killing Games Seriously">
+  <article class="card podcast">
+    <img src="thumbs/bellularnews.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">The EU Just Took Stop Killing Games Seriously</div>
+      <div class="meta-row">Bellular News <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card podcast">
-  <img src="thumbs/techdweeb.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 07:05 AM <span>&middot;</span> Podcastable</div>
-    <div class="title">The EASY Mini PC Steam &amp; Retro Console</div>
-    <div class="channel-row">
-      <div class="channel">TechDweeb</div>
-      <div class="badges"><span class="badge podcast">Podcastable</span></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="opus: prism peak – launch trailer – nintendo switch 2 nintendo of america apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: OPUS: Prism Peak – Launch Trailer – Nintendo Switch 2">
+  <article class="card">
+    <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">OPUS: Prism Peak – Launch Trailer – Nintendo Switch 2</div>
+      <div class="meta-row">Nintendo of America <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article></div></section><section class="category"><h3>Everything Else</h3><div class="cards"><article class="card">
-  <img src="thumbs/spawnwave.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 08:04 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Wait...The Price Actually Went Down?!</div>
-    <div class="channel-row">
-      <div class="channel">Spawn Wave</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="so this is peak smartphone marques brownlee apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: So This is Peak Smartphone">
+  <article class="card">
+    <img src="thumbs/marquesbrownlee.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">So This is Peak Smartphone</div>
+      <div class="meta-row">Marques Brownlee <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/scottsstash.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 07:07 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Mario on Handhelds vs. Consoles</div>
-    <div class="channel-row">
-      <div class="channel">Scott's Stash</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="exit 8 thoughts about liminal horror | the backdrop second wind apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Exit 8 Thoughts About Liminal Horror | The Backdrop">
+  <article class="card podcast">
+    <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Exit 8 Thoughts About Liminal Horror | The Backdrop</div>
+      <div class="meta-row">Second Wind <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 22, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 03:07 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">OPUS: Prism Peak – Launch Trailer – Nintendo Switch 2</div>
-    <div class="channel-row">
-      <div class="channel">Nintendo of America</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="df direct q+a: will pssr lower game resolutions? starfield switch 2, is rtx 5080 ok for path tracing digital foundry apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: DF Direct Q+A: Will PSSR Lower Game Resolutions? Starfield Switch 2, Is RTX 5080 OK For Path Tracing">
+  <article class="card">
+    <img src="thumbs/digitalfoundry.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">DF Direct Q+A: Will PSSR Lower Game Resolutions? Starfield Switch 2, Is RTX 5080 OK For Path Tracing</div>
+      <div class="meta-row">Digital Foundry <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/marquesbrownlee.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 03:06 PM <span>&middot;</span> Not podcastable</div>
-    <div class="title">So This is Peak Smartphone</div>
-    <div class="channel-row">
-      <div class="channel">Marques Brownlee</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="blacklisted by amd | amd's dirty tactics gamers nexus apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: BLACKLISTED by AMD | AMD's Dirty Tactics">
+  <article class="card">
+    <img src="thumbs/gamersnexus.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">BLACKLISTED by AMD | AMD's Dirty Tactics</div>
+      <div class="meta-row">Gamers Nexus <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/digitalfoundry.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 09:43 AM <span>&middot;</span> Not podcastable</div>
-    <div class="title">DF Direct Q+A: Will PSSR Lower Game Resolutions? Starfield Switch 2, Is RTX 5080 OK For Path Tracing</div>
-    <div class="channel-row">
-      <div class="channel">Digital Foundry</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="splatoon raiders — release date revealed — nintendo switch 2 nintendo of america apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Splatoon Raiders — Release Date Revealed — Nintendo Switch 2">
+  <article class="card">
+    <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Splatoon Raiders — Release Date Revealed — Nintendo Switch 2</div>
+      <div class="meta-row">Nintendo of America <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/gamersnexus.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 09:41 AM <span>&middot;</span> Not podcastable</div>
-    <div class="title">BLACKLISTED by AMD | AMD's Dirty Tactics</div>
-    <div class="channel-row">
-      <div class="channel">Gamers Nexus</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="there's a new ps2 emulator fork on android retro game corps apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: There's a New PS2 Emulator Fork on Android">
+  <article class="card podcast">
+    <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">There's a New PS2 Emulator Fork on Android</div>
+      <div class="meta-row">Retro Game Corps <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 09:38 AM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Splatoon Raiders — Release Date Revealed — Nintendo Switch 2</div>
-    <div class="channel-row">
-      <div class="channel">Nintendo of America</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="i have more questions! good world hard mode | goddess of victory: nikke vod yessenia  apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: I HAVE MORE QUESTIONS! GOOD WORLD HARD MODE | Goddess of Victory: NIKKE VOD">
+  <article class="card">
+    <img src="thumbs/yessenia.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">I HAVE MORE QUESTIONS! GOOD WORLD HARD MODE | Goddess of Victory: NIKKE VOD</div>
+      <div class="meta-row">Yessenia <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/yessenia.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 09:35 AM <span>&middot;</span> Not podcastable</div>
-    <div class="title">I HAVE MORE QUESTIONS! GOOD WORLD HARD MODE | Goddess of Victory: NIKKE VOD</div>
-    <div class="channel-row">
-      <div class="channel">Yessenia</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="the easy mini pc steam &amp; retro console techdweeb apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: The EASY Mini PC Steam &amp; Retro Console">
+  <article class="card podcast">
+    <img src="thumbs/techdweeb.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">The EASY Mini PC Steam &amp; Retro Console</div>
+      <div class="meta-row">TechDweeb <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article>
-<article class="card">
-  <img src="thumbs/internettoday.jpg" onerror="this.style.display='none'" alt="">
-  <div class="info">
-    <div class="eyebrow">Downloaded 07:04 AM <span>&middot;</span> Not podcastable</div>
-    <div class="title">Desperate Trump Clears Path for Legal Psychedelics?!</div>
-    <div class="channel-row">
-      <div class="channel">Internet Today</div>
-      <div class="badges"></div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="desperate trump clears path for legal psychedelics?! internet today apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Desperate Trump Clears Path for Legal Psychedelics?!">
+  <article class="card">
+    <img src="thumbs/internettoday.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Desperate Trump Clears Path for Legal Psychedelics?!</div>
+      <div class="meta-row">Internet Today <span>&middot;</span> Apr 21, 2026</div>
     </div>
-    <div class="meta-row">Uploaded Apr 21, 2026</div>
-    
-  </div>
-</article></div></section></section>
+  </article>
+</a></div></section></section>
     </main>
 
-    <footer>report.fernhw.com &middot; updated 2026-04-24 00:54</footer>
+    <section class="bottom-panel">
+      <div class="bottom-head">
+        <h2>Report details</h2>
+        <p>Good morning. 60 items from the last 4 days.</p>
+      </div>
+
+      <div class="warn-stack"></div>
+
+      <section class="summary-bar">
+        <div class="summary-tile">
+          <strong>Report Date</strong>
+          <span>2026-04-24</span>
+        </div>
+        <div class="summary-tile">
+          <strong>Updated</strong>
+          <span>2026-04-24 01:32</span>
+        </div>
+        <div class="summary-tile">
+          <strong>Today</strong>
+          <span>8 downloads on Friday</span>
+        </div>
+        <div class="summary-tile">
+          <strong>Recent Downloads</strong>
+          <span>60 items across 4 days</span>
+        </div>
+        <div class="summary-tile">
+          <strong>Library Storage</strong>
+          <span>699.77 GB used &middot; 1.75 TB free</span>
+        </div>
+      </section>
+    </section>
+
+    <footer>report.fernhw.com &middot; updated 2026-04-24 01:32</footer>
   </div>
 </div>
 
@@ -977,6 +771,129 @@ function waitForOneSignal() {
 
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isStandalone = window.navigator.standalone === true;
+const rootStyle = document.documentElement.style;
+const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+function tryAppUrls(appUrls) {
+  const urls = appUrls.split('|').filter(Boolean);
+  let index = 0;
+
+  function attemptNext() {
+    if (index >= urls.length) {
+      return;
+    }
+
+    const startedAt = Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = urls[index++];
+    document.body.appendChild(iframe);
+
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      if (Date.now() - startedAt < 1400) {
+        attemptNext();
+      }
+    }, 700);
+  }
+
+  attemptNext();
+}
+
+document.addEventListener('click', event => {
+  const chip = event.target.closest('.filter-chip');
+  if (chip) {
+    setActiveBucket(chip.dataset.filterBucket || 'all');
+    applyFeedFilter();
+    return;
+  }
+
+  const link = event.target.closest('.card-link');
+  if (!link) return;
+  event.preventDefault();
+  tryAppUrls(link.dataset.appUrls || '');
+});
+
+const filterInput = document.getElementById('feedFilter');
+const filterStatus = document.getElementById('filterStatus');
+const filterChips = Array.from(document.querySelectorAll('.filter-chip'));
+let activeBucket = 'all';
+
+function setActiveBucket(bucket) {
+  activeBucket = bucket;
+  filterChips.forEach(chip => {
+    chip.classList.toggle('active', (chip.dataset.filterBucket || 'all') === bucket);
+  });
+}
+
+function applyFeedFilter() {
+  const query = (filterInput?.value || '').trim().toLowerCase();
+  const cards = Array.from(document.querySelectorAll('.card-link'));
+  let visibleCount = 0;
+
+  cards.forEach(card => {
+    const haystack = card.dataset.filterText || '';
+    const bucket = card.dataset.bucket || 'nonpriority';
+    const matchesBucket = activeBucket === 'all' || bucket === activeBucket;
+    const matchesQuery = !query || haystack.includes(query);
+    const visible = matchesBucket && matchesQuery;
+    card.hidden = !visible;
+    if (visible) visibleCount += 1;
+  });
+
+  document.querySelectorAll('.category').forEach(section => {
+    const hasVisibleCards = Array.from(section.querySelectorAll('.card-link')).some(card => !card.hidden);
+    section.classList.toggle('is-filtered-empty', !hasVisibleCards);
+  });
+
+  document.querySelectorAll('.day-section').forEach(section => {
+    const hasVisibleCategories = Array.from(section.querySelectorAll('.category')).some(category => !category.classList.contains('is-filtered-empty'));
+    section.classList.toggle('is-filtered-empty', !hasVisibleCategories);
+  });
+
+  if (!filterStatus) return;
+
+  if (!query && activeBucket === 'all') {
+    filterStatus.textContent = 'Showing all ' + visibleCount + ' videos.';
+    return;
+  }
+
+  const bucketLabel = activeBucket === 'all' ? 'all sections' : activeBucket === 'priority' ? 'priority' : 'non-priority';
+  const queryLabel = query ? ' matching "' + query + '"' : '';
+  filterStatus.textContent = 'Showing ' + visibleCount + ' videos in ' + bucketLabel + queryLabel + '.';
+}
+
+filterInput?.addEventListener('input', applyFeedFilter);
+
+function mixChannel(from, to, amount) {
+  return Math.round(from + (to - from) * amount);
+}
+
+function setScrollTheme() {
+  const scrollable = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+  const progress = Math.min(window.scrollY / scrollable, 1);
+  const eased = Math.min(progress * 1.18, 1);
+
+  const top = 'rgb(' + mixChannel(5, 23, eased) + ' ' + mixChannel(7, 43, eased) + ' ' + mixChannel(10, 52, eased) + ')';
+  const mid = 'rgb(' + mixChannel(11, 31, eased) + ' ' + mixChannel(14, 59, eased) + ' ' + mixChannel(17, 67, eased) + ')';
+  const band = 'rgb(' + mixChannel(15, 43, eased) + ' ' + mixChannel(20, 76, eased) + ' ' + mixChannel(25, 86, eased) + ')';
+  const base = 'rgb(' + mixChannel(16, 31, eased) + ' ' + mixChannel(19, 53, eased) + ' ' + mixChannel(23, 60, eased) + ')';
+  const chrome = 'rgba(' + mixChannel(10, 18, eased) + ',' + mixChannel(13, 34, eased) + ',' + mixChannel(16, 40, eased) + ',.88)';
+
+  rootStyle.setProperty('--scroll-bg-top', top);
+  rootStyle.setProperty('--scroll-bg-mid', mid);
+  rootStyle.setProperty('--scroll-bg-band', band);
+  rootStyle.setProperty('--scroll-bg-base', base);
+  rootStyle.setProperty('--chrome-tint', chrome);
+  rootStyle.setProperty('--panel-tint', 'rgba(' + mixChannel(23, 20, eased) + ',' + mixChannel(28, 42, eased) + ',' + mixChannel(33, 48, eased) + ',.8)');
+  if (themeMeta) themeMeta.setAttribute('content', mid);
+  document.getElementById('feedControls')?.classList.toggle('compact', progress > 0.08);
+}
+
+setActiveBucket('all');
+applyFeedFilter();
+setScrollTheme();
+window.addEventListener('scroll', setScrollTheme, { passive: true });
 
 async function subscribeNotify() {
   if (isIOS && !isStandalone) {
