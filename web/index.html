@@ -117,26 +117,43 @@
       .bottom-panel{padding:14px}
       .bottom-head{flex-direction:column;align-items:flex-start}
     }
-    .media-head-bar{display:flex;align-items:baseline;gap:10px;margin-top:28px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.07)}
-    .media-head-bar h2{font-size:1.1rem;color:#d8e1ea;font-weight:600}
-    .media-head-bar span{font:500 .72rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted)}
-    .media-sections{display:grid;gap:14px}
-    .msec{background:var(--panel-tint);border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:18px 20px 20px;box-shadow:0 18px 60px rgba(0,0,0,.12)}
-    .msec-head{display:flex;align-items:center;gap:8px;margin-bottom:14px}
-    .msec-icon{font-size:.9rem;opacity:.75;flex-shrink:0}
-    .msec-head h3{font:600 .74rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#8fa0b1}
-    .mcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
-    .mcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+    .media-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .media-bar-label{font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#8fa0b1}
+    .media-bar-note{font:500 .62rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#4a5a68}
+    .mpills{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    .media-scroll{max-height:40vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+    .mpill{display:flex;align-items:center;gap:10px;background:rgba(14,18,23,.7);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:7px 10px;text-decoration:none;color:inherit;transition:border-color .15s}
+    .mpill:active{border-color:#5c6977}
+    .mpill-thumb{width:32px;height:32px;border-radius:7px;overflow:hidden;flex-shrink:0;background:var(--panel-soft)}
+    .mpill-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+    .mpill-nothumb{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:rgba(255,255,255,.2)}
+    .mpill-body{display:flex;align-items:baseline;gap:7px;min-width:0;flex-wrap:wrap}
+    .mpill-badge{font:600 .58rem/1.1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:999px;flex-shrink:0;white-space:nowrap}
+    .mpill-badge.newshow{background:rgba(86,180,255,.12);color:#7dc8f5;border:1px solid rgba(86,180,255,.25)}
+    .mpill-badge.neweps{background:rgba(114,199,162,.1);color:#82d4b0;border:1px solid rgba(114,199,162,.2)}
+    .mpill-badge.movie{background:rgba(215,168,71,.1);color:#d7a847;border:1px solid rgba(215,168,71,.2)}
+    .mpill-title{font:600 .78rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#d8e1ea;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+    .mpill-ep{font:500 .65rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#5a6e7e;white-space:nowrap}
+    .media-secondary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+    .msec{flex:1 1 160px;background:rgba(14,18,23,.5);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:9px 10px 10px}
+    .msec-head{display:flex;align-items:center;gap:5px;margin-bottom:8px}
+    .msec-icon{font-size:.7rem;opacity:.5;flex-shrink:0}
+    .msec-head h3{font:600 .6rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#536170}
+    .mcards{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+    .mcard{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;flex:0 0 64px;width:64px}
     .mcard img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--panel-soft)}
     .mcard img.sq{aspect-ratio:1}
-    .mcard-nothumb{width:100%;aspect-ratio:2/3;background:var(--panel-soft);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:rgba(255,255,255,.2)}
-    .mcard-body{padding:7px 9px 9px;display:grid;gap:2px}
-    .mcard-title{font-size:.78rem;line-height:1.25;color:#f0f4f8;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-    .mcard-sub{font:500 .66rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    @media(max-width:720px){.mcards{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}.msec{padding:14px}}
+    .mcard-nothumb{width:100%;aspect-ratio:2/3;background:var(--panel-soft);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:rgba(255,255,255,.15)}
+    .mcard-body{padding:4px 5px 5px;display:grid;gap:1px}
+    .mcard-title{font-size:.58rem;line-height:1.2;color:#b0bfcc;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .mcard-sub{font:500 .54rem/1.1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #ptr{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:center;height:0;overflow:hidden;background:rgba(12,15,19,.9);transition:height .2s}
+    #ptr.ready{border-bottom:1px solid rgba(255,255,255,.08)}
+    #ptr-label{color:#c2a365;font:600 .72rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.1em;text-transform:uppercase}
   </style>
 </head>
 <body>
+<div id="ptr"><span id="ptr-label">&#8635; Release to refresh</span></div>
 <div id="gate">
   <h2>report.fernhw.com</h2>
   <input type="password" id="pw" placeholder="password" autocomplete="current-password">
@@ -150,12 +167,14 @@
       <div class="title-wrap">
         <div class="kicker">Recent Download Report</div>
         <h1>Latest downloads</h1>
-        <p class="lede">Good morning. This view keeps the latest 4 days in download order, split into priority, podcastable, rare drops, and everything else.</p>
+        <p class="lede">Good afternoon. This view keeps the latest 4 days in download order, split into priority, podcastable, rare drops, and everything else.</p>
       </div>
       <div class="top-meta">
         <button class="notify-btn" onclick="subscribeNotify()">Get notified</button>
       </div>
     </header>
+
+    <div class="media-bar"><span class="media-bar-label">&#9654;&#xFE0E; Library</span><span class="media-bar-note">last 30 hours</span></div><div class="media-scroll"><div class="mpills"><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/show-a-knight-of-the-seven-kingdoms-s01-complete-2160p-max-web-dl-dv-p5-ddp5-1-atmos-h265-mp4-ben-the-men.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge newshow">New Show</span><span class="mpill-title">A Knight Of The Seven Kingdoms</span><span class="mpill-ep">6 new episodes</span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/show-anohana-the-flower-we-saw-that-day-s01-bd-1080p-hevc-opus-derpie.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge newshow">New Show</span><span class="mpill-title">Anohana - The Flower We Saw That Day - S01 (BD 1080p HEVC Opus) [derpie]</span><span class="mpill-ep">11 new episodes</span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/show-chernobyl.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge newshow">New Show</span><span class="mpill-title">Chernobyl</span><span class="mpill-ep">5 new episodes</span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/show-dark-season-01-s01-complete-dual-audio-ger-eng-1080p-10bit-webrip-6ch-x265-hevc-psa.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge newshow">New Show</span><span class="mpill-title">Dark SEASON 01</span><span class="mpill-ep">10 new episodes</span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/show-devs-season-1-mp4-1080p.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge newshow">New Show</span><span class="mpill-title">Devs Season 1 Mp4 1080p</span><span class="mpill-ep">8 new episodes</span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/movie-12-angry-men-1957.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge movie">New Movie</span><span class="mpill-title">12 Angry Men</span><span class="mpill-ep"></span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/movie-a-fistful-of-dollars-1964.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge movie">New Movie</span><span class="mpill-title">A Fistful of Dollars 1964</span><span class="mpill-ep"></span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/movie-a-silent-voice-2016-1080p-bluray-x264-haiku-ethd.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge movie">New Movie</span><span class="mpill-title">A Silent Voice</span><span class="mpill-ep"></span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><div class="mpill-nothumb">&#9654;</div></div><div class="mpill-body"><span class="mpill-badge movie">New Movie</span><span class="mpill-title">ALFRED HiTCHCOCK The Masterpiece Collection Multi Bluray 1080p x264 DTS-HDMA 6 1-DTOne</span><span class="mpill-ep"></span></div></a><a class="mpill" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="mpill-thumb"><img src="media-thumbs/movie-akira-kurosawa-the-quiet-duel-1949-1080p-jpn-bluray-flac2-0-hevc-ddr-ethd.jpg" onerror="this.style.display='none'" alt=""></div><div class="mpill-body"><span class="mpill-badge movie">New Movie</span><span class="mpill-title">Akira Kurosawa - The Quiet Duel</span><span class="mpill-ep"></span></div></a></div><div class="media-secondary"><section class="msec"><div class="msec-head"><span class="msec-icon">&#9835;</span><h3>Music</h3></div><div class="mcards"><div class="mcard"><img class="sq" src="media-thumbs/music-bravely-default-ii-original-soundtrack-mp3.jpg" onerror="this.style.display='none'" alt=""><div class="mcard-body"><div class="mcard-title">BRAVELY DEFAULT II</div></div></div><div class="mcard"><img class="sq" src="media-thumbs/music-belle-original-motion-picture-soundtrack-english-edition-mp3.jpg" onerror="this.style.display='none'" alt=""><div class="mcard-body"><div class="mcard-title">Belle [English Edition]</div></div></div><div class="mcard"><img class="sq" src="media-thumbs/music-belle-original-soundtrack-mp3.jpg" onerror="this.style.display='none'" alt=""><div class="mcard-body"><div class="mcard-title">Belle</div></div></div><div class="mcard"><div class="mcard-nothumb">&#9835;</div><div class="mcard-body"><div class="mcard-title">Benjamin Button Alexander Desplat</div></div></div><div class="mcard"><img class="sq" src="media-thumbs/music-bocchi-the-rock-original-soundtrack-bocchi-the-track-vol-1-mp3.jpg" onerror="this.style.display='none'" alt=""><div class="mcard-body"><div class="mcard-title">Bocchi the Rock! Bocchi the Track! Vol.1</div></div></div></div></section><section class="msec"><div class="msec-head"><span class="msec-icon">&#128218;</span><h3>Audiobooks</h3></div><div class="mcards"><a class="mcard" href="#" data-app-urls="audiobooth://"><div class="mcard-nothumb">&#128218;</div><div class="mcard-body"><div class="mcard-title">12 Rules for Life</div></div></a><a class="mcard" href="#" data-app-urls="audiobooth://"><div class="mcard-nothumb">&#128218;</div><div class="mcard-body"><div class="mcard-title">33 Strategies of War</div></div></a><a class="mcard" href="#" data-app-urls="audiobooth://"><div class="mcard-nothumb">&#128218;</div><div class="mcard-body"><div class="mcard-title">48 Laws of Power</div></div></a><a class="mcard" href="#" data-app-urls="audiobooth://"><div class="mcard-nothumb">&#128218;</div><div class="mcard-body"><div class="mcard-title">Approach Anxiety Killer</div></div></a><a class="mcard" href="#" data-app-urls="audiobooth://"><div class="mcard-nothumb">&#128218;</div><div class="mcard-body"><div class="mcard-title">Art of Seduction</div></div></a></div></section><section class="msec"><div class="msec-head"><span class="msec-icon">&#128217;</span><h3>Manga</h3></div><div class="mcards"><a class="mcard" href="#" data-app-urls="still://"><div class="mcard-nothumb">&#128217;</div><div class="mcard-body"><div class="mcard-title">BLAME! Master Edition</div><div class="mcard-sub">6 volumes</div></div></a><a class="mcard" href="#" data-app-urls="still://"><div class="mcard-nothumb">&#128217;</div><div class="mcard-body"><div class="mcard-title">Berserk</div><div class="mcard-sub">40 volumes</div></div></a><a class="mcard" href="#" data-app-urls="still://"><div class="mcard-nothumb">&#128217;</div><div class="mcard-body"><div class="mcard-title">Dorohedoro</div><div class="mcard-sub">23 volumes</div></div></a><a class="mcard" href="#" data-app-urls="still://"><div class="mcard-nothumb">&#128217;</div><div class="mcard-body"><div class="mcard-title">Eden of Witches</div><div class="mcard-sub">6 volumes</div></div></a><a class="mcard" href="#" data-app-urls="still://"><div class="mcard-nothumb">&#128217;</div><div class="mcard-body"><div class="mcard-title">Fire Punch</div><div class="mcard-sub">8 volumes</div></div></a></div></section></div></div>
 
     <section class="controls" id="feedControls">
       <input id="feedFilter" class="filter-input" type="search" placeholder="Search title or channel..." autocomplete="off" spellcheck="false">
@@ -803,12 +822,10 @@
 </a></div></section></section>
     </main>
 
-    
-
     <section class="bottom-panel">
       <div class="bottom-head">
         <h2>Report details</h2>
-        <p>Good morning. 71 items from the last 4 days.</p>
+        <p>Good afternoon. 71 items from the last 4 days.</p>
       </div>
 
       <div class="warn-stack"></div>
@@ -820,7 +837,7 @@
         </div>
         <div class="summary-tile">
           <strong>Updated</strong>
-          <span>2026-04-24 11:41</span>
+          <span>2026-04-24 13:55</span>
         </div>
         <div class="summary-tile">
           <strong>Today</strong>
@@ -832,12 +849,12 @@
         </div>
         <div class="summary-tile">
           <strong>Library Storage</strong>
-          <span>708.18 GB used &middot; 1.74 TB free</span>
+          <span>708.16 GB used &middot; 1.74 TB free</span>
         </div>
       </section>
     </section>
 
-    <footer>report.fernhw.com &middot; updated 2026-04-24 11:41</footer>
+    <footer>report.fernhw.com &middot; updated 2026-04-24 13:55</footer>
   </div>
 </div>
 
@@ -951,6 +968,12 @@ function tryAppUrls(appUrls) {
     }
 
     document.addEventListener('visibilitychange', onHide);
+    // http(s): open in new tab so the PWA isn't navigated away
+    if (scheme.startsWith('http')) {
+      document.removeEventListener('visibilitychange', onHide);
+      window.open(scheme, '_blank');
+      return;
+    }
     window.location.href = scheme;
 
     timer = setTimeout(() => {
@@ -991,7 +1014,11 @@ document.addEventListener('click', event => {
   }
 
   const link = event.target.closest('.card-link');
-  if (!link) return;
+  if (!link) {
+    const media = event.target.closest('.mpill[data-app-urls], .mcard[data-app-urls]');
+    if (media) { event.preventDefault(); tryAppUrls(media.dataset.appUrls || ''); }
+    return;
+  }
   event.preventDefault();
 
   if (link.dataset.showPicker) {
@@ -1089,8 +1116,9 @@ setScrollTheme();
 window.addEventListener('scroll', setScrollTheme, { passive: true });
 
 async function subscribeNotify() {
-  if (isIOS && !isStandalone) {
-    alert('On iPhone: tap the Share button then "Add to Home Screen", then open the app and tap Get Notified.');
+  const isIPhone = /iphone|ipod/i.test(navigator.userAgent);
+  if (isIPhone && !isStandalone) {
+    alert('On iPhone: tap the Share button then \u201cAdd to Home Screen\u201d, then open the app and tap Get Notified.');
     return;
   }
   try {
@@ -1109,13 +1137,39 @@ async function subscribeNotify() {
 }
 
 setTimeout(async () => {
-  if (isIOS && !isStandalone) return;
+  const isIPhone = /iphone|ipod/i.test(navigator.userAgent);
+  if (isIPhone && !isStandalone) return;
   try {
     const os = await waitForOneSignal();
     const subbed = os.User.PushSubscription.optedIn;
     if (!subbed) os.Notifications.requestPermission();
   } catch (e) {}
 }, 4000);
+
+// ── Pull-to-refresh ──────────────────────────────────────────────────────────
+(function() {
+  let startY = 0, pulling = false, triggered = false;
+  const ptr = document.getElementById('ptr');
+  const THRESHOLD = 72;
+  document.addEventListener('touchstart', e => {
+    if (window.scrollY > 0) return;
+    startY = e.touches[0].clientY; pulling = true; triggered = false;
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy <= 0) { pulling = false; ptr.style.height = '0'; return; }
+    const h = Math.min(dy * 0.45, THRESHOLD);
+    ptr.style.height = h + 'px';
+    if (h >= THRESHOLD - 1) { ptr.classList.add('ready'); triggered = true; }
+    else { ptr.classList.remove('ready'); triggered = false; }
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    if (!pulling) return;
+    pulling = false; ptr.style.height = '0'; ptr.classList.remove('ready');
+    if (triggered) { triggered = false; location.reload(); }
+  });
+})();
 </script>
 </body>
 </html>

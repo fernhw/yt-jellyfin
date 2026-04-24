@@ -851,13 +851,31 @@ if [ -n "$ONESIGNAL_KEY" ]; then
     echo "  push: 403 ban alert sent"
   fi
 
-  if [ "$DL_COUNT" -gt 0 ]; then
+  # ── Parse media library scan (written by reportMaker.sh) ──────────────────
+  _MEDIA_SCAN="/tmp/media_scan_items.txt"
+  notif_new_shows="" notif_new_movies="" notif_new_eps="" notif_low_media=""
+  if [ -f "$_MEDIA_SCAN" ] && [ -s "$_MEDIA_SCAN" ]; then
+    _fs=$(printf '\037')
+    while IFS="$_fs" read -r _mcat _mtitle _msub _mthumb _mtime; do
+      [ -z "$_mcat" ] && continue
+      case "$_mcat" in
+        show)
+          _kind=$(printf '%s' "$_msub" | cut -d: -f1)
+          if [ "$_kind" = "newshow" ]; then
+            notif_new_shows="${notif_new_shows:+$notif_new_shows, }${_mtitle}"
+          else
+            notif_new_eps="${notif_new_eps:+$notif_new_eps, }${_mtitle}"
+          fi
+          ;;
+        movie) notif_new_movies="${notif_new_movies:+$notif_new_movies, }${_mtitle}" ;;
+        music|book|manga) notif_low_media="${notif_low_media:+$notif_low_media, }${_mtitle}" ;;
+      esac
+    done < "$_MEDIA_SCAN"
+  fi
+
+  if [ "$DL_COUNT" -gt 0 ] || [ -n "$notif_new_shows$notif_new_movies" ]; then
     # --- Build lists of priority / podcastable / regular channel names from DL_ITEMS ---
     # DL_ITEMS format: channel:title|channel:title|...
-    PRI_NOTIF_CHANS=""
-    POD_NOTIF_CHANS=""
-    REG_COUNT=0
-
     # Read priority and podcastable lists (lowercase, pipe-separated)
     pri_handles=$(awk '/^\[priority\]/{f=1;next} /^\[/{f=0} f && /^[^#]/ && NF{print tolower($1)}' "$CONFIG_FILE" | tr '\n' '|' | sed 's/|$//')
     pod_handles=$(awk '/^\[podcastable\]/{f=1;next} /^\[/{f=0} f && /^[^#]/ && NF{print tolower($1)}' "$CONFIG_FILE" | tr '\n' '|' | sed 's/|$//')
@@ -889,34 +907,57 @@ if [ -n "$ONESIGNAL_KEY" ]; then
     reg_count=$(grep -c '^REG:' "/tmp/notif_cats_$$" 2>/dev/null || echo 0)
     rm -f "/tmp/notif_cats_$$"
 
-    # Priority channels → notify immediately
-    if [ -n "$pri_chans" ]; then
-      onesignal_push "What to Watch" "New from ${pri_chans}."
-      echo "  push: priority channels — $pri_chans"
+    # Tier A: Priority YT + new shows + new movies → immediate every run
+    _tier_a=""
+    [ -n "$pri_chans" ]         && _tier_a="${_tier_a:+$_tier_a · }New from ${pri_chans}"
+    [ -n "$notif_new_shows" ]   && _tier_a="${_tier_a:+$_tier_a · }New show: ${notif_new_shows}"
+    [ -n "$notif_new_movies" ]  && _tier_a="${_tier_a:+$_tier_a · }Movie: ${notif_new_movies}"
+    if [ -n "$_tier_a" ]; then
+      onesignal_push "What to Watch" "$_tier_a"
+      echo "  push: tier A — $_tier_a"
     fi
 
-    # Podcastable channels (not already priority) → notify as podcasts
-    if [ -n "$pod_chans" ]; then
-      onesignal_push "New Podcasts In" "${pod_chans} posted."
-      echo "  push: podcast channels — $pod_chans"
+    # Tier B: Podcast YT + new episodes → immediate every run
+    _tier_b=""
+    [ -n "$pod_chans" ]       && _tier_b="${_tier_b:+$_tier_b · }${pod_chans} posted"
+    [ -n "$notif_new_eps" ]   && _tier_b="${_tier_b:+$_tier_b · }New eps: ${notif_new_eps}"
+    if [ -n "$_tier_b" ]; then
+      onesignal_push "New in Queue" "$_tier_b"
+      echo "  push: tier B — $_tier_b"
     fi
 
-    # Regular channels → at most once per day
+    # Tier C: Regular YT → at most once per day
     if [ "$reg_count" -gt 0 ]; then
       last_batch=$(grep '^last_batch_notify=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
       today=$(date '+%Y-%m-%d')
       if [ "${last_batch:-}" != "$today" ]; then
         onesignal_push "What to Watch" "${reg_count} new video(s) from your other channels."
-        echo "  push: regular batch ($reg_count)"
-        # Update last batch date
+        echo "  push: tier C regular batch ($reg_count)"
         if grep -q '^last_batch_notify=' "$VARS_FILE" 2>/dev/null; then
           sed -i '' "s/^last_batch_notify=.*/last_batch_notify=$today/" "$VARS_FILE"
         else
           printf '\nlast_batch_notify=%s\n' "$today" >> "$VARS_FILE"
         fi
       else
-        echo "  push: regular batch skipped (already sent today)"
+        echo "  push: tier C regular batch skipped (already sent today)"
       fi
+    fi
+  fi
+
+  # Tier D: Music / books / manga → at most once per day
+  if [ -n "$notif_low_media" ]; then
+    last_media=$(grep '^last_media_notify=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+    today=$(date '+%Y-%m-%d')
+    if [ "${last_media:-}" != "$today" ]; then
+      onesignal_push "Library Update" "New: ${notif_low_media}"
+      echo "  push: tier D library — $notif_low_media"
+      if grep -q '^last_media_notify=' "$VARS_FILE" 2>/dev/null; then
+        sed -i '' "s/^last_media_notify=.*/last_media_notify=$today/" "$VARS_FILE"
+      else
+        printf '\nlast_media_notify=%s\n' "$today" >> "$VARS_FILE"
+      fi
+    else
+      echo "  push: tier D library skipped (already sent today)"
     fi
   fi
 fi

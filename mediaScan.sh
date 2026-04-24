@@ -31,14 +31,32 @@ if [ -f "$SCRIPT_DIR/locations.md" ]; then
   v=$(_loc MANGA_DIR);  [ -n "$v" ] && MANGA_DIR="$v"
 fi
 
-# ── State: last scan timestamp ────────────────────────────────────────────────
+# ── State: rolling 30-hour window ────────────────────────────────────────────
 now=$(date +%s)
+
+# ── Scan state: when did we last check for new files ─────────────────────────────────
 last_scan=0
 if [ -f "$STATE_FILE" ]; then
   last_scan=$(grep '^last_scan=' "$STATE_FILE" 2>/dev/null | cut -d= -f2 | tr -d '[:space:]')
   printf '%d' "$last_scan" >/dev/null 2>&1 || last_scan=0
 fi
 [ "$last_scan" -eq 0 ] && last_scan=$((now - FIRST_RUN_DAYS * 86400))
+
+# ── Display cache: items stay on site for 30h from when first seen ──────────────
+CACHE_FILE="$SCRIPT_DIR/.media_cache"
+DISPLAY_WINDOW=$((30 * 3600))
+_cache_tmp=$(mktemp)
+if [ -f "$CACHE_FILE" ]; then
+  while IFS= read -r _line; do
+    [ -z "$_line" ] && continue
+    _at=$(printf '%s' "$_line" | awk -F'\037' '{print $5}')
+    [ $(( now - _at )) -le $DISPLAY_WINDOW ] && printf '%s\n' "$_line"
+  done < "$CACHE_FILE" > "$_cache_tmp"
+fi
+
+_in_cache() {
+  awk -F'\037' -v c="$1" -v t="$2" '$1==c && $2==t{found=1;exit} END{exit !found}' "$_cache_tmp" 2>/dev/null
+}
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 fmtime() { stat -f '%m' "$1" 2>/dev/null || stat -c '%Y' "$1" 2>/dev/null || echo 0; }
@@ -68,8 +86,10 @@ find_cover() {
 }
 
 emit() {
-  # category | title | subtitle | thumb_web_path | mtime
-  printf '%s\037%s\037%s\037%s\037%s\n' "$1" "$2" "$3" "$4" "$5" >> "$SCAN_OUT"
+  # Add to display cache only if this item isn't tracked yet; keep original added_at
+  local cat="$1" title="$2" sub="$3" thumb="$4"
+  _in_cache "$cat" "$title" && return
+  printf '%s\037%s\037%s\037%s\037%s\n' "$cat" "$title" "$sub" "$thumb" "$now" >> "$_cache_tmp"
 }
 
 # ── Title cleaners ────────────────────────────────────────────────────────────
@@ -142,11 +162,19 @@ if [ -d "$SHOWS_DIR" ]; then
     if [ -s "$eps_file" ]; then
       max_mt=$(cat "$mt_file")
       ec=$(sort -u "$eps_file" | wc -l | tr -d ' ')
-      if [ "$ec" -gt 3 ]; then
-        sub="${ec} new episodes"
+      # Is the show folder itself new? → new show
+      folder_mt=$(fmtime "$show_dir")
+      if [ "$folder_mt" -gt "$last_scan" ]; then
+        kind="newshow"
       else
-        sub=$(sort -u "$eps_file" | tr '\n' ' ' | sed 's/ $//')
+        kind="neweps"
       fi
+      if [ "$ec" -gt 3 ]; then
+        ep_label="${ec} new episodes"
+      else
+        ep_label=$(sort -u "$eps_file" | tr '\n' ' ' | sed 's/ $//')
+      fi
+      sub="${kind}:${ep_label}"
       name=$(basename "$show_dir")
       t=$(clean_show "$name"); [ -z "$t" ] && t="$name"
       cover=$(find_cover "$show_dir")
@@ -208,7 +236,10 @@ if [ -d "$MANGA_DIR" ]; then
   rm -f "$manga_raw"
 fi
 
-# ── Save state ────────────────────────────────────────────────────────────────
+# ── Save state ─────────────────────────────────────────────────────────────
+cp "$_cache_tmp" "$CACHE_FILE"
+cat "$_cache_tmp" > "$SCAN_OUT"
+rm -f "$_cache_tmp"
 printf 'last_scan=%s\n' "$now" > "$STATE_FILE"
 total=$(wc -l < "$SCAN_OUT" | tr -d ' ')
-printf 'media scan: %s new items\n' "$total" >&2
+printf 'media scan: %s item(s) in 30h window\n' "$total" >&2

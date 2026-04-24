@@ -22,6 +22,7 @@ CONFIG="$SCRIPT_DIR/channelConfig.md"
 VARS_FILE="$SCRIPT_DIR/varsYT.md"
 JELLYFIN_APP_URLS="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"
 ABS_APP_URLS="audiobooth://"
+STILL_APP_URLS="still://"
 
 TODAY=$(date '+%Y-%m-%d')
 NOW_HUMAN=$(date '+%B %d, %Y at %I:%M %p')
@@ -547,7 +548,7 @@ UPDATED_AT=$(date '+%Y-%m-%d %H:%M')
 
 # Run media library scan
 bash "$SCRIPT_DIR/mediaScan.sh" "$MEDIA_SCAN_OUT" 2>/dev/null || true
-MEDIA_SECTIONS_HTML=$(build_media_sections_html "$MEDIA_SCAN_OUT")
+MEDIA_SECTIONS_HTML=$(build_media_sections_html "$MEDIA_SCAN_OUT" "$JELLYFIN_APP_URLS" "$ABS_APP_URLS" "$STILL_APP_URLS")
 
 cat > "$HTML_OUT" <<HTML
 <!DOCTYPE html>
@@ -673,6 +674,7 @@ ${MEDIA_CSS}
   </style>
 </head>
 <body>
+<div id="ptr"><span id="ptr-label">&#8635; Release to refresh</span></div>
 <div id="gate">
   <h2>report.fernhw.com</h2>
   <input type="password" id="pw" placeholder="password" autocomplete="current-password">
@@ -693,6 +695,8 @@ ${MEDIA_CSS}
       </div>
     </header>
 
+    ${MEDIA_SECTIONS_HTML}
+
     <section class="controls" id="feedControls">
       <input id="feedFilter" class="filter-input" type="search" placeholder="Search title or channel..." autocomplete="off" spellcheck="false">
       <button class="filter-chip active" type="button" data-filter-bucket="all">All</button>
@@ -706,8 +710,6 @@ ${MEDIA_CSS}
     <main id="feedMain">
       ${DAY_SECTIONS_HTML}
     </main>
-
-    ${MEDIA_SECTIONS_HTML}
 
     <section class="bottom-panel">
       <div class="bottom-head">
@@ -855,6 +857,12 @@ function tryAppUrls(appUrls) {
     }
 
     document.addEventListener('visibilitychange', onHide);
+    // http(s): open in new tab so the PWA isn't navigated away
+    if (scheme.startsWith('http')) {
+      document.removeEventListener('visibilitychange', onHide);
+      window.open(scheme, '_blank');
+      return;
+    }
     window.location.href = scheme;
 
     timer = setTimeout(() => {
@@ -895,7 +903,11 @@ document.addEventListener('click', event => {
   }
 
   const link = event.target.closest('.card-link');
-  if (!link) return;
+  if (!link) {
+    const media = event.target.closest('.mcard[data-app-urls]');
+    if (media) { event.preventDefault(); tryAppUrls(media.dataset.appUrls || ''); }
+    return;
+  }
   event.preventDefault();
 
   if (link.dataset.showPicker) {
@@ -993,8 +1005,9 @@ setScrollTheme();
 window.addEventListener('scroll', setScrollTheme, { passive: true });
 
 async function subscribeNotify() {
-  if (isIOS && !isStandalone) {
-    alert('On iPhone: tap the Share button then "Add to Home Screen", then open the app and tap Get Notified.');
+  const isIPhone = /iphone|ipod/i.test(navigator.userAgent);
+  if (isIPhone && !isStandalone) {
+    alert('On iPhone: tap the Share button then \u201cAdd to Home Screen\u201d, then open the app and tap Get Notified.');
     return;
   }
   try {
@@ -1013,13 +1026,39 @@ async function subscribeNotify() {
 }
 
 setTimeout(async () => {
-  if (isIOS && !isStandalone) return;
+  const isIPhone = /iphone|ipod/i.test(navigator.userAgent);
+  if (isIPhone && !isStandalone) return;
   try {
     const os = await waitForOneSignal();
     const subbed = os.User.PushSubscription.optedIn;
     if (!subbed) os.Notifications.requestPermission();
   } catch (e) {}
 }, 4000);
+
+// ── Pull-to-refresh ──────────────────────────────────────────────────────────
+(function() {
+  let startY = 0, pulling = false, triggered = false;
+  const ptr = document.getElementById('ptr');
+  const THRESHOLD = 72;
+  document.addEventListener('touchstart', e => {
+    if (window.scrollY > 0) return;
+    startY = e.touches[0].clientY; pulling = true; triggered = false;
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy <= 0) { pulling = false; ptr.style.height = '0'; return; }
+    const h = Math.min(dy * 0.45, THRESHOLD);
+    ptr.style.height = h + 'px';
+    if (h >= THRESHOLD - 1) { ptr.classList.add('ready'); triggered = true; }
+    else { ptr.classList.remove('ready'); triggered = false; }
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    if (!pulling) return;
+    pulling = false; ptr.style.height = '0'; ptr.classList.remove('ready');
+    if (triggered) { triggered = false; location.reload(); }
+  });
+})();
 </script>
 </body>
 </html>
