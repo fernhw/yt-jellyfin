@@ -138,6 +138,10 @@ PRIORITY_LIST=$(read_config_section priority | paste -sd'|' -)
 PODCASTABLE_LIST=$(read_config_section podcastable | paste -sd'|' -)
 FORCE_PODCAST_LIST=$(read_config_section forcePodcast | paste -sd'|' -)
 
+# Load media HTML templates
+. "$SCRIPT_DIR/webTemplates.sh"
+MEDIA_SCAN_OUT="/tmp/media_scan_items.txt"
+
 # --- Greeting ---
 hour=$(date '+%H')
 if [ "$hour" -lt 12 ]; then
@@ -541,6 +545,10 @@ fi
 
 UPDATED_AT=$(date '+%Y-%m-%d %H:%M')
 
+# Run media library scan
+bash "$SCRIPT_DIR/mediaScan.sh" "$MEDIA_SCAN_OUT" 2>/dev/null || true
+MEDIA_SECTIONS_HTML=$(build_media_sections_html "$MEDIA_SCAN_OUT")
+
 cat > "$HTML_OUT" <<HTML
 <!DOCTYPE html>
 <html lang="en">
@@ -661,6 +669,7 @@ cat > "$HTML_OUT" <<HTML
       .bottom-panel{padding:14px}
       .bottom-head{flex-direction:column;align-items:flex-start}
     }
+${MEDIA_CSS}
   </style>
 </head>
 <body>
@@ -697,6 +706,8 @@ cat > "$HTML_OUT" <<HTML
     <main id="feedMain">
       ${DAY_SECTIONS_HTML}
     </main>
+
+    ${MEDIA_SECTIONS_HTML}
 
     <section class="bottom-panel">
       <div class="bottom-head">

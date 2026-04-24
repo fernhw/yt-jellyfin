@@ -117,6 +117,23 @@
       .bottom-panel{padding:14px}
       .bottom-head{flex-direction:column;align-items:flex-start}
     }
+    .media-head-bar{display:flex;align-items:baseline;gap:10px;margin-top:28px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.07)}
+    .media-head-bar h2{font-size:1.1rem;color:#d8e1ea;font-weight:600}
+    .media-head-bar span{font:500 .72rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted)}
+    .media-sections{display:grid;gap:14px}
+    .msec{background:var(--panel-tint);border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:18px 20px 20px;box-shadow:0 18px 60px rgba(0,0,0,.12)}
+    .msec-head{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+    .msec-icon{font-size:.9rem;opacity:.75;flex-shrink:0}
+    .msec-head h3{font:600 .74rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#8fa0b1}
+    .mcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+    .mcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+    .mcard img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:var(--panel-soft)}
+    .mcard img.sq{aspect-ratio:1}
+    .mcard-nothumb{width:100%;aspect-ratio:2/3;background:var(--panel-soft);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:rgba(255,255,255,.2)}
+    .mcard-body{padding:7px 9px 9px;display:grid;gap:2px}
+    .mcard-title{font-size:.78rem;line-height:1.25;color:#f0f4f8;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .mcard-sub{font:500 .66rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    @media(max-width:720px){.mcards{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}.msec{padding:14px}}
   </style>
 </head>
 <body>
@@ -145,13 +162,31 @@
       <button class="filter-chip active" type="button" data-filter-bucket="all">All</button>
       <button class="filter-chip" type="button" data-filter-bucket="priority">Priority</button>
       <button class="filter-chip" type="button" data-filter-bucket="nonpriority">Non-Priority</button>
-      <div class="filter-status" id="filterStatus">Showing all 69 videos.</div>
+      <div class="filter-status" id="filterStatus">Showing all 71 videos.</div>
     </section>
 
     <div id="filterResults"><div class="cards" id="filterCards"></div></div>
 
     <main id="feedMain">
-      <section class="day-section"><div class="day-header"><h2>Today <span>Friday, April 24</span></h2></div><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="orbitals – gameplay reveal trailer – nintendo switch 2 nintendo of america" data-bucket="nonpriority" aria-label="Open in Jellyfin: Orbitals – Gameplay Reveal Trailer – Nintendo Switch 2">
+      <section class="day-section"><div class="day-header"><h2>Today <span>Friday, April 24</span></h2></div><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="xbox, identity, and the power of exclusives | unpacked second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Xbox, Identity, and the Power of Exclusives | Unpacked">
+  <article class="card podcast">
+    <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Xbox, Identity, and the Power of Exclusives | Unpacked</div>
+      <div class="meta-row">Second Wind <span>&middot;</span> Apr 24, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="wwe 2k26 – official season 2 trailer – nintendo switch 2 nintendo of america" data-bucket="nonpriority" aria-label="Open in Jellyfin: WWE 2K26 – Official Season 2 Trailer – Nintendo Switch 2">
+  <article class="card">
+    <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">WWE 2K26 – Official Season 2 Trailer – Nintendo Switch 2</div>
+      <div class="meta-row">Nintendo of America <span>&middot;</span> Apr 24, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="orbitals – gameplay reveal trailer – nintendo switch 2 nintendo of america" data-bucket="nonpriority" aria-label="Open in Jellyfin: Orbitals – Gameplay Reveal Trailer – Nintendo Switch 2">
   <article class="card">
     <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -768,10 +803,12 @@
 </a></div></section></section>
     </main>
 
+    
+
     <section class="bottom-panel">
       <div class="bottom-head">
         <h2>Report details</h2>
-        <p>Good morning. 69 items from the last 4 days.</p>
+        <p>Good morning. 71 items from the last 4 days.</p>
       </div>
 
       <div class="warn-stack"></div>
@@ -783,24 +820,24 @@
         </div>
         <div class="summary-tile">
           <strong>Updated</strong>
-          <span>2026-04-24 09:59</span>
+          <span>2026-04-24 11:41</span>
         </div>
         <div class="summary-tile">
           <strong>Today</strong>
-          <span>17 downloads on Friday</span>
+          <span>19 downloads on Friday</span>
         </div>
         <div class="summary-tile">
           <strong>Recent Downloads</strong>
-          <span>69 items across 4 days</span>
+          <span>71 items across 4 days</span>
         </div>
         <div class="summary-tile">
           <strong>Library Storage</strong>
-          <span>707.72 GB used &middot; 1.74 TB free</span>
+          <span>708.18 GB used &middot; 1.74 TB free</span>
         </div>
       </section>
     </section>
 
-    <footer>report.fernhw.com &middot; updated 2026-04-24 09:59</footer>
+    <footer>report.fernhw.com &middot; updated 2026-04-24 11:41</footer>
   </div>
 </div>
 

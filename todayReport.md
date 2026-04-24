@@ -1,7 +1,7 @@
 # What to Watch — 2026-04-24
 
-> *Good morning! Here's what landed on Friday, April 24, 2026 at 09:58 AM.*
-> **YT Mirror:** 707.72 GB used · 1.74 TB free
+> *Good morning! Here's what landed on Friday, April 24, 2026 at 11:40 AM.*
+> **YT Mirror:** 708.18 GB used · 1.74 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,8 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **Xbox, Identity, and the Power of Exclusives | Unpacked** — *Second Wind* · downloaded 11:36 AM · podcastable
+- **WWE 2K26 – Official Season 2 Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 11:35 AM · not podcastable
 - **Orbitals – Gameplay Reveal Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 09:49 AM · not podcastable
 - **Finally, a good f***ing remake** — *Asmongold TV* · downloaded 09:47 AM · not podcastable
 - **I strongly recommend: Saros (Review)** — *Skill Up* · downloaded 09:45 AM · not podcastable
