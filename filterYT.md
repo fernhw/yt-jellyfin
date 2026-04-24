@@ -6,3 +6,5 @@
 Veritasium -> Veritasium
 3Blue1Brown -> 3Blue1Brown
 ActionButton -> Action Button
+AsmonTV -> AsmongoldTV
+Asmongold TV -> AsmongoldTV

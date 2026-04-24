@@ -464,7 +464,7 @@ if [ -n "$RECENT_VIDEOS" ]; then
       launch_label="Open in Jellyfin"
     fi
 
-    filter_text=$(printf '%s %s %s %s' "$title" "$chan" "$upload_label" "$bucket" | tr '[:upper:]' '[:lower:]')
+    filter_text=$(printf '%s %s' "$title" "$chan" | tr '[:upper:]' '[:lower:]')
     safe_filter_text=$(html_escape "$filter_text")
 
     cat >> "$WEB_TMP_DIR/${download_day}.${bucket}.html" <<CARD
@@ -602,6 +602,10 @@ cat > "$HTML_OUT" <<HTML
     .meta-row span{padding:0 5px;color:#59697a}
     .empty{color:var(--muted);font-size:1rem;line-height:1.6}
     .day-section.is-filtered-empty,.category.is-filtered-empty{display:none}
+    #filterResults{display:none;margin-top:10px}
+    #filterResults .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+    #filterResults .filter-empty{color:var(--muted);font-size:.9rem;padding:16px 4px}
+    @media(max-width:720px){#filterResults .cards{grid-template-columns:1fr}}
     .bottom-panel{margin-top:18px;padding:18px;border:1px solid rgba(255,255,255,.06);border-radius:22px;background:linear-gradient(180deg,rgba(18,22,27,.96),rgba(13,16,20,.96))}
     .bottom-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
     .bottom-head h2{font-size:1rem;color:#dbe4ec;font-weight:600}
@@ -649,14 +653,16 @@ cat > "$HTML_OUT" <<HTML
     </header>
 
     <section class="controls" id="feedControls">
-      <input id="feedFilter" class="filter-input" type="search" placeholder="Filter by title, channel, date" autocomplete="off" spellcheck="false">
+      <input id="feedFilter" class="filter-input" type="search" placeholder="Search title or channel..." autocomplete="off" spellcheck="false">
       <button class="filter-chip active" type="button" data-filter-bucket="all">All</button>
       <button class="filter-chip" type="button" data-filter-bucket="priority">Priority</button>
       <button class="filter-chip" type="button" data-filter-bucket="nonpriority">Non-Priority</button>
       <div class="filter-status" id="filterStatus">Showing all ${RECENT_COUNT} videos.</div>
     </section>
 
-    <main>
+    <div id="filterResults"><div class="cards" id="filterCards"></div></div>
+
+    <main id="feedMain">
       ${DAY_SECTIONS_HTML}
     </main>
 
@@ -817,41 +823,45 @@ function setActiveBucket(bucket) {
   });
 }
 
+const feedMain = document.getElementById('feedMain');
+const filterResults = document.getElementById('filterResults');
+const filterCards = document.getElementById('filterCards');
+
 function applyFeedFilter() {
   const query = (filterInput?.value || '').trim().toLowerCase();
-  const cards = Array.from(document.querySelectorAll('.card-link'));
-  let visibleCount = 0;
+  const isFiltering = query || activeBucket !== 'all';
 
-  cards.forEach(card => {
-    const haystack = card.dataset.filterText || '';
-    const bucket = card.dataset.bucket || 'nonpriority';
-    const matchesBucket = activeBucket === 'all' || bucket === activeBucket;
-    const matchesQuery = !query || haystack.includes(query);
-    const visible = matchesBucket && matchesQuery;
-    card.hidden = !visible;
-    if (visible) visibleCount += 1;
-  });
-
-  document.querySelectorAll('.category').forEach(section => {
-    const hasVisibleCards = Array.from(section.querySelectorAll('.card-link')).some(card => !card.hidden);
-    section.classList.toggle('is-filtered-empty', !hasVisibleCards);
-  });
-
-  document.querySelectorAll('.day-section').forEach(section => {
-    const hasVisibleCategories = Array.from(section.querySelectorAll('.category')).some(category => !category.classList.contains('is-filtered-empty'));
-    section.classList.toggle('is-filtered-empty', !hasVisibleCategories);
-  });
-
-  if (!filterStatus) return;
-
-  if (!query && activeBucket === 'all') {
-    filterStatus.textContent = 'Showing all ' + visibleCount + ' videos.';
+  if (!isFiltering) {
+    filterResults.style.display = 'none';
+    feedMain.style.display = '';
+    filterCards.innerHTML = '';
+    if (filterStatus) filterStatus.textContent = 'Showing all ' + document.querySelectorAll('.card-link').length + ' videos.';
     return;
   }
 
-  const bucketLabel = activeBucket === 'all' ? 'all sections' : activeBucket === 'priority' ? 'priority' : 'non-priority';
-  const queryLabel = query ? ' matching "' + query + '"' : '';
-  filterStatus.textContent = 'Showing ' + visibleCount + ' videos in ' + bucketLabel + queryLabel + '.';
+  const allCards = Array.from(document.querySelectorAll('#feedMain .card-link'));
+  const matched = allCards.filter(card => {
+    const combined = (card.dataset.filterText || '').toLowerCase();
+    const bucket = card.dataset.bucket || 'nonpriority';
+    const matchesBucket = activeBucket === 'all' || bucket === activeBucket;
+    const matchesQuery = !query || combined.includes(query);
+    return matchesBucket && matchesQuery;
+  });
+
+  filterCards.innerHTML = '';
+  matched.forEach(card => filterCards.appendChild(card.cloneNode(true)));
+
+  if (matched.length === 0) {
+    filterCards.innerHTML = '<p class="filter-empty">No videos match.</p>';
+  }
+
+  feedMain.style.display = 'none';
+  filterResults.style.display = 'block';
+
+  if (!filterStatus) return;
+  const bucketLabel = activeBucket === 'all' ? '' : activeBucket === 'priority' ? ' in Priority' : ' in Non-Priority';
+  const queryLabel = query ? ' matching \"' + query + '\"' : '';
+  filterStatus.textContent = matched.length + ' video' + (matched.length === 1 ? '' : 's') + bucketLabel + queryLabel + '.';
 }
 
 filterInput?.addEventListener('input', applyFeedFilter);

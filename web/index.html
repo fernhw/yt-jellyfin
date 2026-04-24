@@ -78,6 +78,10 @@
     .meta-row span{padding:0 5px;color:#59697a}
     .empty{color:var(--muted);font-size:1rem;line-height:1.6}
     .day-section.is-filtered-empty,.category.is-filtered-empty{display:none}
+    #filterResults{display:none;margin-top:10px}
+    #filterResults .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+    #filterResults .filter-empty{color:var(--muted);font-size:.9rem;padding:16px 4px}
+    @media(max-width:720px){#filterResults .cards{grid-template-columns:1fr}}
     .bottom-panel{margin-top:18px;padding:18px;border:1px solid rgba(255,255,255,.06);border-radius:22px;background:linear-gradient(180deg,rgba(18,22,27,.96),rgba(13,16,20,.96))}
     .bottom-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
     .bottom-head h2{font-size:1rem;color:#dbe4ec;font-weight:600}
@@ -125,15 +129,17 @@
     </header>
 
     <section class="controls" id="feedControls">
-      <input id="feedFilter" class="filter-input" type="search" placeholder="Filter by title, channel, date" autocomplete="off" spellcheck="false">
+      <input id="feedFilter" class="filter-input" type="search" placeholder="Search title or channel..." autocomplete="off" spellcheck="false">
       <button class="filter-chip active" type="button" data-filter-bucket="all">All</button>
       <button class="filter-chip" type="button" data-filter-bucket="priority">Priority</button>
       <button class="filter-chip" type="button" data-filter-bucket="nonpriority">Non-Priority</button>
       <div class="filter-status" id="filterStatus">Showing all 60 videos.</div>
     </section>
 
-    <main>
-      <section class="day-section"><div class="day-header"><h2>Today <span>Friday, April 24</span></h2></div><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="boost pragmata ps5 resolution: how to play at 1440p instead of standard 1080p digital foundry apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Boost Pragmata PS5 Resolution: How To Play At 1440p Instead Of Standard 1080p">
+    <div id="filterResults"><div class="cards" id="filterCards"></div></div>
+
+    <main id="feedMain">
+      <section class="day-section"><div class="day-header"><h2>Today <span>Friday, April 24</span></h2></div><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="boost pragmata ps5 resolution: how to play at 1440p instead of standard 1080p digital foundry" data-bucket="nonpriority" aria-label="Open in Jellyfin: Boost Pragmata PS5 Resolution: How To Play At 1440p Instead Of Standard 1080p">
   <article class="card">
     <img src="thumbs/digitalfoundry.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -142,7 +148,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="df retro ex: outlive 25 - the cult classic pc rts remastered [sponsored] digital foundry apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: DF Retro EX: Outlive 25 - The Cult Classic PC RTS Remastered [Sponsored]">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="df retro ex: outlive 25 - the cult classic pc rts remastered [sponsored] digital foundry" data-bucket="nonpriority" aria-label="Open in Jellyfin: DF Retro EX: Outlive 25 - The Cult Classic PC RTS Remastered [Sponsored]">
   <article class="card">
     <img src="thumbs/digitalfoundry.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -151,7 +157,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="wii u vs. playstation vita scott's stash apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Wii U vs. PlayStation Vita">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="wii u vs. playstation vita scott's stash" data-bucket="nonpriority" aria-label="Open in Jellyfin: Wii U vs. PlayStation Vita">
   <article class="card">
     <img src="thumbs/scottsstash.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -160,7 +166,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="the most useless amiibo figures scott's stash apr 24, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: The Most Useless amiibo Figures">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="the most useless amiibo figures scott's stash" data-bucket="nonpriority" aria-label="Open in Jellyfin: The Most Useless amiibo Figures">
   <article class="card">
     <img src="thumbs/scottsstash.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -169,7 +175,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="tim is finally cooked big a apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Tim Is Finally Cooked">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="tim is finally cooked big a" data-bucket="nonpriority" aria-label="Open in Jellyfin: Tim Is Finally Cooked">
   <article class="card">
     <img src="thumbs/biga.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -178,7 +184,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="he apologized big a apr 24, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: He Apologized">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="he apologized big a" data-bucket="nonpriority" aria-label="Open in Jellyfin: He Apologized">
   <article class="card">
     <img src="thumbs/biga.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -187,7 +193,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="go ahead, make me cry | semi-ramblomatic second wind apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Go Ahead, Make Me Cry | Semi-Ramblomatic">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="go ahead, make me cry | semi-ramblomatic second wind" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Go Ahead, Make Me Cry | Semi-Ramblomatic">
   <article class="card podcast">
     <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -196,7 +202,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="the second wind games showcase - spring 2026 edition second wind apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: The Second Wind Games Showcase - Spring 2026 Edition">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="the second wind games showcase - spring 2026 edition second wind" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: The Second Wind Games Showcase - Spring 2026 Edition">
   <article class="card podcast">
     <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -204,7 +210,7 @@
       <div class="meta-row">Second Wind <span>&middot;</span> Apr 23, 2026</div>
     </div>
   </article>
-</a></div></section></section><section class="day-section"><div class="day-header"><h2>Yesterday <span>Thursday, April 23</span></h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="invincible s4 - it's (almost) peak schaffrillas productions apr 23, 2026 priority" data-bucket="priority" aria-label="Open in Jellyfin: Invincible S4 - IT'S (almost) PEAK">
+</a></div></section></section><section class="day-section"><div class="day-header"><h2>Yesterday <span>Thursday, April 23</span></h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="invincible s4 - it's (almost) peak schaffrillas productions" data-bucket="priority" aria-label="Open in Jellyfin: Invincible S4 - IT'S (almost) PEAK">
   <article class="card priority">
     <img src="thumbs/schaffrillasproductions.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -213,7 +219,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="subaru as a villain | re:zero season 4 episode 3 reaction/analysis echidnut apr 22, 2026 priority" data-bucket="priority" aria-label="Open in Jellyfin: Subaru as a Villain | Re:ZERO Season 4 Episode 3 Reaction/Analysis">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="subaru as a villain | re:zero season 4 episode 3 reaction/analysis echidnut" data-bucket="priority" aria-label="Open in Jellyfin: Subaru as a Villain | Re:ZERO Season 4 Episode 3 Reaction/Analysis">
   <article class="card priority">
     <img src="thumbs/echidnut.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -222,7 +228,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="i finally found a use case for openclaw… fireship apr 23, 2026 priority" data-bucket="priority" aria-label="Open in Audiobookshelf: I finally found a use case for OpenClaw…">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="i finally found a use case for openclaw… fireship" data-bucket="priority" aria-label="Open in Audiobookshelf: I finally found a use case for OpenClaw…">
   <article class="card priority">
     <img src="thumbs/fireship.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -230,7 +236,7 @@
       <div class="meta-row">Fireship <span>&middot;</span> Apr 23, 2026</div>
     </div>
   </article>
-</a></div></section><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="do not buy: amd ryzen 9 9950x3d2 cpu review &amp; benchmarks | 24 charts in 24 hours gamers nexus apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: DO NOT BUY: AMD Ryzen 9 9950X3D2 CPU Review &amp; Benchmarks | 24 Charts in 24 Hours">
+</a></div></section><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="do not buy: amd ryzen 9 9950x3d2 cpu review &amp; benchmarks | 24 charts in 24 hours gamers nexus" data-bucket="nonpriority" aria-label="Open in Jellyfin: DO NOT BUY: AMD Ryzen 9 9950X3D2 CPU Review &amp; Benchmarks | 24 Charts in 24 Hours">
   <article class="card">
     <img src="thumbs/gamersnexus.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -239,7 +245,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="uh, is amd ok? techlinked apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Uh, Is AMD Ok?">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="uh, is amd ok? techlinked" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Uh, Is AMD Ok?">
   <article class="card podcast">
     <img src="thumbs/techlinked.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -248,7 +254,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="where’s our money, nintendo? gamelinked apr 24, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Where’s Our Money, Nintendo?">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="where’s our money, nintendo? gamelinked" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Where’s Our Money, Nintendo?">
   <article class="card podcast">
     <img src="thumbs/gamelinked.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -257,7 +263,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="gamers are suing nintendo spawn wave apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Gamers Are Suing Nintendo">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="gamers are suing nintendo spawn wave" data-bucket="nonpriority" aria-label="Open in Jellyfin: Gamers Are Suing Nintendo">
   <article class="card">
     <img src="thumbs/spawnwave.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -266,7 +272,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="overwatch – nintendo switch 2 comparison trailer nintendo of america apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Overwatch – Nintendo Switch 2 Comparison Trailer">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="overwatch – nintendo switch 2 comparison trailer nintendo of america" data-bucket="nonpriority" aria-label="Open in Jellyfin: Overwatch – Nintendo Switch 2 Comparison Trailer">
   <article class="card">
     <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -275,7 +281,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="lego fortnite ninjago – embers of chaos trailer – nintendo switch 2 nintendo of america apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: LEGO Fortnite NINJAGO – Embers of Chaos Trailer – Nintendo Switch 2">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="lego fortnite ninjago – embers of chaos trailer – nintendo switch 2 nintendo of america" data-bucket="nonpriority" aria-label="Open in Jellyfin: LEGO Fortnite NINJAGO – Embers of Chaos Trailer – Nintendo Switch 2">
   <article class="card">
     <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -284,7 +290,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="yoshi and the mysterious book – overview trailer – nintendo switch 2 nintendo of america apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Yoshi and the Mysterious Book – Overview Trailer – Nintendo Switch 2">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="yoshi and the mysterious book – overview trailer – nintendo switch 2 nintendo of america" data-bucket="nonpriority" aria-label="Open in Jellyfin: Yoshi and the Mysterious Book – Overview Trailer – Nintendo Switch 2">
   <article class="card">
     <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -293,7 +299,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="annapurna interactive – 2026 lineup trailer – nintendo switch 2 nintendo of america apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Annapurna Interactive – 2026 Lineup Trailer – Nintendo Switch 2">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="annapurna interactive – 2026 lineup trailer – nintendo switch 2 nintendo of america" data-bucket="nonpriority" aria-label="Open in Jellyfin: Annapurna Interactive – 2026 Lineup Trailer – Nintendo Switch 2">
   <article class="card">
     <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -302,7 +308,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="what the f*ck.. asmongold tv   apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: what the f*ck..">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="what the f*ck.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Audiobookshelf: what the f*ck..">
   <article class="card podcast">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -311,7 +317,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="alex jones was right.. asmongold tv   apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Alex Jones was right..">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="alex jones was right.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Alex Jones was right..">
   <article class="card podcast">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -320,7 +326,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="this is embarrassing.. asmongold tv   apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: This is embarrassing..">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="this is embarrassing.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Audiobookshelf: This is embarrassing..">
   <article class="card podcast">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -329,7 +335,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="not again.. asmongold tv   apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Not again..">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="not again.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Not again..">
   <article class="card podcast">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -338,7 +344,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="so i tried vampire crawlers.. asmongold tv   apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: So I Tried Vampire Crawlers..">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="so i tried vampire crawlers.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Audiobookshelf: So I Tried Vampire Crawlers..">
   <article class="card podcast">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -347,7 +353,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="johnny somali is done for good.. asmongold tv   apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Johnny Somali is done for good..">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="johnny somali is done for good.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Johnny Somali is done for good..">
   <article class="card podcast">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -356,7 +362,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="the uk government is evil asmongold tv   apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: The UK government is evil">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="the uk government is evil asmongold tv  " data-bucket="nonpriority" aria-label="Open in Audiobookshelf: The UK government is evil">
   <article class="card podcast">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -365,7 +371,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="he's been having a bad time.. asmongold tv   apr 24, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: He's been having a BAD time..">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="he's been having a bad time.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Audiobookshelf: He's been having a BAD time..">
   <article class="card podcast">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -374,7 +380,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="i recommend: diablo iv - lord of hatred (review) skill up apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: I recommend: Diablo IV - Lord of Hatred (Review)">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="i recommend: diablo iv - lord of hatred (review) skill up" data-bucket="nonpriority" aria-label="Open in Jellyfin: I recommend: Diablo IV - Lord of Hatred (Review)">
   <article class="card">
     <img src="thumbs/skillup.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -383,7 +389,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="handheld streaming guide (apollo, moonlight, etc) retro game corps apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Handheld Streaming Guide (Apollo, Moonlight, etc)">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="handheld streaming guide (apollo, moonlight, etc) retro game corps" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Handheld Streaming Guide (Apollo, Moonlight, etc)">
   <article class="card podcast">
     <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -392,7 +398,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="these youtubers weren't happy that i watched their first videos... connordawg apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: These YouTubers Weren't Happy that I Watched Their First Videos...">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="these youtubers weren't happy that i watched their first videos... connordawg" data-bucket="nonpriority" aria-label="Open in Jellyfin: These YouTubers Weren't Happy that I Watched Their First Videos...">
   <article class="card">
     <img src="thumbs/connordawg.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -401,7 +407,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="1 gamer vs 100 women garnt apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: 1 GAMER VS 100 WOMEN">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="1 gamer vs 100 women garnt" data-bucket="nonpriority" aria-label="Open in Jellyfin: 1 GAMER VS 100 WOMEN">
   <article class="card">
     <img src="thumbs/garnt.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -410,7 +416,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="gerrymandering: the gop gets a taste of its own medicine internet today apr 23, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Gerrymandering: The GOP Gets a Taste of Its Own Medicine">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="gerrymandering: the gop gets a taste of its own medicine internet today" data-bucket="nonpriority" aria-label="Open in Jellyfin: Gerrymandering: The GOP Gets a Taste of Its Own Medicine">
   <article class="card">
     <img src="thumbs/internettoday.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -418,7 +424,7 @@
       <div class="meta-row">Internet Today <span>&middot;</span> Apr 23, 2026</div>
     </div>
   </article>
-</a></div></section></section><section class="day-section"><div class="day-header"><h2>Wednesday, April 22</h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="pragmata videogamedunkey apr 22, 2026 priority" data-bucket="priority" aria-label="Open in Jellyfin: Pragmata">
+</a></div></section></section><section class="day-section"><div class="day-header"><h2>Wednesday, April 22</h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="pragmata videogamedunkey" data-bucket="priority" aria-label="Open in Jellyfin: Pragmata">
   <article class="card priority">
     <img src="thumbs/videogamedunkey.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -426,7 +432,7 @@
       <div class="meta-row">videogamedunkey <span>&middot;</span> Apr 22, 2026</div>
     </div>
   </article>
-</a></div></section><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="pragmata is a problem cupcake4all apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Pragmata is a problem">
+</a></div></section><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="pragmata is a problem cupcake4all" data-bucket="nonpriority" aria-label="Open in Jellyfin: Pragmata is a problem">
   <article class="card">
     <img src="thumbs/cupcake4all.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -435,7 +441,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="this reviewer should never touch another video game.. asmongold tv   apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: This reviewer should never touch another video game..">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="this reviewer should never touch another video game.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Audiobookshelf: This reviewer should never touch another video game..">
   <article class="card podcast">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -444,7 +450,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="coachella is the worst... papa meat apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Coachella Is The Worst...">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="coachella is the worst... papa meat" data-bucket="nonpriority" aria-label="Open in Jellyfin: Coachella Is The Worst...">
   <article class="card">
     <img src="thumbs/papameat.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -453,7 +459,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="this game is everything they hate legendary drops apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: This game is everything they hate">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="this game is everything they hate legendary drops" data-bucket="nonpriority" aria-label="Open in Jellyfin: This game is everything they hate">
   <article class="card">
     <img src="thumbs/legendarydrops.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -462,7 +468,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="atari versus nintendo: the curse of the rabbit | fully ramblomatic second wind apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Atari Versus Nintendo: The Curse of the Rabbit | Fully Ramblomatic">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="atari versus nintendo: the curse of the rabbit | fully ramblomatic second wind" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Atari Versus Nintendo: The Curse of the Rabbit | Fully Ramblomatic">
   <article class="card podcast">
     <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -471,7 +477,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="doordash girl got what she deserved.. asmongold tv   apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Doordash girl got what she deserved..">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="doordash girl got what she deserved.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Doordash girl got what she deserved..">
   <article class="card podcast">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -480,7 +486,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="digisette duo - odd cassette tape mp3 player from 2000 lgr apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Digisette Duo - Odd Cassette Tape MP3 Player from 2000">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="digisette duo - odd cassette tape mp3 player from 2000 lgr" data-bucket="nonpriority" aria-label="Open in Jellyfin: Digisette Duo - Odd Cassette Tape MP3 Player from 2000">
   <article class="card">
     <img src="thumbs/lgr.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -489,7 +495,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="what a stupid idiot.. asmongold tv   apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: What a stupid idiot..">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="what a stupid idiot.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Audiobookshelf: What a stupid idiot..">
   <article class="card podcast">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -498,7 +504,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="this patch looks insane! 3.3 special program reaction | wuthering waves vod yessenia  apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: THIS PATCH LOOKS INSANE! 3.3 SPECIAL PROGRAM REACTION | Wuthering Waves VOD">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="this patch looks insane! 3.3 special program reaction | wuthering waves vod yessenia " data-bucket="nonpriority" aria-label="Open in Jellyfin: THIS PATCH LOOKS INSANE! 3.3 SPECIAL PROGRAM REACTION | Wuthering Waves VOD">
   <article class="card">
     <img src="thumbs/yessenia.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -507,7 +513,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="everyone expected this.. asmongold tv   apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Everyone expected this..">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="everyone expected this.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Everyone expected this..">
   <article class="card podcast">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -515,7 +521,7 @@
       <div class="meta-row">Asmongold TV <span>&middot;</span> Apr 22, 2026</div>
     </div>
   </article>
-</a></div></section></section><section class="day-section"><div class="day-header"><h2>Tuesday, April 21</h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="every smiling friends episode ranked (all 3 seasons) schaffrillas productions apr 21, 2026 priority" data-bucket="priority" aria-label="Open in Jellyfin: Every Smiling Friends Episode Ranked (All 3 Seasons)">
+</a></div></section></section><section class="day-section"><div class="day-header"><h2>Tuesday, April 21</h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="every smiling friends episode ranked (all 3 seasons) schaffrillas productions" data-bucket="priority" aria-label="Open in Jellyfin: Every Smiling Friends Episode Ranked (All 3 Seasons)">
   <article class="card priority">
     <img src="thumbs/schaffrillasproductions.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -524,7 +530,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="claude just got another superpower... fireship apr 21, 2026 priority" data-bucket="priority" aria-label="Open in Audiobookshelf: Claude just got another superpower...">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="claude just got another superpower... fireship" data-bucket="priority" aria-label="Open in Audiobookshelf: Claude just got another superpower...">
   <article class="card priority">
     <img src="thumbs/fireship.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -532,7 +538,7 @@
       <div class="meta-row">Fireship <span>&middot;</span> Apr 21, 2026</div>
     </div>
   </article>
-</a></div></section><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="wait...the price actually went down?! spawn wave apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Wait...The Price Actually Went Down?!">
+</a></div></section><section class="category"><h3>Non-Priority</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="wait...the price actually went down?! spawn wave" data-bucket="nonpriority" aria-label="Open in Jellyfin: Wait...The Price Actually Went Down?!">
   <article class="card">
     <img src="thumbs/spawnwave.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -541,7 +547,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="mario on handhelds vs. consoles scott's stash apr 22, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Mario on Handhelds vs. Consoles">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="mario on handhelds vs. consoles scott's stash" data-bucket="nonpriority" aria-label="Open in Jellyfin: Mario on Handhelds vs. Consoles">
   <article class="card">
     <img src="thumbs/scottsstash.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -550,7 +556,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="&quot;stop nick shirley act&quot; asmongold tv   apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: &quot;Stop Nick Shirley Act&quot;">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="&quot;stop nick shirley act&quot; asmongold tv  " data-bucket="nonpriority" aria-label="Open in Audiobookshelf: &quot;Stop Nick Shirley Act&quot;">
   <article class="card podcast">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -559,7 +565,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="we are near peak hype the primetime apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: We are near peak hype">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="we are near peak hype the primetime" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: We are near peak hype">
   <article class="card podcast">
     <img src="thumbs/theprimetime.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -568,7 +574,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="the eu just took stop killing games seriously bellular news apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: The EU Just Took Stop Killing Games Seriously">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="the eu just took stop killing games seriously bellular news" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: The EU Just Took Stop Killing Games Seriously">
   <article class="card podcast">
     <img src="thumbs/bellularnews.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -577,7 +583,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="opus: prism peak – launch trailer – nintendo switch 2 nintendo of america apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: OPUS: Prism Peak – Launch Trailer – Nintendo Switch 2">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="opus: prism peak – launch trailer – nintendo switch 2 nintendo of america" data-bucket="nonpriority" aria-label="Open in Jellyfin: OPUS: Prism Peak – Launch Trailer – Nintendo Switch 2">
   <article class="card">
     <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -586,7 +592,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="so this is peak smartphone marques brownlee apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: So This is Peak Smartphone">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="so this is peak smartphone marques brownlee" data-bucket="nonpriority" aria-label="Open in Jellyfin: So This is Peak Smartphone">
   <article class="card">
     <img src="thumbs/marquesbrownlee.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -595,7 +601,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="exit 8 thoughts about liminal horror | the backdrop second wind apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Exit 8 Thoughts About Liminal Horror | The Backdrop">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="exit 8 thoughts about liminal horror | the backdrop second wind" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: Exit 8 Thoughts About Liminal Horror | The Backdrop">
   <article class="card podcast">
     <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -604,7 +610,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="df direct q+a: will pssr lower game resolutions? starfield switch 2, is rtx 5080 ok for path tracing digital foundry apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: DF Direct Q+A: Will PSSR Lower Game Resolutions? Starfield Switch 2, Is RTX 5080 OK For Path Tracing">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="df direct q+a: will pssr lower game resolutions? starfield switch 2, is rtx 5080 ok for path tracing digital foundry" data-bucket="nonpriority" aria-label="Open in Jellyfin: DF Direct Q+A: Will PSSR Lower Game Resolutions? Starfield Switch 2, Is RTX 5080 OK For Path Tracing">
   <article class="card">
     <img src="thumbs/digitalfoundry.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -613,7 +619,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="blacklisted by amd | amd's dirty tactics gamers nexus apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: BLACKLISTED by AMD | AMD's Dirty Tactics">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="blacklisted by amd | amd's dirty tactics gamers nexus" data-bucket="nonpriority" aria-label="Open in Jellyfin: BLACKLISTED by AMD | AMD's Dirty Tactics">
   <article class="card">
     <img src="thumbs/gamersnexus.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -622,7 +628,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="splatoon raiders — release date revealed — nintendo switch 2 nintendo of america apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Splatoon Raiders — Release Date Revealed — Nintendo Switch 2">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="splatoon raiders — release date revealed — nintendo switch 2 nintendo of america" data-bucket="nonpriority" aria-label="Open in Jellyfin: Splatoon Raiders — Release Date Revealed — Nintendo Switch 2">
   <article class="card">
     <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -631,7 +637,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="there's a new ps2 emulator fork on android retro game corps apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: There's a New PS2 Emulator Fork on Android">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="there's a new ps2 emulator fork on android retro game corps" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: There's a New PS2 Emulator Fork on Android">
   <article class="card podcast">
     <img src="thumbs/retrogamecorps.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -640,7 +646,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="i have more questions! good world hard mode | goddess of victory: nikke vod yessenia  apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: I HAVE MORE QUESTIONS! GOOD WORLD HARD MODE | Goddess of Victory: NIKKE VOD">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="i have more questions! good world hard mode | goddess of victory: nikke vod yessenia " data-bucket="nonpriority" aria-label="Open in Jellyfin: I HAVE MORE QUESTIONS! GOOD WORLD HARD MODE | Goddess of Victory: NIKKE VOD">
   <article class="card">
     <img src="thumbs/yessenia.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -649,7 +655,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="the easy mini pc steam &amp; retro console techdweeb apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: The EASY Mini PC Steam &amp; Retro Console">
+<a class="card-link" href="#" data-app-urls="me.jgrenier.AudioBS://|audiobookshelf://" data-filter-text="the easy mini pc steam &amp; retro console techdweeb" data-bucket="nonpriority" aria-label="Open in Audiobookshelf: The EASY Mini PC Steam &amp; Retro Console">
   <article class="card podcast">
     <img src="thumbs/techdweeb.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -658,7 +664,7 @@
     </div>
   </article>
 </a>
-<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="desperate trump clears path for legal psychedelics?! internet today apr 21, 2026 nonpriority" data-bucket="nonpriority" aria-label="Open in Jellyfin: Desperate Trump Clears Path for Legal Psychedelics?!">
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://" data-filter-text="desperate trump clears path for legal psychedelics?! internet today" data-bucket="nonpriority" aria-label="Open in Jellyfin: Desperate Trump Clears Path for Legal Psychedelics?!">
   <article class="card">
     <img src="thumbs/internettoday.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -684,7 +690,7 @@
         </div>
         <div class="summary-tile">
           <strong>Updated</strong>
-          <span>2026-04-24 01:32</span>
+          <span>2026-04-24 01:53</span>
         </div>
         <div class="summary-tile">
           <strong>Today</strong>
@@ -696,12 +702,12 @@
         </div>
         <div class="summary-tile">
           <strong>Library Storage</strong>
-          <span>699.77 GB used &middot; 1.75 TB free</span>
+          <span>699.78 GB used &middot; 1.75 TB free</span>
         </div>
       </section>
     </section>
 
-    <footer>report.fernhw.com &middot; updated 2026-04-24 01:32</footer>
+    <footer>report.fernhw.com &middot; updated 2026-04-24 01:53</footer>
   </div>
 </div>
 
@@ -826,41 +832,45 @@ function setActiveBucket(bucket) {
   });
 }
 
+const feedMain = document.getElementById('feedMain');
+const filterResults = document.getElementById('filterResults');
+const filterCards = document.getElementById('filterCards');
+
 function applyFeedFilter() {
   const query = (filterInput?.value || '').trim().toLowerCase();
-  const cards = Array.from(document.querySelectorAll('.card-link'));
-  let visibleCount = 0;
+  const isFiltering = query || activeBucket !== 'all';
 
-  cards.forEach(card => {
-    const haystack = card.dataset.filterText || '';
-    const bucket = card.dataset.bucket || 'nonpriority';
-    const matchesBucket = activeBucket === 'all' || bucket === activeBucket;
-    const matchesQuery = !query || haystack.includes(query);
-    const visible = matchesBucket && matchesQuery;
-    card.hidden = !visible;
-    if (visible) visibleCount += 1;
-  });
-
-  document.querySelectorAll('.category').forEach(section => {
-    const hasVisibleCards = Array.from(section.querySelectorAll('.card-link')).some(card => !card.hidden);
-    section.classList.toggle('is-filtered-empty', !hasVisibleCards);
-  });
-
-  document.querySelectorAll('.day-section').forEach(section => {
-    const hasVisibleCategories = Array.from(section.querySelectorAll('.category')).some(category => !category.classList.contains('is-filtered-empty'));
-    section.classList.toggle('is-filtered-empty', !hasVisibleCategories);
-  });
-
-  if (!filterStatus) return;
-
-  if (!query && activeBucket === 'all') {
-    filterStatus.textContent = 'Showing all ' + visibleCount + ' videos.';
+  if (!isFiltering) {
+    filterResults.style.display = 'none';
+    feedMain.style.display = '';
+    filterCards.innerHTML = '';
+    if (filterStatus) filterStatus.textContent = 'Showing all ' + document.querySelectorAll('.card-link').length + ' videos.';
     return;
   }
 
-  const bucketLabel = activeBucket === 'all' ? 'all sections' : activeBucket === 'priority' ? 'priority' : 'non-priority';
-  const queryLabel = query ? ' matching "' + query + '"' : '';
-  filterStatus.textContent = 'Showing ' + visibleCount + ' videos in ' + bucketLabel + queryLabel + '.';
+  const allCards = Array.from(document.querySelectorAll('#feedMain .card-link'));
+  const matched = allCards.filter(card => {
+    const combined = (card.dataset.filterText || '').toLowerCase();
+    const bucket = card.dataset.bucket || 'nonpriority';
+    const matchesBucket = activeBucket === 'all' || bucket === activeBucket;
+    const matchesQuery = !query || combined.includes(query);
+    return matchesBucket && matchesQuery;
+  });
+
+  filterCards.innerHTML = '';
+  matched.forEach(card => filterCards.appendChild(card.cloneNode(true)));
+
+  if (matched.length === 0) {
+    filterCards.innerHTML = '<p class="filter-empty">No videos match.</p>';
+  }
+
+  feedMain.style.display = 'none';
+  filterResults.style.display = 'block';
+
+  if (!filterStatus) return;
+  const bucketLabel = activeBucket === 'all' ? '' : activeBucket === 'priority' ? ' in Priority' : ' in Non-Priority';
+  const queryLabel = query ? ' matching \"' + query + '\"' : '';
+  filterStatus.textContent = matched.length + ' video' + (matched.length === 1 ? '' : 's') + bucketLabel + queryLabel + '.';
 }
 
 filterInput?.addEventListener('input', applyFeedFilter);
