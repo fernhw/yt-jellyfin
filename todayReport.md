@@ -1,16 +1,21 @@
 # What to Watch — 2026-04-24
 
-> *Good afternoon! Here's what landed on Friday, April 24, 2026 at 03:38 PM.*
-> **YT Mirror:** 706.69 GB used · 1.74 TB free
+> *Good evening! Here's what landed on Friday, April 24, 2026 at 05:25 PM.*
+> **YT Mirror:** 713.32 GB used · 1.73 TB free
 
 ## Priority Videos
 
+- **This Anime is so Much More Than Just Running | Trash Taste #305** — *Trash Taste* · downloaded 05:11 PM · podcastable
 - **Fitting In at School** — *GLITCH* · downloaded 03:05 PM · not podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **House Fires Destroyed 2 Subscriber PCs - Rebuilding & Inspecting the Remains** — *Gamers Nexus* · downloaded 05:20 PM · not podcastable
+- **Call of Duty Broke Xbox: Everyone Else Paid The Price** — *Bellular News* · downloaded 05:14 PM · podcastable
+- **Things Are Changing At Xbox...** — *Spawn Wave* · downloaded 05:12 PM · not podcastable
+- **Glass is glass** — *Marques Brownlee* · downloaded 05:11 PM · not podcastable
 - **Beast Games 2 Strong/Smart: an Exhaustive Review** — *Folding Ideas* · downloaded 03:11 PM · not podcastable
 - **The Splatoon 3 North American League Show 2026 – Episode 4** — *Nintendo of America* · downloaded 03:08 PM · not podcastable
 - **This is bigger than you think** — *Asmongold TV* · downloaded 03:07 PM · not podcastable
