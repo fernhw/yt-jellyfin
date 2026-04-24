@@ -20,8 +20,8 @@ ARCHIVE_DIR="$SCRIPT_DIR/reportsArchive"
 DB="$SCRIPT_DIR/ytdb.db"
 CONFIG="$SCRIPT_DIR/channelConfig.md"
 VARS_FILE="$SCRIPT_DIR/varsYT.md"
-JELLYFIN_APP_URLS="org.jellyfin.expo://|jellyfin://"
-ABS_APP_URLS="me.jgrenier.AudioBS://|audiobookshelf://"
+JELLYFIN_APP_URLS="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"
+ABS_APP_URLS="audiobooth://"
 
 TODAY=$(date '+%Y-%m-%d')
 NOW_HUMAN=$(date '+%B %d, %Y at %I:%M %p')
@@ -98,6 +98,10 @@ is_podcastable_channel() {
   channel_matches_list "$1" "$PODCASTABLE_LIST"
 }
 
+is_force_podcast_channel() {
+  channel_matches_list "$1" "$FORCE_PODCAST_LIST"
+}
+
 html_escape() {
   printf '%s' "$1" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g'
 }
@@ -132,6 +136,7 @@ format_day_heading() {
 
 PRIORITY_LIST=$(read_config_section priority | paste -sd'|' -)
 PODCASTABLE_LIST=$(read_config_section podcastable | paste -sd'|' -)
+FORCE_PODCAST_LIST=$(read_config_section forcePodcast | paste -sd'|' -)
 
 # --- Greeting ---
 hour=$(date '+%H')
@@ -439,6 +444,8 @@ if [ -n "$RECENT_VIDEOS" ]; then
       is_podcast=1
       if [ "$bucket" = "nonpriority" ]; then
         card_classes=" podcast"
+      elif [ "$bucket" = "priority" ]; then
+        card_classes=" priority podcast"
       fi
       badge_html="${badge_html}<span class=\"badge podcast\">Podcastable</span>"
     fi
@@ -456,9 +463,16 @@ if [ -n "$RECENT_VIDEOS" ]; then
       podcast_label="Not podcastable"
     fi
 
+    # Determine deep-link mode
+    use_picker=0
     if [ "$is_podcast" -eq 1 ]; then
-      app_hrefs="${ABS_APP_URLS}"
-      launch_label="Open in Audiobookshelf"
+      if is_force_podcast_channel "$chan"; then
+        app_hrefs="${ABS_APP_URLS}"
+        launch_label="Open in AudioBooth"
+      else
+        use_picker=1
+        launch_label="Open in Jellyfin or AudioBooth"
+      fi
     else
       app_hrefs="${JELLYFIN_APP_URLS}"
       launch_label="Open in Jellyfin"
@@ -467,13 +481,19 @@ if [ -n "$RECENT_VIDEOS" ]; then
     filter_text=$(printf '%s %s' "$title" "$chan" | tr '[:upper:]' '[:lower:]')
     safe_filter_text=$(html_escape "$filter_text")
 
+    if [ "$use_picker" -eq 1 ]; then
+      card_link_attrs='data-show-picker="1" data-jellyfin-urls="'"${JELLYFIN_APP_URLS}"'" data-abs-urls="'"${ABS_APP_URLS}"'"'
+    else
+      card_link_attrs='data-app-urls="'"${app_hrefs}"'"'
+    fi
+
     cat >> "$WEB_TMP_DIR/${download_day}.${bucket}.html" <<CARD
-<a class="card-link" href="#" data-app-urls="${app_hrefs}" data-filter-text="${safe_filter_text}" data-bucket="${bucket}" aria-label="${launch_label}: ${safe_title}">
+<a class="card-link" href="#" ${card_link_attrs} data-filter-text="${safe_filter_text}" data-bucket="${bucket}" aria-label="${launch_label}: ${safe_title}">
   <article class="card${card_classes}">
     <img src="${thumb_path}" onerror="this.style.display='none'" alt="">
     <div class="info">
       <div class="title">${safe_title}</div>
-      <div class="meta-row">${safe_chan} <span>&middot;</span> ${upload_label}</div>
+      <div class="meta-row">${safe_chan} <span>&middot;</span> ${upload_label}$([ "$is_podcast" -eq 1 ] && [ "$bucket" = "priority" ] && printf ' <span class="pod-cap">&clubsuit; podcast</span>')</div>
     </div>
   </article>
 </a>
@@ -594,7 +614,9 @@ cat > "$HTML_OUT" <<HTML
     .card-link:active .card,.card-link:focus-visible .card{border-color:#5c6977;transform:translateY(1px)}
     .card.priority{border-color:rgba(215,168,71,.45);background:linear-gradient(180deg,rgba(46,36,17,.96),rgba(23,28,33,.96))}
     .card.podcast{border-color:rgba(114,199,162,.45);background:linear-gradient(180deg,rgba(22,49,38,.96),rgba(23,28,33,.96))}
+    .card.priority.podcast{border-color:rgba(215,168,71,.45);background:linear-gradient(135deg,rgba(46,36,17,.96) 0%,rgba(22,49,38,.96) 100%);box-shadow:0 0 0 1px rgba(114,199,162,.2) inset}
     .card.rare{border-color:rgba(134,185,217,.4);background:linear-gradient(180deg,rgba(23,39,52,.96),rgba(23,28,33,.96))}
+    .pod-cap{display:inline-flex;align-items:center;margin-left:6px;padding:2px 7px;border-radius:999px;font:600 .62rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;background:rgba(114,199,162,.15);color:#9ae0bc;border:1px solid rgba(114,199,162,.3)}
     .card img{width:42px;height:42px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--panel-soft)}
     .info{min-width:0;display:grid;gap:4px;width:100%}
     .title{font-size:.92rem;line-height:1.24;color:#f6f8fb;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -606,6 +628,16 @@ cat > "$HTML_OUT" <<HTML
     #filterResults .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
     #filterResults .filter-empty{color:var(--muted);font-size:.9rem;padding:16px 4px}
     @media(max-width:720px){#filterResults .cards{grid-template-columns:1fr}}
+    #pickOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;align-items:flex-end;justify-content:center;padding:0 0 env(safe-area-inset-bottom,0)}
+    #pickSheet{background:#0f1318;border:1px solid rgba(255,255,255,.1);border-radius:22px 22px 0 0;padding:22px 18px 20px;width:100%;max-width:480px}
+    #pickSheet .pick-kicker{font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#8fa0b1;margin-bottom:6px}
+    #pickSheet .pick-title{font-size:.9rem;color:#d8e1ea;margin-bottom:20px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35}
+    .pick-btns{display:grid;gap:10px}
+    .pick-btn{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);color:#d8e1ea;padding:14px 16px;border-radius:14px;font:600 .86rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left;transition:background .15s,border-color .15s}
+    .pick-btn:active{background:rgba(255,255,255,.10)}
+    .pick-btn.jf{border-color:rgba(86,180,255,.35);color:#a8d8ff}
+    .pick-btn.pod{border-color:rgba(114,199,162,.4);color:#9ae0bc}
+    .pick-cancel{display:block;width:100%;margin-top:10px;background:transparent;border:none;color:#7d8d9d;padding:10px;font:500 .82rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;cursor:pointer}
     .bottom-panel{margin-top:18px;padding:18px;border:1px solid rgba(255,255,255,.06);border-radius:22px;background:linear-gradient(180deg,rgba(18,22,27,.96),rgba(13,16,20,.96))}
     .bottom-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
     .bottom-head h2{font-size:1rem;color:#dbe4ec;font-weight:600}
@@ -702,6 +734,18 @@ cat > "$HTML_OUT" <<HTML
   </div>
 </div>
 
+<div id="pickOverlay">
+  <div id="pickSheet">
+    <div class="pick-kicker">Open in&hellip;</div>
+    <div class="pick-title" id="pickTitle"></div>
+    <div class="pick-btns">
+      <button class="pick-btn jf" id="pickJf">&#9654;&#xFE0E;&nbsp; Watch in Jellyfin</button>
+      <button class="pick-btn pod" id="pickPod">&#9827;&nbsp; Listen in AudioBooth</button>
+    </div>
+    <button class="pick-cancel" id="pickCancel">Cancel</button>
+  </div>
+</div>
+
 <script>
 const PW_HASH = "5e7601a1ac99c87a65120283ae1b380901ca55bb402dce34e1a4ec51c20d29bb";
 const COOKIE = "rauth";
@@ -772,30 +816,64 @@ const rootStyle = document.documentElement.style;
 const themeMeta = document.querySelector('meta[name="theme-color"]');
 
 function tryAppUrls(appUrls) {
-  const urls = appUrls.split('|').filter(Boolean);
-  let index = 0;
+  const allUrls = appUrls.split('|').filter(Boolean);
+  if (!allUrls.length) return;
 
-  function attemptNext() {
-    if (index >= urls.length) {
-      return;
+  // On non-mobile, skip app schemes and go straight to the https:// fallback
+  const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent);
+  const httpUrls = allUrls.filter(u => u.startsWith('http'));
+  const urls = (isMobile || !httpUrls.length) ? allUrls : httpUrls;
+  if (!urls.length) return;
+
+  // On non-mobile a plain http URL just navigates directly
+  if (!isMobile) { window.open(urls[0], '_blank'); return; }
+
+  let i = 0;
+
+  function attempt() {
+    if (i >= urls.length) return;
+    const scheme = urls[i++];
+
+    let opened = false;
+    let timer;
+
+    function onHide() {
+      opened = true;
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onHide);
     }
 
-    const startedAt = Date.now();
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = urls[index++];
-    document.body.appendChild(iframe);
+    document.addEventListener('visibilitychange', onHide);
+    window.location.href = scheme;
 
-    setTimeout(() => {
-      document.body.removeChild(iframe);
-      if (Date.now() - startedAt < 1400) {
-        attemptNext();
-      }
-    }, 700);
+    timer = setTimeout(() => {
+      document.removeEventListener('visibilitychange', onHide);
+      if (!opened) attempt();
+    }, 1200);
   }
 
-  attemptNext();
+  attempt();
 }
+
+const pickOverlay = document.getElementById('pickOverlay');
+const pickTitleEl = document.getElementById('pickTitle');
+const pickJfBtn = document.getElementById('pickJf');
+const pickPodBtn = document.getElementById('pickPod');
+const pickCancelBtn = document.getElementById('pickCancel');
+
+function showPicker(title, jellyfinUrls, absUrls) {
+  pickTitleEl.textContent = title;
+  pickJfBtn.onclick = () => { hidePicker(); tryAppUrls(jellyfinUrls); };
+  pickPodBtn.onclick = () => { hidePicker(); tryAppUrls(absUrls); };
+  pickOverlay.style.display = 'flex';
+}
+
+function hidePicker() {
+  pickOverlay.style.display = 'none';
+}
+
+pickCancelBtn.addEventListener('click', hidePicker);
+pickOverlay.addEventListener('click', e => { if (e.target === pickOverlay) hidePicker(); });
 
 document.addEventListener('click', event => {
   const chip = event.target.closest('.filter-chip');
@@ -808,6 +886,13 @@ document.addEventListener('click', event => {
   const link = event.target.closest('.card-link');
   if (!link) return;
   event.preventDefault();
+
+  if (link.dataset.showPicker) {
+    const title = link.querySelector('.title')?.textContent || '';
+    showPicker(title, link.dataset.jellyfinUrls || '', link.dataset.absUrls || '');
+    return;
+  }
+
   tryAppUrls(link.dataset.appUrls || '');
 });
 

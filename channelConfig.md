@@ -73,15 +73,22 @@ NeverKnowsBest
 ThePrimeTime
 BellularNews
 SecondWind
-Asmongold
 KBash
 RetroGameCorps
 shoe0nhead
 DrewGooden
 NakeyJakey
-Asmongold
+AsmonTV
 FritangaPlays
 techlinked
 TechDweeb
 GameLinked
 SchaffrillasProductions
+
+# FORCE PODCAST - skip the open-in picker, go straight to AudioBooth
+# Add channels here if you always want them to open in AudioBooth (no choice prompt)
+[forcePodcast]
+TrashTaste
+RedLetterMedia
+ThePrimeTime
+BellularNews

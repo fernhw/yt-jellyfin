@@ -1,7 +1,7 @@
 # What to Watch — 2026-04-24
 
-> *Good morning! Here's what landed on Friday, April 24, 2026 at 01:53 AM.*
-> **YT Mirror:** 699.78 GB used · 1.75 TB free
+> *Good morning! Here's what landed on Friday, April 24, 2026 at 03:40 AM.*
+> **YT Mirror:** 700.32 GB used · 1.75 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **Saros Review - PlayStation 5/PS5 Pro - Beautiful Visuals, Polished And Approachable** — *Digital Foundry* · downloaded 03:36 AM · not podcastable
 - **Boost Pragmata PS5 Resolution: How To Play At 1440p Instead Of Standard 1080p** — *Digital Foundry* · downloaded 12:12 AM · not podcastable
 - **DF Retro EX: Outlive 25 - The Cult Classic PC RTS Remastered [Sponsored]** — *Digital Foundry* · downloaded 12:11 AM · not podcastable
 - **Wii U vs. PlayStation Vita** — *Scott's Stash* · downloaded 12:10 AM · not podcastable
