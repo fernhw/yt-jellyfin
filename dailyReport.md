@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-24
 
-> *Good evening! Here's what landed on Friday, April 24, 2026 at 05:25 PM.*
-> **YT Mirror:** 713.32 GB used · 1.73 TB free
+> *Good evening! Here's what landed on Friday, April 24, 2026 at 06:08 PM.*
+> **YT Mirror:** 713.43 GB used · 1.73 TB free
 
 ### Priority Videos
 
@@ -14,6 +14,7 @@
 
 ### Non-Priority Videos
 
+- **Somehow, Invincible is Still Ugly** — *The Cosmonaut Variety Hour* · downloaded 06:06 PM · not podcastable
 - **House Fires Destroyed 2 Subscriber PCs - Rebuilding & Inspecting the Remains** — *Gamers Nexus* · downloaded 05:20 PM · not podcastable
 - **Call of Duty Broke Xbox: Everyone Else Paid The Price** — *Bellular News* · downloaded 05:14 PM · podcastable
 - **Things Are Changing At Xbox...** — *Spawn Wave* · downloaded 05:12 PM · not podcastable
