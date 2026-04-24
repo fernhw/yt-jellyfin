@@ -153,6 +153,59 @@ get_limit() {
   ' "$CONFIG_FILE"
 }
 
+# Emit all configured channel limits as: handle<TAB>limit
+get_all_limits() {
+  [ ! -f "$CONFIG_FILE" ] && return
+  awk -F ' *= *' '
+    /^\[limits\]/{found=1; next}
+    /^\[/{found=0}
+    found && /^[[:space:]]*#/ {next}
+    found && NF>=2 {
+      h=$1; l=$2
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", h)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", l)
+      if (h != "" && l ~ /^[0-9]+$/) print h "\t" l
+    }
+  ' "$CONFIG_FILE"
+}
+
+# Match getyt.sh channel normalization for stable folder lookup
+normalize_channel_name() {
+  printf '%s' "$1" \
+    | sed 's/[^a-zA-Z0-9 _-]//g; s/  */ /g; s/^ *//; s/ *$//' \
+    | tr -d ' _'
+}
+
+# Resolve configured handle to actual channel folder path under $YT_ROOT
+resolve_channel_dir() {
+  local handle="$1" bare display filtered mapped folder
+  bare=$(handle_bare "$handle")
+  [ -z "$bare" ] && return
+
+  display=$(sqlite3 "$DB" "SELECT display_name FROM channel_aliases WHERE handle='$(printf '%s' "$bare" | sed "s/'/''/g")';" 2>/dev/null)
+
+  filtered="${display:-$bare}"
+  if [ -f "$FILTER_FILE" ]; then
+    mapped=$(awk -F ' *-> *' -v ch="$filtered" 'tolower($1)==tolower(ch) && NF>=2 {print $2; exit}' "$FILTER_FILE")
+    [ -n "$mapped" ] && filtered="$mapped"
+  fi
+
+  folder=$(normalize_channel_name "$filtered")
+  if [ -d "$YT_ROOT/$folder" ]; then
+    printf '%s\n' "$YT_ROOT/$folder"
+    return
+  fi
+
+  # Fallback: try handle-level filter mapping when alias is not known yet
+  filtered="$bare"
+  if [ -f "$FILTER_FILE" ]; then
+    mapped=$(awk -F ' *-> *' -v ch="$bare" 'tolower($1)==tolower(ch) && NF>=2 {print $2; exit}' "$FILTER_FILE")
+    [ -n "$mapped" ] && filtered="$mapped"
+  fi
+  folder=$(normalize_channel_name "$filtered")
+  [ -d "$YT_ROOT/$folder" ] && printf '%s\n' "$YT_ROOT/$folder"
+}
+
 # Get quality cap for a channel handle (bare, no @). Empty = best available
 get_quality() {
   [ ! -f "$CONFIG_FILE" ] && return
@@ -522,14 +575,20 @@ fi
 # Enforce per-channel rolling limits
 echo ""
 echo "--- Enforcing channel limits ---"
-for channel_dir in "$YT_ROOT"/*/; do
-  [ ! -d "$channel_dir" ] && continue
-  dirname=$(basename "$channel_dir")
-  limit=$(get_limit "$dirname")
-  if [ -n "$limit" ]; then
-    enforce_limit "$channel_dir" "$limit"
-  fi
-done
+limits_list=$(get_all_limits)
+if [ -z "$limits_list" ]; then
+  echo "  no channel limits configured"
+else
+  printf '%s\n' "$limits_list" | while IFS="$(printf '\t')" read -r handle limit; do
+    [ -z "$handle" ] && continue
+    channel_dir=$(resolve_channel_dir "$handle")
+    if [ -n "$channel_dir" ] && [ -d "$channel_dir" ]; then
+      enforce_limit "$channel_dir" "$limit"
+    else
+      echo "  WARN: limit set for $handle=$limit, but no matching channel folder found"
+    fi
+  done
+fi
 
 fi  # end thumbs-only skip
 
@@ -766,6 +825,30 @@ fi
 if [ -x "$REPORT_MAKER" ]; then
   "$REPORT_MAKER"
 fi
+
+# OneSignal push notification (fires only when videos were downloaded)
+ONESIGNAL_KEY=$(grep '^ONESIGNAL_REST_KEY=' "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
+if [ -n "$ONESIGNAL_KEY" ] && [ "$DL_COUNT" -gt 0 ]; then
+  # Build message — include 403 warning if flag exists
+  msg="${DL_COUNT} new video(s) downloaded."
+  if [ -f "$YT_ROOT/.ban_detected" ]; then
+    msg="${msg} ⚠ HTTP 403 detected — check for IP ban."
+  fi
+  curl -s -o /dev/null -X POST "https://onesignal.com/api/v1/notifications" \
+    -H "Authorization: Basic ${ONESIGNAL_KEY}" \
+    -H "Content-Type: application/json; charset=utf-8" \
+    -d "{\"app_id\":\"c88ae5a3-36df-4301-945f-9da65e63d87c\",\"included_segments\":[\"Subscribed Users\"],\"headings\":{\"en\":\"What to Watch\"},\"contents\":{\"en\":\"${msg}\"},\"url\":\"https://report.fernhw.com\"}"
+  echo "  push notification sent ($DL_COUNT new)"
+elif [ -n "$ONESIGNAL_KEY" ] && [ -f "$YT_ROOT/.ban_detected" ]; then
+  # Send ban alert even with no downloads
+  curl -s -o /dev/null -X POST "https://onesignal.com/api/v1/notifications" \
+    -H "Authorization: Basic ${ONESIGNAL_KEY}" \
+    -H "Content-Type: application/json; charset=utf-8" \
+    -d "{\"app_id\":\"c88ae5a3-36df-4301-945f-9da65e63d87c\",\"included_segments\":[\"Subscribed Users\"],\"headings\":{\"en\":\"⚠ YT Mirror\"},\"contents\":{\"en\":\"HTTP 403 detected — possible IP ban. No new downloads.\"},\"url\":\"https://report.fernhw.com\"}"
+  echo "  push notification sent (403 alert)"
+fi
+# Clear 403 flag after reporting
+rm -f "$YT_ROOT/.ban_detected"
 
 echo "=== Done ==="
 

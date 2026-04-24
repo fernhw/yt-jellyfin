@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What to Watch</title>
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({ appId: "c88ae5a3-36df-4301-945f-9da65e63d87c" });
+    });
+  </script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0f0f0f;color:#e0e0e0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+    #gate{display:none;position:fixed;inset:0;background:#0f0f0f;z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:16px}
+    #gate h2{color:#fff;font-size:1.2rem;font-weight:500}
+    #gate input{background:#1a1a1a;border:1px solid #333;color:#fff;padding:10px 16px;border-radius:8px;font-size:1rem;width:220px;text-align:center;outline:none}
+    #gate input:focus{border-color:#555}
+    #gate button{background:#222;border:1px solid #444;color:#ccc;padding:8px 24px;border-radius:8px;cursor:pointer;font-size:.9rem}
+    #gate button:hover{background:#2a2a2a}
+    #gate .err{color:#e05252;font-size:.85rem}
+    #app{display:none}
+    header{padding:24px 32px 0;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px}
+    header h1{font-size:1.4rem;font-weight:600;color:#fff}
+    header .meta{font-size:.8rem;color:#666;display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+    header .meta span{color:#888}
+    .disk{font-size:.75rem;color:#555;margin-top:2px}
+    .notify-btn{background:#1a1a1a;border:1px solid #333;color:#aaa;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:.78rem;transition:all .2s}
+    .notify-btn:hover{border-color:#555;color:#ddd}
+    .section{margin:28px 32px 0}
+    .section h2{font-size:.7rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.12em;margin-bottom:14px}
+    .section h2.warn{color:#c0392b}
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+    .card{background:#161616;border:1px solid #222;border-radius:10px;padding:14px;display:flex;gap:12px;align-items:flex-start;transition:border-color .15s}
+    .card:hover{border-color:#333}
+    .card.priority{border-color:#2a2316;background:#191510}
+    .card.rare{border-color:#162226;background:#101518}
+    .card img{width:48px;height:48px;border-radius:6px;object-fit:cover;flex-shrink:0;background:#1a1a1a}
+    .card .info{min-width:0}
+    .card .title{font-size:.88rem;font-weight:500;color:#ddd;line-height:1.35;word-break:break-word}
+    .card .channel{font-size:.75rem;color:#666;margin-top:4px}
+    .card .gap{font-size:.7rem;color:#4a7a8a;margin-top:3px}
+    .card .badge{display:inline-block;font-size:.6rem;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle}
+    .badge.priority{background:#2a1e0a;color:#c8872a;border:1px solid #3a2a0a}
+    .badge.rare{background:#0a1e22;color:#2a8a9a;border:1px solid #0a2a30}
+    .empty{color:#444;font-size:.85rem;padding:8px 0}
+    .warn-banner{background:#1a0a0a;border:1px solid #3a1818;border-radius:8px;padding:12px 16px;color:#c05050;font-size:.82rem;margin:28px 32px 0}
+    .warn-banner strong{color:#e05050}
+    hr{border:none;border-top:1px solid #1a1a1a;margin:28px 32px}
+    footer{padding:20px 32px;font-size:.72rem;color:#333}
+    @media(max-width:600px){
+      header,hr,.section,.warn-banner,footer{padding-left:16px;padding-right:16px}
+      header{flex-direction:column}
+      header .meta{align-items:flex-start}
+    }
+  </style>
+</head>
+<body>
+
+<!-- Password gate -->
+<div id="gate">
+  <h2>report.fernhw.com</h2>
+  <input type="password" id="pw" placeholder="password" autocomplete="current-password"/>
+  <button onclick="tryAuth()">Enter</button>
+  <span class="err" id="err"></span>
+</div>
+
+<div id="app">
+
+<header>
+  <div>
+    <h1>What to Watch</h1>
+    <div class="disk"><!-- DISK_STATS --></div>
+  </div>
+  <div class="meta">
+    <span><!-- REPORT_DATE --></span>
+    <span><!-- GREETING --></span>
+    <button class="notify-btn" onclick="subscribeNotify()">Get notified</button>
+  </div>
+</header>
+
+<!-- WARN_BANNER -->
+
+<!-- SECTIONS -->
+
+<footer>report.fernhw.com &middot; updated <!-- UPDATED --></footer>
+</div>
+
+<script>
+// --- Auth ---
+const PW_HASH = "5e7601a1ac99c87a65120283ae1b380901ca55bb402dce34e1a4ec51c20d29bb";
+const COOKIE  = "rauth";
+
+async function sha256hex(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+function getCookie(name) {
+  return document.cookie.split(";").map(c=>c.trim()).filter(c=>c.startsWith(name+"=")).map(c=>c.slice(name.length+1))[0] || "";
+}
+
+function setCookie(name, val, days) {
+  const exp = new Date(Date.now() + days*864e5).toUTCString();
+  document.cookie = `${name}=${val};expires=${exp};path=/;SameSite=Strict`;
+}
+
+async function tryAuth(auto) {
+  const input = auto || document.getElementById("pw").value;
+  const h = await sha256hex(input);
+  if (h === PW_HASH) {
+    setCookie(COOKIE, h.slice(0,16), 365);
+    showApp();
+  } else if (!auto) {
+    document.getElementById("err").textContent = "wrong password";
+  }
+}
+
+function showApp() {
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("app").style.display = "block";
+}
+
+document.getElementById("pw").addEventListener("keydown", e => { if(e.key==="Enter") tryAuth(); });
+
+// Check cookie or ?p= param on load
+(async () => {
+  const stored = getCookie(COOKIE);
+  if (stored) {
+    // Verify stored token still matches (first 16 chars of real hash)
+    const expected = PW_HASH.slice(0, 16);
+    if (stored === expected) { showApp(); return; }
+  }
+  const url = new URL(location.href);
+  const p = url.searchParams.get("p") || url.searchParams.get("password");
+  if (p) {
+    url.searchParams.delete("p");
+    url.searchParams.delete("password");
+    history.replaceState({}, "", url.toString());
+    await tryAuth(p);
+    if (getCookie(COOKIE)) return;
+  }
+  document.getElementById("gate").style.display = "flex";
+})();
+
+// --- OneSignal subscribe button ---
+async function subscribeNotify() {
+  if (!window.OneSignal) { alert("OneSignal not loaded"); return; }
+  try {
+    const perm = await OneSignal.Notifications.requestPermission();
+    if (perm) {
+      const btn = document.querySelector(".notify-btn");
+      btn.textContent = "Subscribed!";
+      btn.style.color = "#5a9a5a";
+      btn.style.borderColor = "#2a5a2a";
+      btn.disabled = true;
+    }
+  } catch(e) { console.warn("OneSignal:", e); }
+}
+
+// Auto-prompt after 3s if not yet subscribed
+setTimeout(async () => {
+  if (!window.OneSignal) return;
+  const subbed = await OneSignal.User.PushSubscription.optedIn;
+  if (!subbed) OneSignal.Notifications.requestPermission();
+}, 3000);
+</script>
+
+</body>
+</html>

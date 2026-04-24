@@ -298,3 +298,99 @@ NO_YEST
 fi
 
 echo "  daily report written to dailyReport.md"
+
+# --- Generate web/index.html ---
+WEB_DIR="$SCRIPT_DIR/web"
+THUMBS_DIR="$WEB_DIR/thumbs"
+HTML_OUT="$WEB_DIR/index.html"
+mkdir -p "$THUMBS_DIR"
+
+# Copy channel posters to web/thumbs/<channelname>.jpg (lowercase)
+for ch_dir in "$YT_ROOT"/*/; do
+  ch=$(basename "$ch_dir")
+  src="$ch_dir/poster.jpg"
+  if [ -f "$src" ]; then
+    dest="$THUMBS_DIR/$(printf '%s' "$ch" | tr '[:upper:]' '[:lower:]').jpg"
+    [ ! -f "$dest" ] || [ "$src" -nt "$dest" ] && cp "$src" "$dest"
+  fi
+done
+
+# Build HTML card rows from today's videos (re-read the same DB data)
+PRI_HTML=""
+RARE_HTML=""
+REG_HTML=""
+if [ -n "$TODAYS_VIDEOS" ]; then
+  while IFS='|' read -r chan title upload gap; do
+    [ -z "$chan" ] && continue
+    display_chan=$(printf '%s' "$chan" | sed 's/^@//; s/ *$//')
+    ch_key=$(printf '%s' "$display_chan" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
+    thumb_path="thumbs/${ch_key}.jpg"
+    thumb_html="<img src=\"${thumb_path}\" onerror=\"this.style.display='none'\" alt=\"\">"
+    gap_html=""
+    is_rare=0
+    if [ "$gap" -ge "$RARE_THRESHOLD" ] 2>/dev/null; then
+      gap_html="<div class=\"gap\">${gap} days since last upload</div>"
+      is_rare=1
+    fi
+    # Escape HTML special chars in title/channel
+    safe_title=$(printf '%s' "$title" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g')
+    safe_chan=$(printf '%s' "$display_chan" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g')
+    card="<div class=\"card __CLASS__\">${thumb_html}<div class=\"info\"><div class=\"title\">${safe_title}</div><div class=\"channel\">${safe_chan}</div>${gap_html}</div></div>"
+    if is_priority_channel "$chan"; then
+      card=$(printf '%s' "$card" | sed 's/__CLASS__/priority/')
+      PRI_HTML="${PRI_HTML}${card}"
+    elif [ "$is_rare" -eq 1 ]; then
+      card=$(printf '%s' "$card" | sed 's/__CLASS__/rare/')
+      RARE_HTML="${RARE_HTML}${card}"
+    else
+      card=$(printf '%s' "$card" | sed 's/__CLASS__//')
+      REG_HTML="${REG_HTML}${card}"
+    fi
+  done <<EOF
+$TODAYS_VIDEOS
+EOF
+fi
+
+# Build section HTML
+SECTIONS_HTML=""
+if [ "$VIDEO_COUNT" -eq 0 ]; then
+  SECTIONS_HTML='<div class="section"><p class="empty">Nothing new today. All channels scanned — nobody posted.</p></div>'
+else
+  if [ -n "$PRI_HTML" ]; then
+    SECTIONS_HTML="${SECTIONS_HTML}<div class=\"section\"><h2>Watch First</h2><div class=\"cards\">${PRI_HTML}</div></div>"
+  fi
+  if [ -n "$RARE_HTML" ]; then
+    SECTIONS_HTML="${SECTIONS_HTML}<div class=\"section\"><h2>Rare Drops</h2><div class=\"cards\">${RARE_HTML}</div></div>"
+  fi
+  if [ -n "$REG_HTML" ]; then
+    SECTIONS_HTML="${SECTIONS_HTML}<div class=\"section\"><h2>Also New</h2><div class=\"cards\">${REG_HTML}</div></div>"
+  fi
+fi
+
+# 403/IP ban warning banner
+WARN_HTML=""
+if [ "$ERR_LAST" -gt 0 ] && [ "$SCANNED" -gt 0 ]; then
+  half=$(( SCANNED / 2 ))
+  if [ "$ERR_LAST" -gt "$half" ]; then
+    WARN_HTML="<div class=\"warn-banner\"><strong>⚠ Possible IP ban</strong> — ${ERR_LAST} of ${SCANNED} channels returned nothing last scan.</div>"
+  fi
+fi
+# Check for 403 flag written by getyt.sh
+if [ -f "$YT_ROOT/.ban_detected" ]; then
+  ban_detail=$(cat "$YT_ROOT/.ban_detected")
+  WARN_HTML="${WARN_HTML}<div class=\"warn-banner\"><strong>⚠ HTTP 403 detected</strong> — ${ban_detail}</div>"
+fi
+
+UPDATED_AT=$(date '+%Y-%m-%d %H:%M')
+
+# Write HTML by substituting placeholders in the template
+sed \
+  -e "s|<!-- DISK_STATS -->|${YT_USED} used · ${DISK_FREE} free|g" \
+  -e "s|<!-- REPORT_DATE -->|${TODAY}|g" \
+  -e "s|<!-- GREETING -->|${greeting}|g" \
+  -e "s|<!-- WARN_BANNER -->|${WARN_HTML}|g" \
+  -e "s|<!-- SECTIONS -->|${SECTIONS_HTML}|g" \
+  -e "s|<!-- UPDATED -->|${UPDATED_AT}|g" \
+  "$HTML_OUT" > "$HTML_OUT.tmp" && mv "$HTML_OUT.tmp" "$HTML_OUT"
+
+echo "  web report written to web/index.html"

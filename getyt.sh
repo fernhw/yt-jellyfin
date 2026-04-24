@@ -310,6 +310,7 @@ print(f'yt_handle={shlex.quote(handle)}')
     sort_spec="lang:en,res:${max_res},br,acodec,vcodec"
     echo "  quality cap: ${max_res}p"
   fi
+  local dl_err_file="/tmp/ytdl_err_$$"
   yt-dlp \
     --no-playlist \
     --extractor-args "youtube:lang=en" \
@@ -319,8 +320,16 @@ print(f'yt_handle={shlex.quote(handle)}')
     --throttled-rate 100K \
     --sleep-requests 1 \
     -o "$dest_dir/$filename.%(ext)s" \
-    "$url"
+    "$url" 2>"$dl_err_file"
   local dl_rc=$?
+
+  # 403 = likely IP ban — write flag for the report
+  if [ $dl_rc -ne 0 ] && grep -q "HTTP Error 403" "$dl_err_file" 2>/dev/null; then
+    echo "  WARN: HTTP 403 on download — possible IP ban"
+    printf '%s: HTTP 403 on %s\n' "$(date '+%H:%M')" "$url" >> "$YT_ROOT/.ban_detected"
+  fi
+  cat "$dl_err_file" >&2 2>/dev/null
+  rm -f "$dl_err_file"
 
   # Post-download: verify audio is English (or undefined/single-track)
   if [ $dl_rc -eq 0 ] && [ -f "$dest_dir/$filename.mp4" ]; then
