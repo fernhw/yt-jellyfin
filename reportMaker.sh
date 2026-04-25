@@ -1080,11 +1080,13 @@ echo "  web report written to web/index.html"
 
 # ── Push notifications ────────────────────────────────────────────────────────
 SECRETS_FILE="$SCRIPT_DIR/secrets.md"
-ONESIGNAL_KEY=$(grep '^ONESIGNAL_REST_KEY=' "$SECRETS_FILE" 2>/dev/null | cut -d= -f2-)
+ONESIGNAL_KEY=$(awk -F'=' '/^K[0-9][0-9][0-9]=/{printf $2}' "$SECRETS_FILE" 2>/dev/null)
 onesignal_push() {
   local heading="$1" body="$2"
   [ -z "$ONESIGNAL_KEY" ] && return
-  curl -s -o /dev/null \
+  local _ip; _ip=$(dig +short onesignal.com @1.1.1.1 2>/dev/null | grep -E '^[0-9]+\.' | head -1)
+  [ -z "$_ip" ] && _ip="104.16.160.145"
+  curl -s -o /dev/null --resolve "onesignal.com:443:${_ip}" \
     -X POST "https://onesignal.com/api/v1/notifications" \
     -H "Authorization: Basic ${ONESIGNAL_KEY}" \
     -H "Content-Type: application/json" \
