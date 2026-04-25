@@ -1,7 +1,7 @@
 # What to Watch — 2026-04-24
 
-> *Good evening! Here's what landed on Friday, April 24, 2026 at 06:08 PM.*
-> **YT Mirror:** 713.43 GB used · 1.73 TB free
+> *Good evening! Here's what landed on Friday, April 24, 2026 at 07:10 PM.*
+> **YT Mirror:** 714.13 GB used · 1.60 TB free
 
 ## Priority Videos
 
@@ -12,6 +12,7 @@
 
 ## Non-Priority Videos
 
+- **Crazy Frog: Arcade Racer - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash* · downloaded 07:08 PM · not podcastable
 - **Somehow, Invincible is Still Ugly** — *The Cosmonaut Variety Hour* · downloaded 06:06 PM · not podcastable
 - **House Fires Destroyed 2 Subscriber PCs - Rebuilding & Inspecting the Remains** — *Gamers Nexus* · downloaded 05:20 PM · not podcastable
 - **Call of Duty Broke Xbox: Everyone Else Paid The Price** — *Bellular News* · downloaded 05:14 PM · podcastable
@@ -31,7 +32,6 @@
 - **Perfect COFFEE BREAK Games** — *TechDweeb* · downloaded 07:07 AM · podcastable
 - **This is the funniest sh*t on the Internet** — *Asmongold TV* · downloaded 07:06 AM · not podcastable
 - **Saros Review - PlayStation 5/PS5 Pro - Beautiful Visuals, Polished And Approachable** — *Digital Foundry* · downloaded 03:36 AM · not podcastable
-- **Boost Pragmata PS5 Resolution: How To Play At 1440p Instead Of Standard 1080p** — *Digital Foundry* · downloaded 12:12 AM · not podcastable
 - **DF Retro EX: Outlive 25 - The Cult Classic PC RTS Remastered [Sponsored]** — *Digital Foundry* · downloaded 12:11 AM · not podcastable
 - **Wii U vs. PlayStation Vita** — *Scott's Stash* · downloaded 12:10 AM · not podcastable
 - **The Most Useless amiibo Figures** — *Scott's Stash* · downloaded 12:08 AM · not podcastable

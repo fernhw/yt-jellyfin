@@ -1084,19 +1084,11 @@ ONESIGNAL_KEY=$(grep '^ONESIGNAL_REST_KEY=' "$SECRETS_FILE" 2>/dev/null | cut -d
 onesignal_push() {
   local heading="$1" body="$2"
   [ -z "$ONESIGNAL_KEY" ] && return
-  local os_ip; os_ip=$(dig +short onesignal.com @8.8.8.8 2>/dev/null | grep -E '^[0-9]+\.' | head -1)
-  [ -z "$os_ip" ] && os_ip="104.16.160.145"
-  local players
-  players=$(curl -s --resolve "onesignal.com:443:${os_ip}" \
-    "https://onesignal.com/api/v1/players?app_id=c88ae5a3-36df-4301-945f-9da65e63d87c&limit=50" \
-    -H "Authorization: Basic ${ONESIGNAL_KEY}" \
-    | python3 -c "import sys,json; d=json.load(sys.stdin); print(','.join('\"'+p['id']+'\"' for p in d.get('players',[])))" 2>/dev/null)
-  [ -z "$players" ] && return
-  curl -s -o /dev/null --resolve "onesignal.com:443:${os_ip}" \
+  curl -s -o /dev/null \
     -X POST "https://onesignal.com/api/v1/notifications" \
     -H "Authorization: Basic ${ONESIGNAL_KEY}" \
     -H "Content-Type: application/json" \
-    -d "{\"app_id\":\"c88ae5a3-36df-4301-945f-9da65e63d87c\",\"include_player_ids\":[${players}],\"headings\":{\"en\":\"${heading}\"},\"contents\":{\"en\":\"${body}\"},\"url\":\"https://report.fernhw.com\"}"
+    -d "{\"app_id\":\"c88ae5a3-36df-4301-945f-9da65e63d87c\",\"included_segments\":[\"All\"],\"headings\":{\"en\":\"${heading}\"},\"contents\":{\"en\":\"${body}\"},\"url\":\"https://report.fernhw.com\"}"
 }
 
 if [ -n "$ONESIGNAL_KEY" ]; then
@@ -1112,6 +1104,7 @@ if [ -n "$ONESIGNAL_KEY" ]; then
   notif_new_shows="" notif_new_movies="" notif_new_eps="" notif_low_media=""
   _notif_seen_new=""
   _now_epoch=$(date +%s)
+  _NFS=$(printf '\037')
   if [ -f "$MEDIA_SCAN_OUT" ] && [ -s "$MEDIA_SCAN_OUT" ]; then
     _fs=$(printf '\037')
     if [ -f "$_MEDIA_NOTIF_SEEN" ]; then
@@ -1123,7 +1116,7 @@ if [ -n "$ONESIGNAL_KEY" ]; then
       if [ -f "$_MEDIA_NOTIF_SEEN" ] && grep -qF "$_seen_key" "$_MEDIA_NOTIF_SEEN" 2>/dev/null; then
         continue
       fi
-      _notif_seen_new="${_notif_seen_new}${_seen_key}\037${_now_epoch}\n"
+      _notif_seen_new="${_notif_seen_new}${_seen_key}${_NFS}${_now_epoch}\n"
       case "$_mcat" in
         show)
           _kind=$(printf '%s' "$_msub" | cut -d: -f1)
@@ -1155,7 +1148,7 @@ if [ -n "$ONESIGNAL_KEY" ]; then
       if [ -f "$_YT_NOTIF_SEEN" ] && grep -qF "$_yt_key" "$_YT_NOTIF_SEEN" 2>/dev/null; then
         continue
       fi
-      _yt_seen_new="${_yt_seen_new}${_yt_key}\037${_now_epoch}\n"
+      _yt_seen_new="${_yt_seen_new}${_yt_key}${_NFS}${_now_epoch}\n"
       _cn=$(printf '%s' "$_chan" | sed 's/^@//;s/ *$//')
       if is_priority_channel "$_chan"; then
         case "$pri_chans" in *"$_cn"*) ;; *) pri_chans="${pri_chans:+$pri_chans, }$_cn" ;; esac
