@@ -584,7 +584,7 @@ cat > "$HTML_OUT" <<HTML
     *{box-sizing:border-box;margin:0;padding:0}
     :root{--bg:#101317;--panel:#171c21;--panel-soft:#1d242b;--line:#2a323b;--text:#ecf2f8;--muted:#97a6b4;--soft:#627384;--accent:#d7a847;--accent-soft:#2e2411;--pod:#72c7a2;--pod-soft:#163126;--rare:#86b9d9;--rare-soft:#172734;--warn:#f07f64;--warn-soft:#2b1916;--scroll-bg-top:#05070a;--scroll-bg-mid:#0b0e11;--scroll-bg-band:#0f1419;--scroll-bg-base:#101317;--chrome-tint:rgba(10,13,16,.86);--chrome-line:rgba(255,255,255,.06);--panel-tint:rgba(23,28,33,.78)}
     html{background-color:#05070a;min-height:100%;min-height:100dvh}
-    body{background:linear-gradient(180deg,var(--scroll-bg-top) 0,var(--scroll-bg-mid) 120px,var(--scroll-bg-band) 320px,var(--scroll-bg-base) 100%);color:var(--text);font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;min-height:100vh;min-height:100dvh;padding-top:calc(env(safe-area-inset-top) + 8px);padding-bottom:calc(env(safe-area-inset-bottom) + 8px);overflow-x:hidden;transition:background .25s ease,color .25s ease}
+    body{background:linear-gradient(180deg,var(--scroll-bg-top) 0,var(--scroll-bg-mid) 120px,var(--scroll-bg-band) 320px,var(--scroll-bg-base) 100%);color:var(--text);font-family:Georgia,'Iowan Old Style','Palatino Linotype',serif;min-height:100vh;min-height:100dvh;padding-top:calc(env(safe-area-inset-top) + 32px);padding-bottom:calc(env(safe-area-inset-bottom) + 8px);overflow-x:hidden;transition:background .25s ease,color .25s ease}
     #gate{display:none;position:fixed;inset:0;background:#0c0f13;z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:16px}
     #gate h2{color:#fff;font-size:1.2rem;font-weight:500}
     #gate input{background:#151a1f;border:1px solid #303844;color:#fff;padding:10px 16px;border-radius:8px;font-size:1rem;width:220px;text-align:center;outline:none}
@@ -1007,7 +1007,8 @@ function setScrollTheme() {
   rootStyle.setProperty('--panel-tint', 'rgba(' + mixChannel(23, 20, eased) + ',' + mixChannel(28, 42, eased) + ',' + mixChannel(33, 48, eased) + ',.8)');
   if (themeMeta) themeMeta.setAttribute('content', mid);
   document.getElementById('feedControls')?.classList.toggle('compact', progress > 0.08);
-  document.documentElement.style.backgroundColor = top;
+  // top overscroll shows top color, bottom overscroll shows base color
+  document.documentElement.style.backgroundColor = progress > 0.5 ? base : top;
 }
 
 setActiveBucket('all');
