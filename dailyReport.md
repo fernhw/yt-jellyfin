@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-24
 
-> *Good evening! Here's what landed on Friday, April 24, 2026 at 09:09 PM.*
-> **YT Mirror:** 714.22 GB used · 1.60 TB free
+> *Good evening! Here's what landed on Friday, April 24, 2026 at 10:15 PM.*
+> **YT Mirror:** 714.72 GB used · 1.60 TB free
 
 ### Priority Videos
 
@@ -14,6 +14,7 @@
 
 ### Non-Priority Videos
 
+- **China Doesn’t Want Our Money** — *TechLinked* · downloaded 10:13 PM · podcastable
 - **Thank GOD we have bodycams..** — *Asmongold TV* · downloaded 08:07 PM · not podcastable
 - **Crazy Frog: Arcade Racer - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash* · downloaded 07:08 PM · not podcastable
 - **Somehow, Invincible is Still Ugly** — *The Cosmonaut Variety Hour* · downloaded 06:06 PM · not podcastable
