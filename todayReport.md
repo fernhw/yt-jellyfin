@@ -1,7 +1,7 @@
 # What to Watch — 2026-04-25
 
-> *Good afternoon! Here's what landed on Saturday, April 25, 2026 at 03:10 PM.*
-> **YT Mirror:** 735.01 GB used · 1.58 TB free
+> *Good evening! Here's what landed on Saturday, April 25, 2026 at 05:08 PM.*
+> **YT Mirror:** 735.90 GB used · 1.58 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,8 @@
 
 ## Non-Priority Videos
 
+- **The Steam Controller Price Just Leaked...And It Raises Some Serious Concerns** — *Spawn Wave* · downloaded 05:07 PM · not podcastable
+- **A.I. MAGA Girls Are Scamming Conservative Men - Weekly Weird News** — *Internet Today* · downloaded 05:06 PM · not podcastable
 - **this just KILLED gta 6** — *FLEEKAZOID* · downloaded 03:08 PM · not podcastable
 - **The biggest problem with living on a farm** — *jakkuh* · downloaded 03:08 PM · not podcastable
 - **This Michael Jackson Biopic Feels Off...** — *Karsten Runquist* · downloaded 12:13 PM · not podcastable
