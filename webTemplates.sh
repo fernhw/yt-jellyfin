@@ -22,7 +22,7 @@ MEDIA_CSS=$(cat <<'MEDIA_CSS_EOF'
     .mcard-body{padding:4px 5px 5px;display:grid;gap:1px}
     .mcard-title{font-size:.58rem;line-height:1.2;color:#b0bfcc;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
     .mcard-sub{font:500 .54rem/1.1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    #ptr{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:center;height:0;overflow:hidden;background:rgba(12,15,19,.9);transition:height .2s}
+    #ptr{position:fixed;top:env(safe-area-inset-top);left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:center;height:0;overflow:hidden;background:rgba(12,15,19,.9);transition:height .2s}
     #ptr.ready{border-bottom:1px solid rgba(255,255,255,.08)}
     #ptr-label{color:#c2a365;font:600 .72rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.1em;text-transform:uppercase}
 MEDIA_CSS_EOF
