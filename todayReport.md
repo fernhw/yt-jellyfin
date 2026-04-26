@@ -1,7 +1,7 @@
 # What to Watch — 2026-04-25
 
-> *Good evening! Here's what landed on Saturday, April 25, 2026 at 10:06 PM.*
-> **YT Mirror:** 735.98 GB used · 1.58 TB free
+> *Good evening! Here's what landed on Saturday, April 25, 2026 at 11:37 PM.*
+> **YT Mirror:** 728.33 GB used · 1.59 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@
 
 ## Non-Priority Videos
 
+- **What the f**k is happening in Mali?** — *Asmongold TV* · downloaded 11:35 PM · not podcastable
 - **This is normal now..** — *Asmongold TV* · downloaded 08:06 PM · not podcastable
 - **The PS1 Game that Hates Itself | Misfortune: A Story of Suspicious Friendships** — *Earlybird* · downloaded 06:06 PM · not podcastable
 - **The Steam Controller Price Just Leaked...And It Raises Some Serious Concerns** — *Spawn Wave* · downloaded 05:07 PM · not podcastable
