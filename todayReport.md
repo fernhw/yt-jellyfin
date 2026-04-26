@@ -1,7 +1,7 @@
 # What to Watch — 2026-04-26
 
-> *Good morning! Here's what landed on Sunday, April 26, 2026 at 11:43 AM.*
-> **YT Mirror:** 733.98 GB used · 1.58 TB free
+> *Good afternoon! Here's what landed on Sunday, April 26, 2026 at 03:26 PM.*
+> **YT Mirror:** 742.34 GB used · 1.57 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,10 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **This game popped the f*ck off** — *Asmongold TV* · downloaded 03:23 PM · not podcastable
+- **Ranking EVERY Fast Food Fries...** — *Papa Meat* · downloaded 03:20 PM · not podcastable
+- **I Played Through EVERY FNAF Game** — *ConnorDawg* · downloaded 03:09 PM · not podcastable
+- **very emotional day** — *Garnt* · downloaded 03:06 PM · not podcastable
 - **Are two heads better than one? | Tokyo Scramble Date Night** — *Boy Meets Girl* · downloaded 11:40 AM · not podcastable
 - **Pragmata Is Exactly What Gaming Needs Right Now** — *Spawn Wave* · downloaded 11:39 AM · not podcastable
 - **We Compete to Make the Most SATISFYING CGi #9** — *Corridor Crew* · downloaded 11:37 AM · not podcastable
