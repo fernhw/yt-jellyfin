@@ -1,16 +1,16 @@
-last_scan=1777178177014
+last_scan=1777181721130
 total_videos=2084
-updated=2026-04-25 23:36:17
-report_date=2026-04-25
-downloaded_today=14
-deleted_today=2
-skipped_today=1
+updated=2026-04-26 00:35:21
+report_date=2026-04-26
+downloaded_today=0
+deleted_today=0
+skipped_today=0
 channels_scanned=91
 channels_total=91
 errors_last_run=0
 errors_list=
-downloaded_list=Skill Up:Xbox considering return to exclusives + AC Black Flag Resynced revealed | This Week in Videogames|Karsten Runquist:This Michael Jackson Biopic Feels Off...|Second Wind:Adventure Is Nigh!: The Slow Walk Home  | Season 5 Trailer|YMS:YMS Watches: To Boldly Flee (feat. LW)|Corridor Crew:VFX Artists React to Bad & Great CGi 222|Yessenia :THE STAR OF THE ARK! CHAPTER 45 REACTION PLAYTHROUGH | Goddess of Victory: NIKKE VOD|RedLetterMedia:The Crank Movies!! - re:View|FLEEKAZOID:this just KILLED gta 6|jakkuh:The biggest problem with living on a farm|Spawn Wave:The Steam Controller Price Just Leaked...And It Raises Some Serious Concerns|Internet Today:A.I. MAGA Girls Are Scamming Conservative Men - Weekly Weird News|Earlybird:The PS1 Game that Hates Itself | Misfortune: A Story of Suspicious Friendships|Asmongold TV  :This is normal now..|Asmongold TV  :What the f**k is happening in Mali?
-deleted_list=AsmongoldTV:The_Onlyfans_empire_is_done_S26E32|AsmongoldTV:This_game_fed_me_up_S26E33
-skipped_list=members-only:https://www.youtube.com/watch?v=t-GvOtx8htk
+downloaded_list=
+deleted_list=
+skipped_list=
 last_batch_notify=2026-04-24
 last_media_notify=2026-04-24
