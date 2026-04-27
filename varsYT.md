@@ -1,16 +1,16 @@
-last_scan=1777264554376
-total_videos=2098
-updated=2026-04-26 23:35:54
-report_date=2026-04-26
-downloaded_today=14
-deleted_today=5
-skipped_today=0
+last_scan=1777268115140
+total_videos=2099
+updated=2026-04-27 00:35:15
+report_date=2026-04-27
+downloaded_today=0
+deleted_today=0
+skipped_today=1
 channels_scanned=91
 channels_total=91
 errors_last_run=0
 errors_list=
-downloaded_list=TechDweeb:We don't need the Steam Deck anymore|Asmongold TV  :FBI raided his home..|Asmongold TV  :This broke the Internet..|Skill Up:So far, the new Xbox boss is saying (and doing ) the right things | Friends Per Second #93|Boy Meets Girl:Are two heads better than one? | Tokyo Scramble Date Night|Spawn Wave:Pragmata Is Exactly What Gaming Needs Right Now|Corridor Crew:We Compete to Make the Most SATISFYING CGi #9|Asmongold TV  :This game popped the f*ck off|Papa Meat:Ranking EVERY Fast Food Fries...|ConnorDawg:I Played Through EVERY FNAF Game|Garnt:very emotional day|Asmongold TV  :This was insane..|Modern Vintage Gamer:Super ZSNES - GPU Powered SNES emulation is here!|Asmongold TV  :Trump interviewed about the incident
-deleted_list=AsmongoldTV:Stop_Nick_Shirley_Act_S26E34|AsmongoldTV:Everyone_expected_this_S26E35|AsmongoldTV:What_a_stupid_idiot_S26E36|AsmongoldTV:Doordash_girl_got_what_she_deserved_S26E37|AsmongoldTV:This_reviewer_should_never_touch_another_video_game_S26E38
-skipped_list=
+downloaded_list=
+deleted_list=
+skipped_list=members-only:https://www.youtube.com/watch?v=ShWY9GzS2hM
 last_batch_notify=2026-04-24
 last_media_notify=2026-04-24
