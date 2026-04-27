@@ -1,15 +1,15 @@
-last_scan=1777320661491
-total_videos=2108
-updated=2026-04-27 15:11:01
+last_scan=1777327625711
+total_videos=2110
+updated=2026-04-27 17:07:05
 report_date=2026-04-27
-downloaded_today=9
+downloaded_today=11
 deleted_today=22
 skipped_today=1
 channels_scanned=91
 channels_total=91
 errors_last_run=0
 errors_list=
-downloaded_list=Asmongold TV  :There’s more to this..|Thomas Flight:Why Subtle Acting Deserves More Recognition|Asmongold TV  :She stole water.. (INSTANTLY caught)|Retro Game Corps:GameHub on Mac is Seriously Impressive|Yessenia :THIS WAS A STEP TOO FAR! CHAPTER 46 REACTION PLAYTHROUGH | Goddess of Victory: NIKKE VOD|Second Wind:Why Are Some Games So Horrifically Addictive? | Design Delve|Nintendo of America:Dinkum – Nintendo Switch 2 Edition – Launch Trailer|Digital Foundry:DF Direct Weekly #261: F1 25 PS5 Pro Path Tracing Demo, AC Black Flag Resynced, New Xbox Strategy|Gamers Nexus:Valve Steam Controller Review | Latency Benchmarks, Battery Life, Repairability
+downloaded_list=Asmongold TV  :There’s more to this..|Thomas Flight:Why Subtle Acting Deserves More Recognition|Asmongold TV  :She stole water.. (INSTANTLY caught)|Retro Game Corps:GameHub on Mac is Seriously Impressive|Yessenia :THIS WAS A STEP TOO FAR! CHAPTER 46 REACTION PLAYTHROUGH | Goddess of Victory: NIKKE VOD|Second Wind:Why Are Some Games So Horrifically Addictive? | Design Delve|Nintendo of America:Dinkum – Nintendo Switch 2 Edition – Launch Trailer|Digital Foundry:DF Direct Weekly #261: F1 25 PS5 Pro Path Tracing Demo, AC Black Flag Resynced, New Xbox Strategy|Gamers Nexus:Valve Steam Controller Review | Latency Benchmarks, Battery Life, Repairability|Shoe0nHead:The Male Protector Fantasy | “Is It lNCEL To Want To Be A Father?”|Spawn Wave:Putting The PS5 DRM Claims To The Test
 deleted_list=RetroGameCorps:The_Easiest_Retro_Gaming_TV_Box_Setup_S26E01|RetroGameCorps:Could_Android_Replace_the_Steam_Deck_S26E02|RetroGameCorps:Lossless_Scaling_Emulation_is_Wild_S26E03|RetroGameCorps:AYN_Thor_Starter_Guide_S26E04|RetroGameCorps:This_New_Game_Boy_Color_Shader_is_Neat_S26E05|RetroGameCorps:Emulation_on_the_MacBook_Neo_S26E06|RetroGameCorps:Anbernic_RG_Vita_Pro_Good_Handheld_Bad_Price_S26E07|RetroGameCorps:My_Favorite_Sega_Genesis_Games_S26E08|RetroGameCorps:Linux_on_the_AYN_Thor_and_Other_Handhelds_S26E14|RetroGameCorps:Entry_Handheld_PC_Comparison_Steam_Deck_vs_Xbox_Ally_vs_Legion_Go_S_S26E12|RetroGameCorps:My_Favorite_Handhelds_under_100_S26E15|DigitalFoundry:DF_Direct_Weekly_259_Pragmata_Tested_Forza_Horizon_6_Samson_Disappointment_Nvidi_S26E01|DigitalFoundry:DFDirectQAShouldNintendoMakeASwitch2HomeConsoleIsConsoleGamingStagnating_S26E02|NintendoofAmerica:No_Mans_Sky_Xeno_Arena_Update_Nintendo_Switch_2_S26E01|NintendoofAmerica:Overwatch_Season_2_Summit_Official_Trailer_Nintendo_Switch_2_S26E02|NintendoofAmerica:TomodachiLifeLivingtheDreamTooCoolforYoomianIslandNintendoSwitch_S26E03|NintendoofAmerica:PRAGMATA_Launch_Trailer_Nintendo_Switch_2_S26E04|AsmongoldTV:Hes_been_having_a_BAD_time_S26E39|AsmongoldTV:The_UK_government_is_evil_S26E40|RetroGameCorps:Xbox_Emulation_on_Android_is_Here_Sort_of_S26E20|NintendoofAmerica:The_Splatoon_3_North_American_League_Show_2026_Episode_3_S26E05|DigitalFoundry:PragmataSwitch2ReviewvsPS5XboxSeriesS-AnotherAmbitiousCapcomPort_S26E03
 skipped_list=members-only:https://www.youtube.com/watch?v=ShWY9GzS2hM
 last_batch_notify=2026-04-24

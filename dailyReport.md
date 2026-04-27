@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-27
 
-> *Good afternoon! Here's what landed on Monday, April 27, 2026 at 03:12 PM.*
-> **YT Mirror:** 708.17 GB used · 1.60 TB free
+> *Good evening! Here's what landed on Monday, April 27, 2026 at 05:08 PM.*
+> **YT Mirror:** 708.65 GB used · 1.60 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **The Male Protector Fantasy | “Is It lNCEL To Want To Be A Father?”** — *Shoe0nHead* · downloaded 05:06 PM · podcastable · *31 days since their last upload*
+- **Putting The PS5 DRM Claims To The Test** — *Spawn Wave* · downloaded 05:05 PM · not podcastable
 - **DF Direct Weekly #261: F1 25 PS5 Pro Path Tracing Demo, AC Black Flag Resynced, New Xbox Strategy** — *Digital Foundry* · downloaded 03:10 PM · not podcastable
 - **Valve Steam Controller Review | Latency Benchmarks, Battery Life, Repairability** — *Gamers Nexus* · downloaded 03:06 PM · not podcastable
 - **Why Are Some Games So Horrifically Addictive? | Design Delve** — *Second Wind* · downloaded 11:36 AM · podcastable
