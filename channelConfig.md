@@ -43,6 +43,19 @@ ConnorDawg = 20
 GameLinked = 20
 techlinked = 20
 TechDweeb = 20
+RetroGameCorps = 15
+DigitalFoundry = 10
+SkillUp = 8
+GamersNexus = 10
+PapaMeat = 6
+SecondWindGroup = 15
+CorridorCrew = 6
+InternetTodayTV = 10
+ScottsStash = 10
+NintendoAmerica = 15
+ModernVintageGamer = 5
+LGR = 5
+jakkuh_t = 5
 
 # QUALITY - max resolution per channel
 # Channels not listed here: best available (default)
@@ -54,6 +67,18 @@ ConnorDawg = 1080
 DigitalFoundry = 1080
 TrashTaste = 1080
 NeverKnowsBest = 1080
+RetroGameCorps = 1080
+SkillUp = 1080
+GamersNexus = 1080
+PapaMeat = 1080
+SecondWindGroup = 1080
+CorridorCrew = 1080
+InternetTodayTV = 1080
+ScottsStash = 1080
+NintendoAmerica = 1080
+ModernVintageGamer = 1080
+LGR = 1080
+jakkuh_t = 1080
 
 # PODCASTABLE - channels whose videos work well as audio-only
 # Audio extracted to /Volumes/Jellyfin/Podcasts/<channel>/

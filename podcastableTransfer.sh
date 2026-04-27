@@ -126,7 +126,12 @@ while IFS= read -r handle; do
     fi
 
     echo "podcast: $channel_name/$clean_name"
-    if ffmpeg -nostdin -i "$mp4" -vn -q:a 2 -y "$mp3" -loglevel warning 2>&1; then
+    # -map_metadata -1 strips MP4 container tags (major_brand, compatible_brands, etc.)
+    # that yt-dlp leaves in the file when converting M4A->MP3. Without this, those tags
+    # bleed into the ID3 header and confuse Audiobookshelf into misreading duration
+    # (e.g. showing 10 min instead of 2 hours). ABS uses filename for episode identity
+    # in podcast mode, so stripping all metadata is safe.
+    if ffmpeg -nostdin -i "$mp4" -vn -q:a 2 -map_metadata -1 -id3v2_version 3 -y "$mp3" -loglevel warning 2>&1; then
       count=$((count + 1))
     else
       echo "podcast: FAILED $mp4"
