@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-27
 
-> *Good evening! Here's what landed on Monday, April 27, 2026 at 10:06 PM.*
-> **YT Mirror:** 709.63 GB used · 1.60 TB free
+> *Good evening! Here's what landed on Monday, April 27, 2026 at 11:37 PM.*
+> **YT Mirror:** 710.00 GB used · 1.60 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **This has to stop..** — *Asmongold TV* · downloaded 11:36 PM · not podcastable
 - **Can Microsoft Save Windows?** — *TechLinked* · downloaded 08:06 PM · podcastable
 - **Tetris® 99 – 53rd MAXIMUS CUP Gameplay Trailer - Nintendo Switch** — *Nintendo of America* · downloaded 08:05 PM · not podcastable
 - **The Best Console to Collect For?** — *Scott's Stash* · downloaded 07:06 PM · not podcastable
