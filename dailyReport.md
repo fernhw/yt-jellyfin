@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-28
 
-> *Good morning! Here's what landed on Tuesday, April 28, 2026 at 11:38 AM.*
-> **YT Mirror:** 726.16 GB used · 1.59 TB free
+> *Good afternoon! Here's what landed on Tuesday, April 28, 2026 at 03:11 PM.*
+> **YT Mirror:** 724.79 GB used · 1.59 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,9 @@
 
 ### Non-Priority Videos
 
+- **Valve Steam Controller Review: PC Gets Its Own "Pro" Controller** — *Digital Foundry* · downloaded 03:08 PM · not podcastable
+- **This is A PROBLEM.** — *Asmongold TV* · downloaded 03:07 PM · not podcastable
+- **thank GOD we have bodycams..** — *Asmongold TV* · downloaded 03:06 PM · not podcastable
 - **Michael Isn't a Biopic, It's an Advertisement | The Backdrop** — *Second Wind* · downloaded 11:36 AM · podcastable
 - **Water Womb World Review** — *MandaloreGaming* · downloaded 10:14 AM · not podcastable
 - **Impressive Repairability: Valve Steam Controller Tear-Down & Disassembly** — *Gamers Nexus* · downloaded 10:12 AM · not podcastable
