@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-27
 
-> *Good evening! Here's what landed on Monday, April 27, 2026 at 06:06 PM.*
-> **YT Mirror:** 708.63 GB used · 1.60 TB free
+> *Good evening! Here's what landed on Monday, April 27, 2026 at 07:07 PM.*
+> **YT Mirror:** 709.21 GB used · 1.60 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **The Best Console to Collect For?** — *Scott's Stash* · downloaded 07:06 PM · not podcastable
 - **The Male Protector Fantasy | “Is It lNCEL To Want To Be A Father?”** — *Shoe0nHead* · downloaded 05:06 PM · podcastable · *31 days since their last upload*
 - **Putting The PS5 DRM Claims To The Test** — *Spawn Wave* · downloaded 05:05 PM · not podcastable
 - **DF Direct Weekly #261: F1 25 PS5 Pro Path Tracing Demo, AC Black Flag Resynced, New Xbox Strategy** — *Digital Foundry* · downloaded 03:10 PM · not podcastable
