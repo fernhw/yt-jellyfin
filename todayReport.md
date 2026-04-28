@@ -1,16 +1,22 @@
 # What to Watch — 2026-04-28
 
-> *Good morning! Here's what landed on Tuesday, April 28, 2026 at 07:07 AM.*
-> **YT Mirror:** 710.49 GB used · 1.60 TB free
+> *Good morning! Here's what landed on Tuesday, April 28, 2026 at 10:18 AM.*
+> **YT Mirror:** 725.71 GB used · 1.58 TB free
 
 ## Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **The Film That Attacks You** — *Nerdwriter1* · downloaded 09:36 AM · podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **Water Womb World Review** — *MandaloreGaming* · downloaded 10:14 AM · not podcastable
+- **Impressive Repairability: Valve Steam Controller Tear-Down & Disassembly** — *Gamers Nexus* · downloaded 10:12 AM · not podcastable
+- **So I played the new Diablo 4..** — *Asmongold TV* · downloaded 10:11 AM · not podcastable
+- **Caleb Hammer audited us..** — *Asmongold TV* · downloaded 10:02 AM · not podcastable
+- **I recommend: The Steam Controller (2026) - Review** — *Skill Up* · downloaded 09:57 AM · not podcastable
+- **WHAT ARE THEY UP TO?! 2.7 MAIN STORY PLAYTHROUGH | Zenless Zone Zero VOD** — *Yessenia* · downloaded 09:56 AM · not podcastable
 - **CRYBT: A Solo Roguelike Dungeon Crawl [FREE!]** — *TechDweeb* · downloaded 07:06 AM · podcastable
 - **Conspiracy Theories Run Wild After Trump Assassination Attempt #3** — *Internet Today* · downloaded 03:36 AM · not podcastable
 
