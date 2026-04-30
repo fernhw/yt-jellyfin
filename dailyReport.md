@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-29
 
-> *Good evening! Here's what landed on Wednesday, April 29, 2026 at 06:12 PM.*
-> **YT Mirror:** 725.09 GB used · 1.59 TB free
+> *Good evening! Here's what landed on Wednesday, April 29, 2026 at 07:10 PM.*
+> **YT Mirror:** 725.19 GB used · 1.59 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@
 
 ### Non-Priority Videos
 
+- **Nintendo Guns** — *Scott's Stash* · downloaded 07:08 PM · not podcastable
 - **These Games Are Built To Die** — *Bellular News* · downloaded 06:11 PM · podcastable
 - **My Take on The New Apple** — *Marques Brownlee* · downloaded 06:07 PM · not podcastable
 - **Monopoly: Star Wars Heroes vs. Villains – World Premiere Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:06 PM · not podcastable
