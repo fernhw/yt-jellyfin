@@ -2,17 +2,19 @@
 
 ## What to Watch — 2026-04-29
 
-> *Good evening! Here's what landed on Wednesday, April 29, 2026 at 07:10 PM.*
-> **YT Mirror:** 725.19 GB used · 1.59 TB free
+> *Good evening! Here's what landed on Wednesday, April 29, 2026 at 08:15 PM.*
+> **YT Mirror:** 724.60 GB used · 1.59 TB free
 
 ### Priority Videos
 
+- **Shaula & Flugel | Re:ZERO Season 4 Episode 4 Reaction/Analysis** — *Echidnut* · downloaded 08:10 PM · not podcastable
 - **Tomodunkey Life** — *videogamedunkey* · downloaded 03:06 PM · not podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **Former FBI director is done..** — *Asmongold TV* · downloaded 08:13 PM · not podcastable
 - **Nintendo Guns** — *Scott's Stash* · downloaded 07:08 PM · not podcastable
 - **These Games Are Built To Die** — *Bellular News* · downloaded 06:11 PM · podcastable
 - **My Take on The New Apple** — *Marques Brownlee* · downloaded 06:07 PM · not podcastable
