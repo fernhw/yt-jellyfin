@@ -1,16 +1,19 @@
 # What to Watch — 2026-04-30
 
-> *Good morning! Here's what landed on Thursday, April 30, 2026 at 11:40 AM.*
-> **YT Mirror:** 727.69 GB used · 1.58 TB free
+> *Good afternoon! Here's what landed on Thursday, April 30, 2026 at 03:14 PM.*
+> **YT Mirror:** 729.78 GB used · 1.58 TB free
 
 ## Priority Videos
 
+- **A Low-Poly Interview with the Kero Quest 64 Team** — *Nerrel* · downloaded 03:09 PM · not podcastable
+- **GitHub is having some major issues right now…** — *Fireship* · downloaded 03:05 PM · podcastable
 - **Spitballs: Ninja Accountant** — *RedLetterMedia* · downloaded 11:35 AM · podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **My New Secret Hobby** — *ConnorDawg* · downloaded 03:11 PM · not podcastable
 - **what i watched in april (2026)** — *Karsten Runquist* · downloaded 11:38 AM · not podcastable
 - **"I suck" -ThePrimeagen** — *The PrimeTime* · downloaded 11:37 AM · podcastable
 - **He’s going to prison for life..** — *Asmongold TV* · downloaded 09:37 AM · not podcastable
