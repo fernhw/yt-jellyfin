@@ -1,16 +1,18 @@
 # What to Watch — 2026-05-01
 
-> *Good afternoon! Here's what landed on Friday, May 01, 2026 at 03:12 PM.*
-> **YT Mirror:** 732.17 GB used · 1.58 TB free
+> *Good evening! Here's what landed on Friday, May 01, 2026 at 05:10 PM.*
+> **YT Mirror:** 734.18 GB used · 1.57 TB free
 
 ## Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **We Ranked the Greatest Things of All Time | Trash Taste #306** — *Trash Taste* · downloaded 05:06 PM · podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **Slay The Spire 2 Got Double-Tapped** — *Bellular News* · downloaded 05:08 PM · podcastable
+- **Fortnite – STAR WARS Experience – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:06 PM · not podcastable
 - **WE GOT A SHOP!** — *jakkuh* · downloaded 03:10 PM · not podcastable
 - **The Splatoon 3 North American League Show 2026 – Episode 5** — *Nintendo of America* · downloaded 03:09 PM · not podcastable
 - **Constance – Launch Trailer – Nintendo Switch** — *Nintendo of America* · downloaded 03:08 PM · not podcastable
