@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-04-30
 
-> *Good evening! Here's what landed on Thursday, April 30, 2026 at 08:06 PM.*
-> **YT Mirror:** 731.18 GB used · 1.58 TB free
+> *Good evening! Here's what landed on Thursday, April 30, 2026 at 09:07 PM.*
+> **YT Mirror:** 731.81 GB used · 1.58 TB free
 
 ### Priority Videos
 
@@ -15,6 +15,7 @@
 
 ### Non-Priority Videos
 
+- **What’s the Deal, Sony?** — *GameLinked* · downloaded 09:06 PM · podcastable
 - **Stop Killing Games Just Cracked America** — *Bellular News* · downloaded 05:08 PM · podcastable
 - **WORLD RANK#1 GACHAMAXXER** — *Garnt* · downloaded 05:06 PM · not podcastable
 - **My New Secret Hobby** — *ConnorDawg* · downloaded 03:11 PM · not podcastable
