@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-01
 
-> *Good evening! Here's what landed on Friday, May 01, 2026 at 06:05 PM.*
-> **YT Mirror:** 734.20 GB used · 1.57 TB free
+> *Good evening! Here's what landed on Friday, May 01, 2026 at 07:06 PM.*
+> **YT Mirror:** 734.09 GB used · 1.57 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@
 
 ### Non-Priority Videos
 
+- **The Simpsons Skateboarding - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
 - **Slay The Spire 2 Got Double-Tapped** — *Bellular News* · downloaded 05:08 PM · podcastable
 - **Fortnite – STAR WARS Experience – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:06 PM · not podcastable
 - **WE GOT A SHOP!** — *jakkuh* · downloaded 03:10 PM · not podcastable
