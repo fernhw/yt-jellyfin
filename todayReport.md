@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-01
 
-> *Good evening! Here's what landed on Friday, May 01, 2026 at 10:06 PM.*
-> **YT Mirror:** 735.15 GB used · 1.58 TB free
+> *Good evening! Here's what landed on Friday, May 01, 2026 at 11:36 PM.*
+> **YT Mirror:** 735.38 GB used · 1.58 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@
 
 ## Non-Priority Videos
 
+- **Someone built my DREAM computer monitor** — *MattKC* · downloaded 11:35 PM · not podcastable
 - **You'll Subscribe to Your Router, Too | The First Router Bribes Are Here** — *Gamers Nexus* · downloaded 10:05 PM · not podcastable
 - **So It’s Still an Xbox…** — *TechLinked* · downloaded 08:04 PM · podcastable
 - **The Simpsons Skateboarding - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
