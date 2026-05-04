@@ -1,16 +1,16 @@
-last_scan=1777873136609
-total_videos=2196
-updated=2026-05-04 00:38:56
+last_scan=1777883956008
+total_videos=2197
+updated=2026-05-04 03:39:16
 report_date=2026-05-04
 downloaded_today=0
 deleted_today=0
-skipped_today=0
+skipped_today=1
 channels_scanned=91
 channels_total=91
 errors_last_run=0
 errors_list=
 downloaded_list=
 deleted_list=
-skipped_list=
+skipped_list=members-only:https://www.youtube.com/watch?v=j_YsKzq7OAE
 last_batch_notify=2026-04-24
 last_media_notify=2026-04-24
