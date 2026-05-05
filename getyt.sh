@@ -166,7 +166,7 @@ download_video() {
   # Single yt-dlp call: stdout->temp file (json), stderr->variable (errors)
   local tmpjson="/tmp/ytdl_$$"
   local info errmsg
-  errmsg=$(yt-dlp --no-playlist --extractor-args "youtube:lang=en" --dump-json "$url" 2>&1 >"$tmpjson") || true
+  errmsg=$(yt-dlp --no-playlist --extractor-args "youtube:player_client=web_creator,android,mweb;lang=en" --dump-json "$url" 2>&1 >"$tmpjson") || true
   info=$(cat "$tmpjson" 2>/dev/null)
   rm -f "$tmpjson"
 
@@ -313,7 +313,7 @@ print(f'yt_handle={shlex.quote(handle)}')
   local dl_err_file="/tmp/ytdl_err_$$"
   yt-dlp \
     --no-playlist \
-    --extractor-args "youtube:lang=en" \
+    --extractor-args "youtube:player_client=web_creator,android,mweb;lang=en" \
     -S "$sort_spec" \
     -f "bv+ba[language^=en]/bv+ba[language=en]/bv+ba" \
     --merge-output-format mp4 \

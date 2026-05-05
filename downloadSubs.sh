@@ -459,7 +459,7 @@ while IFS= read -r channel_url <&3; do
   echo "Scanning $label ..."
 
   # Fast flat-playlist: just IDs, ~1s per channel
-  video_ids=$(yt-dlp --flat-playlist --print id --playlist-end "$SCAN_DEPTH" "$clean_url" 2>/dev/null) || true
+  video_ids=$(yt-dlp --flat-playlist --print id --playlist-end "$SCAN_DEPTH" --extractor-args "youtube:player_client=web_creator,android,mweb" "$clean_url" 2>/dev/null) || true
 
   if [ -z "$video_ids" ]; then
     echo "  WARN: no videos returned"
