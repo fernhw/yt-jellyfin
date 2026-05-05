@@ -29,6 +29,7 @@ SchaffrillasProductions
 IHincognitoMode
 StudioWrong
 AlphaBetaGamer
+FLEEKAZOID
 
 # LIMITS - max videos kept on disk per channel
 # When a new video downloads and count exceeds limit,

@@ -2,11 +2,12 @@
 
 ## What to Watch — 2026-05-05
 
-> *Good morning! Here's what landed on Tuesday, May 05, 2026 at 08:22 AM.*
-> **YT Mirror:** 756.54 GB used · 1.55 TB free
+> *Good morning! Here's what landed on Tuesday, May 05, 2026 at 08:29 AM.*
+> **YT Mirror:** 756.41 GB used · 1.55 TB free
 
 ### Priority Videos
 
+- **there's NO HOPE for ubisoft..** — *FLEEKAZOID* · downloaded 03:18 AM · not podcastable
 - **732 bytes of Python just borked every Linux machine on earth…** — *Fireship* · downloaded 02:09 AM · podcastable
 - **Outlast Trials "Review" | Benadryl Friendslop™** — *Max0r* · downloaded 12:30 AM · not podcastable · *79 days since their last upload*
 
@@ -14,7 +15,7 @@
 
 ### Non-Priority Videos
 
-- **there's NO HOPE for ubisoft..** — *FLEEKAZOID* · downloaded 03:18 AM · not podcastable
+- **Fallout creator speaks out..** — *Asmongold TV* · downloaded 08:28 AM · not podcastable
 - **DF Retro Super Show #013 - The Big Arcade To Home Console Conversion Discussion!** — *Digital Foundry* · downloaded 03:17 AM · not podcastable
 - **DF Direct Weekly #262: PS5 Linux Steam PC vs Native PS5, Oblivion Remastered Still "Broken"** — *Digital Foundry* · downloaded 03:14 AM · not podcastable
 - **My Girlfriend asked me if Pokemon Sword was any good** — *Boy Meets Girl* · downloaded 03:12 AM · not podcastable
