@@ -2,11 +2,12 @@
 
 ## What to Watch — 2026-05-05
 
-> *Good morning! Here's what landed on Tuesday, May 05, 2026 at 09:40 AM.*
-> **YT Mirror:** 753.02 GB used · 1.55 TB free
+> *Good morning! Here's what landed on Tuesday, May 05, 2026 at 11:38 AM.*
+> **YT Mirror:** 753.41 GB used · 1.55 TB free
 
 ### Priority Videos
 
+- **Milwaukee Movie Locations!** — *RedLetterMedia* · downloaded 11:35 AM · podcastable
 - **there's NO HOPE for ubisoft..** — *FLEEKAZOID* · downloaded 03:18 AM · not podcastable
 - **732 bytes of Python just borked every Linux machine on earth…** — *Fireship* · downloaded 02:09 AM · podcastable
 - **Outlast Trials "Review" | Benadryl Friendslop™** — *Max0r* · downloaded 12:30 AM · not podcastable · *79 days since their last upload*
@@ -15,6 +16,7 @@
 
 ### Non-Priority Videos
 
+- **Invincible is a Superhero Show About Consequences | The Backdrop** — *Second Wind* · downloaded 11:36 AM · podcastable
 - **Pragmata PC Review + Best Settings, Path Tracing, 8GB GPU Optimisation + More** — *Digital Foundry* · downloaded 09:38 AM · not podcastable
 - **WTF IS HAPPENING..** — *Asmongold TV* · downloaded 09:36 AM · not podcastable
 - **How to Translate Games in Real Time** — *Retro Game Corps* · downloaded 09:34 AM · podcastable
