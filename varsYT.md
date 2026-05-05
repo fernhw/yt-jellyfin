@@ -1,14 +1,14 @@
-last_scan=1777940122044
+last_scan=1777943723774
 total_videos=2197
-updated=2026-05-04 19:15:22
+updated=2026-05-04 20:15:23
 report_date=2026-05-04
 downloaded_today=0
 deleted_today=0
 skipped_today=1
 channels_scanned=91
 channels_total=91
-errors_last_run=0
-errors_list=
+errors_last_run=1
+errors_list=@MichaelReeves:no_videos_returned
 downloaded_list=
 deleted_list=
 skipped_list=members-only:https://www.youtube.com/watch?v=j_YsKzq7OAE
