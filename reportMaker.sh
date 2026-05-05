@@ -355,6 +355,20 @@ SEC
   fi
 fi
 
+# --- VPN skip notice in markdown report ---
+if [ -f "$SCRIPT_DIR/.vpn_skip" ]; then
+  _vpn_md_detail=$(cut -d'|' -f2- "$SCRIPT_DIR/.vpn_skip" 2>/dev/null)
+  _vpn_md_time=$(cut -d'|' -f1 "$SCRIPT_DIR/.vpn_skip" 2>/dev/null)
+  cat >> "$TODAY_REPORT" <<SEC
+
+## 🚨 VPN Not Active — Downloads Skipped
+
+**${_vpn_md_detail:-ProtonVPN malfunction detected.}**
+All downloads were skipped at ${_vpn_md_time} to protect your real IP. Re-enable ProtonVPN and re-run the downloader.
+
+SEC
+fi
+
 echo "  report written to todayReport.md"
 
 # --- Build dailyReport.md: today + yesterday combined ---
@@ -547,6 +561,13 @@ if [ "$ERR_LAST" -gt 0 ] && [ "$SCANNED" -gt 0 ]; then
     WARN_HTML="<div class=\"warn-banner\"><strong>Possible IP ban</strong><span>${ERR_LAST} of ${SCANNED} channels returned nothing last scan.</span></div>"
   fi
 fi
+# Check for VPN skip flag (written by downloadSubs.sh before calling us)
+VPN_WARN_HTML=""
+if [ -f "$SCRIPT_DIR/.vpn_skip" ]; then
+  _vpn_skip_detail=$(cut -d'|' -f2- "$SCRIPT_DIR/.vpn_skip" 2>/dev/null)
+  _vpn_skip_time=$(cut -d'|' -f1 "$SCRIPT_DIR/.vpn_skip" 2>/dev/null)
+  VPN_WARN_HTML="<div class=\"warn-banner vpn-warn\"><strong>🚨 VPN NOT ACTIVE — downloads skipped</strong><span>${_vpn_skip_detail:-ProtonVPN malfunction detected.} (at ${_vpn_skip_time})</span></div>"
+fi
 # Check for 403 flag written by getyt.sh
 if [ -f "$YT_ROOT/.ban_detected" ]; then
   ban_detail=$(cat "$YT_ROOT/.ban_detected")
@@ -619,6 +640,7 @@ cat > "$HTML_OUT" <<HTML
     .warn-stack{display:grid;gap:10px;margin-top:20px}
     .warn-banner{display:flex;gap:12px;align-items:flex-start;background:var(--warn-soft);border:1px solid rgba(240,127,100,.35);border-radius:14px;padding:14px 16px;color:#ffd3c8}
     .warn-banner strong{color:#fff;font:600 .78rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;min-width:max-content}
+    .warn-banner.vpn-warn{background:#2b0a0a;border-color:rgba(255,60,60,.5);color:#ffc5c5;font-size:.95rem}
     main{margin-top:10px;display:grid;gap:18px}
     .day-section{background:var(--panel-tint);border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:22px 20px 20px;box-shadow:0 18px 60px rgba(0,0,0,.16);transition:background .25s ease,border-color .25s ease,box-shadow .25s ease}
     .day-header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.07)}
@@ -726,7 +748,7 @@ ${MEDIA_CSS}
         <p>${greeting}. ${RECENT_COUNT} items from the last ${WEB_RECENT_DAYS} days.</p>
       </div>
 
-      <div class="warn-stack">${WARN_HTML}</div>
+      <div class="warn-stack">${VPN_WARN_HTML}${WARN_HTML}</div>
 
       <section class="summary-bar">
         <div class="summary-tile">
@@ -1096,6 +1118,14 @@ onesignal_push() {
 }
 
 if [ -n "$ONESIGNAL_KEY" ]; then
+  # VPN skip alert — highest priority, sent before everything else
+  if [ -f "$SCRIPT_DIR/.vpn_skip" ]; then
+    _vpn_detail=$(cut -d'|' -f2- "$SCRIPT_DIR/.vpn_skip" 2>/dev/null)
+    onesignal_push "🚨 VPN NOT ACTIVE" "Download skipped — ${_vpn_detail:-ProtonVPN malfunction detected.}"
+    echo "  push: VPN skip alert sent"
+    rm -f "$SCRIPT_DIR/.vpn_skip"
+  fi
+
   # 403 ban alert
   if [ -f "$YT_ROOT/.ban_detected" ]; then
     onesignal_push "⚠ YT Mirror" "Possible IP ban detected — please change VPN and retry."

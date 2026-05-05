@@ -373,6 +373,25 @@ if [ ! -d "/Volumes/Darrel4tb" ]; then
   exit 1
 fi
 
+# ── VPN guard ─────────────────────────────────────────────────────────────────
+# Ecuador = home country. If the exit IP resolves to EC (or is unreachable),
+# we are NOT behind ProtonVPN — abort immediately to avoid exposing real IP.
+if [ "$MODE" != "thumbs-only" ] && [ "$MODE" != "collage-only" ]; then
+  _vpn_country=$(curl -sf --max-time 8 "https://ipinfo.io/country" 2>/dev/null | tr -d '[:space:]')
+  if [ "$_vpn_country" = "EC" ] || [ -z "$_vpn_country" ]; then
+    if [ "$_vpn_country" = "EC" ]; then
+      _vpn_msg="Exit IP is Ecuador (EC) — ProtonVPN is not active."
+    else
+      _vpn_msg="Could not reach geo-IP check — VPN status unknown, aborting for safety."
+    fi
+    echo "VPN ERROR: $_vpn_msg Skipping all downloads."
+    printf '%s|%s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$_vpn_msg" > "$SCRIPT_DIR/.vpn_skip"
+    [ -x "$REPORT_MAKER" ] && "$REPORT_MAKER"
+    exit 1
+  fi
+  echo "  VPN check OK — exit country: $_vpn_country"
+fi
+
 # Prevent overlapping runs (skip lock for thumbs-only — read-only safe)
 if [ "$MODE" != "thumbs-only" ]; then
   if [ -f "$LOCKFILE" ]; then
