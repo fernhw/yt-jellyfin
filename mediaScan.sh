@@ -222,7 +222,11 @@ fi
 # ── MUSIC ─────────────────────────────────────────────────────────────────────
 if [ -d "$MUSIC_DIR" ]; then
   find "$MUSIC_DIR" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | while IFS= read -r d; do
-    is_new "$d" || continue
+    # Check audio files directly — macOS can touch directory mtimes without new music
+    _new_track=$(find "$d" -maxdepth 2 -type f \( -iname "*.mp3" -o -iname "*.flac" -o -iname "*.m4a" -o -iname "*.aac" -o -iname "*.wav" -o -iname "*.ogg" \) 2>/dev/null | while IFS= read -r _af; do
+      [ "$(fmtime "$_af")" -gt "$last_scan" ] && printf 'Y' && break
+    done)
+    [ "$_new_track" = "Y" ] || continue
     name=$(basename "$d")
     t=$(clean_music "$name"); [ -z "$t" ] && t="$name"
     cover=$(find_cover "$d")
@@ -238,11 +242,9 @@ if [ -d "$BOOKS_DIR" ]; then
     name=$(basename "$d")
     t=$(clean_book "$name"); [ -z "$t" ] && t="$name"
     key="book-$(safe_key "$name")"
-    # Skip only if not new AND thumb already extracted (nothing to do)
-    if ! is_new "$d" && [ -f "$THUMBS_DIR/${key}.jpg" ]; then continue; fi
+    # Always extract thumb if missing (independent of whether book is new)
     cover=$(find_cover "$d")
-    # No folder art — try extracting embedded cover from audio file
-    if [ -z "$cover" ]; then
+    if [ -z "$cover" ] && [ ! -f "$THUMBS_DIR/${key}.jpg" ]; then
       _audio=$(find "$d" -maxdepth 1 -type f \( -iname "*.m4b" -o -iname "*.mp3" -o -iname "*.m4a" \) 2>/dev/null | head -1)
       if [ -n "$_audio" ]; then
         _extracted="$THUMBS_DIR/${key}.jpg"
@@ -255,6 +257,8 @@ if [ -d "$BOOKS_DIR" ]; then
     elif [ -f "$THUMBS_DIR/${key}.jpg" ]; then
       thumb="media-thumbs/${key}.jpg"
     fi
+    # Only include in report if the book directory is actually new
+    is_new "$d" || continue
     emit "book" "$(safe_html "$t")" "" "$thumb" "$(fmtime "$d")"
   done
 fi
@@ -277,6 +281,8 @@ if [ -d "$MANGA_DIR" ]; then
     } END {
       for (s in count) printf "%s\t%d\t%s\n", s, count[s], mtime[s]
     }' "$manga_raw" | sort | while IFS=$'\t' read -r series count mt; do
+      # Only include series that have volumes newer than the last scan
+      [ "$mt" -gt "$last_scan" ] || continue
       [ "$count" -gt 1 ] && sub="${count} volumes" || sub="1 volume"
       key="manga-$(safe_key "$series")"
       # Extract cover from first volume's first page if not already cached
