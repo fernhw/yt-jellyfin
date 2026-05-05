@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-05
 
-> *Good morning! Here's what landed on Tuesday, May 05, 2026 at 08:29 AM.*
-> **YT Mirror:** 756.41 GB used · 1.55 TB free
+> *Good morning! Here's what landed on Tuesday, May 05, 2026 at 09:40 AM.*
+> **YT Mirror:** 753.02 GB used · 1.55 TB free
 
 ### Priority Videos
 
@@ -15,6 +15,9 @@
 
 ### Non-Priority Videos
 
+- **Pragmata PC Review + Best Settings, Path Tracing, 8GB GPU Optimisation + More** — *Digital Foundry* · downloaded 09:38 AM · not podcastable
+- **WTF IS HAPPENING..** — *Asmongold TV* · downloaded 09:36 AM · not podcastable
+- **How to Translate Games in Real Time** — *Retro Game Corps* · downloaded 09:34 AM · podcastable
 - **Fallout creator speaks out..** — *Asmongold TV* · downloaded 08:28 AM · not podcastable
 - **DF Retro Super Show #013 - The Big Arcade To Home Console Conversion Discussion!** — *Digital Foundry* · downloaded 03:17 AM · not podcastable
 - **DF Direct Weekly #262: PS5 Linux Steam PC vs Native PS5, Oblivion Remastered Still "Broken"** — *Digital Foundry* · downloaded 03:14 AM · not podcastable
