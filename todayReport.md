@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-05
 
-> *Good morning! Here's what landed on Tuesday, May 05, 2026 at 11:38 AM.*
-> **YT Mirror:** 753.41 GB used · 1.55 TB free
+> *Good afternoon! Here's what landed on Tuesday, May 05, 2026 at 03:08 PM.*
+> **YT Mirror:** 753.12 GB used · 1.55 TB free
 
 ## Priority Videos
 
@@ -14,6 +14,8 @@
 
 ## Non-Priority Videos
 
+- **The Legend of Heroes: Trails from Zero – Announcement Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:06 PM · not podcastable
+- **The Sudden, Inconvenient Demise of Spirit Airlines** — *Internet Today* · downloaded 03:05 PM · not podcastable
 - **Invincible is a Superhero Show About Consequences | The Backdrop** — *Second Wind* · downloaded 11:36 AM · podcastable
 - **Pragmata PC Review + Best Settings, Path Tracing, 8GB GPU Optimisation + More** — *Digital Foundry* · downloaded 09:38 AM · not podcastable
 - **WTF IS HAPPENING..** — *Asmongold TV* · downloaded 09:36 AM · not podcastable
