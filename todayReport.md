@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-06
 
-> *Good morning! Here's what landed on Wednesday, May 06, 2026 at 11:51 AM.*
-> **YT Mirror:** 758.23 GB used · 1.54 TB free
+> *Good afternoon! Here's what landed on Wednesday, May 06, 2026 at 03:10 PM.*
+> **YT Mirror:** 755.71 GB used · 1.55 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,8 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **Thank GOD we have bodycams..** — *Asmongold TV* · downloaded 03:07 PM · not podcastable
+- **Mosh Pits Are The Worst...** — *Papa Meat* · downloaded 03:06 PM · not podcastable
 - **Final Fantasy 7 Rebirth Switch 2/Xbox Series X|S Demo Tested - A Miracle Port for Switch 2?** — *Digital Foundry* · downloaded 11:47 AM · not podcastable
 - **Aphelion | Fully Ramblomatic** — *Second Wind* · downloaded 11:45 AM · podcastable
 - **Worst Thermals Yet: Tryx Flova F50 Case Review & Crossflow Fan Benchmarks** — *Gamers Nexus* · downloaded 11:45 AM · not podcastable
