@@ -588,9 +588,19 @@ if [ -f "$_sched_json" ]; then
   _sched_date=$(grep -o '"date":"[^"]*"' "$_sched_json" | head -1 | cut -d'"' -f4)
 fi
 if [ "$_sched_date" = "$TODAY" ] && [ -f "$_sched_json" ]; then
-  _sched_cards=$(python3 "$SCRIPT_DIR/showSchedulerCards.py" "$_sched_json" 2>/dev/null)
+  _sched_cards=$(python3 "$SCRIPT_DIR/showSchedulerCards.py" today "$_sched_json" 2>/dev/null)
   if [ -n "$_sched_cards" ]; then
     SHOW_SCHED_HTML='<section class="msec sched-section"><div class="msec-head"><span class="msec-icon">📺</span><h3>New Episodes Today</h3></div><div class="mcards sched-cards">'"$_sched_cards"'</div></section>'
+  fi
+fi
+
+# ── Build show-tracker HTML (all scheduled shows, persistent) ─────────────────
+SHOW_TRACKER_HTML=""
+_status_json="$SCRIPT_DIR/showSchedulerStatus.json"
+if [ -f "$_status_json" ]; then
+  _tracker_rows=$(python3 "$SCRIPT_DIR/showSchedulerCards.py" status "$_status_json" 2>/dev/null)
+  if [ -n "$_tracker_rows" ]; then
+    SHOW_TRACKER_HTML='<section class="msec tracker-section"><div class="msec-head"><span class="msec-icon">🗓</span><h3>Show Tracker</h3></div><div class="trk-list">'"$_tracker_rows"'</div></section>'
   fi
 fi
 
@@ -741,6 +751,7 @@ ${MEDIA_CSS}
     </header>
 
     ${SHOW_SCHED_HTML}
+    ${SHOW_TRACKER_HTML}
     ${MEDIA_SECTIONS_HTML}
 
     <section class="controls" id="feedControls">

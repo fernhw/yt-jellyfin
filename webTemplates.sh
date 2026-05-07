@@ -32,6 +32,21 @@ MEDIA_CSS=$(cat <<'MEDIA_CSS_EOF'
     .sched-cards .mcard:active{border-color:#c2a365}
     .sched-cards .mcard-title{color:#d4c4a0}
     .sched-cards .mcard-sub{color:#c2a365;font-weight:700}
+    .tracker-section{border-color:rgba(100,140,200,.18)}
+    .tracker-section .msec-head h3{color:#86b9d9}
+    .trk-list{display:flex;flex-direction:column;gap:10px;padding:4px 0}
+    .trk-row{display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px}
+    .trk-thumb{width:44px;height:62px;object-fit:cover;border-radius:4px;flex-shrink:0}
+    .trk-nothumb{width:44px;height:62px;background:#1d242b;border-radius:4px;flex-shrink:0}
+    .trk-info{flex:1;min-width:0}
+    .trk-name{font-size:.9rem;font-weight:600;color:#ecf2f8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .trk-eps{font-size:.75rem;color:#97a6b4;margin:.2rem 0 .4rem}
+    .trk-bar{height:4px;background:#2a323b;border-radius:2px;overflow:hidden}
+    .trk-fill{height:100%;background:#86b9d9;border-radius:2px;transition:width .3s}
+    .trk-week{text-align:right;font-size:.75rem;font-weight:700;line-height:1.4;white-space:nowrap;color:#627384;flex-shrink:0}
+    .trk-week.trk-done{color:#72c7a2}
+    .trk-week.trk-due{color:#c2a365}
+    .trk-days{font-size:.68rem;font-weight:400;color:#627384}
 MEDIA_CSS_EOF
 )
 

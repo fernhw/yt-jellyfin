@@ -689,6 +689,8 @@ def main() -> None:
             print(f"{r['show_name']:<22} {r.get('search_name',''):<18} {ep_label:<10} "
                   f"{r['release_days']:<5} {r['type']:<6} {week_s:<8} {r['status']}")
         print()
+        locations = load_locations()
+        write_status_json(rows, locations)
         return
 
     if args.dry_run:
@@ -712,6 +714,10 @@ def main() -> None:
     if not args.dry_run:
         write_schedule(updated)
 
+    # Always refresh status JSON so the web report reflects current state
+    if not args.dry_run:
+        write_status_json(updated, locations)
+
     # Summary
     by_status: Dict[str, int] = {}
     for r in updated:
@@ -719,6 +725,90 @@ def main() -> None:
         by_status[s] = by_status.get(s, 0) + 1
     parts = ', '.join(f"{v} {k}" for k, v in sorted(by_status.items()))
     log.info(f"Run complete — {parts}")
+
+
+# ── Status JSON ────────────────────────────────────────────────────────────────
+
+def _find_show_thumb(shows_dir: str, folder: str, web_dir: str) -> str:
+    """
+    Find folder art in the show directory, copy it to web/media-thumbs/,
+    and return a web-relative path. Returns '' if nothing found.
+    """
+    show_dir = os.path.join(shows_dir, folder)
+    src = ''
+    for name in ('folder.jpg', 'cover.jpg', 'poster.jpg', 'Cover.jpg'):
+        candidate = os.path.join(show_dir, name)
+        if os.path.isfile(candidate):
+            src = candidate
+            break
+    if not src:
+        import glob as _glob
+        hits = _glob.glob(os.path.join(show_dir, '**', '*.jpg'), recursive=True)
+        if hits:
+            src = hits[0]
+    if not src:
+        return ''
+    safe_key = re.sub(r'[^a-z0-9]+', '-', folder.lower()).strip('-')
+    thumbs_dir = os.path.join(web_dir, 'media-thumbs')
+    os.makedirs(thumbs_dir, exist_ok=True)
+    dest = os.path.join(thumbs_dir, f"show-sched-{safe_key}.jpg")
+    try:
+        import shutil
+        shutil.copy2(src, dest)
+        return f"media-thumbs/show-sched-{safe_key}.jpg"
+    except Exception:
+        return ''
+
+
+def write_status_json(rows: List[Dict], locations: Dict[str, str]) -> None:
+    """
+    Write showSchedulerStatus.json — full show list with current download state.
+    Used by the web report tracker section; written after every non-dry run.
+    """
+    shows_dir = locations.get('SHOWS_DIR', '/Volumes/Jellyfin/Shows')
+    web_dir   = os.path.join(SCRIPT_DIR, 'web')
+    today     = datetime.date.today()
+    status_path = os.path.join(SCRIPT_DIR, 'showSchedulerStatus.json')
+
+    shows = []
+    for r in rows:
+        name       = r['show_name']
+        season     = int(r['season'])
+        next_ep    = int(r['next_episode'])
+        total      = int(r['total_episodes'])
+        downloaded = next_ep - 1          # last episode we actually have
+        cur_ep     = _current_expected_episode(r, today)
+
+        if cur_ep is None:
+            week_label = '?'
+        elif next_ep > cur_ep:
+            week_label = f"W{cur_ep} ✓"
+        else:
+            week_label = f"W{cur_ep} due"
+
+        thumb = _find_show_thumb(shows_dir, r['folder'], web_dir)
+
+        shows.append({
+            'show':        name,
+            'season':      season,
+            'downloaded':  downloaded,   # 0 = nothing yet
+            'next_ep':     next_ep,
+            'total':       total,
+            'week':        week_label,
+            'status':      r.get('status', 'pending'),
+            'release_days': r.get('release_days', ''),
+            'thumb':       thumb,
+        })
+
+    data = {
+        'updated': today.isoformat(),
+        'shows':   shows,
+    }
+    try:
+        with open(status_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+    except Exception as exc:
+        log.warning(f"Could not write status JSON: {exc}")
 
 
 if __name__ == '__main__':
