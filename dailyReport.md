@@ -2,17 +2,20 @@
 
 ## What to Watch — 2026-05-06
 
-> *Good evening! Here's what landed on Wednesday, May 06, 2026 at 09:00 PM.*
-> **YT Mirror:** 755.79 GB used · 1.55 TB free
+> *Good evening! Here's what landed on Wednesday, May 06, 2026 at 11:27 PM.*
+> **YT Mirror:** 756.18 GB used · 1.54 TB free
 
 ### Priority Videos
 
+- **Books of the Dead | Re:ZERO Season 4 Episode 5 Reaction/Analysis** — *Echidnut* · downloaded 11:22 PM · not podcastable
 - **Did anybody watch the Darth Maul show** — *Schaffrillas Productions* · downloaded 05:04 PM · podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **The X Button** — *Scott's Stash* · downloaded 11:26 PM · not podcastable
+- **Stop Teasing Us Valve** — *TechLinked* · downloaded 11:25 PM · podcastable
 - **Thank GOD we have bodycams..** — *Asmongold TV* · downloaded 03:07 PM · not podcastable
 - **Mosh Pits Are The Worst...** — *Papa Meat* · downloaded 03:06 PM · not podcastable
 - **Final Fantasy 7 Rebirth Switch 2/Xbox Series X|S Demo Tested - A Miracle Port for Switch 2?** — *Digital Foundry* · downloaded 11:47 AM · not podcastable
@@ -28,12 +31,6 @@
 - **Spring Anime 2026 In A Nutshell** — *Gigguk* · downloaded 07:04 AM · not podcastable
 
 ---
-
-
-## 🚨 VPN Not Active — Downloads Skipped
-
-**Could not reach geo-IP check — VPN status unknown, aborting for safety.**
-All downloads were skipped at 2026-05-06 21:00:08 to protect your real IP. Re-enable ProtonVPN and re-run the downloader.
 
 
 ---

@@ -580,6 +580,20 @@ UPDATED_AT=$(date '+%Y-%m-%d %H:%M')
 bash "$SCRIPT_DIR/mediaScan.sh" "$MEDIA_SCAN_OUT" 2>/dev/null || true
 MEDIA_SECTIONS_HTML=$(build_media_sections_html "$MEDIA_SCAN_OUT" "$JELLYFIN_APP_URLS" "$ABS_APP_URLS" "$STILL_APP_URLS" "$FINER_APP_URLS")
 
+# ── Build show-scheduler banner HTML ──────────────────────────────────────────
+SHOW_SCHED_HTML=""
+_sched_json="$SCRIPT_DIR/showSchedulerToday.json"
+_sched_date=""
+if [ -f "$_sched_json" ]; then
+  _sched_date=$(grep -o '"date":"[^"]*"' "$_sched_json" | head -1 | cut -d'"' -f4)
+fi
+if [ "$_sched_date" = "$TODAY" ] && [ -f "$_sched_json" ]; then
+  _sched_cards=$(python3 "$SCRIPT_DIR/showSchedulerCards.py" "$_sched_json" 2>/dev/null)
+  if [ -n "$_sched_cards" ]; then
+    SHOW_SCHED_HTML='<section class="msec sched-section"><div class="msec-head"><span class="msec-icon">📺</span><h3>New Episodes Today</h3></div><div class="mcards sched-cards">'"$_sched_cards"'</div></section>'
+  fi
+fi
+
 cat > "$HTML_OUT" <<HTML
 <!DOCTYPE html>
 <html lang="en">
@@ -726,6 +740,7 @@ ${MEDIA_CSS}
       </div>
     </header>
 
+    ${SHOW_SCHED_HTML}
     ${MEDIA_SECTIONS_HTML}
 
     <section class="controls" id="feedControls">

@@ -1,0 +1,694 @@
+#!/usr/bin/env python3
+"""
+showSchedulerSearch.py — Hourly show episode hunter.
+
+Reads showSchedule.csv and searches Nyaa.si (anime) or ThePirateBay (live
+action) for new episodes. Applies quality filters (1080p+, English, 10+
+seeds) and an algorithmic score to pick the best release, then downloads
+via aria2c and sends a OneSignal push notification.
+
+Run via cron (installed by showScheduler.sh):
+  0 * * * * python3 /path/to/showSchedulerSearch.py
+
+Manual usage:
+  python3 showSchedulerSearch.py                   # normal run
+  python3 showSchedulerSearch.py --dry-run         # search, no download
+  python3 showSchedulerSearch.py --show "Re Zero"  # target one show
+  python3 showSchedulerSearch.py --force           # ignore search window
+  python3 showSchedulerSearch.py --list            # print schedule
+"""
+
+import argparse
+import csv
+import datetime
+import html as html_mod
+import json
+import logging
+import os
+import re
+import subprocess
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+from typing import Dict, List, Optional, Tuple
+
+# ── Paths ──────────────────────────────────────────────────────────────────────
+
+SCRIPT_DIR    = os.path.dirname(os.path.realpath(__file__))
+SCHEDULE_CSV  = os.path.join(SCRIPT_DIR, "showSchedule.csv")
+SECRETS_FILE  = os.path.join(SCRIPT_DIR, "secrets.md")
+LOCATIONS_FILE = os.path.join(SCRIPT_DIR, "locations.md")
+LOG_FILE      = os.path.join(SCRIPT_DIR, "showScheduler.log")
+
+# ── Constants ──────────────────────────────────────────────────────────────────
+
+ONESIGNAL_APP_ID  = "c88ae5a3-36df-4301-945f-9da65e63d87c"
+ONESIGNAL_API_URL = "https://onesignal.com/api/v1/notifications"
+REPORT_URL        = "https://report.fernhw.com"
+
+MIN_SEEDS    = 10
+SEARCH_DAYS  = 4   # days to keep searching after release day before marking missed
+
+DAY_MAP   = {'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3, 'fri': 4, 'sat': 5, 'sun': 6}
+
+CSV_FIELDS = [
+    'show_name', 'search_name', 'folder', 'type', 'season', 'next_episode',
+    'total_episodes', 'release_days', 'status',
+    'search_start', 'search_end', 'last_check', 'week_anchor', 'last_downloaded_week',
+]
+
+HEADERS = {
+    'User-Agent': (
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
+        'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+    ),
+    'Accept': 'text/html,application/xhtml+xml,*/*',
+    'Accept-Language': 'en-US,en;q=0.9',
+}
+
+# ── Logging ────────────────────────────────────────────────────────────────────
+
+logging.basicConfig(
+    filename=LOG_FILE,
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)-7s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
+log = logging.getLogger(__name__)
+
+# Also print INFO+ to stdout so cron logs and manual runs both get output
+_con = logging.StreamHandler(sys.stdout)
+_con.setLevel(logging.INFO)
+_con.setFormatter(logging.Formatter('%(levelname)-7s %(message)s'))
+log.addHandler(_con)
+
+# ── Locations ──────────────────────────────────────────────────────────────────
+
+def load_locations() -> Dict[str, str]:
+    locs = {}
+    try:
+        with open(LOCATIONS_FILE) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    k, _, v = line.partition('=')
+                    locs[k.strip()] = v.strip()
+    except FileNotFoundError:
+        log.warning("locations.md not found — using defaults")
+    return locs
+
+# ── OneSignal ──────────────────────────────────────────────────────────────────
+
+def _read_onesignal_key() -> Optional[str]:
+    """Reconstruct the obfuscated OneSignal REST key from secrets.md."""
+    chars: dict[int, str] = {}
+    try:
+        with open(SECRETS_FILE) as f:
+            for line in f:
+                m = re.match(r'^K(\d+)="(.)"', line.rstrip())
+                if m:
+                    chars[int(m.group(1))] = m.group(2)
+    except FileNotFoundError:
+        return None
+    return ''.join(v for k, v in sorted(chars.items())) if chars else None
+
+
+def onesignal_push(heading: str, body: str) -> None:
+    key = _read_onesignal_key()
+    if not key:
+        log.warning("OneSignal key missing — push skipped")
+        return
+    payload = json.dumps({
+        "app_id":            ONESIGNAL_APP_ID,
+        "included_segments": ["All"],
+        "headings":          {"en": heading},
+        "contents":          {"en": body},
+        "url":               REPORT_URL,
+    }).encode()
+    req = urllib.request.Request(
+        ONESIGNAL_API_URL,
+        data=payload,
+        headers={
+            "Authorization":  f"Basic {key}",
+            "Content-Type":   "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10):
+            log.info(f"  Push sent: {heading}")
+    except Exception as exc:
+        log.warning(f"  Push failed: {exc}")
+
+# ── CSV helpers ────────────────────────────────────────────────────────────────
+
+def read_schedule() -> List[Dict]:
+    if not os.path.exists(SCHEDULE_CSV):
+        return []
+    with open(SCHEDULE_CSV, newline='', encoding='utf-8') as f:
+        rows = list(csv.DictReader(f))
+    # Back-fill search_name for rows added before this field existed
+    for r in rows:
+        if not r.get('search_name', '').strip():
+            r['search_name'] = r['show_name'].lower().strip()
+    return rows
+
+
+def write_schedule(rows: List[Dict]) -> None:
+    with open(SCHEDULE_CSV, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=CSV_FIELDS, extrasaction='ignore')
+        writer.writeheader()
+        writer.writerows(rows)
+
+# ── Day / window helpers ───────────────────────────────────────────────────────
+
+def _parse_days(days_str: str) -> List[int]:
+    result = []
+    for d in days_str.lower().split(','):
+        d = d.strip()
+        if d in DAY_MAP:
+            result.append(DAY_MAP[d])
+    return result
+
+
+def _monday_of_week(d: datetime.date) -> datetime.date:
+    """Return the Monday of the week containing d."""
+    return d - datetime.timedelta(days=d.weekday())
+
+
+def _relative_week(today: datetime.date, anchor_str: str) -> Optional[int]:
+    """
+    Weeks elapsed since anchor Monday (0 = anchor week, 1 = next week, …).
+    Returns None if anchor_str is empty or unparseable.
+    """
+    if not anchor_str:
+        return None
+    try:
+        anchor_monday = _monday_of_week(datetime.date.fromisoformat(anchor_str))
+        current_monday = _monday_of_week(today)
+        delta = (current_monday - anchor_monday).days
+        return delta // 7 if delta >= 0 else None
+    except ValueError:
+        return None
+
+
+def check_window(row: Dict, today: Optional[datetime.date] = None) -> Tuple[bool, bool]:
+    """
+    Returns (in_window, open_new_window).
+    in_window       — True if we should search right now.
+    open_new_window — True if search_start/search_end must be set to today.
+    """
+    if today is None:
+        today = datetime.date.today()
+
+    release_days = _parse_days(row.get('release_days', ''))
+    if not release_days:
+        return False, False
+
+    # If an active window is stored, honour it
+    start_s = row.get('search_start', '').strip()
+    end_s   = row.get('search_end',   '').strip()
+    if start_s and end_s:
+        try:
+            w_start = datetime.date.fromisoformat(start_s)
+            w_end   = datetime.date.fromisoformat(end_s)
+            if w_start <= today <= w_end:
+                return True, False
+            if today > w_end:
+                return False, False   # window expired
+        except ValueError:
+            pass
+
+    # No active window — start one if today is a release day
+    if today.weekday() in release_days:
+        return True, True
+
+    return False, False
+
+# ── Quality filters & scoring ──────────────────────────────────────────────────
+
+# Explicit non-English markers — hard reject
+_NON_EN = [
+    'vostfr', '[fr]', '(fr)', 'french', 'german', 'deutsch',
+    'spanish', '[es]', '(es)', 'italian', '[it]', 'portuguese',
+    '[pt]', '[de]', '(de)', 'russian', '[ru]', 'arabic', '[ar]',
+]
+# Explicit English markers — fast accept
+_EN_MARKERS = [
+    'english', ' en ', '[en]', '(en)', '[en-us]', '[en-gb]',
+    'dual audio', 'multi sub', 'multi-sub', 'dubbed', '[dub]',
+]
+
+
+def _has_english(title: str, show_type: str, nyaa_en_cat: bool = False) -> bool:
+    """
+    For anime  : reject explicit non-English; accept explicit EN or Nyaa cat 1_2.
+    For live   : always True (search on TPB already in English shows category).
+    """
+    if show_type != 'anime':
+        return True
+    t = title.lower()
+    for pat in _NON_EN:
+        if pat in t:
+            return False
+    for pat in _EN_MARKERS:
+        if pat in t:
+            return True
+    # Trust Nyaa English-Translated category if no explicit marker either way
+    return nyaa_en_cat
+
+
+def _has_min_res(title: str) -> bool:
+    t = title.lower()
+    return '1080p' in t or '2160p' in t or '4k' in t or '1080i' in t
+
+
+def score_torrent(title: str, seeds: int, show_type: str,
+                  nyaa_en_cat: bool = False) -> Optional[float]:
+    """
+    Score a candidate torrent.  Returns None if below minimum requirements.
+    Higher score = better pick.
+    """
+    if seeds < MIN_SEEDS:
+        return None
+    if not _has_min_res(title):
+        return None
+    if not _has_english(title, show_type, nyaa_en_cat):
+        return None
+
+    t = title.lower()
+    score = min(seeds, 500) * 0.3   # seeds → up to 150 pts
+
+    # ── Resolution ──────────────────────────────────────────────────────────
+    if '2160p' in t or '4k' in t:
+        score += 80
+    elif '1080p' in t or '1080i' in t:
+        score += 50
+
+    # ── Source ──────────────────────────────────────────────────────────────
+    if 'bluray' in t or 'bdrip' in t or 'bd ' in t or 'bd.' in t:
+        score += 40
+    elif 'web-dl' in t or 'webdl' in t:
+        score += 30
+    elif 'webrip' in t:
+        score += 20
+    elif any(s in t for s in ('crunchyroll', 'amzn', ' nf ', 'hidive', 'cr.')):
+        score += 15
+
+    # ── Video codec (x265/HEVC = better efficiency, usually better encode) ──
+    if any(c in t for c in ('x265', 'hevc', 'h.265', 'h265')):
+        score += 15
+
+    # ── Audio ────────────────────────────────────────────────────────────────
+    if 'flac' in t:
+        score += 10
+    elif any(a in t for a in ('ddp', 'eac3', 'dts', 'dd5.1', 'atmos')):
+        score += 5
+
+    # ── 10-bit encode quality bonus ──────────────────────────────────────────
+    if '10bit' in t or '10-bit' in t or 'hi10p' in t:
+        score += 5
+
+    return score
+
+# ── Nyaa.si scraper ────────────────────────────────────────────────────────────
+
+def _fetch(url: str, timeout: int = 20) -> Optional[str]:
+    req = urllib.request.Request(url, headers=HEADERS)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.read().decode('utf-8', errors='replace')
+    except urllib.error.HTTPError as exc:
+        log.warning(f"HTTP {exc.code} fetching {url}")
+    except Exception as exc:
+        log.warning(f"Fetch error {url}: {exc}")
+    return None
+
+
+def _parse_nyaa_html(body: str) -> List[Dict]:
+    """
+    Extract torrent entries from a Nyaa.si search results page.
+
+    Table layout (column indices within each <tr>):
+      0 — category icon
+      1 — title  (colspan=2, still one <td> tag, contains /view/ link)
+      2 — download links  (torrent file + magnet link)
+      3 — size
+      4 — date
+      5 — seeders
+      6 — leechers
+      7 — completed
+    """
+    results = []
+    row_re = re.compile(
+        r'<tr\s+class="(?:success|default|warning|danger)"[^>]*>(.*?)</tr>',
+        re.DOTALL | re.IGNORECASE,
+    )
+    td_re = re.compile(r'<td[^>]*>(.*?)</td>', re.DOTALL)
+
+    for row_m in row_re.finditer(body):
+        row_html = row_m.group(1)
+        tds = td_re.findall(row_html)
+        if len(tds) < 7:
+            continue
+
+        # Title: the <a href="/view/NNN"> inside td[1]
+        title_td = tds[1]
+        title_links = re.findall(
+            r'href="/view/\d+"[^>]*>([^<]+)</a>', title_td
+        )
+        title = html_mod.unescape(title_links[-1].strip()) if title_links else ''
+
+        # Magnet: inside td[2]
+        dl_td = tds[2]
+        mag_m = re.search(r'href="(magnet:\?[^"]+)"', dl_td)
+        magnet = html_mod.unescape(mag_m.group(1)) if mag_m else ''
+
+        # Seeders: td[5], may be wrapped in <b>
+        seeds_raw = re.sub(r'<[^>]+>', '', tds[5]).strip()
+        try:
+            seeds = int(seeds_raw)
+        except ValueError:
+            seeds = 0
+
+        if title and magnet:
+            results.append({'title': title, 'magnet': magnet, 'seeds': seeds})
+
+    return results
+
+
+def search_nyaa(search_name: str, season: int, episode: int) -> List[Dict]:
+    """Search Nyaa.si (category 1_2 = Anime English Translated)."""
+    query = f"{search_name} S{season:02d}E{episode:02d}"
+    url = (
+        f"https://nyaa.si/?f=0&c=1_2"
+        f"&q={urllib.parse.quote(query)}"
+        f"&s=seeders&o=desc"
+    )
+    log.info(f"  Nyaa query: {query}")
+    body = _fetch(url)
+    if not body:
+        return []
+    results = _parse_nyaa_html(body)
+    log.info(f"  Nyaa → {len(results)} raw results")
+    return results
+
+# ── ThePirateBay (apibay.org JSON API) ────────────────────────────────────────
+
+_TPB_TRACKERS = [
+    'udp://tracker.opentrackr.org:1337/announce',
+    'udp://open.tracker.cl:1337/announce',
+    'udp://tracker.openbittorrent.com:6969/announce',
+    'udp://exodus.desync.com:6969/announce',
+]
+
+
+def search_tpb(search_name: str, season: int, episode: int) -> List[Dict]:
+    """Search ThePirateBay via apibay.org (no category filter = broadest results)."""
+    query = f"{search_name} S{season:02d}E{episode:02d}"
+    url = f"https://apibay.org/q.php?q={urllib.parse.quote(query)}"
+    log.info(f"  TPB query: {query}")
+    body = _fetch(url)
+    if not body:
+        return []
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        log.warning("  TPB: invalid JSON response")
+        return []
+
+    results = []
+    tr_str = '&tr='.join(urllib.parse.quote(t, safe='') for t in _TPB_TRACKERS)
+    for item in data:
+        name = item.get('name', '')
+        if not name or name == 'No results returned':
+            continue
+        info_hash = item.get('info_hash', '').lower()
+        if not info_hash:
+            continue
+        seeds = int(item.get('seeders', 0))
+        magnet = (
+            f"magnet:?xt=urn:btih:{info_hash}"
+            f"&dn={urllib.parse.quote(name)}"
+            f"&tr={tr_str}"
+        )
+        results.append({'title': name, 'magnet': magnet, 'seeds': seeds})
+
+    log.info(f"  TPB → {len(results)} raw results")
+    return results
+
+# ── Download ───────────────────────────────────────────────────────────────────
+
+def download_torrent(magnet: str, dest_dir: str, dry_run: bool = False) -> bool:
+    """
+    Call aria2c, mirroring download.sh's exact flags.
+    Returns True on success.
+    """
+    if dry_run:
+        log.info(f"  [DRY-RUN] → {dest_dir}")
+        return True
+
+    os.makedirs(dest_dir, exist_ok=True)
+    cmd = [
+        'aria2c',
+        '--seed-time=0',
+        f'--dir={dest_dir}',
+        '--summary-interval=30',
+        '--console-log-level=notice',
+        '--file-allocation=falloc',
+        magnet,
+    ]
+    log.info(f"  aria2c → {dest_dir}")
+    try:
+        result = subprocess.run(cmd, timeout=7200)   # 2-hour hard cap
+        return result.returncode == 0
+    except FileNotFoundError:
+        log.error("  aria2c not found — install with: brew install aria2")
+        return False
+    except subprocess.TimeoutExpired:
+        log.error("  aria2c timed out after 2 hours")
+        return False
+
+# ── Show report (daily web banner) ────────────────────────────────────────────
+
+def _update_show_report(row: Dict, season: int, episode: int,
+                        total: int, torrent_title: str) -> None:
+    """Call showSchedulerReport.sh to append this episode to today's JSON."""
+    report_sh = os.path.join(SCRIPT_DIR, 'showSchedulerReport.sh')
+    if not os.path.exists(report_sh):
+        log.warning("showSchedulerReport.sh not found — skipping report update")
+        return
+    try:
+        subprocess.run(
+            ['sh', report_sh,
+             row['show_name'], row['folder'],
+             str(season), str(episode), str(total),
+             torrent_title],
+            timeout=10,
+        )
+    except Exception as exc:
+        log.warning(f"  show report update failed: {exc}")
+
+# ── Core processing ────────────────────────────────────────────────────────────
+
+def process_show(row: dict, locations: dict,
+                 dry_run: bool = False,
+                 force: bool = False) -> dict:
+    """
+    Evaluate one schedule row and, if appropriate, search → score → download.
+    Returns the (possibly mutated) row dict.
+    """
+    today       = datetime.date.today()
+    show_name   = row['show_name']
+    # search_name: clean lowercase query term, auto-derived if missing
+    search_name = row.get('search_name', '').strip() or show_name.lower()
+    season      = int(row['season'])
+    episode     = int(row['next_episode'])
+    total       = int(row['total_episodes'])
+    show_type   = row.get('type', 'anime').lower()
+    status      = row.get('status', 'pending').strip()
+    shows_dir   = locations.get('SHOWS_DIR', '/Volumes/Jellyfin/Shows')
+    dest        = os.path.join(shows_dir, row['folder'])
+    label       = f"{show_name} S{season:02d}E{episode:02d}"
+
+    row['last_check'] = today.isoformat()
+
+    # Terminal states
+    if status == 'complete':
+        return row
+    if status == 'missed' and not force:
+        return row
+
+    # Hard dedup — not overridable by --force or --dry-run.
+    # If we already downloaded an episode this calendar week, wait until next week.
+    last_dl_s = row.get('last_downloaded_week', '').strip()
+    if last_dl_s:
+        try:
+            if _monday_of_week(today) == datetime.date.fromisoformat(last_dl_s):
+                rel = _relative_week(today, row.get('week_anchor', ''))
+                rel_s = f"W{rel}" if rel is not None else last_dl_s
+                log.info(f"  {show_name}: already downloaded this week ({rel_s}) — wait for next week")
+                return row
+        except ValueError:
+            pass
+
+    # Window check
+    in_window, open_window = check_window(row, today)
+    if not in_window and not force:
+        log.info(f"  {show_name}: not in search window — skip")
+        return row
+
+    # Open a new search window on the release day
+    if open_window:
+        row['search_start'] = today.isoformat()
+        row['search_end']   = (today + datetime.timedelta(days=SEARCH_DAYS)).isoformat()
+        row['status']       = 'searching'
+        log.info(f"  {show_name}: search window {row['search_start']} → {row['search_end']}")
+    elif status == 'missed' and force:
+        row['status'] = 'searching'
+
+    # ── Search ──────────────────────────────────────────────────────────────
+    log.info(f"Searching: {label}")
+    candidates: List[Tuple[float, Dict]] = []
+
+    if show_type == 'anime':
+        for r in search_nyaa(search_name, season, episode):
+            s = score_torrent(r['title'], r['seeds'], show_type, nyaa_en_cat=True)
+            if s is not None:
+                candidates.append((s, r))
+
+    # TPB: primary source for live action, fallback for anime when Nyaa dry
+    if show_type == 'live' or not candidates:
+        for r in search_tpb(search_name, season, episode):
+            s = score_torrent(r['title'], r['seeds'], show_type)
+            if s is not None:
+                candidates.append((s, r))
+
+    if not candidates:
+        log.info(f"  {label}: no qualifying results (1080p + English + {MIN_SEEDS}+ seeds)")
+
+        # Check window expiry
+        end_s = row.get('search_end', '').strip()
+        if end_s:
+            try:
+                if today > datetime.date.fromisoformat(end_s):
+                    row['status'] = 'missed'
+                    log.warning(f"  {label}: search window expired → missed")
+                    onesignal_push(
+                        f"⚠ {show_name} not found",
+                        f"{label} — no result after {SEARCH_DAYS} days. Check manually.",
+                    )
+            except ValueError:
+                pass
+        return row
+
+    # ── Pick best ───────────────────────────────────────────────────────────
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    best_score, best = candidates[0]
+    log.info(
+        f"  Best: {best['title'][:80]}"
+        f" | score={best_score:.0f} seeds={best['seeds']}"
+    )
+
+    # ── Download ─────────────────────────────────────────────────────────────
+    ok = download_torrent(best['magnet'], dest, dry_run=dry_run)
+
+    if ok:
+        log.info(f"  {label}: downloaded ✓")
+        # Record the Monday of this week so the dedup blocks same-week re-searches
+        row['last_downloaded_week'] = _monday_of_week(today).isoformat()
+        # Update daily show report for the web page (skip in dry-run)
+        if not dry_run:
+            _update_show_report(row, season, episode, total, best['title'])
+        onesignal_push(
+            f"📺 {show_name}",
+            f"S{season:02d}E{episode:02d} downloaded → {row['folder']}",
+        )
+        if episode >= total:
+            row['status']       = 'complete'
+            row['search_start'] = ''
+            row['search_end']   = ''
+            log.info(f"  {show_name}: all {total} episodes done")
+            onesignal_push(
+                f"✅ {show_name} — Season {season} complete",
+                f"All {total} episodes downloaded.",
+            )
+        else:
+            row['next_episode'] = str(episode + 1)
+            row['status']       = 'pending'
+            row['search_start'] = ''
+            row['search_end']   = ''
+            log.info(f"  {show_name}: next → S{season:02d}E{episode + 1:02d}")
+    else:
+        log.error(f"  {label}: download failed")
+
+    return row
+
+# ── CLI ────────────────────────────────────────────────────────────────────────
+
+def main() -> None:
+    ap = argparse.ArgumentParser(
+        description="Show episode scheduler — hourly torrent hunter",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__,
+    )
+    ap.add_argument('--dry-run', action='store_true',
+                    help='Search but do not download or modify schedule')
+    ap.add_argument('--show',    metavar='NAME',
+                    help='Restrict to shows whose name contains NAME')
+    ap.add_argument('--force',   action='store_true',
+                    help='Search even if outside the release window')
+    ap.add_argument('--list',    action='store_true',
+                    help='Print the current schedule and exit')
+    args = ap.parse_args()
+
+    rows = read_schedule()
+    if not rows:
+        log.info("Schedule is empty — add shows with showScheduler.sh")
+        return
+
+    if args.list:
+        today_ld = datetime.date.today()
+        print(f"\n{'SHOW':<22} {'SEARCH':<18} {'EP':<10} {'DAYS':<5} {'TYPE':<6} {'REL.WK':<7} STATUS")
+        print("─" * 80)
+        for r in rows:
+            ep_label = f"S{int(r['season']):02d}E{r['next_episode']}/{r['total_episodes']}"
+            anchor   = r.get('week_anchor', '').strip()
+            rel      = _relative_week(today_ld, anchor)
+            rel_s    = f"W{rel}" if rel is not None else '?'
+            dl_s     = r.get('last_downloaded_week', '') or '-'
+            print(f"{r['show_name']:<22} {r.get('search_name',''):<18} {ep_label:<10} "
+                  f"{r['release_days']:<5} {r['type']:<6} {rel_s:<7} {r['status']}  "
+                  f"[last dl: {dl_s}]")
+        print()
+        return
+
+    if args.dry_run:
+        log.info("=== DRY-RUN mode — no downloads or CSV writes ===")
+
+    locations = load_locations()
+    updated   = []
+
+    for row in rows:
+        if args.show and args.show.lower() not in row['show_name'].lower():
+            updated.append(row)
+            continue
+        updated.append(process_show(row, locations,
+                                    dry_run=args.dry_run,
+                                    force=args.force))
+
+    if not args.dry_run:
+        write_schedule(updated)
+
+    # Summary
+    by_status: Dict[str, int] = {}
+    for r in updated:
+        s = r.get('status', 'unknown')
+        by_status[s] = by_status.get(s, 0) + 1
+    parts = ', '.join(f"{v} {k}" for k, v in sorted(by_status.items()))
+    log.info(f"Run complete — {parts}")
+
+
+if __name__ == '__main__':
+    main()

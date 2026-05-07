@@ -25,6 +25,13 @@ MEDIA_CSS=$(cat <<'MEDIA_CSS_EOF'
     #ptr{position:fixed;top:env(safe-area-inset-top);left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:center;height:0;overflow:hidden;background:rgba(12,15,19,.9);transition:height .2s}
     #ptr.ready{border-bottom:1px solid rgba(255,255,255,.08)}
     #ptr-label{color:#c2a365;font:600 .72rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+    .sched-section{background:linear-gradient(135deg,rgba(194,163,101,.08) 0%,rgba(14,18,23,.5) 60%);border-color:rgba(194,163,101,.18)}
+    .sched-section .msec-icon{opacity:1}
+    .sched-section .msec-head h3{color:#c2a365}
+    .sched-cards .mcard{width:80px;flex:0 0 80px;height:148px;border-color:rgba(194,163,101,.15)}
+    .sched-cards .mcard:active{border-color:#c2a365}
+    .sched-cards .mcard-title{color:#d4c4a0}
+    .sched-cards .mcard-sub{color:#c2a365;font-weight:700}
 MEDIA_CSS_EOF
 )
 

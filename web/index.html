@@ -138,6 +138,13 @@
     #ptr{position:fixed;top:env(safe-area-inset-top);left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:center;height:0;overflow:hidden;background:rgba(12,15,19,.9);transition:height .2s}
     #ptr.ready{border-bottom:1px solid rgba(255,255,255,.08)}
     #ptr-label{color:#c2a365;font:600 .72rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.1em;text-transform:uppercase}
+    .sched-section{background:linear-gradient(135deg,rgba(194,163,101,.08) 0%,rgba(14,18,23,.5) 60%);border-color:rgba(194,163,101,.18)}
+    .sched-section .msec-icon{opacity:1}
+    .sched-section .msec-head h3{color:#c2a365}
+    .sched-cards .mcard{width:80px;flex:0 0 80px;height:148px;border-color:rgba(194,163,101,.15)}
+    .sched-cards .mcard:active{border-color:#c2a365}
+    .sched-cards .mcard-title{color:#d4c4a0}
+    .sched-cards .mcard-sub{color:#c2a365;font-weight:700}
   </style>
 </head>
 <body>
@@ -163,19 +170,29 @@
     </header>
 
     
+    <div class="media-bar"><span class="media-bar-label">&#9654;&#xFE0E; Library</span><span class="media-bar-note">last 30 hours</span></div><div class="media-scroll"><div class="media-secondary"><section class="msec"><div class="msec-head"><span class="msec-icon">&#9654;</span><h3>Shows</h3></div><div class="mcards"><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/show-fle-re-zero-starting-life-in-another-world-s03-web-1080p-h-264-e-ac-3-dual-audio.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9654;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">[FLE] Re ZERO Starting Life in Another World - S03 (WEB 1080p H 264 E-AC-3) [Dual Audio]</div><div class="mcard-sub">New Show · S04E05</div></div></a></div></section></div></div>
 
     <section class="controls" id="feedControls">
       <input id="feedFilter" class="filter-input" type="search" placeholder="Search title or channel..." autocomplete="off" spellcheck="false">
       <button class="filter-chip active" type="button" data-filter-bucket="all">All</button>
       <button class="filter-chip" type="button" data-filter-bucket="priority">Priority</button>
       <button class="filter-chip" type="button" data-filter-bucket="nonpriority">Non-Priority</button>
-      <div class="filter-status" id="filterStatus">Showing all 61 videos.</div>
+      <div class="filter-status" id="filterStatus">Showing all 64 videos.</div>
     </section>
 
     <div id="filterResults"><div class="cards" id="filterCards"></div></div>
 
     <main id="feedMain">
-      <section class="day-section"><div class="day-header"><h2>Today <span>Wednesday, May 06</span></h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="did anybody watch the darth maul show schaffrillas productions" data-bucket="priority" aria-label="Open in Jellyfin or AudioBooth: Did anybody watch the Darth Maul show">
+      <section class="day-section"><div class="day-header"><h2>Today <span>Wednesday, May 06</span></h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="books of the dead | re:zero season 4 episode 5 reaction/analysis echidnut" data-bucket="priority" aria-label="Open in Jellyfin: Books of the Dead | Re:ZERO Season 4 Episode 5 Reaction/Analysis">
+  <article class="card priority">
+    <img src="thumbs/echidnut.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Books of the Dead | Re:ZERO Season 4 Episode 5 Reaction/Analysis</div>
+      <div class="meta-row">Echidnut <span>&middot;</span> May 07, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="did anybody watch the darth maul show schaffrillas productions" data-bucket="priority" aria-label="Open in Jellyfin or AudioBooth: Did anybody watch the Darth Maul show">
   <article class="card priority podcast">
     <img src="thumbs/schaffrillasproductions.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -183,7 +200,16 @@
       <div class="meta-row">Schaffrillas Productions <span>&middot;</span> May 06, 2026 <span class="pod-cap">&clubsuit; podcast</span></div>
     </div>
   </article>
-</a></div></section><section class="category"><h3>Podcasts</h3><div class="cards"><a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="aphelion | fully ramblomatic second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Aphelion | Fully Ramblomatic">
+</a></div></section><section class="category"><h3>Podcasts</h3><div class="cards"><a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="stop teasing us valve techlinked" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Stop Teasing Us Valve">
+  <article class="card podcast">
+    <img src="thumbs/techlinked.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Stop Teasing Us Valve</div>
+      <div class="meta-row">TechLinked <span>&middot;</span> May 07, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="aphelion | fully ramblomatic second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: Aphelion | Fully Ramblomatic">
   <article class="card podcast">
     <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -218,7 +244,16 @@
       <div class="meta-row">TechDweeb <span>&middot;</span> May 06, 2026</div>
     </div>
   </article>
-</a></div></section><section class="category"><h3>Other Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="thank god we have bodycams.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Jellyfin: Thank GOD we have bodycams..">
+</a></div></section><section class="category"><h3>Other Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="the x button scott's stash" data-bucket="nonpriority" aria-label="Open in Jellyfin: The X Button">
+  <article class="card">
+    <img src="thumbs/scottsstash.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">The X Button</div>
+      <div class="meta-row">Scott's Stash <span>&middot;</span> May 07, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="thank god we have bodycams.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Jellyfin: Thank GOD we have bodycams..">
   <article class="card">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -724,10 +759,10 @@
     <section class="bottom-panel">
       <div class="bottom-head">
         <h2>Report details</h2>
-        <p>Good evening. 61 items from the last 4 days.</p>
+        <p>Good evening. 64 items from the last 4 days.</p>
       </div>
 
-      <div class="warn-stack"><div class="warn-banner vpn-warn"><strong>🚨 VPN NOT ACTIVE — downloads skipped</strong><span>Could not reach geo-IP check — VPN status unknown, aborting for safety. (at 2026-05-06 21:00:08)</span></div></div>
+      <div class="warn-stack"></div>
 
       <section class="summary-bar">
         <div class="summary-tile">
@@ -736,24 +771,24 @@
         </div>
         <div class="summary-tile">
           <strong>Updated</strong>
-          <span>2026-05-06 21:00</span>
+          <span>2026-05-06 23:27</span>
         </div>
         <div class="summary-tile">
           <strong>Today</strong>
-          <span>14 downloads on Wednesday</span>
+          <span>17 downloads on Wednesday</span>
         </div>
         <div class="summary-tile">
           <strong>Recent Downloads</strong>
-          <span>61 items across 4 days</span>
+          <span>64 items across 4 days</span>
         </div>
         <div class="summary-tile">
           <strong>Library Storage</strong>
-          <span>755.79 GB used &middot; 1.55 TB free</span>
+          <span>756.18 GB used &middot; 1.54 TB free</span>
         </div>
       </section>
     </section>
 
-    <footer>report.fernhw.com &middot; updated 2026-05-06 21:00</footer>
+    <footer>report.fernhw.com &middot; updated 2026-05-06 23:27</footer>
   </div>
 </div>
 
