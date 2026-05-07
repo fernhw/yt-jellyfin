@@ -600,7 +600,7 @@ _status_json="$SCRIPT_DIR/showSchedulerStatus.json"
 if [ -f "$_status_json" ]; then
   _tracker_rows=$(python3 "$SCRIPT_DIR/showSchedulerCards.py" status "$_status_json" 2>/dev/null)
   if [ -n "$_tracker_rows" ]; then
-    SHOW_TRACKER_HTML='<section class="msec tracker-section"><div class="msec-head"><span class="msec-icon">🗓</span><h3>Show Tracker</h3></div><div class="trk-scroll">'"$_tracker_rows"'</div></section>'
+    SHOW_TRACKER_HTML='<section class="tracker-section"><div class="trk-head"><span class="trk-head-icon">🗓</span><h3>Show Tracker</h3></div><div class="trk-scroll">'"$_tracker_rows"'</div></section>'
   fi
 fi
 

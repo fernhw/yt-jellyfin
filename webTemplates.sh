@@ -32,14 +32,16 @@ MEDIA_CSS=$(cat <<'MEDIA_CSS_EOF'
     .sched-cards .mcard:active{border-color:#c2a365}
     .sched-cards .mcard-title{color:#d4c4a0}
     .sched-cards .mcard-sub{color:#c2a365;font-weight:700}
-    .tracker-section{border-color:rgba(100,140,200,.18)}
-    .tracker-section .msec-head h3{color:#86b9d9}
-    .trk-scroll{display:flex;overflow-x:auto;gap:10px;padding:4px 0 12px;scrollbar-width:thin;scrollbar-color:#2a323b transparent}
-    .trk-scroll::-webkit-scrollbar{height:5px}
+    .tracker-section{background:linear-gradient(135deg,rgba(86,133,187,.07) 0%,rgba(14,18,23,.5) 60%);border:1px solid rgba(100,140,200,.22);border-radius:22px;padding:18px 20px 20px;box-shadow:0 4px 24px rgba(0,0,0,.18)}
+    .trk-head{display:flex;align-items:center;gap:6px;margin-bottom:14px}
+    .trk-head-icon{font-size:.9rem;opacity:.55;flex-shrink:0}
+    .trk-head h3{font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#86b9d9}
+    .trk-scroll{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:10px;padding:2px 0 8px;scrollbar-width:thin;scrollbar-color:#2a323b transparent}
+    .trk-scroll::-webkit-scrollbar{height:4px}
     .trk-scroll::-webkit-scrollbar-track{background:transparent}
-    .trk-scroll::-webkit-scrollbar-thumb{background:#2a323b;border-radius:3px}
-    .trk-card{flex-shrink:0;width:108px;display:flex;flex-direction:column;gap:5px}
-    .trk-poster{position:relative;width:108px;height:160px;border-radius:6px;overflow:hidden;background:#1d242b;flex-shrink:0}
+    .trk-scroll::-webkit-scrollbar-thumb{background:#2a323b;border-radius:2px}
+    .trk-card{flex:0 0 100px;display:flex;flex-direction:column;gap:5px}
+    .trk-poster{position:relative;width:100px;height:150px;border-radius:7px;overflow:hidden;background:#1d242b;flex-shrink:0}
     .trk-poster img{width:100%;height:100%;object-fit:cover;display:block}
     .trk-poster-blank{width:100%;height:100%;background:#1d242b}
     .trk-badge{position:absolute;top:6px;left:6px;font-size:.58rem;font-weight:800;letter-spacing:.04em;padding:2px 5px;border-radius:3px;text-transform:uppercase;line-height:1.4}

@@ -768,6 +768,17 @@ def _find_show_thumb(shows_dir: str, folder: str, web_dir: str) -> str:
     os.makedirs(thumbs_dir, exist_ok=True)
     dest = os.path.join(thumbs_dir, f"show-sched-{safe_key}.jpg")
     try:
+        from PIL import Image
+        with Image.open(src) as im:
+            im = im.convert('RGB')
+            # Resize to 200px wide (2× display size for retina), keep aspect ratio
+            w, h = im.size
+            new_w = 200
+            new_h = int(h * new_w / w)
+            im = im.resize((new_w, new_h), Image.LANCZOS)
+            im.save(dest, 'JPEG', quality=82, optimize=True)
+        return f"media-thumbs/show-sched-{safe_key}.jpg"
+    except ImportError:
         import shutil
         shutil.copy2(src, dest)
         return f"media-thumbs/show-sched-{safe_key}.jpg"
