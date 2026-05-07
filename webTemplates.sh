@@ -34,19 +34,25 @@ MEDIA_CSS=$(cat <<'MEDIA_CSS_EOF'
     .sched-cards .mcard-sub{color:#c2a365;font-weight:700}
     .tracker-section{border-color:rgba(100,140,200,.18)}
     .tracker-section .msec-head h3{color:#86b9d9}
-    .trk-list{display:flex;flex-direction:column;gap:10px;padding:4px 0}
-    .trk-row{display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px}
-    .trk-thumb{width:44px;height:62px;object-fit:cover;border-radius:4px;flex-shrink:0}
-    .trk-nothumb{width:44px;height:62px;background:#1d242b;border-radius:4px;flex-shrink:0}
-    .trk-info{flex:1;min-width:0}
-    .trk-name{font-size:.9rem;font-weight:600;color:#ecf2f8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .trk-eps{font-size:.75rem;color:#97a6b4;margin:.2rem 0 .4rem}
-    .trk-bar{height:4px;background:#2a323b;border-radius:2px;overflow:hidden}
-    .trk-fill{height:100%;background:#86b9d9;border-radius:2px;transition:width .3s}
-    .trk-week{text-align:right;font-size:.75rem;font-weight:700;line-height:1.4;white-space:nowrap;color:#627384;flex-shrink:0}
-    .trk-week.trk-done{color:#72c7a2}
-    .trk-week.trk-due{color:#c2a365}
-    .trk-days{font-size:.68rem;font-weight:400;color:#627384}
+    .trk-scroll{display:flex;overflow-x:auto;gap:10px;padding:4px 0 12px;scrollbar-width:thin;scrollbar-color:#2a323b transparent}
+    .trk-scroll::-webkit-scrollbar{height:5px}
+    .trk-scroll::-webkit-scrollbar-track{background:transparent}
+    .trk-scroll::-webkit-scrollbar-thumb{background:#2a323b;border-radius:3px}
+    .trk-card{flex-shrink:0;width:108px;display:flex;flex-direction:column;gap:5px}
+    .trk-poster{position:relative;width:108px;height:160px;border-radius:6px;overflow:hidden;background:#1d242b;flex-shrink:0}
+    .trk-poster img{width:100%;height:100%;object-fit:cover;display:block}
+    .trk-poster-blank{width:100%;height:100%;background:#1d242b}
+    .trk-badge{position:absolute;top:6px;left:6px;font-size:.58rem;font-weight:800;letter-spacing:.04em;padding:2px 5px;border-radius:3px;text-transform:uppercase;line-height:1.4}
+    .trk-badge-new{background:#72c7a2;color:#0d1117}
+    .trk-badge-final{background:#c2a365;color:#0d1117}
+    .trk-badge-done{background:#3a4450;color:#97a6b4}
+    .trk-card-name{font-size:.78rem;font-weight:600;color:#ecf2f8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .trk-card-eps{font-size:.68rem;color:#97a6b4}
+    .trk-bar{height:3px;background:#2a323b;border-radius:2px;overflow:hidden}
+    .trk-fill{height:100%;background:#86b9d9;border-radius:2px}
+    .trk-card-next{font-size:.66rem;color:#627384}
+    .trk-card-next.trk-next-today{color:#72c7a2;font-weight:700}
+    .trk-card-next.trk-next-soon{color:#c2a365}
 MEDIA_CSS_EOF
 )
 

@@ -175,6 +175,20 @@ def _parse_days(days_str: str) -> List[int]:
     return result
 
 
+def _days_until_release(release_days_str: str, today: datetime.date) -> Optional[int]:
+    """Days until next occurrence of any release day (0 = today)."""
+    days = _parse_days(release_days_str)
+    if not days:
+        return None
+    today_wd = today.weekday()
+    best: Optional[int] = None
+    for wd in days:
+        delta = (wd - today_wd) % 7
+        if best is None or delta < best:
+            best = delta
+    return best
+
+
 def _monday_of_week(d: datetime.date) -> datetime.date:
     """Return the Monday of the week containing d."""
     return d - datetime.timedelta(days=d.weekday())
@@ -789,6 +803,9 @@ def write_status_json(rows: List[Dict], locations: Dict[str, str]) -> None:
 
         thumb = _find_show_thumb(shows_dir, r['folder'], web_dir)
 
+        is_complete = downloaded >= total and total > 0
+        days_until  = _days_until_release(r.get('release_days', ''), today)
+
         shows.append({
             'show':        name,
             'season':      season,
@@ -798,6 +815,8 @@ def write_status_json(rows: List[Dict], locations: Dict[str, str]) -> None:
             'week':        week_label,
             'status':      r.get('status', 'pending'),
             'release_days': r.get('release_days', ''),
+            'days_until':  days_until,
+            'is_complete': is_complete,
             'thumb':       thumb,
         })
 
