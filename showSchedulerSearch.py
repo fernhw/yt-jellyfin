@@ -697,24 +697,25 @@ def main() -> None:
         log.info("=== DRY-RUN mode — no downloads or CSV writes ===")
 
     locations = load_locations()
-    updated   = []
+    # Work on a mutable copy so we can write incrementally
+    updated = list(rows)
 
-    for row in rows:
+    for i, row in enumerate(rows):
         if args.show and args.show.lower() not in row['show_name'].lower():
-            updated.append(row)
             continue
         # --back-ep: temporarily set next_episode for this pass only
         if args.back_ep is not None:
             row = dict(row)   # shallow copy — don't mutate original for other episodes
             row['next_episode'] = str(args.back_ep)
-        updated.append(process_show(row, locations,
-                                    dry_run=args.dry_run,
-                                    force=args.force))
+        new_row = process_show(row, locations,
+                               dry_run=args.dry_run,
+                               force=args.force)
+        updated[i] = new_row
+        # Write after every show so a crash / kill mid-run never loses progress.
+        # The search window opening and download state are both persisted immediately.
+        if not args.dry_run:
+            write_schedule(updated)
 
-    if not args.dry_run:
-        write_schedule(updated)
-
-    # Always refresh status JSON so the web report reflects current state
     if not args.dry_run:
         write_status_json(updated, locations)
 

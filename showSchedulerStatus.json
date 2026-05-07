@@ -15,10 +15,10 @@
     {
       "show": "The Boys",
       "season": 5,
-      "downloaded": 5,
-      "next_ep": 6,
+      "downloaded": 6,
+      "next_ep": 7,
       "total": 8,
-      "week": "W6 due",
+      "week": "W6 \u2713",
       "status": "pending",
       "release_days": "wed",
       "thumb": "media-thumbs/show-sched-the-boys.jpg"
@@ -26,10 +26,10 @@
     {
       "show": "Dorohedoro",
       "season": 2,
-      "downloaded": 7,
-      "next_ep": 8,
+      "downloaded": 8,
+      "next_ep": 9,
       "total": 11,
-      "week": "W8 due",
+      "week": "W8 \u2713",
       "status": "pending",
       "release_days": "wed",
       "thumb": "media-thumbs/show-sched-dorohedoro.jpg"

@@ -34,6 +34,72 @@ Channel_Name/
 | `rsync_jellyfin.sh` | Backs up Jellyfin data + music library |
 | `filterMusic.sh` | Moves audio files under 60s to a mirror folder (non-music cleanup) |
 | `generatePlaceholder.sh` | Generates placeholder videos for age-restricted/unavailable content |
+| `showScheduler.sh` | Interactive setup — register a new series to track and auto-download |
+| `showSchedulerSearch.py` | Hourly cron engine — searches Nyaa/TPB, downloads via aria2c, updates CSV |
+| `showSchedulerCards.py` | Renders HTML for the web report (today banner + persistent tracker) |
+| `showSchedulerReport.sh` | Called by reportMaker after downloads, appends to today's show JSON |
+| `showSchedule.csv` | State file — one row per tracked series (episode cursor, window, dedup anchor) |
+| `showSchedulerStatus.json` | Generated status snapshot — read by the web tracker |
+| `showSchedulerToday.json` | Today's downloaded episodes — cleared on day rollover |
+
+## Show Scheduler
+
+Tracks weekly TV shows and anime. Searches Nyaa (anime) and TPB (live action) on release day, scores by seeders and resolution, downloads the best match via aria2c, and sends a push notification.
+
+### Register a new series
+
+```sh
+showScheduler
+# Interactive prompts: show name, search name, type (anime/live), season, episode, total, release day
+# Example session:
+#   Show name:    The Boys
+#   Search name:  the boys          ← auto-derived, used for torrent queries
+#   Type:         live
+#   Season:       5
+#   Episode:      6                 ← next episode to download
+#   Total:        8
+#   Release day:  wed
+#   Backfill?     y                 ← downloads eps 1–5 immediately if you're behind
+
+# Non-interactive (all params):
+showScheduler --name "Re Zero" --type anime --season 4 --episode 6 --total 13 --days wed
+showScheduler --name "Re Zero" --type anime --season 4 --episode 6 --total 13 --days wed --search-name "rezero starting"
+```
+
+### Search / download commands
+
+```sh
+# What the cron runs every hour — searches all shows with open windows
+python3 showSchedulerSearch.py
+
+# Same but never writes to disk or CSV (safe to test)
+python3 showSchedulerSearch.py --dry-run
+
+# Show table of all tracked series + current episode/week status
+python3 showSchedulerSearch.py --list
+
+# Force-search one specific show right now (bypasses window/day check)
+python3 showSchedulerSearch.py --show "The Boys" --force
+
+# Force-search + dry-run (preview what it would pick)
+python3 showSchedulerSearch.py --show "The Boys" --force --dry-run
+
+# Download a specific back-episode without advancing the episode counter
+python3 showSchedulerSearch.py --show "Re Zero" --force --back-ep 3
+
+# Backfill episodes 1–5 of a show (non-interactive)
+for ep in 1 2 3 4 5; do
+  python3 showSchedulerSearch.py --show "Re Zero" --force --back-ep $ep
+done
+```
+
+### How it works
+
+- Cron runs `python3 showSchedulerSearch.py` hourly
+- On the show's release day, a 5-day search window opens
+- Each hour it searches until a qualifying result is found (1080p+ / 10+ seeds)
+- After download: episode counter advances, window closes
+- Dedup anchor (`anchor_episode` + `week_anchor`) prevents re-downloading the same week's episode even if you re-run manually
 
 ## Usage
 
@@ -44,7 +110,7 @@ Channel_Name/
 # Seed DB with existing videos (first run for new channels)
 ./downloadSubs.sh --init
 
-# Preview what would download
+# Preview what would download (no writes)
 ./downloadSubs.sh --dry-run
 
 # Only scrape channel artwork/metadata, no downloads
@@ -53,17 +119,18 @@ Channel_Name/
 # Regenerate all video thumbnails (safe to run alongside downloads)
 ./downloadSubs.sh --thumbs
 
-# Download a specific video (auto-detects channel, auto-scrapes if new)
+# Download a specific YouTube video (auto-detects channel, auto-scrapes if new)
 ./getyt.sh https://www.youtube.com/watch?v=VIDEO_ID
+./getyt.sh dQw4w9WgXcQ                          # by video ID only
 
-# Universal downloader
-download VIDEO_ID                           # YouTube by ID
-download https://www.youtube.com/watch?v=X  # YouTube by URL
-download s                                  # Show torrent (paste magnet, auto-match folder)
-download sf                                 # Full show torrent (paste magnet, dump in Shows/)
-download m                                  # Movie torrent (paste magnet)
-download sc                                 # Show torrent (pick folder interactively)
-download --help                             # Show all options
+# Universal downloader (symlinked to /usr/local/bin/download)
+download dQw4w9WgXcQ                            # YouTube by ID
+download https://www.youtube.com/watch?v=X      # YouTube by URL
+download s                                      # Show episode torrent — prompts for magnet, auto-matches folder by name
+download sf                                     # Full show torrent — dumps into Shows/ root
+download m                                      # Movie torrent — prompts for magnet, drops in Movies/
+download sc                                     # Show torrent — interactive folder picker
+download --help                                 # All options
 ```
 
 ## Video Thumbnails
