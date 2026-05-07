@@ -104,8 +104,9 @@ def render_status(data: dict) -> str:
             next_text = f'in {days_until} days'
             next_cls  = 'trk-card-next'
 
+        jf_urls = 'org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com'
         cards.append(
-            f'<div class="trk-card">'
+            f'<div class="trk-card" data-app-urls="{jf_urls}">'
             f'<div class="trk-poster">{poster_inner}{badge}</div>'
             f'<div class="trk-card-name" title="{show}">{show}</div>'
             f'<div class="trk-card-eps">{ep_text}</div>'

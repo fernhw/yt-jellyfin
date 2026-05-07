@@ -32,7 +32,7 @@ MEDIA_CSS=$(cat <<'MEDIA_CSS_EOF'
     .sched-cards .mcard:active{border-color:#c2a365}
     .sched-cards .mcard-title{color:#d4c4a0}
     .sched-cards .mcard-sub{color:#c2a365;font-weight:700}
-    .tracker-section{background:linear-gradient(135deg,rgba(86,133,187,.07) 0%,rgba(14,18,23,.5) 60%);border:1px solid rgba(100,140,200,.22);border-radius:22px;padding:18px 20px 20px;box-shadow:0 4px 24px rgba(0,0,0,.18)}
+    .tracker-section{background:linear-gradient(135deg,rgba(86,133,187,.07) 0%,rgba(14,18,23,.5) 60%);border:1px solid rgba(100,140,200,.22);border-radius:22px;padding:18px 20px 20px;box-shadow:0 4px 24px rgba(0,0,0,.18);margin-bottom:20px}
     .trk-head{display:flex;align-items:center;gap:6px;margin-bottom:14px}
     .trk-head-icon{font-size:.9rem;opacity:.55;flex-shrink:0}
     .trk-head h3{font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#86b9d9}
@@ -44,10 +44,10 @@ MEDIA_CSS=$(cat <<'MEDIA_CSS_EOF'
     .trk-poster{position:relative;width:100px;height:150px;border-radius:7px;overflow:hidden;background:#1d242b;flex-shrink:0}
     .trk-poster img{width:100%;height:100%;object-fit:cover;display:block}
     .trk-poster-blank{width:100%;height:100%;background:#1d242b}
-    .trk-badge{position:absolute;top:6px;left:6px;font-size:.58rem;font-weight:800;letter-spacing:.04em;padding:2px 5px;border-radius:3px;text-transform:uppercase;line-height:1.4}
-    .trk-badge-new{background:#72c7a2;color:#0d1117}
-    .trk-badge-final{background:#c2a365;color:#0d1117}
-    .trk-badge-done{background:#3a4450;color:#97a6b4}
+    .trk-badge{position:absolute;top:7px;left:7px;font-size:.6rem;font-weight:800;letter-spacing:.05em;padding:3px 8px;border-radius:999px;text-transform:uppercase;line-height:1.3;box-shadow:0 2px 8px rgba(0,0,0,.55)}
+    .trk-badge-new{background:#4ecb94;color:#021a0e}
+    .trk-badge-final{background:#d4a84b;color:#1a0d00}
+    .trk-badge-done{background:rgba(255,255,255,.09);color:#627384;border:1px solid rgba(255,255,255,.12)}
     .trk-card-name{font-size:.78rem;font-weight:600;color:#ecf2f8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .trk-card-eps{font-size:.68rem;color:#97a6b4}
     .trk-bar{height:3px;background:#2a323b;border-radius:2px;overflow:hidden}
@@ -55,6 +55,9 @@ MEDIA_CSS=$(cat <<'MEDIA_CSS_EOF'
     .trk-card-next{font-size:.66rem;color:#627384}
     .trk-card-next.trk-next-today{color:#72c7a2;font-weight:700}
     .trk-card-next.trk-next-soon{color:#c2a365}
+    .trk-card[data-app-urls]{cursor:pointer}
+    .trk-card[data-app-urls] .trk-poster{transition:opacity .15s}
+    .trk-card[data-app-urls]:active .trk-poster{opacity:.75}
 MEDIA_CSS_EOF
 )
 

@@ -145,7 +145,7 @@
     .sched-cards .mcard:active{border-color:#c2a365}
     .sched-cards .mcard-title{color:#d4c4a0}
     .sched-cards .mcard-sub{color:#c2a365;font-weight:700}
-    .tracker-section{background:linear-gradient(135deg,rgba(86,133,187,.07) 0%,rgba(14,18,23,.5) 60%);border:1px solid rgba(100,140,200,.22);border-radius:22px;padding:18px 20px 20px;box-shadow:0 4px 24px rgba(0,0,0,.18)}
+    .tracker-section{background:linear-gradient(135deg,rgba(86,133,187,.07) 0%,rgba(14,18,23,.5) 60%);border:1px solid rgba(100,140,200,.22);border-radius:22px;padding:18px 20px 20px;box-shadow:0 4px 24px rgba(0,0,0,.18);margin-bottom:20px}
     .trk-head{display:flex;align-items:center;gap:6px;margin-bottom:14px}
     .trk-head-icon{font-size:.9rem;opacity:.55;flex-shrink:0}
     .trk-head h3{font:600 .68rem/1.2 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#86b9d9}
@@ -157,10 +157,10 @@
     .trk-poster{position:relative;width:100px;height:150px;border-radius:7px;overflow:hidden;background:#1d242b;flex-shrink:0}
     .trk-poster img{width:100%;height:100%;object-fit:cover;display:block}
     .trk-poster-blank{width:100%;height:100%;background:#1d242b}
-    .trk-badge{position:absolute;top:6px;left:6px;font-size:.58rem;font-weight:800;letter-spacing:.04em;padding:2px 5px;border-radius:3px;text-transform:uppercase;line-height:1.4}
-    .trk-badge-new{background:#72c7a2;color:#0d1117}
-    .trk-badge-final{background:#c2a365;color:#0d1117}
-    .trk-badge-done{background:#3a4450;color:#97a6b4}
+    .trk-badge{position:absolute;top:7px;left:7px;font-size:.6rem;font-weight:800;letter-spacing:.05em;padding:3px 8px;border-radius:999px;text-transform:uppercase;line-height:1.3;box-shadow:0 2px 8px rgba(0,0,0,.55)}
+    .trk-badge-new{background:#4ecb94;color:#021a0e}
+    .trk-badge-final{background:#d4a84b;color:#1a0d00}
+    .trk-badge-done{background:rgba(255,255,255,.09);color:#627384;border:1px solid rgba(255,255,255,.12)}
     .trk-card-name{font-size:.78rem;font-weight:600;color:#ecf2f8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .trk-card-eps{font-size:.68rem;color:#97a6b4}
     .trk-bar{height:3px;background:#2a323b;border-radius:2px;overflow:hidden}
@@ -168,6 +168,9 @@
     .trk-card-next{font-size:.66rem;color:#627384}
     .trk-card-next.trk-next-today{color:#72c7a2;font-weight:700}
     .trk-card-next.trk-next-soon{color:#c2a365}
+    .trk-card[data-app-urls]{cursor:pointer}
+    .trk-card[data-app-urls] .trk-poster{transition:opacity .15s}
+    .trk-card[data-app-urls]:active .trk-poster{opacity:.75}
   </style>
 </head>
 <body>
@@ -193,7 +196,7 @@
     </header>
 
     
-    <section class="tracker-section"><div class="trk-head"><span class="trk-head-icon">🗓</span><h3>Show Tracker</h3></div><div class="trk-scroll"><div class="trk-card"><div class="trk-poster"><img src="media-thumbs/show-sched-fle-re-zero-starting-life-in-another-world-s03-web-1080p-h-264-e-ac-3-dual-audio.jpg" onerror="this.remove()" alt=""><span class="trk-badge trk-badge-new">new</span></div><div class="trk-card-name" title="Re Zero">Re Zero</div><div class="trk-card-eps">S04 &middot; 5/13</div><div class="trk-bar"><div class="trk-fill" style="width:38%"></div></div><div class="trk-card-next">in 6 days</div></div><div class="trk-card"><div class="trk-poster"><img src="media-thumbs/show-sched-the-boys.jpg" onerror="this.remove()" alt=""><span class="trk-badge trk-badge-new">new</span></div><div class="trk-card-name" title="The Boys">The Boys</div><div class="trk-card-eps">S05 &middot; 6/8</div><div class="trk-bar"><div class="trk-fill" style="width:75%"></div></div><div class="trk-card-next">in 6 days</div></div><div class="trk-card"><div class="trk-poster"><img src="media-thumbs/show-sched-dorohedoro.jpg" onerror="this.remove()" alt=""><span class="trk-badge trk-badge-new">new</span></div><div class="trk-card-name" title="Dorohedoro">Dorohedoro</div><div class="trk-card-eps">S02 &middot; 8/11</div><div class="trk-bar"><div class="trk-fill" style="width:72%"></div></div><div class="trk-card-next">in 6 days</div></div><div class="trk-card"><div class="trk-poster"><img src="media-thumbs/show-sched-mistress-kanan-is-devilishly-easy.jpg" onerror="this.remove()" alt=""></div><div class="trk-card-name" title="Kanan sama">Kanan sama</div><div class="trk-card-eps">S01 &middot; 5/12</div><div class="trk-bar"><div class="trk-fill" style="width:41%"></div></div><div class="trk-card-next">in 2 days</div></div><div class="trk-card"><div class="trk-poster"><img src="media-thumbs/show-sched-hat-witch-atelier.jpg" onerror="this.remove()" alt=""></div><div class="trk-card-name" title="Atelier of Witch Hat">Atelier of Witch Hat</div><div class="trk-card-eps">S01 &middot; 5/13</div><div class="trk-bar"><div class="trk-fill" style="width:38%"></div></div><div class="trk-card-next">in 4 days</div></div></div></section>
+    <section class="tracker-section"><div class="trk-head"><span class="trk-head-icon">🗓</span><h3>Show Tracker</h3></div><div class="trk-scroll"><div class="trk-card" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="trk-poster"><img src="media-thumbs/show-sched-fle-re-zero-starting-life-in-another-world-s03-web-1080p-h-264-e-ac-3-dual-audio.jpg" onerror="this.remove()" alt=""><span class="trk-badge trk-badge-new">new</span></div><div class="trk-card-name" title="Re Zero">Re Zero</div><div class="trk-card-eps">S04 &middot; 5/13</div><div class="trk-bar"><div class="trk-fill" style="width:38%"></div></div><div class="trk-card-next">in 6 days</div></div><div class="trk-card" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="trk-poster"><img src="media-thumbs/show-sched-the-boys.jpg" onerror="this.remove()" alt=""><span class="trk-badge trk-badge-new">new</span></div><div class="trk-card-name" title="The Boys">The Boys</div><div class="trk-card-eps">S05 &middot; 6/8</div><div class="trk-bar"><div class="trk-fill" style="width:75%"></div></div><div class="trk-card-next">in 6 days</div></div><div class="trk-card" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="trk-poster"><img src="media-thumbs/show-sched-dorohedoro.jpg" onerror="this.remove()" alt=""><span class="trk-badge trk-badge-new">new</span></div><div class="trk-card-name" title="Dorohedoro">Dorohedoro</div><div class="trk-card-eps">S02 &middot; 8/11</div><div class="trk-bar"><div class="trk-fill" style="width:72%"></div></div><div class="trk-card-next">in 6 days</div></div><div class="trk-card" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="trk-poster"><img src="media-thumbs/show-sched-mistress-kanan-is-devilishly-easy.jpg" onerror="this.remove()" alt=""></div><div class="trk-card-name" title="Kanan sama">Kanan sama</div><div class="trk-card-eps">S01 &middot; 5/12</div><div class="trk-bar"><div class="trk-fill" style="width:41%"></div></div><div class="trk-card-next">in 2 days</div></div><div class="trk-card" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><div class="trk-poster"><img src="media-thumbs/show-sched-hat-witch-atelier.jpg" onerror="this.remove()" alt=""></div><div class="trk-card-name" title="Atelier of Witch Hat">Atelier of Witch Hat</div><div class="trk-card-eps">S01 &middot; 5/13</div><div class="trk-bar"><div class="trk-fill" style="width:38%"></div></div><div class="trk-card-next">in 4 days</div></div></div></section>
     <div class="media-bar"><span class="media-bar-label">&#9654;&#xFE0E; Library</span><span class="media-bar-note">last 30 hours</span></div><div class="media-scroll"><div class="media-secondary"><section class="msec"><div class="msec-head"><span class="msec-icon">&#9654;</span><h3>Shows</h3></div><div class="mcards"><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/show-dorohedoro.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9654;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">Dorohedoro</div><div class="mcard-sub">New Show · S02E08</div></div></a><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/show-the-boys.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9654;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">The Boys</div><div class="mcard-sub">New Show · S05E06</div></div></a><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/show-fle-re-zero-starting-life-in-another-world-s03-web-1080p-h-264-e-ac-3-dual-audio.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9654;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">[FLE] Re ZERO Starting Life in Another World - S03 (WEB 1080p H 264 E-AC-3) [Dual Audio]</div><div class="mcard-sub">New Show · S04E05</div></div></a></div></section></div></div>
 
     <section class="controls" id="feedControls">
@@ -795,7 +798,7 @@
         </div>
         <div class="summary-tile">
           <strong>Updated</strong>
-          <span>2026-05-07 02:37</span>
+          <span>2026-05-07 02:42</span>
         </div>
         <div class="summary-tile">
           <strong>Today</strong>
@@ -812,7 +815,7 @@
       </section>
     </section>
 
-    <footer>report.fernhw.com &middot; updated 2026-05-07 02:37</footer>
+    <footer>report.fernhw.com &middot; updated 2026-05-07 02:42</footer>
   </div>
 </div>
 
@@ -975,7 +978,9 @@ document.addEventListener('click', event => {
   const link = event.target.closest('.card-link');
   if (!link) {
     const media = event.target.closest('.mcard[data-app-urls]');
-    if (media) { event.preventDefault(); tryAppUrls(media.dataset.appUrls || ''); }
+    if (media) { event.preventDefault(); tryAppUrls(media.dataset.appUrls || ''); return; }
+    const trk = event.target.closest('.trk-card[data-app-urls]');
+    if (trk) { event.preventDefault(); tryAppUrls(trk.dataset.appUrls || ''); }
     return;
   }
   event.preventDefault();

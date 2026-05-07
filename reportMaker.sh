@@ -963,7 +963,9 @@ document.addEventListener('click', event => {
   const link = event.target.closest('.card-link');
   if (!link) {
     const media = event.target.closest('.mcard[data-app-urls]');
-    if (media) { event.preventDefault(); tryAppUrls(media.dataset.appUrls || ''); }
+    if (media) { event.preventDefault(); tryAppUrls(media.dataset.appUrls || ''); return; }
+    const trk = event.target.closest('.trk-card[data-app-urls]');
+    if (trk) { event.preventDefault(); tryAppUrls(trk.dataset.appUrls || ''); }
     return;
   }
   event.preventDefault();
