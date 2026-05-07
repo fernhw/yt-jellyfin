@@ -145,6 +145,21 @@
     .sched-cards .mcard:active{border-color:#c2a365}
     .sched-cards .mcard-title{color:#d4c4a0}
     .sched-cards .mcard-sub{color:#c2a365;font-weight:700}
+    .tracker-section{border-color:rgba(100,140,200,.18)}
+    .tracker-section .msec-head h3{color:#86b9d9}
+    .trk-list{display:flex;flex-direction:column;gap:10px;padding:4px 0}
+    .trk-row{display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:8px}
+    .trk-thumb{width:44px;height:62px;object-fit:cover;border-radius:4px;flex-shrink:0}
+    .trk-nothumb{width:44px;height:62px;background:#1d242b;border-radius:4px;flex-shrink:0}
+    .trk-info{flex:1;min-width:0}
+    .trk-name{font-size:.9rem;font-weight:600;color:#ecf2f8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .trk-eps{font-size:.75rem;color:#97a6b4;margin:.2rem 0 .4rem}
+    .trk-bar{height:4px;background:#2a323b;border-radius:2px;overflow:hidden}
+    .trk-fill{height:100%;background:#86b9d9;border-radius:2px;transition:width .3s}
+    .trk-week{text-align:right;font-size:.75rem;font-weight:700;line-height:1.4;white-space:nowrap;color:#627384;flex-shrink:0}
+    .trk-week.trk-done{color:#72c7a2}
+    .trk-week.trk-due{color:#c2a365}
+    .trk-days{font-size:.68rem;font-weight:400;color:#627384}
   </style>
 </head>
 <body>
@@ -162,7 +177,7 @@
       <div class="title-wrap">
         <div class="kicker">Recent Download Report</div>
         <h1>Latest downloads</h1>
-        <p class="lede">Good evening. This view keeps the latest 4 days in download order, split into priority, podcastable, rare drops, and everything else.</p>
+        <p class="lede">Good morning. This view keeps the latest 4 days in download order, split into priority, podcastable, rare drops, and everything else.</p>
       </div>
       <div class="top-meta">
         <button class="notify-btn" onclick="subscribeNotify()">Get notified</button>
@@ -170,6 +185,7 @@
     </header>
 
     
+    <section class="msec tracker-section"><div class="msec-head"><span class="msec-icon">🗓</span><h3>Show Tracker</h3></div><div class="trk-list"><div class="trk-row"><img class="trk-thumb" src="media-thumbs/show-sched-fle-re-zero-starting-life-in-another-world-s03-web-1080p-h-264-e-ac-3-dual-audio.jpg" onerror="this.outerHTML='<div class=\"trk-nothumb\"></div>'" alt=""><div class="trk-info"><div class="trk-name">Re Zero</div><div class="trk-eps">S04 · Ep 5/13</div><div class="trk-bar"><div class="trk-fill" style="width:38%"></div></div></div><div class="trk-week trk-done">W5 ✓<br><span class="trk-days">wed</span></div></div><div class="trk-row"><img class="trk-thumb" src="media-thumbs/show-sched-the-boys.jpg" onerror="this.outerHTML='<div class=\"trk-nothumb\"></div>'" alt=""><div class="trk-info"><div class="trk-name">The Boys</div><div class="trk-eps">S05 · Ep 5/8</div><div class="trk-bar"><div class="trk-fill" style="width:62%"></div></div></div><div class="trk-week trk-due">W6 due<br><span class="trk-days">wed</span></div></div><div class="trk-row"><img class="trk-thumb" src="media-thumbs/show-sched-dorohedoro.jpg" onerror="this.outerHTML='<div class=\"trk-nothumb\"></div>'" alt=""><div class="trk-info"><div class="trk-name">Dorohedoro</div><div class="trk-eps">S02 · Ep 7/11</div><div class="trk-bar"><div class="trk-fill" style="width:63%"></div></div></div><div class="trk-week trk-due">W8 due<br><span class="trk-days">wed</span></div></div><div class="trk-row"><img class="trk-thumb" src="media-thumbs/show-sched-mistress-kanan-is-devilishly-easy.jpg" onerror="this.outerHTML='<div class=\"trk-nothumb\"></div>'" alt=""><div class="trk-info"><div class="trk-name">Kanan sama</div><div class="trk-eps">S01 · Ep 5/12</div><div class="trk-bar"><div class="trk-fill" style="width:41%"></div></div></div><div class="trk-week trk-due">W6 due<br><span class="trk-days">sat</span></div></div><div class="trk-row"><img class="trk-thumb" src="media-thumbs/show-sched-hat-witch-atelier.jpg" onerror="this.outerHTML='<div class=\"trk-nothumb\"></div>'" alt=""><div class="trk-info"><div class="trk-name">Atelier of Witch Hat</div><div class="trk-eps">S01 · Ep 5/13</div><div class="trk-bar"><div class="trk-fill" style="width:38%"></div></div></div><div class="trk-week trk-due">W6 due<br><span class="trk-days">mon</span></div></div></div></section>
     <div class="media-bar"><span class="media-bar-label">&#9654;&#xFE0E; Library</span><span class="media-bar-note">last 30 hours</span></div><div class="media-scroll"><div class="media-secondary"><section class="msec"><div class="msec-head"><span class="msec-icon">&#9654;</span><h3>Shows</h3></div><div class="mcards"><a class="mcard" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com"><img src="media-thumbs/show-fle-re-zero-starting-life-in-another-world-s03-web-1080p-h-264-e-ac-3-dual-audio.jpg" onerror="this.outerHTML='<div class=&quot;mcard-nothumb&quot;>&#9654;</div>'" alt=""><div class="mcard-body"><div class="mcard-title">[FLE] Re ZERO Starting Life in Another World - S03 (WEB 1080p H 264 E-AC-3) [Dual Audio]</div><div class="mcard-sub">New Show · S04E05</div></div></a></div></section></div></div>
 
     <section class="controls" id="feedControls">
@@ -183,7 +199,7 @@
     <div id="filterResults"><div class="cards" id="filterCards"></div></div>
 
     <main id="feedMain">
-      <section class="day-section"><div class="day-header"><h2>Today <span>Wednesday, May 06</span></h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="books of the dead | re:zero season 4 episode 5 reaction/analysis echidnut" data-bucket="priority" aria-label="Open in Jellyfin: Books of the Dead | Re:ZERO Season 4 Episode 5 Reaction/Analysis">
+      <section class="day-section"><div class="day-header"><h2>Yesterday <span>Wednesday, May 06</span></h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="books of the dead | re:zero season 4 episode 5 reaction/analysis echidnut" data-bucket="priority" aria-label="Open in Jellyfin: Books of the Dead | Re:ZERO Season 4 Episode 5 Reaction/Analysis">
   <article class="card priority">
     <img src="thumbs/echidnut.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -333,7 +349,7 @@
       <div class="meta-row">Gigguk <span>&middot;</span> May 06, 2026</div>
     </div>
   </article>
-</a></div></section></section><section class="day-section"><div class="day-header"><h2>Yesterday <span>Tuesday, May 05</span></h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="audiobooth://" data-filter-text="milwaukee movie locations! redlettermedia" data-bucket="priority" aria-label="Open in AudioBooth: Milwaukee Movie Locations!">
+</a></div></section></section><section class="day-section"><div class="day-header"><h2>Tuesday, May 05</h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="audiobooth://" data-filter-text="milwaukee movie locations! redlettermedia" data-bucket="priority" aria-label="Open in AudioBooth: Milwaukee Movie Locations!">
   <article class="card priority podcast">
     <img src="thumbs/redlettermedia.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -759,7 +775,7 @@
     <section class="bottom-panel">
       <div class="bottom-head">
         <h2>Report details</h2>
-        <p>Good evening. 64 items from the last 4 days.</p>
+        <p>Good morning. 64 items from the last 4 days.</p>
       </div>
 
       <div class="warn-stack"></div>
@@ -767,15 +783,15 @@
       <section class="summary-bar">
         <div class="summary-tile">
           <strong>Report Date</strong>
-          <span>2026-05-06</span>
+          <span>2026-05-07</span>
         </div>
         <div class="summary-tile">
           <strong>Updated</strong>
-          <span>2026-05-06 23:35</span>
+          <span>2026-05-07 00:35</span>
         </div>
         <div class="summary-tile">
           <strong>Today</strong>
-          <span>17 downloads on Wednesday</span>
+          <span>0 downloads on Thursday</span>
         </div>
         <div class="summary-tile">
           <strong>Recent Downloads</strong>
@@ -783,12 +799,12 @@
         </div>
         <div class="summary-tile">
           <strong>Library Storage</strong>
-          <span>756.19 GB used &middot; 1.54 TB free</span>
+          <span>756.16 GB used &middot; 1.54 TB free</span>
         </div>
       </section>
     </section>
 
-    <footer>report.fernhw.com &middot; updated 2026-05-06 23:35</footer>
+    <footer>report.fernhw.com &middot; updated 2026-05-07 00:35</footer>
   </div>
 </div>
 
