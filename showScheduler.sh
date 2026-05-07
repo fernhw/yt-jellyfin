@@ -20,7 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
 
 SCHEDULE_CSV="$SCRIPT_DIR/showSchedule.csv"
 SEARCH_SCRIPT="$SCRIPT_DIR/showSchedulerSearch.py"
-CSV_HEADER="show_name,search_name,folder,type,season,next_episode,total_episodes,release_days,status,search_start,search_end,last_check,week_anchor,last_downloaded_week"
+CSV_HEADER="show_name,search_name,folder,type,season,next_episode,total_episodes,release_days,status,search_start,search_end,last_check,week_anchor,anchor_episode"
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -320,12 +320,20 @@ case "$OPT_TOTAL" in
   ''|*[!0-9]*) die "Total episodes must be a positive integer" ;;
 esac
 
-# ── 8. Immediate search ────────────────────────────────────────────────────────
+# ── 8. Immediate search + backfill ────────────────────────────────────────────
 
+OPT_BACKFILL=0
 if [ "$OPT_IMMEDIATE" -eq 0 ] && [ "$OPT_PARAM_MODE" -eq 0 ]; then
-  printf '\nImmediate search (y/n):\n> '
+  printf '\nSearch for current episode now? [Y/n]: '
   read -r _imm
-  case "$_imm" in y|Y) OPT_IMMEDIATE=1 ;; esac
+  case "$_imm" in y|Y|"") OPT_IMMEDIATE=1 ;; esac
+
+  # Backfill only relevant when starting mid-season (episode > 1)
+  if [ "$OPT_EPISODE" -gt 1 ]; then
+    printf '\nBackfill episodes 1 to %s? (will search each one now) [y/N]: ' "$((OPT_EPISODE - 1))"
+    read -r _bf
+    case "$_bf" in y|Y) OPT_BACKFILL=1 ;; esac
+  fi
 fi
 
 # ── Summary + confirm ──────────────────────────────────────────────────────────
@@ -376,10 +384,10 @@ t = datetime.date.today()
 print((t - datetime.timedelta(days=t.weekday())).isoformat())
 ")
 
-printf '%s,%s,%s,%s,%s,%s,%s,%s,pending,,,%s,%s,\n' \
+printf '%s,%s,%s,%s,%s,%s,%s,%s,pending,,,%s,%s,%s\n' \
   "$OPT_NAME" "$OPT_SEARCH_NAME" "$OPT_FOLDER" "$OPT_TYPE" "$OPT_SEASON" \
   "$OPT_EPISODE" "$OPT_TOTAL" "$OPT_DAYS" \
-  "$(date +%Y-%m-%d)" "$_week_anchor" >> "$SCHEDULE_CSV"
+  "$(date +%Y-%m-%d)" "$_week_anchor" "$OPT_EPISODE" >> "$SCHEDULE_CSV"
 
 info "Registered: $OPT_NAME S${OPT_SEASON}E${OPT_EPISODE}→${OPT_TOTAL} ($OPT_DAYS, $OPT_TYPE)"
 
@@ -406,9 +414,22 @@ fi
 
 if [ "$OPT_IMMEDIATE" -eq 1 ]; then
   echo ""
-  info "Running immediate search..."
-  echo ""
+  info "Searching for current episode..."
   python3 "$SEARCH_SCRIPT" --show "$OPT_NAME" --force
+fi
+
+# ── Backfill ───────────────────────────────────────────────────────────────────
+
+if [ "$OPT_BACKFILL" -eq 1 ]; then
+  echo ""
+  info "Backfilling episodes 1 → $((OPT_EPISODE - 1))..."
+  _ep=1
+  while [ "$_ep" -lt "$OPT_EPISODE" ]; do
+    info "  Searching Ep${_ep}..."
+    python3 "$SEARCH_SCRIPT" --show "$OPT_NAME" --force --back-ep "$_ep"
+    _ep=$((_ep + 1))
+  done
+  info "Backfill complete."
 fi
 
 echo ""

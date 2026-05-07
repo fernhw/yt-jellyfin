@@ -55,7 +55,7 @@ DAY_MAP   = {'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3, 'fri': 4, 'sat': 5, 'sun': 
 CSV_FIELDS = [
     'show_name', 'search_name', 'folder', 'type', 'season', 'next_episode',
     'total_episodes', 'release_days', 'status',
-    'search_start', 'search_end', 'last_check', 'week_anchor', 'last_downloaded_week',
+    'search_start', 'search_end', 'last_check', 'week_anchor', 'anchor_episode',
 ]
 
 HEADERS = {
@@ -152,6 +152,9 @@ def read_schedule() -> List[Dict]:
     for r in rows:
         if not r.get('search_name', '').strip():
             r['search_name'] = r['show_name'].lower().strip()
+        # Back-fill anchor_episode for rows added before this field existed
+        if not r.get('anchor_episode', '').strip():
+            r['anchor_episode'] = r.get('next_episode', '1')
     return rows
 
 
@@ -189,6 +192,27 @@ def _relative_week(today: datetime.date, anchor_str: str) -> Optional[int]:
         current_monday = _monday_of_week(today)
         delta = (current_monday - anchor_monday).days
         return delta // 7 if delta >= 0 else None
+    except ValueError:
+        return None
+
+
+def _current_expected_episode(row: Dict, today: datetime.date) -> Optional[int]:
+    """
+    Which episode number is expected to air this calendar week?
+    = anchor_episode + weeks_elapsed_since_anchor
+
+    W5 = episode 5, W6 = episode 6, etc.
+    This is the single source of truth for week-based dedup.
+    """
+    anchor_s  = row.get('week_anchor',   '').strip()
+    ep_s      = row.get('anchor_episode','').strip()
+    if not anchor_s or not ep_s:
+        return None
+    try:
+        rel = _relative_week(today, anchor_s)
+        if rel is None:
+            return None
+        return int(ep_s) + rel
     except ValueError:
         return None
 
@@ -520,18 +544,16 @@ def process_show(row: dict, locations: dict,
     if status == 'missed' and not force:
         return row
 
-    # Hard dedup — not overridable by --force or --dry-run.
-    # If we already downloaded an episode this calendar week, wait until next week.
-    last_dl_s = row.get('last_downloaded_week', '').strip()
-    if last_dl_s:
-        try:
-            if _monday_of_week(today) == datetime.date.fromisoformat(last_dl_s):
-                rel = _relative_week(today, row.get('week_anchor', ''))
-                rel_s = f"W{rel}" if rel is not None else last_dl_s
-                log.info(f"  {show_name}: already downloaded this week ({rel_s}) — wait for next week")
-                return row
-        except ValueError:
-            pass
+    # Episode-week dedup — not overridable by --force.
+    # W5 = episode 5. If we already have this week's episode (next_episode > expected),
+    # sit tight until the next week's episode is due.
+    current_expected = _current_expected_episode(row, today)
+    if current_expected is not None and episode > current_expected:
+        log.info(
+            f"  {show_name}: already have W{current_expected}/Ep{current_expected}"
+            f" — Ep{episode} due at W{episode}"
+        )
+        return row
 
     # Window check
     in_window, open_window = check_window(row, today)
@@ -596,8 +618,8 @@ def process_show(row: dict, locations: dict,
 
     if ok:
         log.info(f"  {label}: downloaded ✓")
-        # Record the Monday of this week so the dedup blocks same-week re-searches
-        row['last_downloaded_week'] = _monday_of_week(today).isoformat()
+        # Dedup is now purely mathematical (anchor_episode + elapsed weeks)
+        # No field to update here — next_episode increment is enough.
         # Update daily show report for the web page (skip in dry-run)
         if not dry_run:
             _update_show_report(row, season, episode, total, best['title'])
@@ -639,6 +661,8 @@ def main() -> None:
                     help='Restrict to shows whose name contains NAME')
     ap.add_argument('--force',   action='store_true',
                     help='Search even if outside the release window')
+    ap.add_argument('--back-ep', metavar='N', type=int, default=None,
+                    help='Override next_episode to N (used by backfill in showScheduler.sh)')
     ap.add_argument('--list',    action='store_true',
                     help='Print the current schedule and exit')
     args = ap.parse_args()
@@ -650,17 +674,20 @@ def main() -> None:
 
     if args.list:
         today_ld = datetime.date.today()
-        print(f"\n{'SHOW':<22} {'SEARCH':<18} {'EP':<10} {'DAYS':<5} {'TYPE':<6} {'REL.WK':<7} STATUS")
+        print(f"\n{'SHOW':<22} {'SEARCH':<18} {'EP':<10} {'DAYS':<5} {'TYPE':<6} {'THIS WK':<8} STATUS")
         print("─" * 80)
         for r in rows:
-            ep_label = f"S{int(r['season']):02d}E{r['next_episode']}/{r['total_episodes']}"
-            anchor   = r.get('week_anchor', '').strip()
-            rel      = _relative_week(today_ld, anchor)
-            rel_s    = f"W{rel}" if rel is not None else '?'
-            dl_s     = r.get('last_downloaded_week', '') or '-'
+            ep_label   = f"S{int(r['season']):02d}E{r['next_episode']}/{r['total_episodes']}"
+            cur_ep     = _current_expected_episode(r, today_ld)
+            next_ep    = int(r['next_episode'])
+            if cur_ep is None:
+                week_s = '?'
+            elif next_ep > cur_ep:
+                week_s = f"W{cur_ep} ✓"   # already have this week's
+            else:
+                week_s = f"W{cur_ep}"      # due this week
             print(f"{r['show_name']:<22} {r.get('search_name',''):<18} {ep_label:<10} "
-                  f"{r['release_days']:<5} {r['type']:<6} {rel_s:<7} {r['status']}  "
-                  f"[last dl: {dl_s}]")
+                  f"{r['release_days']:<5} {r['type']:<6} {week_s:<8} {r['status']}")
         print()
         return
 
@@ -674,6 +701,10 @@ def main() -> None:
         if args.show and args.show.lower() not in row['show_name'].lower():
             updated.append(row)
             continue
+        # --back-ep: temporarily set next_episode for this pass only
+        if args.back_ep is not None:
+            row = dict(row)   # shallow copy — don't mutate original for other episodes
+            row['next_episode'] = str(args.back_ep)
         updated.append(process_show(row, locations,
                                     dry_run=args.dry_run,
                                     force=args.force))
