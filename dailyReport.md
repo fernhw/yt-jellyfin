@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-07
 
-> *Good afternoon! Here's what landed on Thursday, May 07, 2026 at 03:21 PM.*
-> **YT Mirror:** 757.12 GB used · 1.56 TB free
+> *Good evening! Here's what landed on Thursday, May 07, 2026 at 05:06 PM.*
+> **YT Mirror:** 757.14 GB used · 1.55 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@
 
 ### Non-Priority Videos
 
+- **LEGO Batman: Legacy of the Dark Knight – Official Story Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:05 PM · not podcastable
 - **Yahtzee Can't Hack It | Semi-Ramblomatic** — *Second Wind* · downloaded 03:18 PM · podcastable
 - **The Publisher So Toxic, Their Devs Prefer You Pirate** — *Bellular News* · downloaded 03:16 PM · podcastable
 - **She let an African migrant stay in her home. This happened.** — *Asmongold TV* · downloaded 03:12 PM · not podcastable
