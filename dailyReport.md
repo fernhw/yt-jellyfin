@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-07
 
-> *Good evening! Here's what landed on Thursday, May 07, 2026 at 09:08 PM.*
-> **YT Mirror:** 756.81 GB used · 1.55 TB free
+> *Good evening! Here's what landed on Thursday, May 07, 2026 at 10:11 PM.*
+> **YT Mirror:** 757.95 GB used · 1.55 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@
 
 ### Non-Priority Videos
 
+- **I’M 100% PLAYING THIS..** — *Asmongold TV* · downloaded 10:10 PM · not podcastable
 - **Ok Nintendo but why?** — *GameLinked* · downloaded 09:06 PM · podcastable
 - **Breaking the Rules: We 3D Printed a Noctua Computer Fan** — *Gamers Nexus* · downloaded 08:05 PM · not podcastable
 - **The Wacky and Worst Arcade1UP Products** — *Scott's Stash* · downloaded 07:07 PM · not podcastable
