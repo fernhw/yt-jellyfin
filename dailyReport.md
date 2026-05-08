@@ -2,17 +2,20 @@
 
 ## What to Watch — 2026-05-08
 
-> *Good morning! Here's what landed on Friday, May 08, 2026 at 11:44 AM.*
-> **YT Mirror:** 759.13 GB used · 1.56 TB free
+> *Good afternoon! Here's what landed on Friday, May 08, 2026 at 03:22 PM.*
+> **YT Mirror:** 759.47 GB used · 1.55 TB free
 
 ### Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **Every Ace Attorney Case Ranked** — *Schaffrillas Productions* · downloaded 03:13 PM · podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **The Classic Game You Couldn't Remake Today** — *Writing on Games* · downloaded 03:19 PM · podcastable
+- **The Splatoon 3 North American League Show 2026 – Episode 6** — *Nintendo of America* · downloaded 03:17 PM · not podcastable
+- **Thank God we have bodycams..** — *Asmongold TV* · downloaded 03:15 PM · not podcastable
 - **So, What’s the Deal with Subnautica 2? | Unpacked** — *Second Wind* · downloaded 11:42 AM · podcastable
 - **Star Fox – Prologue – Nintendo Switch 2** — *Nintendo of America* · downloaded 11:41 AM · not podcastable
 - **So I tried this new MMO..** — *Asmongold TV* · downloaded 11:40 AM · not podcastable
