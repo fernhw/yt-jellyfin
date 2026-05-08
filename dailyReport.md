@@ -2,17 +2,19 @@
 
 ## What to Watch — 2026-05-08
 
-> *Good afternoon! Here's what landed on Friday, May 08, 2026 at 03:22 PM.*
-> **YT Mirror:** 759.47 GB used · 1.55 TB free
+> *Good evening! Here's what landed on Friday, May 08, 2026 at 05:12 PM.*
+> **YT Mirror:** 761.56 GB used · 1.55 TB free
 
 ### Priority Videos
 
+- **Our Boy Raised OVER $1,000,000 for Charity | Trash Taste #307** — *Trash Taste* · downloaded 05:09 PM · podcastable
 - **Every Ace Attorney Case Ranked** — *Schaffrillas Productions* · downloaded 03:13 PM · podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **Somehow, 2 years later, this is STILL the one I tell people to get** — *TechDweeb* · downloaded 05:10 PM · podcastable
 - **The Classic Game You Couldn't Remake Today** — *Writing on Games* · downloaded 03:19 PM · podcastable
 - **The Splatoon 3 North American League Show 2026 – Episode 6** — *Nintendo of America* · downloaded 03:17 PM · not podcastable
 - **Thank God we have bodycams..** — *Asmongold TV* · downloaded 03:15 PM · not podcastable
