@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-07
 
-> *Good evening! Here's what landed on Thursday, May 07, 2026 at 07:08 PM.*
-> **YT Mirror:** 757.58 GB used · 1.55 TB free
+> *Good evening! Here's what landed on Thursday, May 07, 2026 at 08:07 PM.*
+> **YT Mirror:** 756.29 GB used · 1.55 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@
 
 ## Non-Priority Videos
 
+- **Breaking the Rules: We 3D Printed a Noctua Computer Fan** — *Gamers Nexus* · downloaded 08:05 PM · not podcastable
 - **The Wacky and Worst Arcade1UP Products** — *Scott's Stash* · downloaded 07:07 PM · not podcastable
 - **LEGO Batman: Legacy of the Dark Knight – Official Story Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:05 PM · not podcastable
 - **Yahtzee Can't Hack It | Semi-Ramblomatic** — *Second Wind* · downloaded 03:18 PM · podcastable
