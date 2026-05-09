@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-08
 
-> *Good evening! Here's what landed on Friday, May 08, 2026 at 09:08 PM.*
-> **YT Mirror:** 762.58 GB used · 1.55 TB free
+> *Good evening! Here's what landed on Friday, May 08, 2026 at 10:07 PM.*
+> **YT Mirror:** 762.81 GB used · 1.55 TB free
 
 ## Priority Videos
 
@@ -12,6 +12,7 @@
 
 ## Non-Priority Videos
 
+- **So are the aliens f***ing real?** — *Asmongold TV* · downloaded 10:06 PM · not podcastable
 - **Not Nintendo, Too...** — *TechLinked* · downloaded 09:06 PM · podcastable
 - **Mighty No. 9 - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash* · downloaded 07:07 PM · not podcastable
 - **Things Just Got A Lot Harder For Nintendo...** — *Spawn Wave* · downloaded 06:04 PM · not podcastable
