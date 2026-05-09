@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-08
 
-> *Good evening! Here's what landed on Friday, May 08, 2026 at 06:06 PM.*
-> **YT Mirror:** 761.68 GB used · 1.55 TB free
+> *Good evening! Here's what landed on Friday, May 08, 2026 at 07:09 PM.*
+> **YT Mirror:** 762.06 GB used · 1.55 TB free
 
 ### Priority Videos
 
@@ -14,6 +14,7 @@
 
 ### Non-Priority Videos
 
+- **Mighty No. 9 - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash* · downloaded 07:07 PM · not podcastable
 - **Things Just Got A Lot Harder For Nintendo...** — *Spawn Wave* · downloaded 06:04 PM · not podcastable
 - **Somehow, 2 years later, this is STILL the one I tell people to get** — *TechDweeb* · downloaded 05:10 PM · podcastable
 - **The Classic Game You Couldn't Remake Today** — *Writing on Games* · downloaded 03:19 PM · podcastable
