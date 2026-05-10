@@ -425,8 +425,11 @@ def index():
     # Unauthenticated visitors see login.html (no app structure exposed).
     token = request.cookies.get('req_token', '')
     if token and hmac.compare_digest(token, _web_password_hash()):
-        return send_from_directory(STATIC_DIR, 'index.html')
-    return send_from_directory(STATIC_DIR, 'login.html')
+        resp = send_from_directory(STATIC_DIR, 'index.html')
+    else:
+        resp = send_from_directory(STATIC_DIR, 'login.html')
+    resp.headers['Cache-Control'] = 'no-store'
+    return resp
 
 @app.route('/favicon.ico')
 def favicon():

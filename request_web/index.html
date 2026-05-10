@@ -172,8 +172,8 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 
     <div class="step-label" style="margin-bottom:6px">Quality preference</div>
     <div class="qual-row">
-      <button class="qual-btn" id="qbtn-1080" onclick="selQuality('1080')">1080p</button>
-      <button class="qual-btn selected" id="qbtn-4k" onclick="selQuality('4k')">&#10024; 4K / 2160p</button>
+      <button class="qual-btn selected" id="qbtn-1080" onclick="selQuality('1080')">1080p</button>
+      <button class="qual-btn" id="qbtn-4k" onclick="selQuality('4k')">&#10024; 4K / 2160p</button>
     </div>
     <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">
       4K mode searches for <code style="color:var(--orange)">2160p</code> / <code style="color:var(--orange)">4k</code> markers first.
@@ -558,7 +558,7 @@ function resetAddForm() {
 }
 
 // ── Movie tab ─────────────────────────────────────────────────────────────────
-let _movieType = 'live', _movieQuality = '4k';
+let _movieType = 'live', _movieQuality = '1080';
 
 function selMovieType(t) {
   _movieType = t;
@@ -683,9 +683,9 @@ async function pollDownloads() {
         '  <div class="dl-stat" style="color:var(--muted)">' + _esc(status) + '</div>',
         '</div>',
         gid ? '<div class="dl-card-actions">' +
-          '<button class="dl-act-btn" onclick="pauseToggle('' + gid + '', '' + status + '')">' +
+          '<button class="dl-act-btn" onclick="pauseToggle(\'' + gid + '\', \'' + status + '\')">' +
           (status === 'paused' ? '▶ Resume' : '⏸ Pause') + '</button>' +
-          '<button class="dl-act-btn remove" onclick="removeDl('' + gid + '')">✕ Remove</button>' +
+          '<button class="dl-act-btn remove" onclick="removeDl(\'' + gid + '\')">✕ Remove</button>' +
           '</div>' : '',
       ].join('');
       body.appendChild(card);
