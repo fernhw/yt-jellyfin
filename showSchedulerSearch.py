@@ -26,6 +26,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 import urllib.error
@@ -488,8 +489,13 @@ def download_torrent(magnet: str, dest_dir: str, dry_run: bool = False) -> bool:
         return True
 
     os.makedirs(dest_dir, exist_ok=True)
+    aria2c_bin = (
+        shutil.which('aria2c')
+        or '/opt/homebrew/bin/aria2c'
+        or '/usr/local/bin/aria2c'
+    )
     cmd = [
-        'aria2c',
+        aria2c_bin,
         '--seed-time=0',
         f'--dir={dest_dir}',
         '--summary-interval=30',
