@@ -557,11 +557,10 @@ def search_yts(title: str, year: Optional[int] = None) -> List[Dict]:
     return results
 
 
-def search_tpb_movie(title: str, year: Optional[int] = None) -> List[Dict]:
+def search_tpb_movie(title: str) -> List[Dict]:
     """Search ThePirateBay for a movie (no episode filter)."""
-    query = f"{title} {year}" if year else title
-    url = f"https://apibay.org/q.php?q={urllib.parse.quote(query)}"
-    log.info(f"  TPB movie query: {query}")
+    url = f"https://apibay.org/q.php?q={urllib.parse.quote(title)}"
+    log.info(f"  TPB movie query: {title}")
     body = _fetch(url)
     if not body:
         return []
@@ -618,43 +617,49 @@ def _score_movie(title: str, seeds: int, is_anime: bool) -> Optional[float]:
     return score_torrent(title, seeds, show_type)
 
 
-def download_movie(title: str, year: Optional[int], is_anime: bool,
+def download_movie(title: str, is_anime: bool,
                    movies_dir: str, dry_run: bool = False) -> None:
     """
     Search → score → download a movie to movies_dir.
-    Sources: Nyaa+TPB for anime, YTS+TPB for live-action.
+    Title is lowercased before querying.
+    Primary:  Nyaa + TPB (anime) or TPB alone (live-action).
+    Fallback: YTS (both types) if primary yields nothing.
     """
-    label = f"{title}" + (f" ({year})" if year else "")
-    log.info(f"Searching movie: {label}")
+    q = title.lower()
+    log.info(f"Searching movie: {q}")
 
-    candidates: List[Dict] = []
+    def _score_all(candidates: List[Dict]) -> List[Tuple[float, Dict]]:
+        scored: List[Tuple[float, Dict]] = []
+        for c in candidates:
+            s = _score_movie(c['title'], c['seeds'], is_anime)
+            if s is not None:
+                scored.append((s, c))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return scored
+
+    # ── Primary pass ────────────────────────────────────────────────────────
     if is_anime:
-        candidates += search_nyaa_movie(title)
-        candidates += search_tpb_movie(title, year)
+        primary = search_nyaa_movie(q) + search_tpb_movie(q)
     else:
-        candidates += search_yts(title, year)
-        candidates += search_tpb_movie(title, year)
-
-    scored: List[Tuple[float, Dict]] = []
-    for c in candidates:
-        s = _score_movie(c['title'], c['seeds'], is_anime)
-        if s is not None:
-            scored.append((s, c))
+        primary = search_tpb_movie(q)
+    scored = _score_all(primary)
 
     if not scored:
-        log.error(f"  {label}: no qualifying results (need {MIN_SEEDS}+ seeds, 1080p+, English)")
+        log.warning(f"  primary pass: no qualifying results — trying YTS fallback")
+        scored = _score_all(search_yts(q))
+
+    if not scored:
+        log.error(f"  {q}: no qualifying results across all sources (need {MIN_SEEDS}+ seeds, 1080p+, English)")
         return
 
-    scored.sort(key=lambda x: x[0], reverse=True)
     best_score, best = scored[0]
     log.info(f"  Best: {best['title']} | score={best_score:.0f} seeds={best['seeds']}")
 
-    dest_dir = movies_dir
-    ok = download_torrent(best['magnet'], dest_dir, dry_run=dry_run)
+    ok = download_torrent(best['magnet'], movies_dir, dry_run=dry_run)
     if ok:
-        log.info(f"  {label}: download complete")
+        log.info(f"  {q}: download complete")
     else:
-        log.error(f"  {label}: download failed")
+        log.error(f"  {q}: download failed")
 
 
 # ── Show report (daily web banner) ────────────────────────────────────────────
@@ -830,10 +835,8 @@ def main() -> None:
                     help='Print the current schedule and exit')
     ap.add_argument('--movie',       metavar='TITLE',
                     help='Download a movie by title (bypasses CSV)')
-    ap.add_argument('--year',        metavar='YEAR', type=int, default=None,
-                    help='Release year — narrows movie search')
     ap.add_argument('--anime-movie', action='store_true',
-                    help='Treat --movie as anime (searches Nyaa instead of YTS)')
+                    help='Treat --movie as anime (searches Nyaa+TPB first, YTS fallback)')
     args = ap.parse_args()
 
     # ── Movie mode: search & download, then exit ──────────────────────────────
@@ -844,7 +847,6 @@ def main() -> None:
         movies_dir = locations.get('MOVIES_DIR', '/Volumes/Jellyfin/Movies')
         download_movie(
             title=args.movie,
-            year=args.year,
             is_anime=args.anime_movie,
             movies_dir=movies_dir,
             dry_run=args.dry_run,
