@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-10
 
-> *Good afternoon! Here's what landed on Sunday, May 10, 2026 at 03:10 PM.*
-> **YT Mirror:** 754.45 GB used · 1.54 TB free
+> *Good evening! Here's what landed on Sunday, May 10, 2026 at 05:07 PM.*
+> **YT Mirror:** 754.38 GB used · 1.54 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **People found out..** — *Asmongold TV* · downloaded 05:05 PM · not podcastable
 - **HomeGrown Devlog: Programming the Research System** — *ThinMatrix* · downloaded 03:08 PM · not podcastable · *105 days since their last upload*
 - **What the f*ck is this journalism??** — *Asmongold TV* · downloaded 03:07 PM · not podcastable
 - **I Beat Japan's Hardest Game** — *ConnorDawg* · downloaded 03:06 PM · not podcastable
