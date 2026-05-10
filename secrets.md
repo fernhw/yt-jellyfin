@@ -111,3 +111,6 @@ K109="x"
 K110="r"
 K111="c"
 K112="y"
+
+# Web UI password for request.fernhw.com
+WEB_PASS=Sxfv56
