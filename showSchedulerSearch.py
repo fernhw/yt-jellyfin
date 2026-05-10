@@ -514,6 +514,149 @@ def download_torrent(magnet: str, dest_dir: str, dry_run: bool = False) -> bool:
         log.error("  aria2c timed out after 2 hours")
         return False
 
+# ── Movie search ─────────────────────────────────────────────────────────────
+
+def search_yts(title: str, year: Optional[int] = None) -> List[Dict]:
+    """Search YTS (yts.mx) JSON API. Best for non-anime 1080p/4K movies."""
+    query = f"{title} {year}" if year else title
+    url = (
+        f"https://yts.mx/api/v2/list_movies.json"
+        f"?query_term={urllib.parse.quote(query)}&limit=10"
+    )
+    log.info(f"  YTS query: {query}")
+    body = _fetch(url)
+    if not body:
+        return []
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        log.warning("  YTS: invalid JSON")
+        return []
+    movies = (data.get('data') or {}).get('movies') or []
+    results: List[Dict] = []
+    tr_str = '&tr='.join(urllib.parse.quote(t, safe='') for t in _TPB_TRACKERS)
+    for movie in movies:
+        for torrent in (movie.get('torrents') or []):
+            info_hash = torrent.get('hash', '').lower()
+            if not info_hash:
+                continue
+            name = (
+                f"{movie.get('title', title)}"
+                f" ({movie.get('year', year or '')})"
+                f" {torrent.get('quality', '')}"
+                f" {torrent.get('video_codec', '')}"
+            ).strip()
+            seeds = int(torrent.get('seeds', 0))
+            magnet = (
+                f"magnet:?xt=urn:btih:{info_hash}"
+                f"&dn={urllib.parse.quote(name)}"
+                f"&tr={tr_str}"
+            )
+            results.append({'title': name, 'magnet': magnet, 'seeds': seeds})
+    log.info(f"  YTS → {len(results)} raw results")
+    return results
+
+
+def search_tpb_movie(title: str, year: Optional[int] = None) -> List[Dict]:
+    """Search ThePirateBay for a movie (no episode filter)."""
+    query = f"{title} {year}" if year else title
+    url = f"https://apibay.org/q.php?q={urllib.parse.quote(query)}"
+    log.info(f"  TPB movie query: {query}")
+    body = _fetch(url)
+    if not body:
+        return []
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        log.warning("  TPB: invalid JSON")
+        return []
+    results: List[Dict] = []
+    tr_str = '&tr='.join(urllib.parse.quote(t, safe='') for t in _TPB_TRACKERS)
+    for item in data:
+        name = item.get('name', '')
+        if not name or name == 'No results returned':
+            continue
+        info_hash = item.get('info_hash', '').lower()
+        if not info_hash:
+            continue
+        seeds = int(item.get('seeders', 0))
+        magnet = (
+            f"magnet:?xt=urn:btih:{info_hash}"
+            f"&dn={urllib.parse.quote(name)}"
+            f"&tr={tr_str}"
+        )
+        results.append({'title': name, 'magnet': magnet, 'seeds': seeds})
+    log.info(f"  TPB movie → {len(results)} raw results")
+    return results
+
+
+def search_nyaa_movie(title: str) -> List[Dict]:
+    """Search Nyaa for an anime movie (no episode filter, anime-eng category)."""
+    url = (
+        f"https://nyaa.si/?f=0&c=1_2"
+        f"&q={urllib.parse.quote(title)}"
+        f"&s=seeders&o=desc"
+    )
+    log.info(f"  Nyaa movie query: {title}")
+    body = _fetch(url)
+    if not body:
+        return []
+    results = _parse_nyaa_html(body)
+    log.info(f"  Nyaa movie → {len(results)} raw results")
+    return results
+
+
+def _score_movie(title: str, seeds: int, is_anime: bool) -> Optional[float]:
+    """Score a movie torrent candidate. Returns None if below requirements."""
+    if seeds < MIN_SEEDS:
+        return None
+    if not _has_min_res(title):
+        return None
+    show_type = 'anime' if is_anime else 'live'
+    if not _has_english(title, show_type, False):
+        return None
+    return score_torrent(title, seeds, show_type)
+
+
+def download_movie(title: str, year: Optional[int], is_anime: bool,
+                   movies_dir: str, dry_run: bool = False) -> None:
+    """
+    Search → score → download a movie to movies_dir.
+    Sources: Nyaa+TPB for anime, YTS+TPB for live-action.
+    """
+    label = f"{title}" + (f" ({year})" if year else "")
+    log.info(f"Searching movie: {label}")
+
+    candidates: List[Dict] = []
+    if is_anime:
+        candidates += search_nyaa_movie(title)
+        candidates += search_tpb_movie(title, year)
+    else:
+        candidates += search_yts(title, year)
+        candidates += search_tpb_movie(title, year)
+
+    scored: List[Tuple[float, Dict]] = []
+    for c in candidates:
+        s = _score_movie(c['title'], c['seeds'], is_anime)
+        if s is not None:
+            scored.append((s, c))
+
+    if not scored:
+        log.error(f"  {label}: no qualifying results (need {MIN_SEEDS}+ seeds, 1080p+, English)")
+        return
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    best_score, best = scored[0]
+    log.info(f"  Best: {best['title']} | score={best_score:.0f} seeds={best['seeds']}")
+
+    dest_dir = movies_dir
+    ok = download_torrent(best['magnet'], dest_dir, dry_run=dry_run)
+    if ok:
+        log.info(f"  {label}: download complete")
+    else:
+        log.error(f"  {label}: download failed")
+
+
 # ── Show report (daily web banner) ────────────────────────────────────────────
 
 def _update_show_report(row: Dict, season: int, episode: int,
@@ -685,7 +828,28 @@ def main() -> None:
                     help='Override next_episode to N (used by backfill in showScheduler.sh)')
     ap.add_argument('--list',    action='store_true',
                     help='Print the current schedule and exit')
+    ap.add_argument('--movie',       metavar='TITLE',
+                    help='Download a movie by title (bypasses CSV)')
+    ap.add_argument('--year',        metavar='YEAR', type=int, default=None,
+                    help='Release year — narrows movie search')
+    ap.add_argument('--anime-movie', action='store_true',
+                    help='Treat --movie as anime (searches Nyaa instead of YTS)')
     args = ap.parse_args()
+
+    # ── Movie mode: search & download, then exit ──────────────────────────────
+    if args.movie:
+        if args.dry_run:
+            log.info("=== DRY-RUN mode — no downloads ===")
+        locations = load_locations()
+        movies_dir = locations.get('MOVIES_DIR', '/Volumes/Jellyfin/Movies')
+        download_movie(
+            title=args.movie,
+            year=args.year,
+            is_anime=args.anime_movie,
+            movies_dir=movies_dir,
+            dry_run=args.dry_run,
+        )
+        return
 
     rows = read_schedule()
     if not rows:
