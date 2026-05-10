@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-09
 
-> *Good evening! Here's what landed on Saturday, May 09, 2026 at 07:07 PM.*
-> **YT Mirror:** 756.92 GB used · 1.54 TB free
+> *Good evening! Here's what landed on Saturday, May 09, 2026 at 09:58 PM.*
+> **YT Mirror:** 757.14 GB used · 1.54 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **You Will Probably Regret Learning About Ballmaxxing - Weekly Weird News** — *Internet Today* · downloaded 09:57 PM · not podcastable
 - **The Ultimate Video Game Trivia Showdown** — *Scott's Stash* · downloaded 07:06 PM · not podcastable
 - **The British Elections Were A Wipeout** — *Big A* · downloaded 06:05 PM · not podcastable
 - **How the f*ck do you end up like this??** — *Asmongold TV* · downloaded 05:05 PM · not podcastable
