@@ -605,7 +605,8 @@ def search_nyaa_movie(title: str) -> List[Dict]:
     return results
 
 
-def _score_movie(title: str, seeds: int, is_anime: bool) -> Optional[float]:
+def _score_movie(title: str, seeds: int, is_anime: bool,
+                 prefer_4k: bool = False) -> Optional[float]:
     """Score a movie torrent candidate. Returns None if below requirements."""
     if seeds < MIN_SEEDS:
         return None
@@ -614,11 +615,21 @@ def _score_movie(title: str, seeds: int, is_anime: bool) -> Optional[float]:
     show_type = 'anime' if is_anime else 'live'
     if not _has_english(title, show_type, False):
         return None
-    return score_torrent(title, seeds, show_type)
+    base = score_torrent(title, seeds, show_type)
+    if base is None:
+        return None
+    # When 4K is preferred, add a large bonus to 4K results so they
+    # always sort above 1080p candidates.
+    if prefer_4k:
+        t = title.lower()
+        if '2160p' in t or '4k' in t:
+            base += 200
+    return base
 
 
 def download_movie(title: str, is_anime: bool,
-                   movies_dir: str, dry_run: bool = False) -> None:
+                   movies_dir: str, dry_run: bool = False,
+                   prefer_4k: bool = False) -> None:
     """
     Search → score → download a movie to movies_dir.
     Title is lowercased before querying.
@@ -631,7 +642,7 @@ def download_movie(title: str, is_anime: bool,
     def _score_all(candidates: List[Dict]) -> List[Tuple[float, Dict]]:
         scored: List[Tuple[float, Dict]] = []
         for c in candidates:
-            s = _score_movie(c['title'], c['seeds'], is_anime)
+            s = _score_movie(c['title'], c['seeds'], is_anime, prefer_4k=prefer_4k)
             if s is not None:
                 scored.append((s, c))
         scored.sort(key=lambda x: x[0], reverse=True)
@@ -837,6 +848,8 @@ def main() -> None:
                     help='Download a movie by title (bypasses CSV)')
     ap.add_argument('--anime-movie', action='store_true',
                     help='Treat --movie as anime (searches Nyaa+TPB first, YTS fallback)')
+    ap.add_argument('--prefer-4k', action='store_true',
+                    help='Prefer 4K/2160p results for movies (large score bonus; falls back to 1080p)')
     args = ap.parse_args()
 
     # ── Movie mode: search & download, then exit ──────────────────────────────
@@ -850,6 +863,7 @@ def main() -> None:
             is_anime=args.anime_movie,
             movies_dir=movies_dir,
             dry_run=args.dry_run,
+            prefer_4k=args.prefer_4k,
         )
         return
 

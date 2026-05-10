@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Request"/>
+<title>Media Request</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+<style>
+:root{--bg:#0d1117;--bg2:#13191f;--bg3:#1c242d;--orange:#f97316;--teal:#2dd4bf;--white:#f0f6ff;--muted:#7a8fa0;--border:rgba(255,255,255,.09);--radius:16px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{display:flex;align-items:center;justify-content:center;padding:24px}
+.box{width:100%;max-width:400px}
+.brand{font-size:3rem;font-weight:800;letter-spacing:-.02em;line-height:1;margin-bottom:6px}
+.brand span.t{color:var(--teal)}.brand span.o{color:var(--orange)}
+.tagline{color:var(--muted);font-size:.95rem;margin-bottom:36px}
+.big-input{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius);padding:15px 16px;color:var(--white);font-size:1rem;outline:none;transition:border-color .2s}
+.big-input:focus{border-color:var(--teal)}
+.big-btn{width:100%;margin-top:12px;padding:15px;border-radius:var(--radius);border:none;font-size:.97rem;font-weight:700;cursor:pointer;background:var(--teal);color:#071c1a;transition:opacity .2s,transform .1s}
+.big-btn:active{transform:scale(.98)}
+.big-btn:disabled{opacity:.5;cursor:not-allowed}
+.err{color:#f87171;font-size:.83rem;margin-top:10px;min-height:18px}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="brand"><span class="t">re</span><span class="o">quest</span></div>
+  <div class="tagline">Enter your password to continue.</div>
+  <input id="pw" class="big-input" type="password" placeholder="Password"
+         autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+  <button id="btn" class="big-btn" onclick="doLogin()">Enter &rarr;</button>
+  <div class="err" id="err"></div>
+</div>
+<script>
+async function _sha256hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function doLogin() {
+  const pw = document.getElementById('pw').value;
+  if (!pw) return;
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+  document.getElementById('err').textContent = '';
+  try {
+    const hash = await _sha256hex(pw);
+    const r = await fetch('/auth', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({token: hash}),
+    });
+    if (r.ok) {
+      location.href = '/';
+    } else {
+      document.getElementById('err').textContent = 'Wrong password — try again.';
+      document.getElementById('pw').value = '';
+      document.getElementById('pw').focus();
+    }
+  } catch(e) {
+    document.getElementById('err').textContent = 'Network error — check connection.';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Enter →';
+}
+
+document.getElementById('pw').focus();
+</script>
+</body>
+</html>

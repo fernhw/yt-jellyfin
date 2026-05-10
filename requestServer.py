@@ -29,6 +29,7 @@ SCHEDULE_CSV  = os.path.join(SCRIPT_DIR, 'showSchedule.csv')
 SECRETS_FILE  = os.path.join(SCRIPT_DIR, 'secrets.md')
 LOCATIONS_FILE = os.path.join(SCRIPT_DIR, 'locations.md')
 SCHEDULER_LOG = os.path.join(SCRIPT_DIR, 'showScheduler.log')
+DOWNLOADER_LOG = os.path.join(SCRIPT_DIR, 'downloader.log')
 TORRENT_STATE = os.path.join(SCRIPT_DIR, '.torrent_state.json')
 STATIC_DIR    = os.path.join(SCRIPT_DIR, 'request_web')
 PORT          = 8770
@@ -66,7 +67,9 @@ def _web_password_hash() -> str:
 # ── Auth ───────────────────────────────────────────────────────────────────────
 
 def _check_auth() -> bool:
-    token = request.headers.get('X-Auth-Token', '') or request.args.get('token', '')
+    token = (request.headers.get('X-Auth-Token', '')
+             or request.args.get('token', '')
+             or request.cookies.get('req_token', ''))
     if not token:
         return False
     return hmac.compare_digest(token, _web_password_hash())
@@ -121,32 +124,43 @@ _PROGRESS_RE = re.compile(
 _FILE_RE = re.compile(r'FILE:\s*(.+)')
 
 def _watch_log():
-    last_size = 0
     state: Dict = {}
     while True:
         try:
-            size = os.path.getsize(SCHEDULER_LOG)
-            if size != last_size:
-                last_size = size
-                raw = _tail_log(60)
-                # Extract current download progress
-                progress_lines = []
-                current_file = ''
-                for line in raw.splitlines():
-                    fm = _FILE_RE.search(line)
-                    if fm:
-                        current_file = fm.group(1).strip()
-                    pm = _PROGRESS_RE.search(line)
-                    if pm:
-                        progress_lines.append({'id': pm.group(1), 'info': pm.group(2), 'file': current_file})
-                state = {
-                    'updated': time.time(),
-                    'progress': progress_lines[-1] if progress_lines else None,
-                    'current_file': current_file,
-                    'log_tail': raw,
-                }
-                with open(TORRENT_STATE, 'w') as f:
-                    json.dump(state, f)
+            combined_lines: list = []
+            for log_path in (SCHEDULER_LOG, DOWNLOADER_LOG):
+                try:
+                    with open(log_path) as f:
+                        combined_lines.extend(f.readlines()[-80:])
+                except Exception:
+                    pass
+
+            downloads_seen: Dict[str, Dict] = {}  # id → entry (keep last seen)
+            current_file = ''
+            for line in combined_lines:
+                fm = _FILE_RE.search(line)
+                if fm:
+                    current_file = fm.group(1).strip()
+                pm = _PROGRESS_RE.search(line)
+                if pm:
+                    info = pm.group(2)
+                    pct_m = re.search(r'\((\d+)%\)', info)
+                    pct = int(pct_m.group(1)) if pct_m else 0
+                    dl_id = pm.group(1)
+                    downloads_seen[dl_id] = {
+                        'id': dl_id,
+                        'info': info,
+                        'file': current_file,
+                        'pct': pct,
+                    }
+
+            state = {
+                'updated': time.time(),
+                'downloads': list(downloads_seen.values()),
+                'log_tail': ''.join(combined_lines[-120:]),
+            }
+            with open(TORRENT_STATE, 'w') as f:
+                json.dump(state, f)
         except Exception:
             pass
         time.sleep(3)
@@ -156,6 +170,20 @@ def _watch_log():
 @app.route('/api/ping')
 def ping():
     return jsonify({'ok': True})
+
+
+@app.route('/auth', methods=['POST'])
+def do_auth():
+    """Validate a pre-hashed token (sha256 of raw password) and set a cookie."""
+    data = request.get_json(force=True) or {}
+    token = (data.get('token') or '').strip()
+    if not token or not hmac.compare_digest(token, _web_password_hash()):
+        abort(401)
+    from flask import make_response
+    resp = make_response(jsonify({'ok': True}))
+    # httponly=False so JS can read the cookie to use as X-Auth-Token header
+    resp.set_cookie('req_token', token, max_age=2592000, samesite='Strict', httponly=False)
+    return resp
 
 @app.route('/api/schedule', methods=['GET'])
 @_require_auth
@@ -204,6 +232,38 @@ def add_show():
     write_schedule(rows)
     return jsonify({'added': row['show_name']}), 201
 
+@app.route('/api/schedule/<int:idx>/backlog', methods=['POST'])
+@_require_auth
+def backlog_show(idx: int):
+    """Reset a show to episode 1 and kick off a forced sequential download
+    of all episodes in a background thread."""
+    rows = read_schedule()
+    if idx < 0 or idx >= len(rows):
+        abort(404)
+    row = rows[idx]
+    show_name = row['show_name']
+    total = int(row.get('total_episodes') or 99)
+    # Reset CSV so scheduler starts from ep 1
+    rows[idx]['next_episode'] = '1'
+    rows[idx]['status'] = 'pending'
+    write_schedule(rows)
+
+    search_script = os.path.join(SCRIPT_DIR, 'showSchedulerSearch.py')
+
+    def _run_backlog():
+        for _ in range(total):
+            subprocess.run(
+                [sys.executable, search_script, '--show', show_name, '--force'],
+                capture_output=True,
+            )
+            # Each call blocks until aria2c finishes downloading that episode.
+            # Short pause to avoid hammering tracker APIs between episodes.
+            time.sleep(5)
+
+    threading.Thread(target=_run_backlog, daemon=True).start()
+    return jsonify({'backlog': show_name, 'from_ep': 1, 'total': total}), 202
+
+
 @app.route('/api/movie', methods=['POST'])
 @_require_auth
 def request_movie():
@@ -212,6 +272,8 @@ def request_movie():
     if not title:
         return jsonify({'error': 'title required'}), 400
     is_anime = bool(data.get('anime'))
+    quality = (data.get('quality') or '1080').lower()
+    prefer_4k = quality in ('4k', '2160p', '4k2160', '4k/2160p')
     cmd = [
         sys.executable,
         os.path.join(SCRIPT_DIR, 'showSchedulerSearch.py'),
@@ -219,8 +281,10 @@ def request_movie():
     ]
     if is_anime:
         cmd.append('--anime-movie')
+    if prefer_4k:
+        cmd.append('--prefer-4k')
     threading.Thread(target=subprocess.run, args=(cmd,), daemon=True).start()
-    return jsonify({'queued': title, 'anime': is_anime}), 202
+    return jsonify({'queued': title, 'anime': is_anime, 'quality': quality}), 202
 
 @app.route('/api/torrent-state')
 @_require_auth
@@ -237,7 +301,12 @@ def get_log():
 
 @app.route('/')
 def index():
-    return send_from_directory(STATIC_DIR, 'index.html')
+    # Server-side cookie check: only serve the full app if authenticated.
+    # Unauthenticated visitors see login.html (no app structure exposed).
+    token = request.cookies.get('req_token', '')
+    if token and hmac.compare_digest(token, _web_password_hash()):
+        return send_from_directory(STATIC_DIR, 'index.html')
+    return send_from_directory(STATIC_DIR, 'login.html')
 
 @app.route('/favicon.ico')
 def favicon():

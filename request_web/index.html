@@ -9,435 +9,637 @@
 <title>Media Request</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
 <style>
-:root{--bg:#0d1117;--bg2:#13191f;--bg3:#1c242d;--orange:#f97316;--teal:#2dd4bf;--blue:#60a5fa;--purple:#a78bfa;--white:#f0f6ff;--muted:#7a8fa0;--border:rgba(255,255,255,.09);--nav-h:54px;--radius:16px}
+:root{--bg:#0d1117;--bg2:#13191f;--bg3:#1c242d;--orange:#f97316;--teal:#2dd4bf;--blue:#60a5fa;--purple:#a78bfa;--white:#f0f6ff;--muted:#7a8fa0;--border:rgba(255,255,255,.09);--nav-h:54px;--strip-h:56px;--radius:16px}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;overflow-x:hidden}
-#login-screen{position:fixed;inset:0;z-index:9000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
-#login-screen.gone{display:none}
-.login-box{width:100%;max-width:400px}
-.brand{font-size:2.8rem;font-weight:800;letter-spacing:-.02em;line-height:1;margin-bottom:6px}
-.brand span.t{color:var(--teal)}.brand span.o{color:var(--orange)}
-.tagline{color:var(--muted);font-size:.95rem;margin-bottom:36px}
-#app{display:none;flex-direction:column;min-height:100vh}
-#app.ready{display:flex}
-#topbar{position:sticky;top:0;z-index:100;height:var(--nav-h);background:rgba(13,17,23,.93);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:4px}
-.topbar-brand{font-size:1rem;font-weight:800;margin-right:8px;flex-shrink:0;padding:0 4px}
+
+/* ── Top nav ── */
+#topbar{position:sticky;top:0;z-index:100;height:var(--nav-h);background:rgba(13,17,23,.93);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:4px}
+.topbar-brand{font-size:1.05rem;font-weight:800;flex-shrink:0;padding:0 6px;margin-right:4px}
 .topbar-brand span.t{color:var(--teal)}.topbar-brand span.o{color:var(--orange)}
 .nav-tabs{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none}
 .nav-tabs::-webkit-scrollbar{display:none}
-.nav-tab{flex-shrink:0;padding:7px 13px;border-radius:10px;border:none;background:none;color:var(--muted);font-size:.85rem;font-weight:600;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
+.nav-tab{flex-shrink:0;padding:7px 13px;border-radius:10px;border:none;background:none;color:var(--muted);font-size:.84rem;font-weight:600;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
 .nav-tab.active{background:rgba(255,255,255,.09);color:var(--white)}
 .nav-tab:hover:not(.active){color:var(--white)}
-#dl-indicator{flex-shrink:0;display:flex;align-items:center;gap:5px;margin-left:6px;padding:5px 10px}
-#dl-dot{width:7px;height:7px;border-radius:50%;background:var(--bg3);border:1px solid var(--muted);transition:background .3s,box-shadow .3s}
+#dl-nav-badge{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:5px 8px}
+#dl-dot{width:7px;height:7px;border-radius:50%;background:var(--bg3);border:1px solid var(--muted);transition:background .3s,box-shadow .3s;flex-shrink:0}
 #dl-dot.active{background:var(--orange);border-color:var(--orange);box-shadow:0 0 7px var(--orange);animation:pulse-dot 1.4s ease-in-out infinite}
 @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.35}}
-#dl-pct{font-size:.75rem;font-weight:700;color:var(--orange);display:none;min-width:32px}
-#dl-dot.active ~ #dl-pct{display:block}
-.big-input{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius);padding:15px 16px;color:var(--white);font-size:1rem;outline:none;transition:border-color .2s}
+#dl-nav-pct{font-size:.74rem;font-weight:700;color:var(--orange)}
+
+/* ── Content area ── */
+#content{padding-bottom:calc(var(--strip-h) + 24px)}
+.tab-pane{display:none;padding:22px 16px 16px;max-width:620px;margin:0 auto;width:100%}
+.tab-pane.active{display:block}
+
+/* ── Fixed download strip ── */
+#dl-strip{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(19,25,31,.97);border-top:1px solid var(--border);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);min-height:var(--strip-h);padding:8px 16px;display:flex;flex-direction:column;gap:6px}
+#dl-strip-idle{color:var(--muted);font-size:.78rem;display:flex;align-items:center;gap:8px;padding:6px 0}
+#dl-strip-idle .dot-idle{width:6px;height:6px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);flex-shrink:0}
+.dl-row{display:flex;align-items:center;gap:10px;min-width:0}
+.dl-row-info{flex:1;min-width:0}
+.dl-row-fname{font-size:.78rem;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-row-meta{font-size:.68rem;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-row-bar{flex-shrink:0;width:90px;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.dl-row-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--teal));border-radius:2px;transition:width .6s}
+.dl-row-pct{flex-shrink:0;font-size:.72rem;font-weight:800;color:var(--orange);min-width:30px;text-align:right}
+
+/* ── Typography ── */
+.section-label{font-size:.6rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.section-title{font-size:1.85rem;font-weight:800;line-height:1.1;margin-bottom:6px}
+.section-sub{font-size:.85rem;color:var(--muted);margin-bottom:20px}
+
+/* ── Form elements ── */
+.big-input{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 15px;color:var(--white);font-size:1rem;outline:none;transition:border-color .2s}
 .big-input:focus{border-color:var(--teal)}
-.big-btn{width:100%;margin-top:12px;padding:15px;border-radius:var(--radius);border:none;font-size:.97rem;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s}
+.big-btn{width:100%;margin-top:10px;padding:14px;border-radius:var(--radius);border:none;font-size:.95rem;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px}
 .big-btn:active{transform:scale(.98)}
+.big-btn:disabled{opacity:.45;cursor:not-allowed}
 .btn-teal{background:var(--teal);color:#071c1a}.btn-orange{background:var(--orange);color:#1a0800}
 .btn-blue{background:var(--blue);color:#040e1f}.btn-purple{background:var(--purple);color:#0d0716}
 .btn-muted{background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
-.err{color:#f87171;font-size:.83rem;margin-top:8px;min-height:18px}
-.tab-pane{display:none;padding:22px 16px 40px;max-width:600px;margin:0 auto;width:100%}
-.tab-pane.active{display:block}
-.section-label{font-size:.62rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-.section-title{font-size:1.8rem;font-weight:800;line-height:1.1;margin-bottom:20px}
+.btn-red{background:#dc2626;color:#fff}
+.err{color:#f87171;font-size:.82rem;margin-top:8px;min-height:16px}
+.success-msg{color:var(--teal);font-weight:600;font-size:.9rem;margin-top:10px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* ── Shows tab ── */
 .show-list{display:flex;flex-direction:column;gap:9px}
 .show-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;gap:10px}
 .show-card-info{flex:1;min-width:0}
 .show-card-name{font-weight:700;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.show-card-meta{font-size:.74rem;color:var(--muted);margin-top:3px}
-.show-card-status{font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px;flex-shrink:0}
-.status-searching{background:rgba(96,165,250,.15);color:var(--blue)}
-.status-pending{background:rgba(255,255,255,.07);color:var(--muted)}
-.status-done{background:rgba(45,212,191,.12);color:var(--teal)}
-.del-btn{background:none;border:none;color:var(--muted);font-size:.95rem;cursor:pointer;padding:6px 8px;border-radius:8px;transition:color .18s,background .18s;flex-shrink:0}
-.del-btn:hover{color:#f87171;background:rgba(248,113,113,.1)}
+.show-card-meta{font-size:.73rem;color:var(--muted);margin-top:4px;line-height:1.5}
+.show-card-actions{display:flex;gap:5px;flex-shrink:0}
+.icon-btn{background:none;border:none;padding:7px 9px;border-radius:8px;cursor:pointer;font-size:.88rem;transition:color .2s,background .2s;color:var(--muted)}
+.icon-btn.backlog{color:var(--blue)}.icon-btn.backlog:hover{color:var(--white);background:rgba(96,165,250,.15)}
+.icon-btn.del:hover{color:#f87171;background:rgba(248,113,113,.1)}
+.status-badge{font-size:.58rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;border-radius:999px;flex-shrink:0;white-space:nowrap}
+.s-searching{background:rgba(96,165,250,.15);color:var(--blue)}
+.s-pending{background:rgba(255,255,255,.07);color:var(--muted)}
+.s-done,.s-complete{background:rgba(45,212,191,.12);color:var(--teal)}
+.s-missed{background:rgba(239,68,68,.12);color:#f87171}
 .empty-state{color:var(--muted);font-size:.9rem;padding:40px 0;text-align:center}
-.progress-bar{height:3px;background:var(--bg3);border-radius:2px;margin-bottom:26px;overflow:hidden}
-.progress-fill{height:100%;border-radius:2px;transition:width .4s;background:linear-gradient(90deg,var(--teal),var(--blue))}
+
+/* ── Add show form (step wizard) ── */
+.progress-bar{height:3px;background:var(--bg3);border-radius:2px;margin-bottom:24px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width .4s;background:linear-gradient(90deg,var(--purple),var(--blue))}
 .form-step{display:none}.form-step.active{display:block}
-.step-label{font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-.step-q{font-size:1.35rem;font-weight:700;margin-bottom:5px;line-height:1.2}
-.step-hint{font-size:.82rem;color:var(--muted);margin-bottom:16px}
-.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.type-btn{padding:16px;border-radius:14px;border:1.5px solid var(--border);background:var(--bg3);color:var(--white);font-size:.95rem;font-weight:600;cursor:pointer;transition:border-color .2s,background .2s}
-.type-btn.selected,.type-btn:hover{border-color:var(--teal);background:rgba(45,212,191,.08)}
-.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px}
-.day-btn{padding:10px 2px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg3);color:var(--white);font-size:.72rem;font-weight:700;cursor:pointer;transition:border-color .2s,background .2s}
+.step-label{font-size:.63rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.step-q{font-size:1.35rem;font-weight:700;margin-bottom:4px;line-height:1.2}
+.step-hint{font-size:.81rem;color:var(--muted);margin-bottom:15px;line-height:1.4}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.type-btn,.qual-btn,.movie-type-btn{padding:15px;border-radius:14px;border:1.5px solid var(--border);background:var(--bg3);color:var(--white);font-size:.93rem;font-weight:600;cursor:pointer;transition:border-color .2s,background .2s;width:100%}
+.type-btn.selected{border-color:var(--purple);background:rgba(167,139,250,.1)}
+.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:12px}
+.day-btn{padding:10px 2px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg3);color:var(--white);font-size:.7rem;font-weight:700;cursor:pointer;transition:border-color .2s,background .2s}
 .day-btn.selected{border-color:var(--purple);background:rgba(167,139,250,.12);color:var(--purple)}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.confirm-box{background:var(--bg3);border-radius:14px;padding:16px;margin-bottom:18px;font-size:.9rem;line-height:1.85;color:var(--muted)}
-.movie-type-row{display:flex;gap:10px;margin-bottom:14px}
-.movie-type-btn{flex:1;padding:14px;border-radius:14px;border:1.5px solid var(--border);background:var(--bg3);color:var(--white);font-size:.92rem;font-weight:600;cursor:pointer;transition:border-color .2s,background .2s}
-.movie-type-btn.selected{border-color:var(--orange);background:rgba(249,115,22,.1);color:var(--orange)}
-.dl-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px}
-.dl-card-label{font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin-bottom:10px}
-.dl-file{font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
-.dl-bar-outer{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin:10px 0}
-.dl-bar-inner{height:100%;background:linear-gradient(90deg,var(--orange),var(--teal));border-radius:3px;transition:width .6s}
-.dl-info{font-size:.9rem;font-weight:600;color:var(--white)}
-.log-pre{font-size:.68rem;color:var(--muted);font-family:'Menlo','Monaco',monospace;white-space:pre-wrap;max-height:320px;overflow-y:auto;background:var(--bg);border-radius:10px;padding:12px;border:1px solid var(--border)}
-.idle-state{color:var(--muted);font-size:.9rem;text-align:center;padding:40px 0}
-.spinner{display:inline-block;width:17px;height:17px;border:2.5px solid rgba(255,255,255,.15);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+.confirm-box{background:var(--bg3);border-radius:14px;padding:16px;margin-bottom:16px;font-size:.88rem;line-height:2;color:var(--muted)}
+.toggle-row{display:flex;align-items:center;gap:12px;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius);padding:13px 15px;cursor:pointer;margin-bottom:10px}
+.toggle-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--purple);cursor:pointer;flex-shrink:0}
+.toggle-label{flex:1;font-size:.92rem;font-weight:600}
+.toggle-sub{font-size:.76rem;color:var(--muted);margin-top:2px}
+
+/* ── Movie tab ── */
+.qual-row{display:flex;gap:8px;margin-bottom:12px}
+.qual-btn{flex:1;padding:12px}
+.qual-btn.selected{border-color:var(--orange);background:rgba(249,115,22,.1);color:var(--orange)}
+.movie-type-row{display:flex;gap:8px;margin-bottom:12px}
+.movie-type-btn{flex:1;padding:12px}
+.movie-type-btn.selected{border-color:var(--teal);background:rgba(45,212,191,.09);color:var(--teal)}
+
+/* ── Current tab (log / detail) ── */
+.log-pre{font-size:.67rem;color:var(--muted);font-family:'Menlo','Monaco',monospace;white-space:pre-wrap;max-height:380px;overflow-y:auto;background:var(--bg);border-radius:10px;padding:12px;border:1px solid var(--border)}
+
+/* ── Shared ── */
+.spinner{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.15);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .hidden{display:none!important}
-.success-msg{margin-top:12px;color:var(--teal);font-weight:600;font-size:.93rem}
-#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 20px;font-size:.87rem;font-weight:600;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;z-index:9999}
+#toast{position:fixed;bottom:calc(var(--strip-h) + 12px);left:50%;transform:translateX(-50%) translateY(14px);background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:9px 18px;font-size:.86rem;font-weight:600;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;z-index:9999}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(max-width:420px){.brand{font-size:2.2rem}.days-grid{grid-template-columns:repeat(4,1fr)}.row2{grid-template-columns:1fr}.nav-tab{padding:6px 10px;font-size:.8rem}}
+
+@media(max-width:440px){
+  .section-title{font-size:1.5rem}
+  .days-grid{grid-template-columns:repeat(4,1fr)}
+  .row2{grid-template-columns:1fr}
+  .nav-tab{padding:6px 10px;font-size:.78rem}
+}
 </style>
 </head>
 <body>
 
-<div id="login-screen">
-  <div class="login-box">
-    <div class="brand"><span class="t">re</span><span class="o">quest</span></div>
-    <div class="tagline">Your media, on demand.</div>
-    <input id="pw-input" class="big-input" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
-    <button class="big-btn btn-teal" onclick="doLogin()">Enter &rarr;</button>
-    <div class="err" id="login-err"></div>
+<!-- ── Top nav ────────────────────────────────────────────── -->
+<nav id="topbar">
+  <div class="topbar-brand"><span class="t">re</span><span class="o">q</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab" onclick="showTab('movie')" id="ntab-movie">Movie</button>
+    <button class="nav-tab" onclick="showTab('shows')" id="ntab-shows">Shows</button>
+    <button class="nav-tab" onclick="showTab('add')"   id="ntab-add">+ Add Show</button>
+    <button class="nav-tab" onclick="showTab('current')" id="ntab-current">Current</button>
   </div>
-</div>
-
-<div id="app">
-  <nav id="topbar">
-    <div class="topbar-brand"><span class="t">re</span><span class="o">q</span></div>
-    <div class="nav-tabs">
-      <button class="nav-tab active" onclick="showTab('shows')">Shows</button>
-      <button class="nav-tab" onclick="showTab('add')">+ Add</button>
-      <button class="nav-tab" onclick="showTab('movie')">Movie</button>
-      <button class="nav-tab" onclick="showTab('current')">Current</button>
-    </div>
-    <div id="dl-indicator"><div id="dl-dot"></div><span id="dl-pct"></span></div>
-  </nav>
-
-  <div class="tab-pane active" id="tab-shows">
-    <div class="section-label">Tracking</div>
-    <div class="section-title" style="color:var(--blue)">Shows</div>
-    <div id="schedule-list" class="show-list"><div class="empty-state">Loading&hellip;</div></div>
-    <button class="big-btn btn-blue" style="margin-top:18px" onclick="showTab('add')">+ Add Show</button>
+  <div id="dl-nav-badge">
+    <div id="dl-dot"></div>
+    <span id="dl-nav-pct"></span>
   </div>
+</nav>
 
-  <div class="tab-pane" id="tab-add">
-    <div class="section-label">Schedule</div>
-    <div class="section-title" style="color:var(--purple)">New Show</div>
-    <div class="progress-bar"><div class="progress-fill" id="add-progress" style="width:0%"></div></div>
-    <div class="form-step active" id="step-1">
-      <div class="step-label">Step 1 of 7</div><div class="step-q">What's the show called?</div>
-      <div class="step-hint">Display name &mdash; e.g. <em>Re Zero</em></div>
-      <input id="f-show-name" class="big-input" placeholder="Re Zero" maxlength="80" onkeydown="stepEnter(event,2)"/>
-      <button class="big-btn btn-purple" style="margin-top:12px" onclick="goStep(2)">Next &rarr;</button>
-      <div class="err" id="err-1"></div>
-    </div>
-    <div class="form-step" id="step-2">
-      <div class="step-label">Step 2 of 7</div><div class="step-q">Search term for torrents?</div>
-      <div class="step-hint">Lowercase, no punctuation &mdash; <em>re zero</em> not <em>Re:Zero</em></div>
-      <input id="f-search-name" class="big-input" placeholder="re zero" maxlength="80" onkeydown="stepEnter(event,3)"/>
-      <button class="big-btn btn-purple" style="margin-top:12px" onclick="goStep(3)">Next &rarr;</button>
-      <div class="err" id="err-2"></div>
-    </div>
-    <div class="form-step" id="step-3">
-      <div class="step-label">Step 3 of 7</div><div class="step-q">Jellyfin folder name?</div>
-      <div class="step-hint">Exact folder inside Shows &mdash; e.g. <em>Re Zero</em></div>
-      <input id="f-folder" class="big-input" placeholder="Re Zero" maxlength="120" onkeydown="stepEnter(event,4)"/>
-      <button class="big-btn btn-purple" style="margin-top:12px" onclick="goStep(4)">Next &rarr;</button>
-      <div class="err" id="err-3"></div>
-    </div>
-    <div class="form-step" id="step-4">
-      <div class="step-label">Step 4 of 7</div><div class="step-q">Anime or live-action?</div>
-      <div class="step-hint">Affects which torrent sites are searched first</div>
-      <div class="type-grid">
-        <button class="type-btn" onclick="selectType('anime',this)">&#127885; Anime</button>
-        <button class="type-btn" onclick="selectType('live',this)">&#127916; Live-action</button>
-      </div>
-      <div class="err" id="err-4"></div>
-    </div>
-    <div class="form-step" id="step-5">
-      <div class="step-label">Step 5 of 7</div><div class="step-q">Season &amp; episode info?</div>
-      <div class="step-hint">Season number, next episode to grab, total episodes</div>
-      <input id="f-season" class="big-input" placeholder="Season e.g. 1" type="number" min="1" style="margin-bottom:8px" onkeydown="if(event.key==='Enter')document.getElementById('f-next-ep').focus()"/>
-      <div class="row2" style="margin-bottom:8px">
-        <input id="f-next-ep" class="big-input" placeholder="Next ep e.g. 1" type="number" min="1" onkeydown="if(event.key==='Enter')document.getElementById('f-total-ep').focus()"/>
-        <input id="f-total-ep" class="big-input" placeholder="Total e.g. 13" type="number" min="1" onkeydown="stepEnter(event,6)"/>
-      </div>
-      <button class="big-btn btn-purple" style="margin-top:4px" onclick="goStep(6)">Next &rarr;</button>
-      <div class="err" id="err-5"></div>
-    </div>
-    <div class="form-step" id="step-6">
-      <div class="step-label">Step 6 of 7</div><div class="step-q">Which day does it air?</div>
-      <div class="step-hint">New episodes release day</div>
-      <div class="days-grid">
-        <button class="day-btn" onclick="selectDay('mon',this)">Mon</button>
-        <button class="day-btn" onclick="selectDay('tue',this)">Tue</button>
-        <button class="day-btn" onclick="selectDay('wed',this)">Wed</button>
-        <button class="day-btn" onclick="selectDay('thu',this)">Thu</button>
-        <button class="day-btn" onclick="selectDay('fri',this)">Fri</button>
-        <button class="day-btn" onclick="selectDay('sat',this)">Sat</button>
-        <button class="day-btn" onclick="selectDay('sun',this)">Sun</button>
-      </div>
-      <div class="err" id="err-6"></div>
-    </div>
-    <div class="form-step" id="step-7">
-      <div class="step-label">Step 7 of 7</div><div class="step-q">Confirm?</div>
-      <div class="confirm-box" id="confirm-preview"></div>
-      <button class="big-btn btn-purple" onclick="submitShow()"><span class="spinner hidden" id="add-spinner"></span>Add to Schedule</button>
-      <button class="big-btn btn-muted" style="margin-top:8px" onclick="resetAddForm()">Start over</button>
-      <div class="err" id="err-7"></div>
-    </div>
-  </div>
+<!-- ── Tab panes ─────────────────────────────────────────── -->
+<div id="content">
 
-  <div class="tab-pane" id="tab-movie">
+  <!-- MOVIE TAB (default) -->
+  <div class="tab-pane active" id="tab-movie">
     <div class="section-label">One-time download</div>
     <div class="section-title" style="color:var(--orange)">Movie</div>
-    <p style="color:var(--muted);font-size:.85rem;margin-bottom:20px">TPB &rarr; Nyaa (anime) &rarr; YTS fallback. Downloads to Jellyfin Movies.</p>
+    <div class="section-sub">Search TPB, Nyaa (anime) and YTS. Downloads straight to Jellyfin Movies.</div>
+
+    <div class="step-label" style="margin-bottom:6px">Content type</div>
     <div class="movie-type-row">
-      <button class="movie-type-btn selected" id="mbtn-live" onclick="selectMovieType('live')">&#127916; Live-action</button>
-      <button class="movie-type-btn" id="mbtn-anime" onclick="selectMovieType('anime')">&#127885; Anime</button>
+      <button class="movie-type-btn selected" id="mbtn-live" onclick="selMovieType('live')">&#127916; Live-action</button>
+      <button class="movie-type-btn" id="mbtn-anime" onclick="selMovieType('anime')">&#127885; Anime</button>
     </div>
-    <input id="movie-title" class="big-input" placeholder="e.g. dune part two" style="margin-bottom:12px" onkeydown="if(event.key==='Enter')submitMovie()"/>
-    <button class="big-btn btn-orange" onclick="submitMovie()"><span class="spinner hidden" id="movie-spinner"></span>Queue Download</button>
+
+    <div class="step-label" style="margin-bottom:6px">Quality preference</div>
+    <div class="qual-row">
+      <button class="qual-btn" id="qbtn-1080" onclick="selQuality('1080')">1080p</button>
+      <button class="qual-btn selected" id="qbtn-4k" onclick="selQuality('4k')">&#10024; 4K / 2160p</button>
+    </div>
+    <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">
+      4K mode searches for <code style="color:var(--orange)">2160p</code> / <code style="color:var(--orange)">4k</code> markers first.
+      Falls back to 1080p if nothing found.
+    </p>
+
+    <div class="step-label" style="margin-bottom:6px">Title</div>
+    <input id="movie-title" class="big-input" placeholder="e.g. dune part two" onkeydown="if(event.key==='Enter')submitMovie()"/>
+    <button class="big-btn btn-orange" id="movie-btn" onclick="submitMovie()" style="margin-top:12px">
+      <span class="spinner hidden" id="movie-spin"></span>Queue Download
+    </button>
     <div class="err" id="movie-err"></div>
     <div id="movie-ok" class="success-msg hidden"></div>
   </div>
 
+  <!-- SHOWS TAB -->
+  <div class="tab-pane" id="tab-shows">
+    <div class="section-label">Tracking</div>
+    <div class="section-title" style="color:var(--blue)">Shows</div>
+    <div class="section-sub">The scheduler checks for new episodes on their release day and downloads the best available version automatically.</div>
+    <div id="schedule-list" class="show-list"><div class="empty-state">Loading&hellip;</div></div>
+    <button class="big-btn btn-blue" style="margin-top:18px" onclick="showTab('add')">+ Track a New Show</button>
+  </div>
+
+  <!-- ADD SHOW TAB -->
+  <div class="tab-pane" id="tab-add">
+    <div class="section-label">Schedule</div>
+    <div class="section-title" style="color:var(--purple)">Track a Show</div>
+    <div class="progress-bar"><div class="progress-fill" id="add-prog" style="width:0%"></div></div>
+
+    <!-- Step 1: Show name -->
+    <div class="form-step active" id="step-1">
+      <div class="step-label">Step 1 of 8 &mdash; Display name</div>
+      <div class="step-q">What's the show called?</div>
+      <div class="step-hint">This is the name shown in the app &mdash; e.g. <em>Re Zero</em>, <em>The Boys</em></div>
+      <input id="f-show-name" class="big-input" placeholder="Show name" maxlength="80" onkeydown="stepEnter(event,2)"/>
+      <button class="big-btn btn-purple" onclick="goStep(2)">Next &rarr;</button>
+      <div class="err" id="err-1"></div>
+    </div>
+
+    <!-- Step 2: Search term -->
+    <div class="form-step" id="step-2">
+      <div class="step-label">Step 2 of 8 &mdash; Torrent search term</div>
+      <div class="step-q">How should we search for it?</div>
+      <div class="step-hint">
+        Lowercase, no punctuation. Use the plain English name the torrent sites use.<br>
+        &rarr; <em>re zero</em> (not <em>Re:Zero</em>), <em>the boys</em>
+      </div>
+      <input id="f-search-name" class="big-input" placeholder="search name" maxlength="80" onkeydown="stepEnter(event,3)"/>
+      <button class="big-btn btn-purple" onclick="goStep(3)">Next &rarr;</button>
+      <button class="big-btn btn-muted" onclick="goStep(1)" style="margin-top:6px">&larr; Back</button>
+      <div class="err" id="err-2"></div>
+    </div>
+
+    <!-- Step 3: Jellyfin folder -->
+    <div class="form-step" id="step-3">
+      <div class="step-label">Step 3 of 8 &mdash; Jellyfin folder</div>
+      <div class="step-q">Which folder in Jellyfin Shows?</div>
+      <div class="step-hint">Exact folder name inside your Shows library &mdash; e.g. <em>Re Zero</em>.<br>Must already exist (or be created) in Jellyfin.</div>
+      <input id="f-folder" class="big-input" placeholder="Folder name" maxlength="120" onkeydown="stepEnter(event,4)"/>
+      <button class="big-btn btn-purple" onclick="goStep(4)">Next &rarr;</button>
+      <button class="big-btn btn-muted" onclick="goStep(2)" style="margin-top:6px">&larr; Back</button>
+      <div class="err" id="err-3"></div>
+    </div>
+
+    <!-- Step 4: Type -->
+    <div class="form-step" id="step-4">
+      <div class="step-label">Step 4 of 8 &mdash; Content type</div>
+      <div class="step-q">Anime or live-action?</div>
+      <div class="step-hint">Anime searches Nyaa.si first. Live-action searches The Pirate Bay and RARBG.</div>
+      <div class="type-grid">
+        <button class="type-btn" onclick="selType('anime',this)">&#127885; Anime</button>
+        <button class="type-btn" onclick="selType('live',this)">&#127916; Live-action</button>
+      </div>
+      <button class="big-btn btn-muted" onclick="goStep(3)">&larr; Back</button>
+      <div class="err" id="err-4"></div>
+    </div>
+
+    <!-- Step 5: Season + episodes -->
+    <div class="form-step" id="step-5">
+      <div class="step-label">Step 5 of 8 &mdash; Season &amp; episodes</div>
+      <div class="step-q">Which season, and how many episodes?</div>
+      <div class="step-hint">
+        <strong>Next episode</strong> = the first episode to download (usually 1 for a new season).<br>
+        <strong>Total episodes</strong> = how many episodes in the season.
+        Not sure? Add more &mdash; the system handles extras gracefully.
+      </div>
+      <input id="f-season" class="big-input" placeholder="Season number (e.g. 1)" type="number" min="1" style="margin-bottom:8px"/>
+      <div class="row2" style="margin-bottom:8px">
+        <input id="f-next-ep" class="big-input" placeholder="Next ep (e.g. 1)" type="number" min="1"/>
+        <input id="f-total-ep" class="big-input" placeholder="Total eps (e.g. 24)" type="number" min="1"/>
+      </div>
+      <button class="big-btn btn-purple" onclick="goStep(6)">Next &rarr;</button>
+      <button class="big-btn btn-muted" onclick="goStep(4)" style="margin-top:6px">&larr; Back</button>
+      <div class="err" id="err-5"></div>
+    </div>
+
+    <!-- Step 6: Release day -->
+    <div class="form-step" id="step-6">
+      <div class="step-label">Step 6 of 8 &mdash; Release day</div>
+      <div class="step-q">Which day does it air?</div>
+      <div class="step-hint">New episodes drop on this day. The scheduler searches within a few days of this date to catch delayed uploads.</div>
+      <div class="days-grid">
+        <button class="day-btn" onclick="selDay('mon',this)">Mon</button>
+        <button class="day-btn" onclick="selDay('tue',this)">Tue</button>
+        <button class="day-btn" onclick="selDay('wed',this)">Wed</button>
+        <button class="day-btn" onclick="selDay('thu',this)">Thu</button>
+        <button class="day-btn" onclick="selDay('fri',this)">Fri</button>
+        <button class="day-btn" onclick="selDay('sat',this)">Sat</button>
+        <button class="day-btn" onclick="selDay('sun',this)">Sun</button>
+      </div>
+      <button class="big-btn btn-muted" onclick="goStep(5)">&larr; Back</button>
+      <div class="err" id="err-6"></div>
+    </div>
+
+    <!-- Step 7: Ongoing? -->
+    <div class="form-step" id="step-7">
+      <div class="step-label">Step 7 of 8 &mdash; Season status</div>
+      <div class="step-q">Is this season currently airing?</div>
+      <div class="step-hint">
+        If the season is mid-run and you want to catch up on past episodes <strong>immediately</strong>,
+        turn on <em>Download backlog now</em> &mdash; it will queue every episode from 1 up to your "next episode" without waiting for release days.
+      </div>
+      <label class="toggle-row">
+        <input type="checkbox" id="f-ongoing"/>
+        <div>
+          <div class="toggle-label">Season is currently airing</div>
+          <div class="toggle-sub">New episodes still releasing week by week</div>
+        </div>
+      </label>
+      <label class="toggle-row">
+        <input type="checkbox" id="f-backlog"/>
+        <div>
+          <div class="toggle-label">&#9660; Download backlog now</div>
+          <div class="toggle-sub">Queue all episodes from ep 1 up to "next episode" immediately</div>
+        </div>
+      </label>
+      <button class="big-btn btn-purple" onclick="goStep(8)">Next &rarr;</button>
+      <button class="big-btn btn-muted" onclick="goStep(6)" style="margin-top:6px">&larr; Back</button>
+    </div>
+
+    <!-- Step 8: Confirm -->
+    <div class="form-step" id="step-8">
+      <div class="step-label">Step 8 of 8 &mdash; Confirm</div>
+      <div class="step-q">Ready to add?</div>
+      <div class="confirm-box" id="confirm-preview"></div>
+      <button class="big-btn btn-purple" id="add-btn" onclick="submitShow()">
+        <span class="spinner hidden" id="add-spin"></span>Add to Schedule
+      </button>
+      <button class="big-btn btn-muted" onclick="resetAddForm()" style="margin-top:8px">Start over</button>
+      <div class="err" id="err-8"></div>
+    </div>
+  </div>
+
+  <!-- CURRENT TAB -->
   <div class="tab-pane" id="tab-current">
     <div class="section-label">Downloads</div>
     <div class="section-title" style="color:var(--orange)">Current</div>
-    <div id="dl-active-card" class="dl-card hidden">
-      <div class="dl-card-label">&#11015; Active Download</div>
-      <div id="c-file" class="dl-file">&mdash;</div>
-      <div class="dl-bar-outer"><div class="dl-bar-inner" id="c-bar" style="width:2%"></div></div>
-      <div id="c-info" class="dl-info">Connecting&hellip;</div>
-    </div>
-    <div id="dl-idle" class="idle-state">No active download</div>
-    <button class="big-btn btn-muted" style="margin-top:4px" onclick="fetchLog(true)">&#8635; Refresh log</button>
-    <pre id="c-log" class="log-pre" style="margin-top:14px">Loading&hellip;</pre>
+    <div class="section-sub">Live view of active downloads and recent log output.</div>
+    <button class="big-btn btn-muted" onclick="fetchLog(true)" style="margin-bottom:14px">&#8635; Refresh log</button>
+    <pre id="c-log" class="log-pre">Loading&hellip;</pre>
   </div>
+
+</div><!-- /#content -->
+
+<!-- ── Persistent bottom download strip ─────────────────── -->
+<div id="dl-strip">
+  <div id="dl-strip-idle"><span class="dot-idle"></span>No active downloads</div>
+  <!-- .dl-row entries injected by JS -->
 </div>
 
 <div id="toast"></div>
 
 <script>
-let TOKEN = _readToken();
-let _movieType = 'live', _showType = '', _releaseDay = '', _currentStep = 1, _polling = null;
-const TOTAL_STEPS = 7;
-
-function _readToken() {
-  const ls = localStorage.getItem('req_token');
-  if (ls) return ls;
+// ── Token ────────────────────────────────────────────────────────────────────
+function _getToken() {
   const m = document.cookie.match(/(?:^|;\s*)req_token=([^;]+)/);
   return m ? m[1] : '';
 }
-function _saveToken(hash) {
-  localStorage.setItem('req_token', hash);
-  document.cookie = 'req_token=' + hash + '; max-age=2592000; SameSite=Strict';
-}
-function _clearToken() {
-  localStorage.removeItem('req_token');
-  document.cookie = 'req_token=; max-age=0';
-  TOKEN = '';
-}
+const TOKEN = _getToken();
+if (!TOKEN) { location.href = '/'; }
 
-async function _sha256hex(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
-async function doLogin() {
-  const pw = document.getElementById('pw-input').value.trim();
-  if (!pw) return;
-  const hash = await _sha256hex(pw);
-  const r = await fetch('/api/ping', {headers: {'X-Auth-Token': hash}});
-  if (r.ok) { TOKEN = hash; _saveToken(hash); showApp(); }
-  else document.getElementById('login-err').textContent = 'Wrong password.';
-}
-
-async function tryAutoLogin() {
-  if (!TOKEN) return false;
-  try {
-    const r = await fetch('/api/ping', {headers: {'X-Auth-Token': TOKEN}});
-    if (r.ok) { showApp(); return true; }
-  } catch(e) {}
-  _clearToken(); return false;
-}
-
-function showApp() {
-  document.getElementById('login-screen').classList.add('gone');
-  document.getElementById('app').classList.add('ready');
-  loadSchedule(); startPolling();
-}
-
+// ── API helper ───────────────────────────────────────────────────────────────
 async function api(method, path, body) {
-  const opts = {method, headers: {'X-Auth-Token': TOKEN, 'Content-Type': 'application/json'}};
+  const opts = {
+    method,
+    headers: {'X-Auth-Token': TOKEN, 'Content-Type': 'application/json'},
+  };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(path, opts);
-  if (r.status === 401) { _clearToken(); location.reload(); throw new Error('401'); }
+  if (r.status === 401) { location.href = '/'; throw new Error('401'); }
   return r;
 }
 
-const TAB_ORDER = ['shows','add','movie','current'];
+// ── Tab switching ─────────────────────────────────────────────────────────────
+const TAB_IDS = ['movie','shows','add','current'];
 function showTab(name) {
-  document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  const idx = TAB_ORDER.indexOf(name);
-  if (idx >= 0) document.querySelectorAll('.nav-tab')[idx].classList.add('active');
+  TAB_IDS.forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === name);
+    document.getElementById('ntab-' + t).classList.toggle('active', t === name);
+  });
   if (name === 'current') fetchLog(false);
-  if (name === 'shows') loadSchedule();
+  if (name === 'shows')   loadSchedule();
 }
+// Default tab
+showTab('movie');
+document.getElementById('ntab-movie').classList.add('active');
 
+// ── Shows tab ─────────────────────────────────────────────────────────────────
 async function loadSchedule() {
-  if (!TOKEN) return;
-  const r = await api('GET', '/api/schedule');
-  const rows = await r.json();
   const el = document.getElementById('schedule-list');
-  if (!rows.length) { el.innerHTML = '<div class="empty-state">No shows scheduled yet.</div>'; return; }
-  el.innerHTML = rows.map((row, i) => {
-    const sc = row.status === 'searching' ? 'status-searching' : row.status === 'done' ? 'status-done' : 'status-pending';
-    return '<div class="show-card"><div class="show-card-info"><div class="show-card-name">' + esc(row.show_name) + '</div>' +
-      '<div class="show-card-meta">S' + pad(row.season) + 'E' + pad(row.next_episode) + ' of ' + row.total_episodes + ' \u00b7 ' + row.type + ' \u00b7 ' + row.release_days + '</div></div>' +
-      '<span class="show-card-status ' + sc + '">' + row.status + '</span>' +
-      '<button class="del-btn" onclick="deleteShow(' + i + ',event)" title="Remove">\u00d7</button></div>';
-  }).join('');
+  el.innerHTML = '<div class="empty-state">Loading\u2026</div>';
+  try {
+    const r = await api('GET', '/api/schedule');
+    const rows = await r.json();
+    if (!rows.length) {
+      el.innerHTML = '<div class="empty-state">No shows tracked yet.<br>Hit \u201c+ Add Show\u201d to get started.</div>';
+      return;
+    }
+    el.innerHTML = rows.map((row, i) => {
+      const st = (row.status || 'pending').toLowerCase();
+      const sc = st === 'searching' ? 's-searching' : st === 'complete' || st === 'done' ? 's-done'
+               : st === 'missed' ? 's-missed' : 's-pending';
+      const epLabel = 'S' + _pad(row.season) + 'E' + _pad(row.next_episode) + ' of ' + row.total_episodes;
+      return [
+        '<div class="show-card">',
+        '  <div class="show-card-info">',
+        '    <div class="show-card-name">' + _esc(row.show_name) + '</div>',
+        '    <div class="show-card-meta">',
+        '      ' + epLabel + ' \u00b7 ' + _esc(row.type) + ' \u00b7 ' + _esc(row.release_days),
+        '      <br>Searches: <em>' + _esc(row.search_name || '\u2014') + '</em>',
+        '    </div>',
+        '  </div>',
+        '  <span class="status-badge ' + sc + '">' + st + '</span>',
+        '  <div class="show-card-actions">',
+        '    <button class="icon-btn backlog" title="Download backlog from ep 1 now" onclick="doBacklog(' + i + ',\'' + _esc(row.show_name) + '\',event)">\u2193\u2193</button>',
+        '    <button class="icon-btn del" title="Remove" onclick="deleteShow(' + i + ',event)">\u00d7</button>',
+        '  </div>',
+        '</div>',
+      ].join('');
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state">Failed to load schedule.</div>';
+  }
 }
 
 async function deleteShow(i, e) {
   e.stopPropagation();
-  if (!confirm('Remove this show?')) return;
+  if (!confirm('Remove this show from the schedule?')) return;
   await api('DELETE', '/api/schedule/' + i);
-  loadSchedule(); toast('Removed \u2713');
+  toast('Removed \u2713');
+  loadSchedule();
 }
 
+async function doBacklog(i, name, e) {
+  e.stopPropagation();
+  if (!confirm('Queue ALL episodes of \u201c' + name + '\u201d from ep 1 right now?\n\nThis will download them sequentially. Existing downloads continue in parallel.')) return;
+  const r = await api('POST', '/api/schedule/' + i + '/backlog');
+  if (r.ok) {
+    toast('Backlog queued for ' + name + ' \u2193\u2193');
+    loadSchedule();
+  } else {
+    toast('Error starting backlog');
+  }
+}
+
+// ── Add show wizard ───────────────────────────────────────────────────────────
+const TOTAL_STEPS = 8;
+let _showType = '', _releaseDay = '', _currentStep = 1;
+
 function goStep(n) {
-  const err = validate(_currentStep);
-  if (err) { document.getElementById('err-' + _currentStep).textContent = err; return; }
-  document.getElementById('err-' + _currentStep).textContent = '';
+  const err = _validate(_currentStep);
+  if (err) { _setErr(_currentStep, err); return; }
+  _setErr(_currentStep, '');
   document.getElementById('step-' + _currentStep).classList.remove('active');
   _currentStep = n;
   document.getElementById('step-' + n).classList.add('active');
-  document.getElementById('add-progress').style.width = ((n-1)/(TOTAL_STEPS-1)*100) + '%';
-  if (n === 7) buildPreview();
-  const inp = document.querySelector('#step-' + n + ' input');
+  document.getElementById('add-prog').style.width = ((n - 1) / (TOTAL_STEPS - 1) * 100) + '%';
+  if (n === TOTAL_STEPS) _buildPreview();
+  const inp = document.querySelector('#step-' + n + ' input:not([type=checkbox])');
   if (inp) setTimeout(() => inp.focus(), 50);
 }
 function stepEnter(e, next) { if (e.key === 'Enter') goStep(next); }
-function validate(step) {
-  if (step === 1 && !document.getElementById('f-show-name').value.trim()) return 'Show name required';
-  if (step === 2 && !document.getElementById('f-search-name').value.trim()) return 'Search name required';
-  if (step === 3 && !document.getElementById('f-folder').value.trim()) return 'Folder required';
+function _setErr(step, msg) { const el = document.getElementById('err-' + step); if(el) el.textContent = msg; }
+function _gv(id) { return (document.getElementById(id) || {}).value || ''; }
+function _validate(step) {
+  if (step === 1 && !_gv('f-show-name').trim()) return 'Show name is required';
+  if (step === 2 && !_gv('f-search-name').trim()) return 'Search name is required';
+  if (step === 3 && !_gv('f-folder').trim()) return 'Folder name is required';
   if (step === 4 && !_showType) return 'Pick a type';
   if (step === 5) {
-    if (!document.getElementById('f-season').value) return 'Season required';
-    if (!document.getElementById('f-next-ep').value) return 'Next episode required';
-    if (!document.getElementById('f-total-ep').value) return 'Total episodes required';
+    if (!_gv('f-season')) return 'Season number is required';
+    if (!_gv('f-next-ep')) return 'Next episode is required';
+    if (!_gv('f-total-ep')) return 'Total episodes is required (estimate high if unsure)';
   }
-  if (step === 6 && !_releaseDay) return 'Pick a release day';
+  if (step === 6 && !_releaseDay) return 'Pick the release day';
   return '';
 }
-function selectType(t, btn) {
+function selType(t, btn) {
   _showType = t;
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  setTimeout(() => goStep(5), 250);
+  setTimeout(() => goStep(5), 200);
 }
-function selectDay(d, btn) {
+function selDay(d, btn) {
   _releaseDay = d;
   document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  setTimeout(() => goStep(7), 250);
+  setTimeout(() => goStep(7), 200);
 }
-function buildPreview() {
-  const v = id => document.getElementById(id).value.trim();
-  document.getElementById('confirm-preview').innerHTML =
-    '<b style="color:var(--white)">' + esc(v('f-show-name')) + '</b><br>' +
-    'Search: <b>' + esc(v('f-search-name')) + '</b><br>' +
-    'Folder: <b>' + esc(v('f-folder')) + '</b><br>' +
-    'Type: <b>' + _showType + '</b><br>' +
-    'Season <b>' + v('f-season') + '</b> \u00b7 Ep <b>' + v('f-next-ep') + '</b> of <b>' + v('f-total-ep') + '</b><br>' +
-    'Airs: <b>' + _releaseDay + '</b>';
+function _buildPreview() {
+  const ongoing = document.getElementById('f-ongoing').checked;
+  const backlog  = document.getElementById('f-backlog').checked;
+  document.getElementById('confirm-preview').innerHTML = [
+    '<b style="color:var(--white);font-size:1rem">' + _esc(_gv('f-show-name')) + '</b>',
+    'Search: <b>' + _esc(_gv('f-search-name')) + '</b>',
+    'Folder: <b>' + _esc(_gv('f-folder')) + '</b>',
+    'Type: <b>' + _showType + '</b>',
+    'Season <b>' + _gv('f-season') + '</b> &middot; Ep <b>' + _gv('f-next-ep') + '</b> of <b>' + _gv('f-total-ep') + '</b>',
+    'Airs: <b>' + _releaseDay + '</b>',
+    'Currently airing: <b>' + (ongoing ? 'Yes' : 'No') + '</b>',
+    backlog ? '<span style="color:var(--orange)">&#9660; Backlog download will start immediately</span>' : '',
+  ].filter(Boolean).join('<br>');
 }
+
 async function submitShow() {
-  const spin = document.getElementById('add-spinner');
-  spin.classList.remove('hidden');
-  const v = id => document.getElementById(id).value.trim();
-  const body = {show_name:v('f-show-name'),search_name:v('f-search-name'),folder:v('f-folder'),type:_showType,season:+v('f-season'),next_episode:+v('f-next-ep'),total_episodes:+v('f-total-ep'),release_days:_releaseDay};
+  const btn = document.getElementById('add-btn');
+  const spin = document.getElementById('add-spin');
+  btn.disabled = true; spin.classList.remove('hidden');
+  const body = {
+    show_name:      _gv('f-show-name').trim(),
+    search_name:    _gv('f-search-name').trim().toLowerCase(),
+    folder:         _gv('f-folder').trim(),
+    type:           _showType,
+    season:         +_gv('f-season'),
+    next_episode:   +_gv('f-next-ep'),
+    total_episodes: +_gv('f-total-ep'),
+    release_days:   _releaseDay,
+    ongoing:        document.getElementById('f-ongoing').checked,
+  };
   try {
     const r = await api('POST', '/api/schedule', body);
-    if (r.ok) { toast('Show added \u2713'); resetAddForm(); showTab('shows'); }
-    else { const j = await r.json(); document.getElementById('err-7').textContent = j.error || 'Error'; }
-  } catch(e) {}
-  spin.classList.add('hidden');
+    if (r.ok) {
+      const j = await r.json();
+      // Trigger backlog if requested
+      if (document.getElementById('f-backlog').checked) {
+        const rows = await (await api('GET', '/api/schedule')).json();
+        const idx = rows.findIndex(row => row.show_name === body.show_name);
+        if (idx >= 0) await api('POST', '/api/schedule/' + idx + '/backlog');
+      }
+      toast('Show added \u2713');
+      resetAddForm();
+      showTab('shows');
+    } else {
+      const j = await r.json().catch(() => ({}));
+      _setErr(8, j.error || 'Server error');
+    }
+  } catch(e) { _setErr(8, 'Network error'); }
+  btn.disabled = false; spin.classList.add('hidden');
 }
+
 function resetAddForm() {
   _showType = ''; _releaseDay = ''; _currentStep = 1;
-  ['f-show-name','f-search-name','f-folder','f-season','f-next-ep','f-total-ep'].forEach(id => { document.getElementById(id).value = ''; });
+  ['f-show-name','f-search-name','f-folder','f-season','f-next-ep','f-total-ep'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  ['f-ongoing','f-backlog'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.checked = false;
+  });
   for (let i = 1; i <= TOTAL_STEPS; i++) {
     document.getElementById('step-' + i).classList.toggle('active', i === 1);
-    const e = document.getElementById('err-' + i); if (e) e.textContent = '';
+    _setErr(i, '');
   }
-  document.getElementById('add-progress').style.width = '0%';
+  document.getElementById('add-prog').style.width = '0%';
   document.querySelectorAll('.type-btn,.day-btn').forEach(b => b.classList.remove('selected'));
 }
 
-function selectMovieType(t) {
+// ── Movie tab ─────────────────────────────────────────────────────────────────
+let _movieType = 'live', _movieQuality = '4k';
+
+function selMovieType(t) {
   _movieType = t;
   document.getElementById('mbtn-live').classList.toggle('selected', t === 'live');
   document.getElementById('mbtn-anime').classList.toggle('selected', t === 'anime');
 }
+function selQuality(q) {
+  _movieQuality = q;
+  document.getElementById('qbtn-1080').classList.toggle('selected', q === '1080');
+  document.getElementById('qbtn-4k').classList.toggle('selected', q === '4k');
+}
+
 async function submitMovie() {
   const title = document.getElementById('movie-title').value.trim();
-  if (!title) { document.getElementById('movie-err').textContent = 'Enter a title'; return; }
+  if (!title) { document.getElementById('movie-err').textContent = 'Enter a movie title'; return; }
   document.getElementById('movie-err').textContent = '';
   document.getElementById('movie-ok').classList.add('hidden');
-  document.getElementById('movie-spinner').classList.remove('hidden');
+  const btn = document.getElementById('movie-btn');
+  btn.disabled = true;
+  document.getElementById('movie-spin').classList.remove('hidden');
   try {
-    const r = await api('POST', '/api/movie', {title, anime: _movieType === 'anime'});
+    const r = await api('POST', '/api/movie', {
+      title,
+      anime: _movieType === 'anime',
+      quality: _movieQuality,
+    });
     if (r.ok) {
-      document.getElementById('movie-ok').textContent = '"' + title + '" queued \u2014 check Current tab';
+      document.getElementById('movie-ok').textContent = '\u201c' + title + '\u201d queued \u2014 check the Current tab for progress.';
       document.getElementById('movie-ok').classList.remove('hidden');
       document.getElementById('movie-title').value = '';
       toast('Queued \u2713');
-    } else { const j = await r.json(); document.getElementById('movie-err').textContent = j.error || 'Error'; }
-  } catch(e) {}
-  document.getElementById('movie-spinner').classList.add('hidden');
+    } else {
+      const j = await r.json().catch(() => ({}));
+      document.getElementById('movie-err').textContent = j.error || 'Server error';
+    }
+  } catch(e) {
+    document.getElementById('movie-err').textContent = 'Network error';
+  }
+  btn.disabled = false;
+  document.getElementById('movie-spin').classList.add('hidden');
 }
 
+// ── Download strip (always visible) ──────────────────────────────────────────
+let _pollTimer = null;
+
 function startPolling() {
-  if (_polling) return;
-  _polling = setInterval(pollTorrent, 4000);
-  pollTorrent();
+  if (_pollTimer) return;
+  _pollTimer = setInterval(pollDownloads, 4000);
+  pollDownloads();
 }
-async function pollTorrent() {
-  if (!TOKEN) return;
+
+async function pollDownloads() {
   try {
     const r = await api('GET', '/api/torrent-state');
     const s = await r.json();
-    const dot = document.getElementById('dl-dot');
-    const pctEl = document.getElementById('dl-pct');
-    const activeCard = document.getElementById('dl-active-card');
-    const idleEl = document.getElementById('dl-idle');
-    if (!s || !s.progress) {
-      dot.classList.remove('active'); pctEl.textContent = '';
-      activeCard.classList.add('hidden'); idleEl.classList.remove('hidden'); return;
+    const downloads = (s && s.downloads) || [];
+    const strip = document.getElementById('dl-strip');
+    const idle  = document.getElementById('dl-strip-idle');
+    const dot   = document.getElementById('dl-dot');
+    const pctEl = document.getElementById('dl-nav-pct');
+
+    // Remove old rows (keep idle div)
+    strip.querySelectorAll('.dl-row').forEach(el => el.remove());
+
+    if (!downloads.length) {
+      idle.classList.remove('hidden');
+      dot.classList.remove('active');
+      pctEl.textContent = '';
+      return;
     }
-    const info = s.progress.info || '';
-    const pm = info.match(/\((\d+)%\)/);
-    const pct = pm ? +pm[1] : 2;
-    dot.classList.add('active'); pctEl.textContent = pct + '%';
-    activeCard.classList.remove('hidden'); idleEl.classList.add('hidden');
-    document.getElementById('c-file').textContent = s.current_file ? s.current_file.split('/').pop() : '\u2014';
-    document.getElementById('c-info').textContent = info;
-    document.getElementById('c-bar').style.width = Math.max(pct, 2) + '%';
+
+    idle.classList.add('hidden');
+    // Show pct of first download in nav badge
+    const firstPct = downloads[0].pct || 0;
+    dot.classList.add('active');
+    pctEl.textContent = firstPct + '%';
+
+    downloads.forEach(dl => {
+      const pct = dl.pct || 0;
+      const fname = (dl.file || '').split('/').pop() || '\u2014';
+      const row = document.createElement('div');
+      row.className = 'dl-row';
+      row.innerHTML = [
+        '<div class="dl-row-info">',
+        '  <div class="dl-row-fname">' + _esc(fname) + '</div>',
+        '  <div class="dl-row-meta">' + _esc(dl.info || 'Connecting\u2026') + '</div>',
+        '</div>',
+        '<div class="dl-row-bar"><div class="dl-row-fill" style="width:' + Math.max(pct, 2) + '%"></div></div>',
+        '<div class="dl-row-pct">' + pct + '%</div>',
+      ].join('');
+      strip.appendChild(row);
+    });
   } catch(e) {}
 }
+
+// ── Log (current tab) ─────────────────────────────────────────────────────────
 async function fetchLog(scroll) {
   try {
-    const r = await api('GET', '/api/log?lines=100');
+    const r = await api('GET', '/api/log?lines=120');
     const txt = await r.text();
     const el = document.getElementById('c-log');
     el.textContent = txt;
@@ -445,15 +647,17 @@ async function fetchLog(scroll) {
   } catch(e) {}
 }
 
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function pad(n) { return String(n).padStart(2,'0'); }
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function _pad(n) { return String(n || 0).padStart(2, '0'); }
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2200);
+  setTimeout(() => t.classList.remove('show'), 2400);
 }
 
-tryAutoLogin().then(ok => { if (!ok) document.getElementById('pw-input').focus(); });
+// ── Init ──────────────────────────────────────────────────────────────────────
+startPolling();
 </script>
 </body>
 </html>
