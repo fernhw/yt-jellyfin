@@ -35,11 +35,6 @@ body{display:flex;align-items:center;justify-content:center;padding:24px}
   <div class="err" id="err"></div>
 </div>
 <script>
-async function _sha256hex(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 async function doLogin() {
   const pw = document.getElementById('pw').value;
   if (!pw) return;
@@ -48,11 +43,10 @@ async function doLogin() {
   btn.textContent = 'Checking…';
   document.getElementById('err').textContent = '';
   try {
-    const hash = await _sha256hex(pw);
     const r = await fetch('/auth', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({token: hash}),
+      body: JSON.stringify({password: pw}),
     });
     if (r.ok) {
       location.href = '/';

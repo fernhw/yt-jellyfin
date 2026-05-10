@@ -257,15 +257,22 @@ def ping():
 
 @app.route('/auth', methods=['POST'])
 def do_auth():
-    """Validate a pre-hashed token (sha256 of raw password) and set a cookie."""
+    """Accept raw password (hashed server-side) or pre-hashed token. Sets auth cookie."""
     data = request.get_json(force=True) or {}
-    token = (data.get('token') or '').strip()
-    if not token or not hmac.compare_digest(token, _web_password_hash()):
+    raw   = (data.get('password') or '').strip()
+    token = (data.get('token')    or '').strip()
+    expected = _web_password_hash()  # sha256(WEB_PASS)
+    valid = False
+    if raw:
+        valid = hmac.compare_digest(hashlib.sha256(raw.encode()).hexdigest(), expected)
+    elif token:
+        valid = hmac.compare_digest(token, expected)
+    if not valid:
         abort(401)
     from flask import make_response
     resp = make_response(jsonify({'ok': True}))
-    # httponly=False so JS can read the cookie to use as X-Auth-Token header
-    resp.set_cookie('req_token', token, max_age=2592000, samesite='Strict', httponly=False)
+    # Cookie is always the hash — httponly=False so JS can read it as X-Auth-Token
+    resp.set_cookie('req_token', expected, max_age=2592000, samesite='Strict', httponly=False)
     return resp
 
 @app.route('/api/schedule', methods=['GET'])
