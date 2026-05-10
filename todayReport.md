@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-10
 
-> *Good morning! Here's what landed on Sunday, May 10, 2026 at 09:45 AM.*
-> **YT Mirror:** 754.99 GB used · 1.54 TB free
+> *Good morning! Here's what landed on Sunday, May 10, 2026 at 11:38 AM.*
+> **YT Mirror:** 754.12 GB used · 1.54 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,8 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **This Is Looking Ugly For Sony & Bungie** — *Spawn Wave* · downloaded 11:37 AM · not podcastable
+- **We Ranked Resurrected Actors** — *Corridor Crew* · downloaded 11:36 AM · not podcastable
 - **I tried to tell you..** — *Asmongold TV* · downloaded 09:43 AM · not podcastable
 - **British leftists are losing it..** — *Asmongold TV* · downloaded 09:42 AM · not podcastable
 - **We asked the Mixtape devs how they made 2026's highest rated game | Friends Per Second #94** — *Skill Up* · downloaded 09:41 AM · not podcastable
