@@ -1,5 +1,5 @@
 {
-  "updated": "2026-05-09",
+  "updated": "2026-05-10",
   "shows": [
     {
       "show": "Re Zero",
@@ -10,7 +10,7 @@
       "week": "W5 \u2713",
       "status": "searching",
       "release_days": "wed",
-      "days_until": 4,
+      "days_until": 3,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-fle-re-zero-starting-life-in-another-world-s03-web-1080p-h-264-e-ac-3-dual-audio.jpg"
     },
@@ -23,7 +23,7 @@
       "week": "W6 \u2713",
       "status": "pending",
       "release_days": "wed",
-      "days_until": 4,
+      "days_until": 3,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-the-boys.jpg"
     },
@@ -36,7 +36,7 @@
       "week": "W8 \u2713",
       "status": "pending",
       "release_days": "wed",
-      "days_until": 4,
+      "days_until": 3,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-dorohedoro.jpg"
     },
@@ -49,7 +49,7 @@
       "week": "W6 \u2713",
       "status": "pending",
       "release_days": "sat",
-      "days_until": 0,
+      "days_until": 6,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-mistress-kanan-is-devilishly-easy.jpg"
     },
@@ -62,7 +62,7 @@
       "week": "W6 due",
       "status": "pending",
       "release_days": "mon",
-      "days_until": 2,
+      "days_until": 1,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-hat-witch-atelier.jpg"
     }
