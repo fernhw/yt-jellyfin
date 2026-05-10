@@ -9,10 +9,12 @@ Start:  python3 requestServer.py
 import csv
 import datetime
 import hashlib
+import hmac
 import io
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 import threading
@@ -54,19 +56,20 @@ def _load_kv(path: str) -> Dict[str, str]:
         pass
     return out
 
-def _web_password() -> str:
-    """Read WEB_PASS from secrets.md, fall back to sha256 of hostname."""
+def _web_password_hash() -> str:
+    """SHA-256 of WEB_PASS from secrets.md (or sha256 of hostname as fallback).
+    The client hashes the raw password before sending, so we compare hashes."""
     s = _load_kv(SECRETS_FILE)
-    if 'WEB_PASS' in s:
-        return s['WEB_PASS']
-    import socket
-    return hashlib.sha256(socket.gethostname().encode()).hexdigest()[:16]
+    raw = s.get('WEB_PASS') or hashlib.sha256(socket.gethostname().encode()).hexdigest()[:16]
+    return hashlib.sha256(raw.encode()).hexdigest()
 
 # ── Auth ───────────────────────────────────────────────────────────────────────
 
 def _check_auth() -> bool:
     token = request.headers.get('X-Auth-Token', '') or request.args.get('token', '')
-    return token == _web_password()
+    if not token:
+        return False
+    return hmac.compare_digest(token, _web_password_hash())
 
 def _require_auth(f):
     from functools import wraps
@@ -247,8 +250,9 @@ if __name__ == '__main__':
     t = threading.Thread(target=_watch_log, daemon=True)
     t.start()
 
-    pw = _web_password()
+    kv = _load_kv(SECRETS_FILE)
+    pw = kv.get('WEB_PASS', '(using hostname fallback)')
     print(f"  request server → http://localhost:{PORT}")
-    print(f"  password: {pw}")
-    print(f"  set WEB_PASS=yourpassword in secrets.md to override")
+    print(f"  password (raw, set in secrets.md): {pw}")
+    print(f"  token hash (sha256): {_web_password_hash()[:16]}...")
     app.run(host='0.0.0.0', port=PORT, debug=False)

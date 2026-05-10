@@ -286,13 +286,19 @@ const TOTAL_STEPS = 7;
 let _logVisible = false;
 
 /* ── Auth ── */
+async function _sha256hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
 async function doLogin() {
   const pw = document.getElementById('pw-input').value.trim();
   if (!pw) return;
-  const r = await fetch('/api/ping', {headers: {'X-Auth-Token': pw}});
+  const hash = await _sha256hex(pw);
+  const r = await fetch('/api/ping', {headers: {'X-Auth-Token': hash}});
   if (r.ok) {
-    TOKEN = pw;
-    localStorage.setItem('req_token', pw);
+    TOKEN = hash;
+    localStorage.setItem('req_token', hash);
     document.getElementById('login-err').textContent = '';
     location.href = '#cell-schedule';
     loadSchedule();
