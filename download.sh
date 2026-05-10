@@ -23,6 +23,62 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")" && pwd)"
 GETYT="$SCRIPT_DIR/getyt.sh"
 LOG="$SCRIPT_DIR/downloader.log"
 
+# ── aria2c RPC helpers ──────────────────────────────────────────────────────
+# When requestServer.py is running it keeps an aria2c daemon on port 6802.
+# We submit downloads via JSON-RPC so they appear live in the web UI overlay.
+# Falls back silently to direct aria2c if curl can't reach the daemon.
+
+_aria2_port=6802
+_aria2_secret() {
+  grep -m1 '^ARIA2_SECRET=' "$SCRIPT_DIR/secrets.md" 2>/dev/null | cut -d= -f2-
+}
+
+# Submit a magnet/torrent to the aria2 daemon.  Prints the GID on success.
+aria2_rpc_add() {
+  local magnet="$1" dest="$2"
+  local secret; secret=$(_aria2_secret)
+  [ -z "$secret" ] && secret="aria2rpc2026"
+  local payload
+  # Escape double-quotes in magnet (just in case)
+  local safe_magnet; safe_magnet=$(printf '%s' "$magnet" | sed 's/"/\\"/g')
+  local safe_dest;   safe_dest=$(printf '%s' "$dest" | sed 's/"/\\"/g')
+  payload=$(printf '{"jsonrpc":"2.0","id":"sh","method":"aria2.addUri","params":["token:%s",["%s"],{"dir":"%s","seed-time":"0","file-allocation":"falloc"}]}' \
+    "$secret" "$safe_magnet" "$safe_dest")
+  curl -sf -m 5 -X POST -H "Content-Type: application/json" \
+    -d "$payload" "http://127.0.0.1:$_aria2_port/jsonrpc" 2>/dev/null \
+    | grep -o '"result":"[^"]*"' | cut -d'"' -f4
+}
+
+# Wait for a GID to reach 'complete' or 'error'.
+aria2_rpc_wait() {
+  local gid="$1"
+  local secret; secret=$(_aria2_secret)
+  [ -z "$secret" ] && secret="aria2rpc2026"
+  echo "  Downloading via aria2 (GID: $gid) — visible in web UI overlay"
+  while true; do
+    sleep 15
+    local resp status
+    resp=$(curl -sf -m 5 -X POST -H "Content-Type: application/json" \
+      -d "{\"jsonrpc\":\"2.0\",\"id\":\"sh\",\"method\":\"aria2.tellStatus\",\"params\":[\"token:$secret\",\"$gid\",[\"status\",\"completedLength\",\"totalLength\",\"downloadSpeed\",\"numSeeders\"]]}" \
+      "http://127.0.0.1:$_aria2_port/jsonrpc" 2>/dev/null)
+    status=$(printf '%s' "$resp" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+    case "$status" in
+      complete) echo "  Done."; return 0 ;;
+      error)    echo "  aria2 reported error for GID $gid"; return 1 ;;
+    esac
+    # Print a brief progress line
+    local speed seeds done total
+    speed=$(printf '%s' "$resp" | grep -o '"downloadSpeed":"[^"]*"' | cut -d'"' -f4)
+    seeds=$(printf '%s' "$resp" | grep -o '"numSeeders":"[^"]*"' | cut -d'"' -f4)
+    done=$(printf '%s' "$resp" | grep -o '"completedLength":"[^"]*"' | cut -d'"' -f4)
+    total=$(printf '%s' "$resp" | grep -o '"totalLength":"[^"]*"' | cut -d'"' -f4)
+    if [ -n "$speed" ] && [ "$speed" -gt 0 ] 2>/dev/null && [ -n "$total" ] && [ "$total" -gt 0 ] 2>/dev/null; then
+      local pct=$(( done * 100 / total ))
+      printf '  [%d%%] %d KB/s | %d seeds\n' "$pct" "$((speed / 1024))" "${seeds:-0}"
+    fi
+  done
+}
+
 log_msg() {
   printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M')" "$1" >> "$LOG"
 }
@@ -262,6 +318,25 @@ do_torrent() {
   echo "This may take a while..."
   echo ""
 
+  # Try aria2c RPC daemon first (shows progress in web UI)
+  local gid
+  gid=$(aria2_rpc_add "$input" "$DEST")
+  if [ -n "$gid" ]; then
+    if aria2_rpc_wait "$gid"; then
+      log_msg "OK  torrent  $input  →  $DEST"
+      echo ""
+      echo "Done! Saved to: $DEST"
+    else
+      log_msg "FAIL  torrent  $input  →  $DEST"
+      echo ""
+      echo "Download failed."
+      return 1
+    fi
+    return 0
+  fi
+
+  # Fallback: direct aria2c call
+  echo "  (aria2 daemon not reachable — using direct download)"
   if aria2c \
     --seed-time=0 \
     --dir="$DEST" \

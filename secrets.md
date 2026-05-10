@@ -114,3 +114,6 @@ K112="y"
 
 # Web UI password for request.fernhw.com
 WEB_PASS=Sxfv56
+
+# aria2c RPC secret (shared between requestServer.py, showSchedulerSearch.py, download.sh)
+ARIA2_SECRET=aria2rpc2026

@@ -34,16 +34,28 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 .tab-pane.active{display:block}
 
 /* ── Fixed download strip ── */
-#dl-strip{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(19,25,31,.97);border-top:1px solid var(--border);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);min-height:var(--strip-h);padding:8px 16px;display:flex;flex-direction:column;gap:6px}
-#dl-strip-idle{color:var(--muted);font-size:.78rem;display:flex;align-items:center;gap:8px;padding:6px 0}
+#dl-strip{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(13,17,23,.98);border-top:1px solid var(--border);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:8px 14px 10px;display:flex;flex-direction:column;gap:7px;transition:max-height .3s}
+#dl-strip.expanded{max-height:600px}
+#dl-strip-header{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;padding:2px 0}
+#dl-strip-label{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);flex:1}
+#dl-strip-toggle{font-size:.72rem;color:var(--muted);padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;flex-shrink:0}
+#dl-strip-body{display:flex;flex-direction:column;gap:8px;overflow:hidden}
+#dl-strip-idle{color:var(--muted);font-size:.78rem;display:flex;align-items:center;gap:8px;padding:4px 0}
 #dl-strip-idle .dot-idle{width:6px;height:6px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);flex-shrink:0}
-.dl-row{display:flex;align-items:center;gap:10px;min-width:0}
-.dl-row-info{flex:1;min-width:0}
-.dl-row-fname{font-size:.78rem;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dl-row-meta{font-size:.68rem;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dl-row-bar{flex-shrink:0;width:90px;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
-.dl-row-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--teal));border-radius:2px;transition:width .6s}
-.dl-row-pct{flex-shrink:0;font-size:.72rem;font-weight:800;color:var(--orange);min-width:30px;text-align:right}
+.dl-card-row{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.dl-card-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.dl-card-name{flex:1;min-width:0;font-size:.82rem;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-card-pct{flex-shrink:0;font-size:.78rem;font-weight:800;color:var(--orange);min-width:32px;text-align:right}
+.dl-bar-outer{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:7px}
+.dl-bar-inner{height:100%;background:linear-gradient(90deg,var(--orange),var(--teal));border-radius:3px;transition:width .7s}
+.dl-stats{display:flex;gap:12px;flex-wrap:wrap}
+.dl-stat{font-size:.67rem;color:var(--muted);display:flex;align-items:center;gap:3px}
+.dl-stat b{color:var(--white);font-weight:700}
+.dl-stat-arrow{font-size:.6rem}
+.dl-card-actions{display:flex;gap:5px;margin-top:6px}
+.dl-act-btn{font-size:.68rem;padding:3px 9px;border-radius:6px;border:none;cursor:pointer;font-weight:700;background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
+.dl-act-btn:hover{color:var(--white)}
+.dl-act-btn.remove:hover{color:#f87171;border-color:#f87171}
 
 /* ── Typography ── */
 .section-label{font-size:.6rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
@@ -329,8 +341,14 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 
 <!-- ── Persistent bottom download strip ─────────────────── -->
 <div id="dl-strip">
-  <div id="dl-strip-idle"><span class="dot-idle"></span>No active downloads</div>
-  <!-- .dl-row entries injected by JS -->
+  <div id="dl-strip-header" onclick="toggleStrip()">
+    <span id="dl-strip-label">&#11015; Downloads</span>
+    <button id="dl-strip-toggle" onclick="event.stopPropagation();toggleStrip()">&#9650;</button>
+  </div>
+  <div id="dl-strip-body">
+    <div id="dl-strip-idle"><span class="dot-idle"></span>No active downloads</div>
+    <!-- .dl-card-row entries injected by JS -->
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -585,6 +603,13 @@ async function submitMovie() {
 
 // ── Download strip (always visible) ──────────────────────────────────────────
 let _pollTimer = null;
+let _stripOpen = true;
+
+function toggleStrip() {
+  _stripOpen = !_stripOpen;
+  document.getElementById('dl-strip-body').style.display = _stripOpen ? '' : 'none';
+  document.getElementById('dl-strip-toggle').textContent = _stripOpen ? '▲' : '▼';
+}
 
 function startPolling() {
   if (_pollTimer) return;
@@ -597,42 +622,92 @@ async function pollDownloads() {
     const r = await api('GET', '/api/torrent-state');
     const s = await r.json();
     const downloads = (s && s.downloads) || [];
-    const strip = document.getElementById('dl-strip');
+    const body  = document.getElementById('dl-strip-body');
     const idle  = document.getElementById('dl-strip-idle');
     const dot   = document.getElementById('dl-dot');
     const pctEl = document.getElementById('dl-nav-pct');
+    const lbl   = document.getElementById('dl-strip-label');
 
-    // Remove old rows (keep idle div)
-    strip.querySelectorAll('.dl-row').forEach(el => el.remove());
+    // Remove old cards (keep idle div)
+    body.querySelectorAll('.dl-card-row').forEach(el => el.remove());
 
-    if (!downloads.length) {
+    // Filter to only torrent downloads (have seeds or are bittorrent-like)
+    const torrents = downloads.filter(dl =>
+      dl.seeds !== undefined || dl.peers !== undefined || dl.status === 'active' || dl.status === 'waiting'
+    );
+
+    if (!torrents.length) {
       idle.classList.remove('hidden');
       dot.classList.remove('active');
       pctEl.textContent = '';
+      lbl.textContent = '⬇ Downloads';
       return;
     }
 
     idle.classList.add('hidden');
-    // Show pct of first download in nav badge
-    const firstPct = downloads[0].pct || 0;
+    lbl.textContent = '⬇ Downloads (' + torrents.length + ' active)';
+
+    // Nav badge: show highest-speed download pct
+    const fastest = torrents.slice().sort((a, b) => (b.speed_bytes||0) - (a.speed_bytes||0))[0];
+    const firstPct = fastest.pct || 0;
     dot.classList.add('active');
     pctEl.textContent = firstPct + '%';
 
-    downloads.forEach(dl => {
-      const pct = dl.pct || 0;
-      const fname = (dl.file || '').split('/').pop() || '\u2014';
-      const row = document.createElement('div');
-      row.className = 'dl-row';
-      row.innerHTML = [
-        '<div class="dl-row-info">',
-        '  <div class="dl-row-fname">' + _esc(fname) + '</div>',
-        '  <div class="dl-row-meta">' + _esc(dl.info || 'Connecting\u2026') + '</div>',
+    torrents.forEach(dl => {
+      const pct = Math.min(dl.pct || 0, 100);
+      const name = dl.name || '(unknown)';
+      const speed = dl.speed || '0 B/s';
+      const upload = dl.upload || '0 B/s';
+      const seeds = dl.seeds !== undefined ? dl.seeds : '?';
+      const peers = dl.peers !== undefined ? dl.peers : '?';
+      const size  = dl.size  || '';
+      const done  = dl.done  || '';
+      const status = dl.status || 'active';
+      const gid    = dl.gid || '';
+
+      const card = document.createElement('div');
+      card.className = 'dl-card-row';
+      card.dataset.gid = gid;
+      card.innerHTML = [
+        '<div class="dl-card-top">',
+        '  <div class="dl-card-name" title="' + _esc(name) + '">' + _esc(name) + '</div>',
+        '  <div class="dl-card-pct">' + pct + '%</div>',
         '</div>',
-        '<div class="dl-row-bar"><div class="dl-row-fill" style="width:' + Math.max(pct, 2) + '%"></div></div>',
-        '<div class="dl-row-pct">' + pct + '%</div>',
+        '<div class="dl-bar-outer"><div class="dl-bar-inner" style="width:' + Math.max(pct, 1) + '%"></div></div>',
+        '<div class="dl-stats">',
+        '  <div class="dl-stat"><span class="dl-stat-arrow">&#11015;</span><b>' + _esc(speed) + '</b></div>',
+        '  <div class="dl-stat"><span class="dl-stat-arrow">&#11014;</span><b>' + _esc(upload) + '</b></div>',
+        '  <div class="dl-stat">Seeds&nbsp;<b>' + seeds + '</b></div>',
+        '  <div class="dl-stat">Peers&nbsp;<b>' + peers + '</b></div>',
+        (done && size ? '<div class="dl-stat">' + _esc(done) + ' / ' + _esc(size) + '</div>' : ''),
+        '  <div class="dl-stat" style="color:var(--muted)">' + _esc(status) + '</div>',
+        '</div>',
+        gid ? '<div class="dl-card-actions">' +
+          '<button class="dl-act-btn" onclick="pauseToggle('' + gid + '', '' + status + '')">' +
+          (status === 'paused' ? '▶ Resume' : '⏸ Pause') + '</button>' +
+          '<button class="dl-act-btn remove" onclick="removeDl('' + gid + '')">✕ Remove</button>' +
+          '</div>' : '',
       ].join('');
-      strip.appendChild(row);
+      body.appendChild(card);
     });
+  } catch(e) {}
+}
+
+async function pauseToggle(gid, status) {
+  try {
+    const endpoint = status === 'paused' ? '/api/torrent/' + gid + '/unpause' : '/api/torrent/' + gid + '/pause';
+    await api('POST', endpoint);
+    toast(status === 'paused' ? 'Resumed' : 'Paused');
+    pollDownloads();
+  } catch(e) {}
+}
+
+async function removeDl(gid) {
+  if (!confirm('Remove this download?')) return;
+  try {
+    await api('POST', '/api/torrent/' + gid + '/remove');
+    toast('Removed ✓');
+    pollDownloads();
   } catch(e) {}
 }
 
