@@ -602,24 +602,27 @@ def library_check():
 @app.route('/api/movie-suggest')
 @_require_auth
 def movie_suggest():
-    """Movie title autocomplete using iTunes Search API (free, no key required)."""
+    """Movie title autocomplete using OMDb search API (free key, 1000 req/day)."""
     q = (request.args.get('q') or '').strip()
     if not q or len(q) < 2:
         return jsonify({'results': []})
     try:
         import urllib.request as _ur
         import urllib.parse as _up
-        url = ('https://itunes.apple.com/search?media=movie&entity=movie&limit=14&term='
-               + _up.quote(q))
+        # OMDb free key — enough for personal use (1000 req/day)
+        # User can override via OMDB_KEY env var
+        omdb_key = os.environ.get('OMDB_KEY', 'trilogy')
+        url = ('https://www.omdbapi.com/?type=movie&s='
+               + _up.quote(q) + '&apikey=' + _up.quote(omdb_key))
         req = _ur.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         with _ur.urlopen(req, timeout=8) as resp:
             data = json.loads(resp.read())
         results = []
         seen: set = set()
-        for item in (data.get('results') or []):
-            title = (item.get('trackName') or '').strip()
-            year_raw = item.get('releaseDate', '')
-            year = int(year_raw[:4]) if year_raw and len(year_raw) >= 4 else None
+        for item in (data.get('Search') or []):
+            title = (item.get('Title') or '').strip()
+            year_raw = (item.get('Year') or '')[:4]
+            year = int(year_raw) if year_raw.isdigit() else None
             if not title:
                 continue
             key = title.lower()
