@@ -122,7 +122,6 @@ def _tail_log(n: int = 120) -> str:
 # exposes its live download list to the UI.
 
 _aria2_proc: Optional[subprocess.Popen] = None
-_aria2_last_ok: float = 0.0   # timestamp of last successful getVersion
 
 def _aria2_secret() -> str:
     return _load_kv(SECRETS_FILE).get('ARIA2_SECRET', 'aria2rpc2026')
@@ -242,124 +241,137 @@ def _aria2_active_downloads() -> List[Dict]:
         })
     return out
 
-def _ensure_aria2_daemon() -> None:
-    """Start aria2c RPC daemon if it isn't already responding."""
-    global _aria2_proc, _aria2_last_ok
-
-    # Already alive and responsive?
+def _aria2_port_open() -> bool:
+    """Non-RPC check: can we TCP-connect to aria2's RPC port? No RPC overhead."""
+    import socket
     try:
-        _aria2_rpc('aria2.getVersion')
-        _aria2_last_ok = time.time()
-        return
-    except Exception as _e:
-        log.warning(f'aria2c watchdog: getVersion failed: {_e!r}')
+        with socket.create_connection(('127.0.0.1', ARIA2_RPC_PORT), timeout=2):
+            return True
+    except Exception:
+        return False
 
-    # Not responsive — but it may be temporarily busy (session save, high I/O).
-    # Retry up to 5× with 10s gaps (50s total) before considering it truly dead.
-    for _retry in range(5):
-        time.sleep(10)
-        try:
-            _aria2_rpc('aria2.getVersion')
-            _aria2_last_ok = time.time()
-            log.info('aria2c watchdog: recovered after retry %d', _retry + 1)
-            return
-        except Exception:
-            pass
 
-    # Still not responding after 50s. Only kill if last successful response
-    # was more than 90s ago (guards against a single long stall killing a healthy process).
-    if time.time() - _aria2_last_ok < 90:
-        log.warning('aria2c watchdog: RPC stalled but last OK was recent — skipping kill')
-        return
+def _aria2_confirmed_dead() -> bool:
+    """
+    Multi-direction dead confirmation. Returns True ONLY when ALL three checks
+    agree aria2 is gone. No RPC calls — process state, TCP connect, and lsof.
+    """
+    global _aria2_proc
+    c = {}
+    # 1. Our own Popen exited?
+    c['proc_exited'] = (_aria2_proc is None or _aria2_proc.poll() is not None)
+    # 2. TCP port closed?
+    c['port_closed'] = not _aria2_port_open()
+    # 3. lsof sees nothing listening on port
     try:
-        ps = subprocess.run(
+        r = subprocess.run(
             ['lsof', '-nP', f'-iTCP:{ARIA2_RPC_PORT}', '-sTCP:LISTEN'],
             capture_output=True, text=True, timeout=5,
         )
-        pids_to_kill = []
-        # Parse lsof table output (header: COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME)
-        for line in ps.stdout.splitlines()[1:]:  # skip header
-            cols = line.split()
-            if len(cols) < 2:
-                continue
-            try:
-                pid = int(cols[1])
-                # Check process start time — skip if recently started (< 45s)
-                stat_r = subprocess.run(
-                    ['ps', '-o', 'etime=', '-p', str(pid)],
-                    capture_output=True, text=True, timeout=3,
-                )
-                etime = stat_r.stdout.strip()  # format: [[DD-]HH:]MM:SS
-                # Parse to seconds
-                parts = etime.replace('-', ':').split(':')
-                secs = sum(int(p) * m for p, m in zip(reversed(parts), [1, 60, 3600, 86400]))
-                if secs >= 45:
-                    pids_to_kill.append(pid)
-                else:
-                    log.info(f'aria2c watchdog: process {pid} too young ({secs}s), waiting')
-            except Exception:
-                pass
-        for pid in pids_to_kill:
-            try:
-                os.kill(pid, 9)
-                log.warning(f'aria2c watchdog: killed stale process on port {ARIA2_RPC_PORT} pid={pid}')
-            except Exception:
-                pass
-        if pids_to_kill:
-            time.sleep(1)
-        elif ps.stdout.strip():
-            # Process too young, back off — it's still starting up
-            return
+        c['lsof_empty'] = len(r.stdout.splitlines()) <= 1
     except Exception:
-        pass
+        c['lsof_empty'] = False  # can't confirm → treat as alive
+    dead = all(c.values())
+    log.warning('aria2c dead-check: %s → confirmed_dead=%s', c, dead)
+    return dead
 
-    # Find aria2c binary
+
+def _start_aria2c() -> None:
+    """Spawn aria2c daemon and wait up to 15s for RPC port to open."""
+    global _aria2_proc
     aria2c_bin = (
         shutil.which('aria2c')
         or '/opt/homebrew/bin/aria2c'
         or '/usr/local/bin/aria2c'
     )
     if not aria2c_bin or not os.path.exists(aria2c_bin):
+        log.error('aria2c binary not found — cannot start')
         return
+    session_path = os.path.join(SCRIPT_DIR, 'aria2.session')
     cmd = [
         aria2c_bin,
-        '--enable-rpc=true',
-        f'--rpc-listen-port={ARIA2_RPC_PORT}',
-        f'--rpc-secret={_aria2_secret()}',
-        '--rpc-allow-origin-all=true',
-        '--enable-color=false',
-        '--seed-time=0',
-        '--file-allocation=falloc',
-        '--max-concurrent-downloads=16',
-        '--allow-overwrite=true',
+        '--enable-rpc=true', f'--rpc-listen-port={ARIA2_RPC_PORT}',
+        f'--rpc-secret={_aria2_secret()}', '--rpc-allow-origin-all=true',
+        '--enable-color=false', '--seed-time=0', '--file-allocation=falloc',
+        '--max-concurrent-downloads=16', '--allow-overwrite=true',
         '--auto-file-renaming=false',
-        f'--log={ARIA2_LOG}',
-        '--log-level=warn',
-        # ── Session persistence: survive daemon restarts ──────────────────
-        f'--save-session={os.path.join(SCRIPT_DIR, "aria2.session")}',
-        '--save-session-interval=60',  # flush every 60s (only active/waiting/paused)
-        # Reload any saved downloads from last session
-        *(
-            [f'--input-file={os.path.join(SCRIPT_DIR, "aria2.session")}']
-            if os.path.exists(os.path.join(SCRIPT_DIR, 'aria2.session'))
-            else []
-        ),
+        f'--log={ARIA2_LOG}', '--log-level=warn',
+        f'--save-session={session_path}', '--save-session-interval=60',
+        *([f'--input-file={session_path}'] if os.path.exists(session_path) else []),
         '--continue=true',
     ]
-    _aria2_proc = subprocess.Popen(
-        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-    )
-    time.sleep(1.5)  # Wait for RPC socket to be ready
-    # Session file (--input-file) already restores all downloads on restart.
+    _aria2_proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    log.info('aria2c started pid=%d', _aria2_proc.pid)
+    for _ in range(10):
+        time.sleep(1.5)
+        if _aria2_port_open():
+            log.info('aria2c RPC port ready')
+            return
+    log.warning('aria2c started but RPC port not open after 15s — continuing')
 
-def _aria2_watchdog() -> None:
-    """Background thread: keep aria2c daemon alive."""
-    while True:
+
+def _aria2_add_uri_safe(uri: str, opts: dict) -> str:
+    """
+    aria2.addUri with on-demand restart.
+
+    1. Try the RPC call directly — fast path, works 99.9% of the time.
+    2. On failure: multi-direction dead-check (proc + TCP + lsof).
+    3. Confirmed dead → restart, wait for RPC, re-add, return GID.
+    4. NOT confirmed dead (aria2 busy/slow) → raise, let caller surface error.
+    """
+    try:
+        return _aria2_rpc('aria2.addUri', [[uri], opts])
+    except Exception as e_first:
+        log.warning('aria2c addUri failed (%r) — running full dead-check', e_first)
+
+    if not _aria2_confirmed_dead():
+        # Process is alive but slow — do NOT restart, surface error to user
+        raise RuntimeError('aria2c is busy/unresponsive but not confirmed dead — try again in a moment')
+
+    # All three checks confirm dead — safe to restart
+    log.warning('aria2c confirmed dead — restarting and re-adding torrent')
+    _start_aria2c()
+    for _ in range(5):
+        time.sleep(3)
         try:
-            _ensure_aria2_daemon()
+            _aria2_rpc('aria2.getVersion')
+            break
         except Exception:
             pass
-        time.sleep(30)
+    else:
+        raise RuntimeError('aria2c restarted but RPC did not come up in time')
+    return _aria2_rpc('aria2.addUri', [[uri], opts])
+
+
+def _aria2_watchdog() -> None:
+    """
+    Passive watchdog — NO RPC calls, NO proactive kills.
+
+    Checks TCP port every 60s. Only restarts after 3 consecutive checks
+    (3 minutes) all show the port closed, AND _aria2_confirmed_dead() agrees.
+    This way a busy/slow aria2 under heavy download load is never touched.
+    """
+    strikes = 0
+    while True:
+        time.sleep(60)
+        try:
+            if _aria2_port_open():
+                if strikes > 0:
+                    log.info('aria2c passive check: port open again, resetting')
+                strikes = 0
+            else:
+                strikes += 1
+                log.warning('aria2c passive check: port %d closed (strike %d/3)',
+                            ARIA2_RPC_PORT, strikes)
+                if strikes >= 3:
+                    if _aria2_confirmed_dead():
+                        log.warning('aria2c passive watchdog: confirmed dead after 3 min — restarting')
+                        _start_aria2c()
+                    else:
+                        log.info('aria2c passive watchdog: port closed but proc/lsof say alive — not restarting')
+                    strikes = 0
+        except Exception:
+            pass
 
 # ── API routes ─────────────────────────────────────────────────────────────────
 
@@ -485,6 +497,96 @@ def show_download_direct():
 
     threading.Thread(target=_run_and_cleanup, daemon=True).start()
     return jsonify({'queued': show_name}), 202
+
+
+@app.route('/api/show-scan', methods=['POST'])
+@_require_auth
+def show_scan():
+    """Scan for season packs + individual episodes without downloading anything.
+    Returns structured JSON for the UI preview screen."""
+    data = request.get_json(force=True)
+    search_name = re.sub(r'\s+', ' ', re.sub(r'[^\w\s]', '', (data.get('search_name') or ''))).strip().lower()
+    show_type = (data.get('type') or 'live').strip()
+    seasons = data.get('seasons') or []
+    if not search_name or not seasons:
+        return jsonify({'error': 'search_name and seasons required'}), 400
+
+    seasons_arg = ','.join(f"{s['n']}:{s.get('episodes', 24)}" for s in seasons)
+    cmd = [
+        sys.executable,
+        os.path.join(SCRIPT_DIR, 'showSchedulerSearch.py'),
+        '--scan-seasons',
+        '--show-search', search_name,
+        '--scan-type', show_type,
+        '--seasons-arg', seasons_arg,
+    ]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        for line in reversed(proc.stdout.splitlines()):
+            line = line.strip()
+            if line.startswith('{'):
+                return jsonify(json.loads(line))
+        return jsonify({'seasons': [], 'error': 'no results from scanner'})
+    except subprocess.TimeoutExpired:
+        return jsonify({'error': 'scan timed out', 'seasons': []}), 504
+    except Exception as e:
+        return jsonify({'error': str(e), 'seasons': []}), 500
+
+
+@app.route('/api/show-download-batch', methods=['POST'])
+@_require_auth
+def show_download_batch():
+    """Add a list of magnets directly to aria2c for immediate download.
+    No scheduler involvement — for older/complete show downloads only."""
+    data = request.get_json(force=True)
+    show_name = (data.get('show_name') or '').strip()
+    items = data.get('items') or []   # [{magnet, label}]
+    if not show_name or not items:
+        return jsonify({'error': 'show_name and items required'}), 400
+
+    try:
+        locs = _load_kv(LOCATIONS_FILE)
+        shows_dir = locs.get('SHOWS_DIR', '/Volumes/Jellyfin/Shows')
+        dest = os.path.join(shows_dir, show_name)
+        # aria2c creates the download directory itself; avoid makedirs so Flask
+        # doesn't need filesystem access to the media volume.
+
+        # Load and patch gid_names.json so the UI shows friendly names
+        names_path = os.path.join(SCRIPT_DIR, 'gid_names.json')
+        try:
+            with open(names_path) as f:
+                gid_names = json.load(f)
+        except Exception:
+            gid_names = {}
+
+        gids = []
+        for item in items:
+            magnet = (item.get('magnet') or '').strip()
+            label = (item.get('label') or show_name).strip()
+            if not magnet:
+                continue
+            try:
+                gid = _aria2_add_uri_safe(magnet, {'dir': dest, 'seed-time': '0'})
+                if gid:
+                    gid_str = str(gid)
+                    gids.append({'gid': gid_str, 'label': label})
+                    gid_names[gid_str] = label
+            except Exception as e:
+                log.warning('show_download_batch: failed to add %r: %s', label, e)
+
+        try:
+            with open(names_path, 'w') as f:
+                json.dump(gid_names, f)
+        except Exception as e:
+            log.warning('show_download_batch: could not write gid_names.json: %s', e)
+
+        if not gids:
+            return jsonify({'error': 'no torrents were added — aria2c may be unavailable', 'gids': []}), 500
+
+        return jsonify({'gids': gids, 'count': len(gids)}), 200
+    except Exception as e:
+        log.exception('show_download_batch unexpected error')
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/schedule/<int:idx>/backlog', methods=['POST'])
@@ -963,7 +1065,10 @@ def favicon():
 
 if __name__ == '__main__':
     # Start aria2c RPC daemon and watchdog
-    _ensure_aria2_daemon()
+    if not _aria2_port_open():
+        _start_aria2c()
+    else:
+        log.info('aria2c already running on port %d', ARIA2_RPC_PORT)
     wd = threading.Thread(target=_aria2_watchdog, daemon=True)
     wd.start()
 

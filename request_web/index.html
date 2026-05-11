@@ -565,11 +565,24 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
         <button class="big-btn btn-muted" onclick="resetAddForm()" style="margin-top:8px">Start over</button>
         <div class="err" id="serr-6"></div>
       </div>
-      <!-- Searching view (older shows only) -->
-      <div id="ss-6-searching" class="hidden" style="text-align:center;padding:32px 0">
-        <div class="spinner" style="width:36px;height:36px;margin:0 auto 20px;border-width:3.5px"></div>
-        <div style="font-size:1.05rem;font-weight:700;color:var(--white);margin-bottom:8px" id="ss-searching-label">Queuing&hellip;</div>
-        <div style="font-size:.82rem;color:var(--muted)" id="ss-searching-sub">Sending request to server&hellip;</div>
+      <!-- Scanning view (older shows only) -->
+      <div id="ss-6-scanning" class="hidden" style="text-align:center;padding:28px 0">
+        <div class="spinner" style="width:36px;height:36px;margin:0 auto 16px;border-width:3.5px"></div>
+        <div style="font-size:.95rem;font-weight:700;color:var(--white);margin-bottom:4px" id="ss-scan-season-label">Scanning&hellip;</div>
+        <div style="font-size:.8rem;color:var(--muted);margin-bottom:18px" id="ss-scan-sub">Looking for season packs &amp; episodes&hellip;</div>
+        <div id="ss-scan-progress" style="text-align:left;display:inline-block;min-width:200px;font-size:.8rem;line-height:2"></div>
+      </div>
+      <!-- Preview view (older shows only) -->
+      <div id="ss-6-preview" class="hidden">
+        <div style="font-size:.85rem;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:12px">WHAT WILL BE DOWNLOADED</div>
+        <div id="ss-scan-results" style="max-height:55vh;overflow-y:auto;margin-bottom:14px"></div>
+        <div id="ss-scan-warnings" style="font-size:.78rem;color:#f59e0b;margin-bottom:14px;line-height:1.6"></div>
+        <button class="big-btn btn-purple" id="ss-dl-btn" onclick="_doShowBatchDownload()">
+          <span class="spinner hidden" id="ss-dl-spin"></span>
+          <span id="ss-dl-label">Download</span>
+        </button>
+        <button class="big-btn btn-muted" onclick="resetAddForm()" style="margin-top:8px">Cancel</button>
+        <div class="err" id="serr-scan"></div>
       </div>
       <!-- Success view (older shows only) -->
       <div id="ss-6-done" class="hidden" style="text-align:center;padding:24px 0">
@@ -1143,64 +1156,197 @@ async function submitShow() {
 
   try {
     if (_showMode === 'older') {
-      // Snapshot existing GIDs before submitting
-      let knownGids = new Set();
-      try {
-        const snap = await api('GET', '/api/torrent-state');
-        const sj = await snap.json();
-        (sj.downloads || []).forEach(d => knownGids.add(d.gid));
-      } catch(_) {}
-
-      // Switch to searching view
+      // ── Older show: scan season-by-season for live feedback, then show preview ─
       document.getElementById('ss-6-confirm').classList.add('hidden');
-      document.getElementById('ss-6-searching').classList.remove('hidden');
-      document.getElementById('ss-searching-label').textContent = '\u201c' + title + '\u201d\u2026';
-      document.getElementById('ss-searching-sub').textContent = 'Sending request to server\u2026';
+      document.getElementById('ss-6-scanning').classList.remove('hidden');
 
-      const calls = _selectedSeasons.map(s => api('POST', '/api/show-download', {
-        show_name:      title + (_selectedSeasons.length > 1 ? ' S' + String(s.n).padStart(2,'0') : ''),
-        search_name:    search,
-        type:           _showType,
-        season:         s.n,
-        total_episodes: s.episodes || 99,
-      }));
-      await Promise.all(calls);
+      const seasonLabelEl = document.getElementById('ss-scan-season-label');
+      const subEl         = document.getElementById('ss-scan-sub');
+      const progressEl    = document.getElementById('ss-scan-progress');
+      progressEl.innerHTML = '';
 
-      // Poll torrent-state for a new GID (up to 45s)
-      document.getElementById('ss-searching-sub').textContent = 'Waiting for download to start\u2026';
-      const POLL_MS = 3000, TIMEOUT_MS = 45000;
-      const t0 = Date.now();
-      let foundGid = null;
-      while (Date.now() - t0 < TIMEOUT_MS) {
-        await new Promise(res => setTimeout(res, POLL_MS));
+      const allCollected = [];
+      const totalSeasons = _selectedSeasons.length;
+
+      for (let si = 0; si < totalSeasons; si++) {
+        const s = _selectedSeasons[si];
+        const sTag = 'S' + String(s.n).padStart(2,'0');
+        if (seasonLabelEl) seasonLabelEl.textContent =
+          totalSeasons > 1 ? `Scanning season ${si+1} of ${totalSeasons}\u2026` : `Scanning ${sTag}\u2026`;
+        if (subEl) subEl.textContent = sTag + ' \u2014 searching for season pack\u2026';
+
+        let scanResult;
         try {
-          const pr = await api('GET', '/api/torrent-state');
-          const pj = await pr.json();
-          const newItem = (pj.downloads || []).find(d => !knownGids.has(d.gid));
-          if (newItem) { foundGid = newItem.gid; break; }
-        } catch(_) {}
-        const elapsed = Math.round((Date.now() - t0) / 1000);
-        const sub = document.getElementById('ss-searching-sub');
-        if (sub) sub.textContent = 'Still waiting\u2026 (' + elapsed + 's)';
+          const r = await api('POST', '/api/show-scan', {
+            search_name: search,
+            type:        _showType,
+            seasons:     [{ n: s.n, episodes: s.episodes || 24 }],
+          });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          scanResult = await r.json();
+        } catch(e) {
+          const row = document.createElement('div');
+          row.style.cssText = 'color:#f87171';
+          row.textContent = sTag + ' \u2717 ' + (e.message || 'network error');
+          progressEl.appendChild(row);
+          if (subEl) subEl.textContent = sTag + ' \u2014 failed, skipping';
+          await new Promise(res => setTimeout(res, 1000));
+          continue;
+        }
+
+        const seasonData = (scanResult.seasons || [])[0];
+        if (!seasonData) {
+          const row = document.createElement('div');
+          row.style.cssText = 'color:var(--muted)';
+          row.textContent = sTag + ' \u2014 no data';
+          progressEl.appendChild(row);
+          continue;
+        }
+
+        // Show what was found for this season
+        const row = document.createElement('div');
+        if (seasonData.pack) {
+          if (subEl) subEl.textContent = sTag + ' \u2014 season pack found (' + seasonData.pack.seeds + ' seeds) \u2713';
+          row.style.cssText = 'color:var(--teal)';
+          row.textContent = sTag + ' \u2713  pack  (' + seasonData.pack.seeds + ' seeds)';
+        } else {
+          const foundEps = (seasonData.episodes || []).filter(e => e.found).length;
+          const totalEps = s.episodes || 24;
+          if (subEl) subEl.textContent = sTag + ' \u2014 ' + foundEps + '/' + totalEps + ' episodes found';
+          row.style.cssText = foundEps > 0 ? 'color:var(--teal)' : 'color:var(--muted)';
+          row.textContent = sTag + (foundEps > 0 ? ' \u2713 ' : ' \u2717 ') + foundEps + '/' + totalEps + ' episodes';
+        }
+        progressEl.appendChild(row);
+        allCollected.push(seasonData);
       }
 
-      if (foundGid) {
-        _dlNamesSet(foundGid, title);
-        document.getElementById('ss-6-searching').classList.add('hidden');
-        document.getElementById('ss-6-done').classList.remove('hidden');
-        document.getElementById('ss-ok-label').textContent = title + ' \u00b7 episodes queued';
-        toast('Downloading \u2713');
-        setTimeout(() => { resetAddForm(); showTab('schedule'); }, 3000);
-      } else {
-        // Timed out but server accepted — it's running in background
-        document.getElementById('ss-6-searching').classList.add('hidden');
-        document.getElementById('ss-6-done').classList.remove('hidden');
-        document.getElementById('ss-ok-label').textContent = title + ' \u00b7 queued (searching for torrent)';
-        toast('Queued \u2193\u2193');
-        setTimeout(() => { resetAddForm(); showTab('schedule'); }, 3000);
+      if (allCollected.length === 0) {
+        document.getElementById('ss-6-scanning').classList.add('hidden');
+        document.getElementById('ss-6-confirm').classList.remove('hidden');
+        document.getElementById('serr-6').textContent = 'Nothing found for any selected season.';
+        btn.disabled = false; spin.classList.add('hidden');
+        return;
       }
+
+      // ── Build preview ──────────────────────────────────────────────────────
+      window._scanTitle   = title;
+      window._scanResult  = { seasons: allCollected };
+      window._scanItems   = [];
+      window._seasonMode  = {};   // sn → 'pack' | 'episodes'
+
+      // Initialise mode: pack if available, else episodes
+      for (const season of allCollected) {
+        window._seasonMode[season.season] = season.pack ? 'pack' : 'episodes';
+      }
+
+      // Build DOM — two sub-views per season (pack-view / ep-view), toggle between them
+      const resultsEl = document.getElementById('ss-scan-results');
+      resultsEl.innerHTML = '';
+
+      for (const season of allCollected) {
+        const sn       = season.season;
+        const pack     = season.pack;
+        const episodes = season.episodes || [];
+        const foundEps = episodes.filter(e => e.found);
+
+        const section = document.createElement('div');
+        section.style.cssText = 'margin-bottom:20px';
+
+        const hdr = document.createElement('div');
+        hdr.style.cssText = 'font-size:.82rem;font-weight:700;color:var(--blue);letter-spacing:.04em;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.08)';
+        hdr.textContent = 'Season ' + sn;
+        section.appendChild(hdr);
+
+        // ── Pack view ──
+        const packView = document.createElement('div');
+        packView.id = 'ssv-pack-' + sn;
+        packView.style.display = (window._seasonMode[sn] === 'pack') ? '' : 'none';
+
+        if (pack) {
+          const wBadges = (pack.warnings || []).map(w =>
+            w === 'non_english' ? '<span style="color:#f87171;margin-left:6px">⚠ non-English</span>'
+                                : '<span style="color:#fbbf24;margin-left:6px">⚠ no 1080p</span>'
+          ).join('');
+          const card = document.createElement('div');
+          card.style.cssText = 'background:rgba(255,255,255,.05);border-radius:8px;padding:10px 12px;font-size:.8rem';
+          card.innerHTML =
+            '<div style="font-size:.72rem;font-weight:700;color:var(--teal);margin-bottom:3px">📦 SEASON PACK' + wBadges + '</div>' +
+            '<div style="color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">' + _esc(pack.title) + '</div>' +
+            '<div style="color:var(--muted);margin-top:2px">' + pack.seeds + ' seeds</div>';
+          packView.appendChild(card);
+
+          if (foundEps.length > 0) {
+            const tog = document.createElement('button');
+            tog.className = 'big-btn btn-muted';
+            tog.style.cssText = 'margin-top:8px;font-size:.77rem;padding:6px 14px';
+            tog.textContent = 'Switch to ' + foundEps.length + ' individual episodes instead';
+            tog.onclick = () => _toggleSeason(sn);
+            packView.appendChild(tog);
+          }
+        } else {
+          const none = document.createElement('div');
+          none.style.cssText = 'font-size:.8rem;color:var(--muted);padding:6px 0';
+          none.textContent = 'No season pack found.';
+          packView.appendChild(none);
+        }
+        section.appendChild(packView);
+
+        // ── Episodes view ──
+        const epView = document.createElement('div');
+        epView.id = 'ssv-ep-' + sn;
+        epView.style.display = (window._seasonMode[sn] === 'episodes') ? '' : 'none';
+
+        if (foundEps.length === 0) {
+          const none = document.createElement('div');
+          none.style.cssText = 'font-size:.8rem;color:var(--muted);padding:6px 0';
+          none.textContent = 'No individual episodes found for this season.';
+          epView.appendChild(none);
+        } else {
+          const grid = document.createElement('div');
+          grid.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px';
+          for (const ep of episodes) {
+            const chip = document.createElement('div');
+            let bg = 'rgba(20,184,166,.18)'; let col = 'var(--teal)';
+            if (!ep.found) { bg = 'rgba(255,255,255,.06)'; col = 'var(--muted)'; }
+            else if ((ep.warnings||[]).includes('non_english')) { bg='rgba(248,113,113,.15)'; col='#f87171'; }
+            else if ((ep.warnings||[]).includes('no_1080p'))    { bg='rgba(251,191,36,.12)'; col='#fbbf24'; }
+            chip.style.cssText = `background:${bg};color:${col};border-radius:4px;padding:3px 7px;font-size:.75rem;font-weight:600`;
+            chip.textContent = 'E' + String(ep.ep).padStart(2,'0') + (ep.found ? '' : ' \u2717');
+            if (ep.found && ep.title) chip.title = ep.title + ' \u00b7 ' + ep.seeds + ' seeds';
+            grid.appendChild(chip);
+          }
+          epView.appendChild(grid);
+
+          const notFound = episodes.filter(e => !e.found);
+          if (notFound.length > 0) {
+            const miss = document.createElement('div');
+            miss.style.cssText = 'font-size:.75rem;color:var(--muted);margin-top:5px';
+            miss.textContent = notFound.length + ' episode' + (notFound.length > 1 ? 's' : '') + ' not found';
+            epView.appendChild(miss);
+          }
+        }
+
+        if (pack) {
+          const tog = document.createElement('button');
+          tog.className = 'big-btn btn-muted';
+          tog.style.cssText = 'margin-top:8px;font-size:.77rem;padding:6px 14px';
+          tog.textContent = '\u2190 Switch back to season pack';
+          tog.onclick = () => _toggleSeason(sn);
+          epView.appendChild(tog);
+        }
+        section.appendChild(epView);
+
+        resultsEl.appendChild(section);
+      }
+
+      // Compute initial _scanItems, warnings, and button state
+      _rebuildScanItems();
+
+      document.getElementById('ss-6-scanning').classList.add('hidden');
+      document.getElementById('ss-6-preview').classList.remove('hidden');
       btn.disabled = false; spin.classList.add('hidden');
       return;
+
     } else {
       const s = _selectedSeasons[0] || {n: +_gv('f-season') || 1, episodes: +_gv('f-total-ep') || 99};
       const r = await api('POST', '/api/schedule', {
@@ -1227,6 +1373,100 @@ async function submitShow() {
   btn.disabled = false; spin.classList.add('hidden');
 }
 
+// ── Scan preview helpers ──────────────────────────────────────────────────────
+function _rebuildScanItems() {
+  const result = window._scanResult || { seasons: [] };
+  const title  = window._scanTitle || 'Show';
+  const modes  = window._seasonMode || {};
+  const allWarnings = new Set();
+  let totalFound = 0;
+  window._scanItems = [];
+
+  for (const season of (result.seasons || [])) {
+    const sn   = season.season;
+    const mode = modes[sn] || (season.pack ? 'pack' : 'episodes');
+    if (mode === 'pack' && season.pack) {
+      window._scanItems.push({ magnet: season.pack.magnet,
+        label: title + ' S' + String(sn).padStart(2,'0') + ' (pack)' });
+      totalFound++;
+      (season.pack.warnings || []).forEach(w => allWarnings.add(w));
+    } else {
+      for (const ep of (season.episodes || [])) {
+        if (!ep.found) continue;
+        window._scanItems.push({ magnet: ep.magnet,
+          label: title + ' S' + String(sn).padStart(2,'0') + 'E' + String(ep.ep).padStart(2,'0') });
+        totalFound++;
+        (ep.warnings || []).forEach(w => allWarnings.add(w));
+      }
+    }
+  }
+
+  const lbl = document.getElementById('ss-dl-label');
+  const btn = document.getElementById('ss-dl-btn');
+  if (lbl) lbl.textContent = totalFound === 0 ? 'Nothing to download'
+    : 'Download ' + totalFound + ' item' + (totalFound > 1 ? 's' : '');
+  if (btn) btn.disabled = totalFound === 0;
+
+  const warnEl = document.getElementById('ss-scan-warnings');
+  if (warnEl) {
+    const lines = [];
+    if (allWarnings.has('non_english')) lines.push('\u26a0 Some torrents may not be in English \u2014 double-check before confirming.');
+    if (allWarnings.has('no_1080p'))    lines.push('\u26a0 Some episodes are not available in 1080p/4K \u2014 older shows sometimes only have SD releases.');
+    warnEl.innerHTML = lines.join('<br>');
+  }
+}
+
+function _toggleSeason(sn) {
+  if (!window._seasonMode) window._seasonMode = {};
+  const result = window._scanResult || { seasons: [] };
+  const season = (result.seasons || []).find(s => s.season === sn);
+  if (!season) return;
+  const cur = window._seasonMode[sn] || (season.pack ? 'pack' : 'episodes');
+  window._seasonMode[sn] = (cur === 'pack') ? 'episodes' : 'pack';
+  const packView = document.getElementById('ssv-pack-' + sn);
+  const epView   = document.getElementById('ssv-ep-'   + sn);
+  if (packView) packView.style.display = (window._seasonMode[sn] === 'pack')     ? '' : 'none';
+  if (epView)   epView.style.display   = (window._seasonMode[sn] === 'episodes') ? '' : 'none';
+  _rebuildScanItems();
+}
+
+async function _doShowBatchDownload() {
+  const btn  = document.getElementById('ss-dl-btn');
+  const spin = document.getElementById('ss-dl-spin');
+  const errEl = document.getElementById('serr-scan');
+  btn.disabled = true;
+  spin.classList.remove('hidden');
+  errEl.textContent = '';
+
+  try {
+    const r = await api('POST', '/api/show-download-batch', {
+      show_name: window._scanTitle || 'Show',
+      items:     window._scanItems || [],
+    });
+    const j = await r.json();
+    if (!r.ok || !j.gids || j.gids.length === 0) {
+      errEl.textContent = j.error || 'Failed to start downloads';
+      btn.disabled = false;
+      spin.classList.add('hidden');
+      return;
+    }
+
+    // Register friendly names in localStorage for the download strip
+    (j.gids || []).forEach(g => _dlNamesSet(g.gid, g.label));
+
+    document.getElementById('ss-6-preview').classList.add('hidden');
+    document.getElementById('ss-6-done').classList.remove('hidden');
+    document.getElementById('ss-ok-label').textContent =
+      (window._scanTitle || 'Show') + ' \u00b7 ' + j.count + ' torrent' + (j.count > 1 ? 's' : '') + ' queued';
+    toast('Downloading \u2713');
+    setTimeout(() => { resetAddForm(); showTab('current'); }, 3000);
+  } catch(e) {
+    errEl.textContent = 'Network error: ' + (e.message || e);
+    btn.disabled = false;
+    spin.classList.add('hidden');
+  }
+}
+
 function resetAddForm() {
   _showMode = ''; _showType = ''; _releaseDay = '';
   _showStep = 'ss-1'; _showInputMethod = '';
@@ -1245,11 +1485,18 @@ function resetAddForm() {
   });
   // Reset ss-6 inner views
   const c = document.getElementById('ss-6-confirm');
-  const s = document.getElementById('ss-6-searching');
+  const sc = document.getElementById('ss-6-scanning');
+  const sp = document.getElementById('ss-6-preview');
   const d = document.getElementById('ss-6-done');
   if (c) c.classList.remove('hidden');
-  if (s) s.classList.add('hidden');
+  if (sc) sc.classList.add('hidden');
+  if (sp) sp.classList.add('hidden');
   if (d) d.classList.add('hidden');
+  window._scanResult = null; window._scanItems = []; window._scanTitle = ''; window._seasonMode = {};
+  const scanRes = document.getElementById('ss-scan-results');
+  if (scanRes) scanRes.innerHTML = '';
+  const scanProg = document.getElementById('ss-scan-progress');
+  if (scanProg) scanProg.innerHTML = '';
   const rows = document.getElementById('season-builder-rows');
   if (rows) rows.innerHTML = '';
   const res = document.getElementById('ss-2-results');

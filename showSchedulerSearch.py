@@ -505,6 +505,203 @@ def search_tpb(search_name: str, season: int, episode: int) -> List[Dict]:
     log.info(f"  TPB → {len(results)} raw results")
     return results
 
+# ── Season-pack search ────────────────────────────────────────────────────────
+
+def search_nyaa_season_pack(search_name: str, season: int) -> List[Dict]:
+    """Search Nyaa.si for a season pack using 's{NN}' (no episode number)."""
+    query = f"{search_name} s{season:02d}"
+    url = (
+        f"https://nyaa.si/?f=0&c=1_2"
+        f"&q={urllib.parse.quote(query)}"
+        f"&s=seeders&o=desc"
+    )
+    log.info(f"  Nyaa season-pack query: {query}")
+    body = _fetch(url)
+    if not body:
+        return []
+    results = _parse_nyaa_html(body)
+    log.info(f"  Nyaa pack → {len(results)} raw results")
+    return results
+
+
+def search_tpb_season_pack(search_name: str, season: int) -> List[Dict]:
+    """Search ThePirateBay for a season pack using 's{NN}' (no episode number)."""
+    query = f"{search_name} s{season:02d}"
+    url = f"https://apibay.org/q.php?q={urllib.parse.quote(query)}"
+    log.info(f"  TPB season-pack query: {query}")
+    body = _fetch(url)
+    if not body:
+        return []
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        return []
+    results = []
+    tr_str = '&tr='.join(urllib.parse.quote(t, safe='') for t in _TPB_TRACKERS)
+    for item in data:
+        name = item.get('name', '')
+        if not name or name == 'No results returned':
+            continue
+        info_hash = item.get('info_hash', '').lower()
+        if not info_hash:
+            continue
+        seeds = int(item.get('seeders', 0))
+        magnet = (
+            f"magnet:?xt=urn:btih:{info_hash}"
+            f"&dn={urllib.parse.quote(name)}"
+            f"&tr={tr_str}"
+        )
+        results.append({'title': name, 'magnet': magnet, 'seeds': seeds})
+    log.info(f"  TPB pack → {len(results)} raw results")
+    return results
+
+
+def _is_season_pack(title: str, season: int) -> bool:
+    """Return True if the torrent title looks like a season pack, not a single episode."""
+    # Has SxxExx → single episode, not a pack
+    if re.search(r'[Ss]\d{1,2}[Ee]\d{1,2}', title):
+        return False
+    t = title.lower()
+    # Must reference the correct season
+    if re.search(rf's0*{season}(?!\d)', t):
+        return True
+    if re.search(rf'season\s*0*{season}\b', t):
+        return True
+    if 'complete' in t or 'the complete' in t:
+        return True
+    return False
+
+
+def score_torrent_relaxed(
+    title: str, seeds: int, show_type: str, nyaa_en_cat: bool = False
+) -> Tuple[Optional[float], List[str]]:
+    """Like score_torrent but warns instead of hard-rejecting on quality issues.
+
+    Returns (score, warnings). score=None means truly unusable (no seeds / raw disc dump).
+    Warnings: 'non_english', 'no_1080p'
+    """
+    if seeds < 1:
+        return None, []
+    t = title.lower()
+    warnings_out: List[str] = []
+
+    # Hard reject: raw disc dumps (BDMV, complete unencoded Blu-ray)
+    if 'bdmv' in t:
+        return None, []
+
+    # Non-English: warn but accept
+    if show_type == 'anime' and not nyaa_en_cat:
+        if any(pat in t for pat in _NON_EN):
+            warnings_out.append('non_english')
+
+    # No 1080p / 4K: warn but accept
+    if not _has_min_res(title):
+        warnings_out.append('no_1080p')
+
+    score: float = min(seeds, 500) * 0.3
+    if '2160p' in t or '4k' in t:
+        score += 80
+    elif '1080p' in t or '1080i' in t:
+        score += 50
+    if 'bluray' in t or 'bdrip' in t or 'bd ' in t or 'bd.' in t:
+        score += 40
+    elif 'web-dl' in t or 'webdl' in t:
+        score += 30
+    elif 'webrip' in t:
+        score += 20
+    elif any(s in t for s in ('crunchyroll', 'amzn', ' nf ', 'hidive', 'cr.')):
+        score += 15
+    if any(c in t for c in ('x265', 'hevc', 'h.265', 'h265')):
+        score += 15
+    if 'flac' in t:
+        score += 10
+    elif any(a in t for a in ('ddp', 'eac3', 'dts', 'dd5.1', 'atmos')):
+        score += 5
+    if '10bit' in t or '10-bit' in t or 'hi10p' in t:
+        score += 5
+
+    return score, warnings_out
+
+
+def scan_seasons(search_name: str, show_type: str, seasons_info: List[Dict]) -> Dict:
+    """For each season: try season pack first, then per-episode in parallel.
+
+    Returns structured JSON suitable for the UI preview screen:
+    {seasons: [{season, pack, episodes: [{ep, found, title, seeds, magnet, warnings}]}]}
+    """
+    import concurrent.futures as _cf
+
+    all_seasons = []
+
+    for season_info in seasons_info:
+        season_n = int(season_info['n'])
+        total_eps = min(int(season_info.get('episodes', 24)), 200)
+
+        # ── Season pack search ─────────────────────────────────────────────
+        pack_candidates: List[Tuple] = []
+        if show_type == 'anime':
+            for r in search_nyaa_season_pack(search_name, season_n):
+                if _is_season_pack(r['title'], season_n):
+                    sc, ws = score_torrent_relaxed(r['title'], r['seeds'], show_type, nyaa_en_cat=True)
+                    if sc is not None:
+                        pack_candidates.append((sc, ws, r))
+        if show_type == 'live' or not pack_candidates:
+            for r in search_tpb_season_pack(search_name, season_n):
+                if _is_season_pack(r['title'], season_n):
+                    sc, ws = score_torrent_relaxed(r['title'], r['seeds'], show_type)
+                    if sc is not None:
+                        pack_candidates.append((sc, ws, r))
+
+        best_pack = None
+        if pack_candidates:
+            pack_candidates.sort(key=lambda x: x[0], reverse=True)
+            sc, ws, best = pack_candidates[0]
+            best_pack = {
+                'title': best['title'],
+                'seeds': best['seeds'],
+                'magnet': best['magnet'],
+                'score': round(sc),
+                'warnings': ws,
+            }
+
+        # ── Per-episode search (parallel) ──────────────────────────────────
+        def _search_ep(ep: int) -> Dict:
+            candidates: List[Tuple] = []
+            if show_type == 'anime':
+                for r in search_nyaa(search_name, season_n, ep):
+                    sc, ws = score_torrent_relaxed(r['title'], r['seeds'], show_type, nyaa_en_cat=True)
+                    if sc is not None:
+                        candidates.append((sc, ws, r))
+            if show_type == 'live' or not candidates:
+                for r in search_tpb(search_name, season_n, ep):
+                    sc, ws = score_torrent_relaxed(r['title'], r['seeds'], show_type)
+                    if sc is not None:
+                        candidates.append((sc, ws, r))
+            if candidates:
+                candidates.sort(key=lambda x: x[0], reverse=True)
+                sc, ws, best = candidates[0]
+                return {
+                    'ep': ep, 'found': True,
+                    'title': best['title'],
+                    'seeds': best['seeds'],
+                    'magnet': best['magnet'],
+                    'score': round(sc),
+                    'warnings': ws,
+                }
+            return {'ep': ep, 'found': False, 'title': None, 'seeds': 0, 'magnet': None, 'warnings': []}
+
+        ep_range = list(range(1, total_eps + 1))
+        with _cf.ThreadPoolExecutor(max_workers=6) as executor:
+            ep_results = list(executor.map(_search_ep, ep_range))
+
+        all_seasons.append({
+            'season': season_n,
+            'pack': best_pack,
+            'episodes': ep_results,
+        })
+
+    return {'seasons': all_seasons}
+
 # ── Download via aria2c RPC daemon ─────────────────────────────────────────────
 # When requestServer.py is running it keeps an aria2c daemon alive on port
 # ARIA2_RPC_PORT.  All downloads go through aria2.addUri so they appear in the
@@ -1153,6 +1350,14 @@ def main() -> None:
                     help='Prefer 4K/2160p results for movies (large score bonus; falls back to 1080p)')
     ap.add_argument('--list-candidates', action='store_true',
                     help='Print top movie candidates as JSON and exit (requires --movie)')
+    ap.add_argument('--scan-seasons', action='store_true',
+                    help='Scan for a show\'s season packs + episodes and print JSON (no download)')
+    ap.add_argument('--show-search', metavar='NAME',
+                    help='Search term for --scan-seasons (e.g. "attack on titan")')
+    ap.add_argument('--scan-type', metavar='TYPE', default='live',
+                    help='Show type for --scan-seasons: anime or live')
+    ap.add_argument('--seasons-arg', metavar='SEASONS',
+                    help='Comma-separated season:episodes pairs for --scan-seasons (e.g. "1:25,2:12")')
     args = ap.parse_args()
 
     # ── Movie mode: search & download, then exit ──────────────────────────────
@@ -1177,6 +1382,28 @@ def main() -> None:
             dry_run=args.dry_run,
             prefer_4k=args.prefer_4k,
         )
+        return
+
+    # ── Scan-seasons mode ──────────────────────────────────────────────────────
+    if args.scan_seasons:
+        seasons_info: List[Dict] = []
+        for part in (args.seasons_arg or '').split(','):
+            part = part.strip()
+            if ':' in part:
+                n_s, ep_s = part.split(':', 1)
+                try:
+                    seasons_info.append({'n': int(n_s), 'episodes': int(ep_s)})
+                except ValueError:
+                    pass
+        if not args.show_search or not seasons_info:
+            print(json.dumps({'error': 'requires --show-search and --seasons-arg'}))
+            return
+        result = scan_seasons(
+            search_name=args.show_search,
+            show_type=args.scan_type or 'live',
+            seasons_info=seasons_info,
+        )
+        print(json.dumps(result))
         return
 
     rows = read_schedule()

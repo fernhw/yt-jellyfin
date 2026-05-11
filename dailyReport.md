@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-11
 
-> *Good afternoon! Here's what landed on Monday, May 11, 2026 at 03:18 PM.*
-> **YT Mirror:** 764.95 GB used · 1.15 TB free
+> *Good evening! Here's what landed on Monday, May 11, 2026 at 05:10 PM.*
+> **YT Mirror:** 765.30 GB used · 1.15 TB free
 
 ### Priority Videos
 
@@ -14,6 +14,7 @@
 
 ### Non-Priority Videos
 
+- **Why New Smartphone Cameras Feel Worse** — *Marques Brownlee* · downloaded 05:08 PM · not podcastable
 - **Hollywood never learns..** — *Asmongold TV* · downloaded 03:14 PM · not podcastable
 - **Everybody is talking about this game..** — *Asmongold TV* · downloaded 03:13 PM · not podcastable
 - **DF Direct Weekly #263: Star Fox Returns, Switch 2 Price Hike, Nvidia GTX 10-Series 10th Anniversary!** — *Digital Foundry* · downloaded 11:38 AM · not podcastable

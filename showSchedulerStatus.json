@@ -2,19 +2,6 @@
   "updated": "2026-05-11",
   "shows": [
     {
-      "show": "Attack on Titan S01",
-      "season": 1,
-      "downloaded": 2,
-      "next_ep": 3,
-      "total": 25,
-      "week": "?",
-      "status": "searching",
-      "release_days": "daily",
-      "days_until": 0,
-      "is_complete": false,
-      "thumb": ""
-    },
-    {
       "show": "The Boys",
       "season": 5,
       "downloaded": 6,
@@ -62,32 +49,6 @@
       "week": "W7 due",
       "status": "searching",
       "release_days": "mon",
-      "days_until": 0,
-      "is_complete": false,
-      "thumb": ""
-    },
-    {
-      "show": "marshals",
-      "season": 1,
-      "downloaded": 0,
-      "next_ep": 1,
-      "total": 8,
-      "week": "?",
-      "status": "pending",
-      "release_days": "tue",
-      "days_until": 1,
-      "is_complete": false,
-      "thumb": ""
-    },
-    {
-      "show": "Takeshi's Castle",
-      "season": 1,
-      "downloaded": 0,
-      "next_ep": 1,
-      "total": 99,
-      "week": "?",
-      "status": "searching",
-      "release_days": "daily",
       "days_until": 0,
       "is_complete": false,
       "thumb": ""
