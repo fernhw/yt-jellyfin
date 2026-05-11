@@ -257,8 +257,8 @@ def _ensure_aria2_daemon() -> None:
             if len(parts) < 3:
                 continue
             pid_s, stat, cmd = parts
-            # UN = uninterruptible + stopped; U alone also matches UN
-            if 'U' in stat and 'aria2c' in cmd:
+            # UN = uninterruptible sleep + not runnable (truly stuck — not just 'U' in stat)
+            if re.match(r'U[Ns]?$', stat) and 'aria2c' in cmd:
                 try:
                     os.kill(int(pid_s), 9)
                     log.warning(f'aria2c watchdog: killed stuck UN process {pid_s}')

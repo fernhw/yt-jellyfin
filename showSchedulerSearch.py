@@ -152,6 +152,18 @@ def read_schedule() -> List[Dict]:
         return []
     with open(SCHEDULE_CSV, newline='', encoding='utf-8') as f:
         rows = list(csv.DictReader(f))
+    good = []
+    for r in rows:
+        # Skip rows where numeric fields were corrupted (e.g. show name had a
+        # comma and was not properly quoted, shifting all columns).
+        for field in ('season', 'next_episode', 'total_episodes'):
+            if not (r.get(field) or '').strip().isdigit():
+                log.warning('read_schedule: skipping corrupt row (bad %s=%r) show=%r',
+                            field, r.get(field), r.get('show_name'))
+                break
+        else:
+            good.append(r)
+    rows = good
     # Back-fill search_name for rows added before this field existed
     for r in rows:
         if not r.get('search_name', '').strip():
@@ -1281,10 +1293,14 @@ def write_status_json(rows: List[Dict], locations: Dict[str, str]) -> None:
 
     shows = []
     for r in rows:
-        name       = r['show_name']
-        season     = int(r['season'])
-        next_ep    = int(r['next_episode'])
-        total      = int(r['total_episodes'])
+        name = r['show_name']
+        try:
+            season  = int(r['season'])
+            next_ep = int(r['next_episode'])
+            total   = int(r['total_episodes'])
+        except (ValueError, KeyError):
+            log.warning('write_status_json: skipping malformed row for %r', name)
+            continue
         downloaded = next_ep - 1          # last episode we actually have
         cur_ep     = _current_expected_episode(r, today)
 

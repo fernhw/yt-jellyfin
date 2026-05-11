@@ -2,17 +2,17 @@
   "updated": "2026-05-11",
   "shows": [
     {
-      "show": "Re Zero",
-      "season": 4,
-      "downloaded": 5,
-      "next_ep": 6,
-      "total": 13,
-      "week": "W6 due",
-      "status": "searching",
-      "release_days": "wed",
-      "days_until": 2,
+      "show": "Attack on Titan S01",
+      "season": 1,
+      "downloaded": 0,
+      "next_ep": 1,
+      "total": 25,
+      "week": "?",
+      "status": "pending",
+      "release_days": "daily",
+      "days_until": null,
       "is_complete": false,
-      "thumb": "media-thumbs/show-sched-fle-re-zero-starting-life-in-another-world-s03-web-1080p-h-264-e-ac-3-dual-audio.jpg"
+      "thumb": ""
     },
     {
       "show": "The Boys",
@@ -76,6 +76,32 @@
       "status": "pending",
       "release_days": "tue",
       "days_until": 1,
+      "is_complete": false,
+      "thumb": ""
+    },
+    {
+      "show": "Takeshi's Castle",
+      "season": 1,
+      "downloaded": 0,
+      "next_ep": 1,
+      "total": 99,
+      "week": "?",
+      "status": "pending",
+      "release_days": "daily",
+      "days_until": null,
+      "is_complete": false,
+      "thumb": ""
+    },
+    {
+      "show": "Attack on Titan S02",
+      "season": 2,
+      "downloaded": 0,
+      "next_ep": 1,
+      "total": 12,
+      "week": "?",
+      "status": "pending",
+      "release_days": "daily",
+      "days_until": null,
       "is_complete": false,
       "thumb": ""
     }

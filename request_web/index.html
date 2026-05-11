@@ -870,7 +870,10 @@ function showSearchInput() {
           </div>
         </button>
       `).join('');
-    } catch(e) { spinner.style.display = 'none'; }
+    } catch(e) {
+      spinner.style.display = 'none';
+      results.innerHTML = '<div style="font-size:.82rem;color:#f87171;padding:8px 2px">&#9888; Search failed \u2014 check your connection and try again.</div>';
+    }
   }, 420);
 }
 
@@ -926,7 +929,7 @@ async function _pickShow(idx) {
       : visibleSeasons.length ? [visibleSeasons[visibleSeasons.length - 1]] : visibleSeasons;
   } catch(e) {
     spinner.style.display = 'none';
-    list.innerHTML = '<div style="font-size:.82rem;color:var(--muted);padding:8px 0">Could not load seasons. All episodes will be downloaded.</div>';
+    list.innerHTML = '<div style="font-size:.82rem;color:#f87171;padding:8px 0">&#9888; Could not load seasons \u2014 check your connection and try again.</div>';
     _selectedSeasons = [{n:1, episodes:99}];
   }
 }
