@@ -205,19 +205,12 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       </div>
     </div>
 
-    <!-- Step A: title + type -->
+    <!-- Step A: title -->
     <div id="mv-step-a">
       <div class="field-label">MOVIE TITLE</div>
       <input id="movie-title" class="big-input" placeholder="e.g. Dune Part Two"
-             onkeydown="if(event.key==='Enter')mvGo()"
-             style="font-size:1.15rem;padding:20px 18px;margin-bottom:12px"/>
-
-      <div class="field-label">TYPE</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-        <button id="mv-type-live"  class="big-btn btn-orange" style="margin-top:0" onclick="mvSetType('live')">&#127916;&nbsp; Live-action</button>
-        <button id="mv-type-anime" class="big-btn" style="margin-top:0;opacity:.38;background:var(--bg3);color:var(--muted)" onclick="mvSetType('anime')">&#127885;&nbsp; Anime</button>
-      </div>
-
+             onkeydown="if(event.key==='Enter')mvNext()"
+             style="font-size:1.15rem;padding:20px 18px;margin-bottom:14px"/>
       <details style="margin-bottom:12px">
         <summary style="font-size:.75rem;color:var(--muted);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px">
           <span style="font-size:.7rem">&#9660;</span> Quality (default: 1080p)
@@ -229,9 +222,29 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
           </select>
         </div>
       </details>
-
       <div class="err" id="movie-err"></div>
-      <button class="big-btn btn-orange" onclick="mvGo()" style="margin-top:0">Find &amp; Download &rarr;</button>
+      <button class="big-btn btn-orange" onclick="mvNext()" style="margin-top:0">Next &rarr;</button>
+    </div>
+
+    <!-- Step B: type choice -->
+    <div id="mv-step-b" class="hidden">
+      <div class="step-q" style="margin-bottom:6px">What kind of movie is it?</div>
+      <div class="step-hint" style="margin-bottom:16px" id="mv-title-echo"></div>
+      <button class="show-mode-btn" onclick="mvSubmit('live')">
+        <div class="smb-icon">&#127916;</div>
+        <div class="smb-body">
+          <div class="smb-title">Live-action</div>
+          <div class="smb-sub">Hollywood, foreign films, documentaries, 3D animated films</div>
+        </div>
+      </button>
+      <button class="show-mode-btn" onclick="mvSubmit('anime')">
+        <div class="smb-icon">&#127885;</div>
+        <div class="smb-body">
+          <div class="smb-title">Anime</div>
+          <div class="smb-sub">Japanese animated films, Ghibli, etc.</div>
+        </div>
+      </button>
+      <button class="ghost-btn" onclick="mvBack()">&larr; Back</button>
     </div>
 
     <!-- Step C: searching spinner -->
@@ -710,28 +723,16 @@ function resetAddForm() {
 // ── Movie tab ─────────────────────────────────────────────────────────────────
 let _mvType = 'live', _mvTitle = '';
 
-function mvSetType(type) {
-  _mvType = type;
-  const live  = document.getElementById('mv-type-live');
-  const anime = document.getElementById('mv-type-anime');
-  if (type === 'live') {
-    live.className  = 'big-btn btn-orange'; live.style.opacity  = '1';  live.style.background = ''; live.style.color = '';
-    anime.className = 'big-btn';            anime.style.opacity = '.38'; anime.style.background = 'var(--bg3)'; anime.style.color = 'var(--muted)';
-  } else {
-    anime.className = 'big-btn btn-purple'; anime.style.opacity = '1';  anime.style.background = ''; anime.style.color = '';
-    live.className  = 'big-btn';            live.style.opacity  = '.38'; live.style.background  = 'var(--bg3)'; live.style.color = 'var(--muted)';
-  }
-}
-
-function mvGo() {
+function mvNext() {
   const title = document.getElementById('movie-title').value.trim();
   if (!title) { document.getElementById('movie-err').textContent = 'Enter a movie title first'; return; }
   document.getElementById('movie-err').textContent = '';
-  mvSubmit(_mvType, title);
+  document.getElementById('mv-title-echo').textContent = '\u201c' + title + '\u201d';
+  mvShowStep('mv-step-b');
 }
 
 function mvBack() {
-  ['mv-step-c','mv-step-d','mv-step-e'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  ['mv-step-b','mv-step-c','mv-step-d','mv-step-e'].forEach(id => document.getElementById(id).classList.add('hidden'));
   document.getElementById('mv-step-a').classList.remove('hidden');
 }
 
@@ -739,12 +740,11 @@ function mvReset() {
   document.getElementById('movie-title').value = '';
   const r = document.getElementById('mv-retry-title');
   if (r) r.value = '';
-  mvSetType('live');
   mvBack();
 }
 
 function mvShowStep(id) {
-  ['mv-step-a','mv-step-c','mv-step-d','mv-step-e'].forEach(s => document.getElementById(s).classList.add('hidden'));
+  ['mv-step-a','mv-step-b','mv-step-c','mv-step-d','mv-step-e'].forEach(s => document.getElementById(s).classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
 }
 
