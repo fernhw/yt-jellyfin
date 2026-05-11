@@ -599,6 +599,169 @@ def library_check():
     return jsonify({'matches': matches[:20]})
 
 
+@app.route('/api/movie-suggest')
+@_require_auth
+def movie_suggest():
+    """Movie title autocomplete using iTunes Search API (free, no key required)."""
+    q = (request.args.get('q') or '').strip()
+    if not q or len(q) < 2:
+        return jsonify({'results': []})
+    try:
+        import urllib.request as _ur
+        import urllib.parse as _up
+        url = ('https://itunes.apple.com/search?media=movie&entity=movie&limit=14&term='
+               + _up.quote(q))
+        req = _ur.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with _ur.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read())
+        results = []
+        seen: set = set()
+        for item in (data.get('results') or []):
+            title = (item.get('trackName') or '').strip()
+            year_raw = item.get('releaseDate', '')
+            year = int(year_raw[:4]) if year_raw and len(year_raw) >= 4 else None
+            if not title:
+                continue
+            key = title.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            results.append({'title': title, 'year': year})
+        return jsonify({'results': results})
+    except Exception as e:
+        log.warning('movie-suggest error: %s', e)
+        return jsonify({'results': []})
+
+
+@app.route('/api/show-suggest')
+@_require_auth
+def show_suggest():
+    """TV show search via TVmaze (live-action/anime) + AniList GraphQL (anime)."""
+    q = (request.args.get('q') or '').strip()
+    if not q or len(q) < 2:
+        return jsonify({'results': []})
+    import urllib.request as _ur
+    import urllib.parse as _up
+    results = []
+
+    # ── TVmaze ────────────────────────────────────────────────────────────────
+    try:
+        url = 'https://api.tvmaze.com/search/shows?q=' + _up.quote(q)
+        req = _ur.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with _ur.urlopen(req, timeout=8) as resp:
+            items = json.loads(resp.read())
+        for entry in (items or [])[:6]:
+            show = entry.get('show') or {}
+            name = (show.get('name') or '').strip()
+            if not name:
+                continue
+            year_raw = show.get('premiered') or show.get('airdate') or ''
+            year = int(year_raw[:4]) if year_raw and len(year_raw) >= 4 else None
+            genres = [g.lower() for g in (show.get('genres') or [])]
+            show_type = 'anime' if 'anime' in genres else 'live'
+            poster = (show.get('image') or {}).get('medium') or ''
+            network = ((show.get('network') or {}).get('name') or
+                       (show.get('webChannel') or {}).get('name') or '')
+            results.append({
+                'title': name,
+                'year': year,
+                'type': show_type,
+                'poster': poster,
+                'network': network,
+                'source': 'tvmaze',
+                'source_id': str(show.get('id', '')),
+            })
+    except Exception as e:
+        log.warning('show-suggest tvmaze error: %s', e)
+
+    # ── AniList ───────────────────────────────────────────────────────────────
+    try:
+        gql = ('query ($q: String) { Page(perPage: 5) { media(search: $q, type: ANIME, '
+               'sort: SEARCH_MATCH) { id title { romaji english } seasonYear '
+               'coverImage { medium } episodes status } } }')
+        body = json.dumps({'query': gql, 'variables': {'q': q}}).encode()
+        req = _ur.Request('https://graphql.anilist.co', data=body,
+                          headers={'Content-Type': 'application/json',
+                                   'User-Agent': 'Mozilla/5.0'})
+        with _ur.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read())
+        for media in ((data.get('data') or {}).get('Page', {}).get('media') or []):
+            title = ((media.get('title') or {}).get('english') or
+                     (media.get('title') or {}).get('romaji') or '').strip()
+            if not title:
+                continue
+            poster = (media.get('coverImage') or {}).get('medium') or ''
+            results.append({
+                'title': title,
+                'year': media.get('seasonYear'),
+                'type': 'anime',
+                'poster': poster,
+                'network': 'AniList',
+                'source': 'anilist',
+                'source_id': str(media.get('id', '')),
+            })
+    except Exception as e:
+        log.warning('show-suggest anilist error: %s', e)
+
+    # Deduplicate by title (case-insensitive); AniList results appended last so
+    # TVmaze takes precedence for live-action, AniList for pure anime
+    seen_titles: set = set()
+    deduped = []
+    for r in results:
+        key = r['title'].lower()
+        if key not in seen_titles:
+            seen_titles.add(key)
+            deduped.append(r)
+    return jsonify({'results': deduped[:10]})
+
+
+@app.route('/api/show-seasons')
+@_require_auth
+def show_seasons():
+    """Return seasons list for a show by source (tvmaze/anilist) and id."""
+    source = (request.args.get('source') or '').strip()
+    sid    = (request.args.get('id') or '').strip()
+    if not source or not sid:
+        return jsonify({'seasons': []})
+    import urllib.request as _ur
+
+    if source == 'tvmaze':
+        if not sid.isdigit():
+            return jsonify({'seasons': []}), 400
+        try:
+            url = f'https://api.tvmaze.com/shows/{sid}/seasons'
+            req = _ur.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with _ur.urlopen(req, timeout=8) as resp:
+                items = json.loads(resp.read())
+            seasons = []
+            for s in (items or []):
+                n  = s.get('number')
+                ep = s.get('episodeOrder') or s.get('numberOfEpisodes') or 0
+                if n and n > 0:
+                    seasons.append({'n': n, 'episodes': ep or 99})
+            return jsonify({'seasons': seasons})
+        except Exception as e:
+            log.warning('show-seasons tvmaze error: %s', e)
+            return jsonify({'seasons': []})
+
+    elif source == 'anilist':
+        try:
+            gql = 'query ($id: Int) { Media(id: $id, type: ANIME) { episodes } }'
+            body = json.dumps({'query': gql, 'variables': {'id': int(sid)}}).encode()
+            req = _ur.Request('https://graphql.anilist.co', data=body,
+                              headers={'Content-Type': 'application/json',
+                                       'User-Agent': 'Mozilla/5.0'})
+            with _ur.urlopen(req, timeout=8) as resp:
+                data = json.loads(resp.read())
+            episodes = ((data.get('data') or {}).get('Media') or {}).get('episodes') or 99
+            return jsonify({'seasons': [{'n': 1, 'episodes': episodes}]})
+        except Exception as e:
+            log.warning('show-seasons anilist error: %s', e)
+            return jsonify({'seasons': []})
+
+    return jsonify({'seasons': []})
+
+
 @app.route('/api/movie-candidates')
 @_require_auth
 def movie_candidates():

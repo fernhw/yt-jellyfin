@@ -164,6 +164,33 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
   .row2{grid-template-columns:1fr}
   .nav-tab{padding:6px 10px;font-size:.78rem}
 }
+
+/* ── Show search result cards ── */
+.show-result-card{display:flex;gap:12px;background:var(--bg3);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;cursor:pointer;margin-bottom:8px;align-items:center;transition:border-color .2s,background .2s;width:100%;text-align:left}
+.show-result-card:active{border-color:var(--purple);background:rgba(167,139,250,.08)}
+.show-result-poster{width:46px;height:66px;border-radius:7px;object-fit:cover;flex-shrink:0;background:var(--bg2)}
+.show-result-info{flex:1;min-width:0}
+.show-result-title{font-size:.95rem;font-weight:700;color:var(--white);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.show-result-meta{font-size:.74rem;color:var(--muted);margin-top:3px}
+
+/* ── Season checkbox rows ── */
+.season-check-row{display:flex;align-items:center;gap:12px;background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;padding:13px 15px;cursor:pointer;margin-bottom:8px;transition:border-color .2s,background .2s;width:100%;text-align:left}
+.season-check-row input[type=checkbox]{width:20px;height:20px;accent-color:var(--purple);cursor:pointer;flex-shrink:0}
+.season-check-row.selected{border-color:var(--purple);background:rgba(167,139,250,.07)}
+.season-check-num{font-size:.95rem;font-weight:700;color:var(--white);flex:1}
+.season-check-ep{font-size:.78rem;color:var(--muted);flex-shrink:0}
+
+/* ── Manual season builder ── */
+.season-builder-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.season-add-btn{background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);padding:10px;width:100%;cursor:pointer;font-size:.84rem;font-weight:600;margin-bottom:4px;transition:border-color .2s,color .2s}
+.season-add-btn:hover{border-color:var(--purple);color:var(--purple)}
+
+/* ── Movie autocomplete ── */
+#movie-suggest-list{background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:8px;display:none}
+.mv-suggest-item{padding:12px 15px;cursor:pointer;border-bottom:1px solid var(--border);font-size:.92rem;font-weight:600;color:var(--white);display:flex;justify-content:space-between;align-items:center;transition:background .15s}
+.mv-suggest-item:last-child{border-bottom:none}
+.mv-suggest-item:active,.mv-suggest-item:hover{background:rgba(45,212,191,.09);color:var(--teal)}
+.mv-suggest-year{font-size:.78rem;font-weight:400;color:var(--muted);margin-left:8px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -259,10 +286,12 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
                 style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:20px;height:20px;font-size:.65rem;font-weight:800;color:var(--muted);cursor:pointer;padding:0;flex-shrink:0;line-height:1">?</button>
       </div>
       <input id="movie-title" class="big-input" placeholder="e.g. Dune Part Two"
-             onkeydown="if(event.key==='Enter')mvNext()"
-             oninput="libCheckSpace('movie-title','lib-warn-movie');inputHint('movie-title','input-hint-movie')"
-             onblur="libCheckNow('movie-title','lib-warn-movie')"
-             style="font-size:1.15rem;padding:20px 18px;margin-bottom:6px"/>
+             onkeydown="if(event.key==='Enter'){document.getElementById('movie-suggest-list').style.display='none';mvNext()}"
+             oninput="movieSuggestInput()"
+             onblur="libCheckNow('movie-title','lib-warn-movie');setTimeout(()=>{document.getElementById('movie-suggest-list').style.display='none'},200)"
+             style="font-size:1.15rem;padding:20px 18px;margin-bottom:6px"
+             autocomplete="off"/>
+      <div id="movie-suggest-list"></div>
       <div id="input-hint-movie" style="display:none;margin-bottom:6px;padding:9px 13px;background:rgba(250,204,21,.07);border:1px solid rgba(250,204,21,.3);border-radius:12px;font-size:.79rem;color:#fde68a;line-height:1.5"></div>
       <div id="lib-warn-movie" style="display:none;margin-bottom:6px;padding:10px 13px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);border-radius:12px;font-size:.79rem;color:#93c5fd;line-height:1.55">
         &#128204; <span id="lib-warn-movie-msg"></span>
@@ -371,7 +400,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
     </div>
   </div>
 
-  <!-- ADD SHOW TAB (simplified 5-step wizard) -->
+  <!-- ADD SHOW TAB -->
   <div class="tab-pane" id="tab-shows">
     <div class="section-label">Schedule</div>
     <div class="section-title" style="color:var(--purple)">Add Show</div>
@@ -399,56 +428,92 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <div class="err" id="serr-1"></div>
     </div>
 
-    <!-- Step 2: Show name -->
+    <!-- Step 2: Search or manual entry point -->
     <div class="form-step" id="ss-2">
-      <div class="step-q">What's it called?</div>
-      <label class="field-label" style="margin-top:14px" for="f-show-name">Show name</label>
-      <input id="f-show-name" class="big-input" placeholder="e.g. Marshals" maxlength="80"
-             oninput="autoFillSearch();libCheckSpace('f-show-name','lib-warn-show');inputHint('f-show-name','input-hint-show')"
-             onblur="libCheckNow('f-show-name','lib-warn-show')" onkeydown="if(event.key==='Enter')document.getElementById('f-search-name').focus()"/>
-      <div id="input-hint-show" style="display:none;margin-top:6px;padding:9px 13px;background:rgba(250,204,21,.07);border:1px solid rgba(250,204,21,.3);border-radius:12px;font-size:.79rem;color:#fde68a;line-height:1.5"></div>
-      <div id="lib-warn-show" style="display:none;margin-top:8px;padding:10px 13px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);border-radius:12px;font-size:.79rem;color:#93c5fd;line-height:1.55">
-        &#128204; <span id="lib-warn-show-msg"></span>
+      <div class="step-q">Find the show</div>
+      <input id="f-show-search" class="big-input" placeholder="Type a show name to search&hellip;"
+             oninput="showSearchInput()" autocomplete="off" style="margin-bottom:8px"/>
+      <div id="ss-2-spinner" style="text-align:center;padding:10px 0;display:none">
+        <div class="spinner" style="margin:0 auto"></div>
       </div>
-      <div class="field-label" style="margin-top:14px">Search term <button class="tip-btn" onclick="tipToggle('tip-search')">?</button></div>
-      <div class="tip-box hidden" id="tip-search">
-        What we search for to find episodes. Filled in automatically from the show name — only change it if the wrong episodes are coming up.<br><br>
-        Example: <b>Re:Zero</b> &rarr; search term <b>re zero</b>
+      <div id="ss-2-results"></div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin:18px 0 12px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:.69rem;color:var(--muted);font-weight:700;letter-spacing:.1em;text-transform:uppercase">or</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
       </div>
-      <input id="f-search-name" class="big-input" placeholder="e.g. marshals" maxlength="80"
-             oninput="markSearchEdited()" onkeydown="if(event.key==='Enter')_goShowStepNext2()"/>
-      <button class="big-btn btn-purple" style="margin-top:16px" onclick="_goShowStepNext2()">Next &rarr;</button>
-      <button class="ghost-btn" onclick="_goShowStep(1)">&larr; Back</button>
+      <button class="show-mode-btn" onclick="_startManual()">
+        <div class="smb-icon">&#9999;&#65039;</div>
+        <div class="smb-body">
+          <div class="smb-title">Manual entry</div>
+          <div class="smb-sub" style="font-size:.73rem">For when you already know the season &amp; episode count.</div>
+        </div>
+      </button>
+      <button class="ghost-btn" onclick="_goShowStep('ss-1')">&larr; Back</button>
       <div class="err" id="serr-2"></div>
     </div>
 
-    <!-- Step 3: Season & episodes -->
-    <div class="form-step" id="ss-3">
-      <div class="step-q">Season &amp; episodes <button class="tip-btn" onclick="tipToggle('tip-eps')">?</button></div>
-      <div class="tip-box hidden" id="tip-eps">
-        <b>Season</b> — 1 for first season, 2 for second, etc.<br>
-        <b>Current episode</b> — Which ep to start from. Usually 1.<br>
-        <b>Total episodes</b> — Leave "Don't know" checked if unsure — auto-stops after 4 days with no new result.
+    <!-- Step 3s: Season selector from search results -->
+    <div class="form-step" id="ss-3s">
+      <div class="step-q" id="ss-3s-title">Pick seasons</div>
+      <div class="step-hint" id="ss-3s-hint">Select the seasons you want to download.</div>
+      <div id="ss-3s-spinner" style="text-align:center;padding:24px 0;display:none">
+        <div class="spinner" style="margin:0 auto 10px"></div>
+        <div style="font-size:.8rem;color:var(--muted)">Loading season info&hellip;</div>
       </div>
-      <label class="field-label" style="margin-top:12px" for="f-season">Season number</label>
-      <input id="f-season" class="big-input" placeholder="e.g. 1" type="number" min="1"/>
-      <div id="ss-3-eps" style="margin-top:12px">
-        <label class="field-label" for="f-next-ep">Starting episode</label>
-        <input id="f-next-ep" class="big-input" placeholder="e.g. 1" type="number" min="1" style="margin-bottom:10px"/>
-        <label id="ss-3-dontknow-lbl" style="display:flex;align-items:flex-start;gap:10px;font-size:.82rem;color:var(--muted);cursor:pointer;margin-bottom:10px">
+      <div id="ss-3s-list"></div>
+      <button class="big-btn btn-purple" onclick="_goFromSeasons()" style="margin-top:8px">Next &rarr;</button>
+      <button class="ghost-btn" onclick="_goShowStep('ss-2')">&larr; Back</button>
+      <div class="err" id="serr-3s"></div>
+    </div>
+
+    <!-- Step 3m: Manual entry — show name + season builder -->
+    <div class="form-step" id="ss-3m">
+      <div class="step-q">Show details</div>
+      <label class="field-label" style="margin-top:4px" for="f-show-name">Show name <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:.75rem;color:var(--muted)">(as it will appear in Jellyfin)</span></label>
+      <input id="f-show-name" class="big-input" placeholder="e.g. Naruto" maxlength="80"
+             oninput="autoFillSearch();libCheckSpace('f-show-name','lib-warn-show')"
+             onblur="libCheckNow('f-show-name','lib-warn-show')"/>
+      <div id="input-hint-show" style="display:none;margin-top:5px;padding:9px 13px;background:rgba(250,204,21,.07);border:1px solid rgba(250,204,21,.3);border-radius:12px;font-size:.79rem;color:#fde68a;line-height:1.5"></div>
+      <div id="lib-warn-show" style="display:none;margin-top:6px;padding:10px 13px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);border-radius:12px;font-size:.79rem;color:#93c5fd;line-height:1.55">
+        &#128204; <span id="lib-warn-show-msg"></span>
+      </div>
+      <label class="field-label" style="margin-top:12px">Search term <button class="tip-btn" onclick="tipToggle('tip-search')">?</button></label>
+      <div class="tip-box hidden" id="tip-search">
+        What we search for on torrent sites &mdash; auto-filled from the show name. Change it only if wrong episodes appear.<br><br>
+        Example: <b>Re:Zero</b> &rarr; search term <b>re zero</b>
+      </div>
+      <input id="f-search-name" class="big-input" placeholder="e.g. naruto" maxlength="80"
+             oninput="markSearchEdited()"/>
+
+      <!-- Ongoing: single season entry -->
+      <div id="ss-3m-ongoing" style="display:none">
+        <label class="field-label" style="margin-top:12px">Season number</label>
+        <input id="f-season" class="big-input" placeholder="e.g. 1" type="number" min="1"/>
+        <label class="field-label" style="margin-top:10px">Starting episode</label>
+        <input id="f-next-ep" class="big-input" placeholder="e.g. 1" type="number" min="1" style="margin-bottom:8px"/>
+        <label style="display:flex;align-items:flex-start;gap:10px;font-size:.82rem;color:var(--muted);cursor:pointer;margin-bottom:10px">
           <input type="checkbox" id="f-dont-know" onchange="toggleDontKnow(this)" checked
                  style="width:18px;height:18px;flex-shrink:0;margin-top:1px;accent-color:var(--purple)"/>
-          <span>Don't know total episodes — will auto-stop after 4 days without a new result</span>
+          <span>Don&rsquo;t know total episodes &mdash; auto-stops after 4 days without a new result</span>
         </label>
         <div id="ss-3-total-wrap" class="hidden">
-          <label class="field-label" for="f-total-ep">Total episodes in season</label>
+          <label class="field-label">Total episodes in season</label>
           <input id="f-total-ep" class="big-input" placeholder="e.g. 24" type="number" min="1"/>
         </div>
       </div>
-      <div id="ss-3-older-note" class="hidden" style="font-size:.8rem;color:var(--muted);margin-bottom:8px">All episodes will be downloaded automatically (ep 1 &rarr; up to 99).</div>
-      <button class="big-btn btn-purple" style="margin-top:6px" onclick="_goShowStepNext3()">Next &rarr;</button>
-      <button class="ghost-btn" onclick="_goShowStep(2)">&larr; Back</button>
-      <div class="err" id="serr-3"></div>
+
+      <!-- Older: multi-season builder -->
+      <div id="ss-3m-older" style="display:none">
+        <label class="field-label" style="margin-top:12px">Seasons to download</label>
+        <div id="season-builder-rows"></div>
+        <button class="season-add-btn" onclick="addSeasonRow()">+ Add another season</button>
+      </div>
+
+      <button class="big-btn btn-purple" style="margin-top:10px" onclick="_validateManual()">Next &rarr;</button>
+      <button class="ghost-btn" onclick="_goShowStep('ss-2')">&larr; Back</button>
+      <div class="err" id="serr-3m"></div>
     </div>
 
     <!-- Step 4: Release day (ongoing only) -->
@@ -464,31 +529,28 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
         <button class="day-btn" onclick="selDay('sat',this)">Sat</button>
         <button class="day-btn" onclick="selDay('sun',this)">Sun</button>
       </div>
-      <button class="big-btn btn-muted" onclick="_goShowStep(3)" style="margin-top:8px">&larr; Back</button>
+      <button class="big-btn btn-muted" id="ss-4-back-btn" onclick="_goShowStep(_ss4BackStep)" style="margin-top:8px">&larr; Back</button>
       <div class="err" id="serr-4"></div>
     </div>
 
     <!-- Step 5: Content type -->
     <div class="form-step" id="ss-5">
-      <div class="step-q">
-        Anime or live-action?
-        <button class="tip-btn" onclick="tipToggle('tip-type')">?</button>
-      </div>
+      <div class="step-q">Anime or live-action? <button class="tip-btn" onclick="tipToggle('tip-type')">?</button></div>
       <div class="tip-box hidden" id="tip-type">
-        <b>Anime</b> — searches Japanese animation sources.<br>
-        <b>Live-action</b> — searches international movie &amp; TV sources.
+        <b>Anime</b> &mdash; searches Japanese animation sources.<br>
+        <b>Live-action</b> &mdash; searches international TV &amp; movie sources.
       </div>
       <div class="type-grid" style="margin-top:14px">
         <button class="type-btn" onclick="selShowType('anime',this)">&#127885; Anime</button>
         <button class="type-btn" onclick="selShowType('live',this)">&#127916; Live-action</button>
       </div>
-      <button class="big-btn btn-muted" onclick="_goShowStepBack5()" style="margin-top:6px">&larr; Back</button>
+      <button class="big-btn btn-muted" id="ss-5-back-btn" onclick="_goShowStep(_ss5BackStep)" style="margin-top:6px">&larr; Back</button>
       <div class="err" id="serr-5"></div>
     </div>
 
     <!-- Step 6: Confirm -->
     <div class="form-step" id="ss-6">
-      <div class="step-q">Ready to add?</div>
+      <div class="step-q">Ready?</div>
       <div class="confirm-box" id="show-confirm-preview"></div>
       <button class="big-btn btn-purple" id="add-btn" onclick="submitShow()">
         <span class="spinner hidden" id="add-spin"></span><span id="add-btn-label">Add to Schedule</span>
@@ -723,16 +785,253 @@ async function doBacklog(i, name, e) {
   else toast('Error starting backlog');
 }
 
-// ── Add show wizard (simplified) ─────────────────────────────────────────────
-let _showMode = '';   // 'older' | 'ongoing'
-let _showType = '';   // 'anime' | 'live'
+// ── Add show wizard ───────────────────────────────────────────────────────────
+let _showMode = '';        // 'older' | 'ongoing'
+let _showType = '';        // 'anime' | 'live'
 let _releaseDay = '';
-let _showStep = 1;
+let _showStep = 'ss-1';   // current step element ID
+let _showInputMethod = ''; // 'search' | 'manual'
+let _pickedShow = null;    // {title, type, source, source_id} from search
+let _selectedSeasons = []; // [{n, episodes}]
 let _searchEdited = false;
+let _seasonRowCount = 0;
+let _ss4BackStep = 'ss-3m';
+let _ss5BackStep = 'ss-3s';
 
 function selShowMode(mode) {
   _showMode = mode;
-  _goShowStep(2);
+  const f = document.getElementById('f-show-search');
+  if (f) f.value = '';
+  const r = document.getElementById('ss-2-results');
+  if (r) r.innerHTML = '';
+  _goShowStep('ss-2');
+}
+
+function _goShowStep(id) {
+  if (_showStep === id) return;
+  const cur = document.getElementById(_showStep);
+  if (cur) cur.classList.remove('active');
+  _showStep = id;
+  const next = document.getElementById(id);
+  if (next) next.classList.add('active');
+  _updateShowProgress(id);
+  const inp = next && next.querySelector('input:not([type=checkbox]):not([type=number])');
+  if (inp) setTimeout(() => inp.focus(), 60);
+}
+
+function _updateShowProgress(id) {
+  const orders = {
+    'older-search':  ['ss-1','ss-2','ss-3s','ss-5','ss-6'],
+    'older-manual':  ['ss-1','ss-2','ss-3m','ss-5','ss-6'],
+    'ongoing-search':['ss-1','ss-2','ss-3s','ss-4','ss-5','ss-6'],
+    'ongoing-manual':['ss-1','ss-2','ss-3m','ss-4','ss-5','ss-6'],
+  };
+  const key = (_showMode || 'older') + '-' + (_showInputMethod || 'search');
+  const seq = orders[key] || orders['older-search'];
+  const pos = seq.indexOf(id);
+  const pct = pos < 0 ? 0 : Math.round(pos / (seq.length - 1) * 100);
+  const el = document.getElementById('add-prog');
+  if (el) el.style.width = pct + '%';
+}
+
+// ── Show search ───────────────────────────────────────────────────────────────
+let _showSearchTimer = null;
+function showSearchInput() {
+  clearTimeout(_showSearchTimer);
+  const q = (document.getElementById('f-show-search').value || '').trim();
+  const results = document.getElementById('ss-2-results');
+  const spinner = document.getElementById('ss-2-spinner');
+  if (q.length < 2) { results.innerHTML = ''; spinner.style.display = 'none'; return; }
+  spinner.style.display = 'block';
+  results.innerHTML = '';
+  _showSearchTimer = setTimeout(async () => {
+    try {
+      const r = await fetch('/api/show-suggest?q=' + encodeURIComponent(q), {
+        headers: {'X-Auth-Token': TOKEN}
+      });
+      const data = await r.json();
+      spinner.style.display = 'none';
+      const items = data.results || [];
+      if (!items.length) {
+        results.innerHTML = '<div style="font-size:.82rem;color:var(--muted);padding:8px 2px">No results \u2014 try the manual option below.</div>';
+        return;
+      }
+      window._showSearchResults = items;
+      results.innerHTML = items.map((s, i) => `
+        <button class="show-result-card" onclick="_pickShow(${i})">
+          <img class="show-result-poster" src="${s.poster || ''}" alt="" onerror="this.style.display='none'" loading="lazy"/>
+          <div class="show-result-info">
+            <div class="show-result-title">${_esc(s.title)}</div>
+            <div class="show-result-meta">${s.year ? s.year + ' &middot; ' : ''}${s.type === 'anime' ? '&#127885; Anime' : '&#127916; ' + _esc(s.network || 'Live-action')}</div>
+          </div>
+        </button>
+      `).join('');
+    } catch(e) { spinner.style.display = 'none'; }
+  }, 420);
+}
+
+async function _pickShow(idx) {
+  const s = (window._showSearchResults || [])[idx];
+  if (!s) return;
+  _pickedShow = s;
+  _showInputMethod = 'search';
+  if (s.type === 'anime') _showType = 'anime';
+  else if (s.type === 'live') _showType = 'live';
+  else _showType = '';
+
+  _goShowStep('ss-3s');
+  const titleEl = document.getElementById('ss-3s-title');
+  const hintEl  = document.getElementById('ss-3s-hint');
+  const spinner = document.getElementById('ss-3s-spinner');
+  const list    = document.getElementById('ss-3s-list');
+  if (titleEl) titleEl.textContent = s.title;
+  if (hintEl)  hintEl.textContent  = _showMode === 'ongoing'
+    ? 'Pick the current season (one only).'
+    : 'Select the seasons you want to download.';
+  list.innerHTML = '';
+  spinner.style.display = 'block';
+
+  try {
+    const r = await fetch('/api/show-seasons?source=' + encodeURIComponent(s.source)
+      + '&id=' + encodeURIComponent(s.source_id), {headers: {'X-Auth-Token': TOKEN}});
+    const data = await r.json();
+    spinner.style.display = 'none';
+    const seasons = data.seasons || [];
+    if (!seasons.length) {
+      list.innerHTML = '<div style="font-size:.82rem;color:var(--muted);padding:8px 0">Could not load season info \u2014 all episodes will be downloaded.</div>';
+      _selectedSeasons = [{n:1, episodes:99}];
+      return;
+    }
+    window._loadedSeasons = seasons;
+    const defaultChecked = i => _showMode === 'older' ? true : i === seasons.length - 1;
+    list.innerHTML = seasons.map((ss, i) => `
+      <button class="season-check-row ${defaultChecked(i) ? 'selected' : ''}" id="scr-${i}"
+              onclick="toggleSeasonRow(${i})">
+        <input type="checkbox" ${defaultChecked(i) ? 'checked' : ''}
+               id="scb-${i}" style="width:20px;height:20px;accent-color:var(--purple);cursor:pointer;flex-shrink:0;pointer-events:none"/>
+        <span class="season-check-num">Season ${ss.n}</span>
+        <span class="season-check-ep">${ss.episodes && ss.episodes < 99 ? ss.episodes + ' eps' : ''}</span>
+      </button>
+    `).join('');
+    _selectedSeasons = _showMode === 'older' ? [...seasons]
+      : seasons.length ? [seasons[seasons.length - 1]] : seasons;
+  } catch(e) {
+    spinner.style.display = 'none';
+    list.innerHTML = '<div style="font-size:.82rem;color:var(--muted);padding:8px 0">Could not load seasons. All episodes will be downloaded.</div>';
+    _selectedSeasons = [{n:1, episodes:99}];
+  }
+}
+
+function toggleSeasonRow(i) {
+  const cb  = document.getElementById('scb-' + i);
+  const row = document.getElementById('scr-' + i);
+  if (!cb || !row) return;
+  cb.checked = !cb.checked;
+  row.classList.toggle('selected', cb.checked);
+}
+
+function _getCheckedSeasons() {
+  const seasons = window._loadedSeasons || [];
+  return seasons.filter((_, i) => {
+    const cb = document.getElementById('scb-' + i);
+    return cb && cb.checked;
+  });
+}
+
+function _goFromSeasons() {
+  const seasons = _getCheckedSeasons();
+  const errEl = document.getElementById('serr-3s');
+  if (!seasons.length) { errEl.textContent = 'Pick at least one season'; return; }
+  if (_showMode === 'ongoing' && seasons.length > 1) {
+    errEl.textContent = 'For ongoing shows, pick just one season'; return;
+  }
+  errEl.textContent = '';
+  _selectedSeasons = seasons;
+  if (_showMode === 'ongoing') {
+    _ss4BackStep = 'ss-3s';
+    _goShowStep('ss-4');
+  } else {
+    _ss5BackStep = 'ss-3s';
+    if (_showType) { _buildShowPreview(); _goShowStep('ss-6'); }
+    else _goShowStep('ss-5');
+  }
+}
+
+// ── Manual entry ──────────────────────────────────────────────────────────────
+function _startManual() {
+  _showInputMethod = 'manual';
+  _pickedShow = null;
+  const ongoingEl = document.getElementById('ss-3m-ongoing');
+  const olderEl   = document.getElementById('ss-3m-older');
+  if (ongoingEl) ongoingEl.style.display = _showMode === 'ongoing' ? 'block' : 'none';
+  if (olderEl)   olderEl.style.display   = _showMode === 'older'   ? 'block' : 'none';
+  if (_showMode === 'older') {
+    _seasonRowCount = 0;
+    const rows = document.getElementById('season-builder-rows');
+    if (rows) rows.innerHTML = '';
+    addSeasonRow();
+  }
+  _ss4BackStep = 'ss-3m';
+  _ss5BackStep = 'ss-3m';
+  _goShowStep('ss-3m');
+}
+
+function addSeasonRow() {
+  _seasonRowCount++;
+  const n = _seasonRowCount;
+  const rows = document.getElementById('season-builder-rows');
+  if (!rows) return;
+  const div = document.createElement('div');
+  div.className = 'season-builder-row';
+  div.id = 'sbr-' + n;
+  div.innerHTML =
+    `<input type="number" min="1" value="${n}" class="big-input" id="sbn-${n}" ` +
+    `style="width:68px;flex-shrink:0;padding:12px 8px;text-align:center" title="Season #"/>` +
+    `<input type="number" min="1" placeholder="Episodes" class="big-input" id="sbe-${n}" style="flex:1;padding:12px 14px"/>` +
+    (n > 1 ? `<button onclick="removeSeasonRow(${n})" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer;padding:4px 8px;line-height:1" title="Remove">&times;</button>` : '');
+  rows.appendChild(div);
+}
+
+function removeSeasonRow(n) {
+  const el = document.getElementById('sbr-' + n);
+  if (el) el.remove();
+}
+
+function _getManualSeasons() {
+  const rows = document.querySelectorAll('#season-builder-rows .season-builder-row');
+  const seasons = [];
+  rows.forEach(row => {
+    const n  = parseInt(row.querySelector('input[id^="sbn-"]').value) || 0;
+    const ep = parseInt(row.querySelector('input[id^="sbe-"]').value) || 99;
+    if (n > 0) seasons.push({n, episodes: ep});
+  });
+  return seasons;
+}
+
+function _validateManual() {
+  const name   = _gv('f-show-name').trim();
+  const search = _gv('f-search-name').trim();
+  const errEl  = document.getElementById('serr-3m');
+  if (!name)   { errEl.textContent = 'Show name is required'; return; }
+  if (!search) { errEl.textContent = 'Search term is required'; return; }
+  errEl.textContent = '';
+
+  if (_showMode === 'older') {
+    const seasons = _getManualSeasons();
+    if (!seasons.length) { errEl.textContent = 'Add at least one season'; return; }
+    _selectedSeasons = seasons;
+    _ss5BackStep = 'ss-3m';
+    _goShowStep('ss-5');
+  } else {
+    if (!_gv('f-season'))   { errEl.textContent = 'Season number is required'; return; }
+    if (!_gv('f-next-ep'))  { errEl.textContent = 'Starting episode is required'; return; }
+    const dontKnow = document.getElementById('f-dont-know').checked;
+    if (!dontKnow && !_gv('f-total-ep')) { errEl.textContent = "Enter total episodes or check \"Don\u2019t know\""; return; }
+    if (dontKnow) document.getElementById('f-total-ep').value = '99';
+    _selectedSeasons = [{n: +_gv('f-season'), episodes: +_gv('f-total-ep') || 99}];
+    _ss4BackStep = 'ss-3m';
+    _goShowStep('ss-4');
+  }
 }
 
 function autoFillSearch() {
@@ -743,138 +1042,91 @@ function autoFillSearch() {
 }
 function markSearchEdited() { _searchEdited = true; }
 
-function _goShowStep(n) {
-  document.getElementById('serr-' + _showStep).textContent = '';
-  document.getElementById('ss-' + _showStep).classList.remove('active');
-  _showStep = n;
-  document.getElementById('ss-' + n).classList.add('active');
-  // For step 3, show/hide ep fields based on mode
-  if (n === 3) {
-    const isOlder = _showMode === 'older';
-    document.getElementById('ss-3-eps').classList.toggle('hidden', isOlder);
-    document.getElementById('ss-3-older-note').classList.toggle('hidden', !isOlder);
-    if (!isOlder) {
-      // Reset "don't know" checkbox to checked default when entering step 3 for ongoing
-      const cb = document.getElementById('f-dont-know');
-      if (cb && !document.getElementById('f-total-ep').value) {
-        cb.checked = true;
-        document.getElementById('ss-3-total-wrap').classList.add('hidden');
-      }
-    }
-  }
-  // progress: older = steps 1,2,3,5,6  ongoing = 1,2,3,4,5,6
-  const seq = _showMode === 'ongoing' ? [1,2,3,4,5,6] : [1,2,3,5,6];
-  const pos = seq.indexOf(n);
-  document.getElementById('add-prog').style.width = (pos < 0 ? 0 : Math.round(pos / (seq.length - 1) * 100)) + '%';
-  if (n === 6) _buildShowPreview();
-  // Update confirm button label to match mode
-  if (n === 6) {
-    document.getElementById('add-btn-label').textContent =
-      _showMode === 'older' ? 'Download All Episodes' : 'Add to Schedule';
-  }
-  const inp = document.querySelector('#ss-' + n + ' input:not([type=checkbox])');
-  if (inp) setTimeout(() => inp.focus(), 50);
-}
-
-function _goShowStepNext2() {
-  if (!_gv('f-show-name').trim()) { document.getElementById('serr-2').textContent = 'Show name is required'; return; }
-  if (!_gv('f-search-name').trim()) { document.getElementById('serr-2').textContent = 'Search term is required'; return; }
-  _goShowStep(3);
-}
-
 function toggleDontKnow(cb) {
   document.getElementById('ss-3-total-wrap').classList.toggle('hidden', cb.checked);
   if (cb.checked) document.getElementById('f-total-ep').value = '';
-}
-
-function _goShowStepNext3() {
-  if (!_gv('f-season'))   { document.getElementById('serr-3').textContent = 'Season number is required'; return; }
-  if (_showMode === 'older') {
-    // Auto-fill ep values for older shows — download everything from ep 1
-    document.getElementById('f-next-ep').value  = '1';
-    document.getElementById('f-total-ep').value = '99';
-  } else {
-    if (!_gv('f-next-ep'))  { document.getElementById('serr-3').textContent = 'Current episode is required'; return; }
-    const dontKnow = document.getElementById('f-dont-know').checked;
-    if (dontKnow) {
-      document.getElementById('f-total-ep').value = '99';  // sentinel: auto-stop after 4 days no result
-    } else {
-      if (!_gv('f-total-ep')) { document.getElementById('serr-3').textContent = 'Enter total episodes or check “Don’t know”'; return; }
-    }
-  }
-  _goShowStep(_showMode === 'ongoing' ? 4 : 5);
-}
-
-function _goShowStepBack5() {
-  _goShowStep(_showMode === 'ongoing' ? 4 : 3);
 }
 
 function selDay(d, btn) {
   _releaseDay = d;
   document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  setTimeout(() => _goShowStep(5), 200);
+  setTimeout(() => _goShowStep('ss-5'), 200);
 }
 
 function selShowType(t, btn) {
   _showType = t;
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  setTimeout(() => _goShowStep(6), 200);
+  setTimeout(() => { _buildShowPreview(); _goShowStep('ss-6'); }, 200);
 }
 
 function _buildShowPreview() {
-  const name = _gv('f-show-name');
+  const name   = _pickedShow ? _pickedShow.title : _gv('f-show-name');
+  const search = _pickedShow ? '' : _gv('f-search-name');
+  const modeLabel = _showMode === 'ongoing'
+    ? '\uD83D\uDCE1 Ongoing \u2014 downloads each new episode automatically'
+    : '\uD83D\uDCE6 Older \u2014 all episodes queued now';
+  let seasonText;
+  if (_showMode === 'ongoing') {
+    const s = _selectedSeasons[0] || {};
+    const startEp = _gv('f-next-ep') || '1';
+    const totalEp = _gv('f-total-ep');
+    seasonText = 'Season ' + (s.n || _gv('f-season'))
+      + ' \u00b7 from ep <b>' + startEp + '</b>'
+      + (totalEp && totalEp !== '99' ? ' \u00b7 total <b>' + totalEp + '</b>' : ' \u00b7 <b>auto-stop</b>');
+  } else {
+    seasonText = _selectedSeasons.length === 1
+      ? 'Season ' + _selectedSeasons[0].n + (_selectedSeasons[0].episodes < 99 ? ' \u00b7 ' + _selectedSeasons[0].episodes + ' eps' : '')
+      : _selectedSeasons.length + ' seasons: ' + _selectedSeasons.map(s => 'S' + s.n).join(', ');
+  }
   const lines = [
     '<b style="color:var(--white);font-size:1rem">' + _esc(name) + '</b>',
-    'Mode: <b>' + (_showMode === 'ongoing' ? '\uD83D\uDCE1 Ongoing \u2014 downloads each new episode automatically' : '\uD83D\uDCE6 Older / Finished \u2014 all episodes queued now') + '</b>',
-    'Search term: <b>' + _esc(_gv('f-search-name')) + '</b>',
+    'Mode: <b>' + modeLabel + '</b>',
+    search ? 'Search term: <b>' + _esc(search) + '</b>' : '',
     'Type: <b>' + _showType + '</b>',
-    'Season <b>' + _gv('f-season') + '</b>' + (
-      _showMode === 'older' ? ' \u00b7 <b>All episodes</b> (ep 1 \u2192 up to 99, auto)' :
-      _gv('f-total-ep') === '99' ? ' \u00b7 From ep <b>' + _gv('f-next-ep') + '</b> \u00b7 <b>auto-stop</b> when no new ep found for 4 days' :
-      ' \u00b7 From ep <b>' + _gv('f-next-ep') + '</b> \u00b7 Total <b>' + _gv('f-total-ep') + '</b>'
-    ),
-  ];
-  if (_showMode === 'ongoing') lines.push('Airs on: <b>' + _releaseDay + '</b>');
+    'Seasons: <b>' + seasonText + '</b>',
+    _showMode === 'ongoing' ? 'Airs on: <b>' + _releaseDay + '</b>' : '',
+  ].filter(Boolean);
   document.getElementById('show-confirm-preview').innerHTML = lines.join('<br>');
+  document.getElementById('add-btn-label').textContent =
+    _showMode === 'older' ? 'Download All Episodes' : 'Add to Schedule';
 }
 
 async function submitShow() {
   if (!_showType) { document.getElementById('serr-6').textContent = 'Pick a content type first'; return; }
-  const btn = document.getElementById('add-btn');
+  const btn  = document.getElementById('add-btn');
   const spin = document.getElementById('add-spin');
   btn.disabled = true; spin.classList.remove('hidden');
-  const name = _gv('f-show-name').trim();
+
+  const title  = _pickedShow ? _pickedShow.title : _gv('f-show-name').trim();
+  const search = _pickedShow
+    ? title.toLowerCase().replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim()
+    : _gv('f-search-name').trim().toLowerCase();
 
   try {
     if (_showMode === 'older') {
-      // Older/finished show — one call, no permanent schedule entry
-      const r = await api('POST', '/api/show-download', {
-        show_name:      name,
-        search_name:    _gv('f-search-name').trim().toLowerCase(),
+      const calls = _selectedSeasons.map(s => api('POST', '/api/show-download', {
+        show_name:      title + (_selectedSeasons.length > 1 ? ' S' + String(s.n).padStart(2,'0') : ''),
+        search_name:    search,
         type:           _showType,
-        season:         +_gv('f-season'),
-        total_episodes: +_gv('f-total-ep'),
-      });
-      if (r.ok) {
-        toast('Download started \u2193\u2193');
-        resetAddForm();
-        showTab('movie');
-      } else {
-        const j = await r.json().catch(() => ({}));
-        document.getElementById('serr-6').textContent = j.error || 'Server error';
-      }
+        season:         s.n,
+        total_episodes: s.episodes || 99,
+      }));
+      await Promise.all(calls);
+      toast('Download started \u2193\u2193');
+      resetAddForm();
+      showTab('movie');
     } else {
-      // Ongoing show — add to schedule as normal
+      const s = _selectedSeasons[0] || {n: +_gv('f-season') || 1, episodes: +_gv('f-total-ep') || 99};
       const r = await api('POST', '/api/schedule', {
-        show_name:      name,
-        search_name:    _gv('f-search-name').trim().toLowerCase(),
-        folder:         name,
+        show_name:      title,
+        search_name:    search,
+        folder:         title,
         type:           _showType,
-        season:         +_gv('f-season'),
-        next_episode:   +_gv('f-next-ep'),
-        total_episodes: +_gv('f-total-ep'),
+        season:         s.n,
+        next_episode:   +_gv('f-next-ep') || 1,
+        total_episodes: s.episodes || 99,
         release_days:   _releaseDay,
         ongoing:        true,
       });
@@ -892,18 +1144,64 @@ async function submitShow() {
 }
 
 function resetAddForm() {
-  _showMode = ''; _showType = ''; _releaseDay = ''; _showStep = 1; _searchEdited = false;
-  ['f-show-name','f-search-name','f-season','f-next-ep','f-total-ep'].forEach(id => {
+  _showMode = ''; _showType = ''; _releaseDay = '';
+  _showStep = 'ss-1'; _showInputMethod = '';
+  _pickedShow = null; _selectedSeasons = [];
+  _searchEdited = false; _seasonRowCount = 0;
+  window._showSearchResults = []; window._loadedSeasons = [];
+  ['f-show-name','f-search-name','f-show-search','f-season','f-next-ep','f-total-ep'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
-  for (let i = 1; i <= 6; i++) {
-    const el = document.getElementById('ss-' + i);
-    if (el) el.classList.toggle('active', i === 1);
-    const err = document.getElementById('serr-' + i);
-    if (err) err.textContent = '';
-  }
+  document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+  document.getElementById('ss-1').classList.add('active');
   document.getElementById('add-prog').style.width = '0%';
   document.querySelectorAll('.type-btn,.day-btn').forEach(b => b.classList.remove('selected'));
+  ['serr-1','serr-2','serr-3s','serr-3m','serr-4','serr-5','serr-6'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = '';
+  });
+  const rows = document.getElementById('season-builder-rows');
+  if (rows) rows.innerHTML = '';
+  const res = document.getElementById('ss-2-results');
+  if (res) res.innerHTML = '';
+}
+
+// ── Movie autocomplete ────────────────────────────────────────────────────────
+let _mvSuggestTimer = null;
+function movieSuggestInput() {
+  libCheckSpace('movie-title', 'lib-warn-movie');
+  inputHint('movie-title', 'input-hint-movie');
+  clearTimeout(_mvSuggestTimer);
+  const q = (document.getElementById('movie-title').value || '').trim();
+  const list = document.getElementById('movie-suggest-list');
+  if (q.length < 4) { list.innerHTML = ''; list.style.display = 'none'; return; }
+  list.innerHTML = '<div style="padding:12px 15px;display:flex;align-items:center;gap:9px">' +
+    '<div class="spinner" style="width:13px;height:13px;border-width:2px"></div>' +
+    '<span style="font-size:.83rem;color:var(--muted)">Searching\u2026</span></div>';
+  list.style.display = 'block';
+  _mvSuggestTimer = setTimeout(async () => {
+    try {
+      const r = await fetch('/api/movie-suggest?q=' + encodeURIComponent(q), {
+        headers: {'X-Auth-Token': TOKEN}
+      });
+      const data = await r.json();
+      const items = (data.results || []).slice(0, 8);
+      if (!items.length) { list.style.display = 'none'; return; }
+      list.innerHTML = items.map(m =>
+        `<div class="mv-suggest-item" onmousedown="mvSuggestPick(${JSON.stringify(m.title)},${m.year||0})">` +
+        _esc(m.title) +
+        (m.year ? `<span class="mv-suggest-year">${m.year}</span>` : '') +
+        `</div>`
+      ).join('');
+    } catch(e) { list.style.display = 'none'; }
+  }, 400);
+}
+
+function mvSuggestPick(title, year) {
+  const clean = (year && !title.includes(String(year))) ? title + ' ' + year : title;
+  document.getElementById('movie-title').value = clean;
+  const list = document.getElementById('movie-suggest-list');
+  list.style.display = 'none'; list.innerHTML = '';
+  mvNext();
 }
 
 // ── Movie tab ─────────────────────────────────────────────────────────────────
