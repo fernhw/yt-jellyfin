@@ -182,34 +182,46 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
   <div class="tab-pane active" id="tab-movie">
     <div class="section-label">One-time download</div>
     <div class="section-title" style="color:var(--orange)">Movies</div>
-    <div class="section-sub">Search TPB, Nyaa (anime) and YTS. Downloads straight to Jellyfin.</div>
+    <div class="section-sub">Type the movie name and we'll find and download it.</div>
 
-    <div class="step-label" style="margin-bottom:6px">Content type</div>
-    <div class="movie-type-row">
-      <button class="movie-type-btn selected" id="mbtn-live" onclick="selMovieType('live')">&#127916; Live-action</button>
-      <button class="movie-type-btn" id="mbtn-anime" onclick="selMovieType('anime')">&#127885; Anime</button>
+    <!-- Step A: title -->
+    <div id="mv-step-a">
+      <input id="movie-title" class="big-input" placeholder="e.g. Dune Part Two"
+             onkeydown="if(event.key==='Enter')mvNext()"
+             style="font-size:1.15rem;padding:16px"/>
+      <details style="margin-top:10px">
+        <summary style="font-size:.75rem;color:var(--muted);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px">
+          <span style="font-size:.7rem">&#9660;</span> Quality (default: 1080p)
+        </summary>
+        <div style="margin-top:8px">
+          <select id="movie-quality" class="big-input" style="padding:10px 14px;font-size:.88rem;color:var(--muted);background:var(--bg3)">
+            <option value="1080" selected>1080p HD — recommended</option>
+            <option value="4k">4K / 2160p — large files, 4K screen only</option>
+          </select>
+        </div>
+      </details>
+      <div class="err" id="movie-err"></div>
+      <button class="big-btn btn-orange" onclick="mvNext()" style="margin-top:14px">Next &rarr;</button>
     </div>
 
-    <div class="step-label" style="margin-bottom:6px">
-      Quality <button class="tip-btn" onclick="tipToggle('tip-quality')">?</button>
+    <!-- Step B: type choice -->
+    <div id="mv-step-b" class="hidden">
+      <div class="step-q" style="margin-bottom:6px">What kind of movie is it?</div>
+      <div class="step-hint" style="margin-bottom:16px" id="mv-title-echo"></div>
+      <button class="show-mode-btn" onclick="mvSubmit('live')">
+        <div class="smb-icon">&#127916;</div>
+        <div class="smb-title">Live-action / Western</div>
+        <div class="smb-sub">Hollywood, foreign films, documentaries</div>
+      </button>
+      <button class="show-mode-btn" onclick="mvSubmit('anime')">
+        <div class="smb-icon">&#127885;</div>
+        <div class="smb-title">Anime / Japanese Animation</div>
+        <div class="smb-sub">Searches Nyaa.si and anime-specific sources</div>
+      </button>
+      <button class="big-btn btn-muted" onclick="mvBack()" style="margin-top:4px">&larr; Back</button>
+      <div class="err" id="movie-err2"></div>
+      <div id="movie-ok" class="success-msg hidden"></div>
     </div>
-    <div class="tip-box hidden" id="tip-quality">
-      <b>1080p</b> is HD — works great on any TV and downloads faster.<br>
-      <b>4K</b> is ultra-high quality, much larger files. Only needed for a 4K screen.
-    </div>
-    <div class="qual-row" style="margin-top:8px">
-      <button class="qual-btn selected" id="qbtn-1080" onclick="selQuality('1080')">1080p</button>
-      <button class="qual-btn" id="qbtn-4k" onclick="selQuality('4k')">&#10024; 4K / 2160p</button>
-    </div>
-
-    <div class="step-label" style="margin-bottom:6px;margin-top:14px">Movie title</div>
-    <input id="movie-title" class="big-input" placeholder="e.g. Dune Part Two" onkeydown="if(event.key==='Enter')submitMovie()"/>
-    <button class="big-btn btn-orange" id="movie-btn" onclick="submitMovie()" style="margin-top:12px">
-      <span class="spinner hidden" id="movie-spin"></span>Queue Download
-    </button>
-    <p style="font-size:.76rem;color:var(--muted);margin-top:8px">The download will appear in the strip at the bottom of the screen.</p>
-    <div class="err" id="movie-err"></div>
-    <div id="movie-ok" class="success-msg hidden"></div>
   </div>
 
   <!-- ADD SHOW TAB (simplified 5-step wizard) -->
@@ -591,41 +603,43 @@ function resetAddForm() {
 }
 
 // ── Movie tab ─────────────────────────────────────────────────────────────────
-let _movieType = 'live', _movieQuality = '1080';
-
-function selMovieType(t) {
-  _movieType = t;
-  document.getElementById('mbtn-live').classList.toggle('selected', t === 'live');
-  document.getElementById('mbtn-anime').classList.toggle('selected', t === 'anime');
-}
-function selQuality(q) {
-  _movieQuality = q;
-  document.getElementById('qbtn-1080').classList.toggle('selected', q === '1080');
-  document.getElementById('qbtn-4k').classList.toggle('selected', q === '4k');
-}
-
-async function submitMovie() {
+function mvNext() {
   const title = document.getElementById('movie-title').value.trim();
-  if (!title) { document.getElementById('movie-err').textContent = 'Enter a movie title'; return; }
+  if (!title) { document.getElementById('movie-err').textContent = 'Enter a movie title first'; return; }
   document.getElementById('movie-err').textContent = '';
+  document.getElementById('mv-title-echo').textContent = '\u201c' + title + '\u201d';
+  document.getElementById('mv-step-a').classList.add('hidden');
+  document.getElementById('mv-step-b').classList.remove('hidden');
+}
+
+function mvBack() {
+  document.getElementById('mv-step-b').classList.add('hidden');
+  document.getElementById('mv-step-a').classList.remove('hidden');
+  document.getElementById('movie-err2').textContent = '';
   document.getElementById('movie-ok').classList.add('hidden');
-  const btn = document.getElementById('movie-btn');
-  btn.disabled = true;
-  document.getElementById('movie-spin').classList.remove('hidden');
+}
+
+async function mvSubmit(type) {
+  const title = document.getElementById('movie-title').value.trim();
+  const quality = document.getElementById('movie-quality').value;
+  document.getElementById('movie-err2').textContent = '';
+  document.getElementById('movie-ok').classList.add('hidden');
+  // Briefly disable buttons
+  document.querySelectorAll('#mv-step-b .show-mode-btn').forEach(b => b.disabled = true);
   try {
-    const r = await api('POST', '/api/movie', { title, anime: _movieType === 'anime', quality: _movieQuality });
+    const r = await api('POST', '/api/movie', { title, anime: type === 'anime', quality });
     if (r.ok) {
-      document.getElementById('movie-ok').textContent = '\u201c' + title + '\u201d queued \u2014 the download strip below will show progress.';
+      document.getElementById('movie-ok').textContent = '\u201c' + title + '\u201d queued \u2014 the strip below will show progress.';
       document.getElementById('movie-ok').classList.remove('hidden');
       document.getElementById('movie-title').value = '';
       toast('Queued \u2713');
+      setTimeout(() => mvBack(), 1800);
     } else {
       const j = await r.json().catch(() => ({}));
-      document.getElementById('movie-err').textContent = j.error || 'Server error';
+      document.getElementById('movie-err2').textContent = j.error || 'Server error';
     }
-  } catch(e) { document.getElementById('movie-err').textContent = 'Network error'; }
-  btn.disabled = false;
-  document.getElementById('movie-spin').classList.add('hidden');
+  } catch(e) { document.getElementById('movie-err2').textContent = 'Network error'; }
+  document.querySelectorAll('#mv-step-b .show-mode-btn').forEach(b => b.disabled = false);
 }
 
 // ── Download strip ────────────────────────────────────────────────────────────
