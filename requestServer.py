@@ -283,6 +283,17 @@ def _ensure_aria2_daemon() -> None:
         '--auto-file-renaming=false',
         f'--log={ARIA2_LOG}',
         '--log-level=warn',
+        # ── Session persistence: survive daemon restarts ──────────────────
+        # Save all active/waiting downloads every 30s so they reload on restart
+        f'--save-session={os.path.join(SCRIPT_DIR, "aria2.session")}',
+        '--save-session-interval=30',
+        # Reload any saved downloads from last session
+        *(
+            [f'--input-file={os.path.join(SCRIPT_DIR, "aria2.session")}']
+            if os.path.exists(os.path.join(SCRIPT_DIR, 'aria2.session'))
+            else []
+        ),
+        '--continue=true',
     ]
     _aria2_proc = subprocess.Popen(
         cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
