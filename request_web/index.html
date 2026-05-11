@@ -960,18 +960,44 @@ async function mvSubmit(type, titleOverride) {
 function _buildPicker(candidates, type, title, quality) {
   const list = document.getElementById('mv-picker-list');
   list.innerHTML = '';
+
+  // Group by year (4-digit number 1800-2999 in the title)
+  const _YEAR_PICK = /\b(1[89]\d{2}|2\d{3})\b/;
+  const groups = {};   // year string → [candidate, ...]
+  const NO_YEAR = '—';
   candidates.forEach(c => {
-    const slowBadge = c.slow
-      ? ' <span style="font-size:.62rem;color:#fbbf24;margin-left:4px">\u23f3 slow</span>'
-      : '';
-    const btn = document.createElement('button');
-    btn.className = 'big-btn btn-teal';
-    btn.style.cssText = 'text-align:left;padding:13px 15px;font-size:.82rem;font-weight:600;line-height:1.4;margin:0';
-    btn.innerHTML =
-      '<div>' + _esc(c.title) + slowBadge + '</div>'
-      + '<div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-top:3px">\uD83C\uDF31 ' + c.seeds + ' seeds</div>';
-    btn.onclick = () => mvPickCandidate(c.magnet, c.title, type, title, quality);
-    list.appendChild(btn);
+    const m = c.title.match(_YEAR_PICK);
+    const yr = m ? m[1] : NO_YEAR;
+    (groups[yr] = groups[yr] || []).push(c);
+  });
+
+  // Sort years numerically, unknowns last
+  const sortedYears = Object.keys(groups).sort((a, b) => {
+    if (a === NO_YEAR) return 1;
+    if (b === NO_YEAR) return -1;
+    return Number(a) - Number(b);
+  });
+
+  sortedYears.forEach(yr => {
+    // Year header
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'font-size:.7rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:10px;margin-bottom:2px;padding-left:2px';
+    hdr.textContent = yr === NO_YEAR ? 'Unknown year' : yr;
+    list.appendChild(hdr);
+
+    groups[yr].forEach(c => {
+      const slowBadge = c.slow
+        ? ' <span style="font-size:.62rem;color:#fbbf24;margin-left:4px">\u23f3 slow</span>'
+        : '';
+      const btn = document.createElement('button');
+      btn.className = 'big-btn btn-teal';
+      btn.style.cssText = 'text-align:left;padding:13px 15px;font-size:.82rem;font-weight:600;line-height:1.4;margin:0';
+      btn.innerHTML =
+        '<div>' + _esc(c.title) + slowBadge + '</div>'
+        + '<div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-top:3px">\uD83C\uDF31 ' + c.seeds + ' seeds</div>';
+      btn.onclick = () => mvPickCandidate(c.magnet, c.title, type, title, quality);
+      list.appendChild(btn);
+    });
   });
 }
 
