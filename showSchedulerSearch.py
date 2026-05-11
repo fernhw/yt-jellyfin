@@ -747,6 +747,59 @@ def _score_movie(title: str, seeds: int, is_anime: bool,
     return base
 
 
+def list_movie_candidates(title: str, is_anime: bool,
+                          prefer_4k: bool = False) -> List[Dict]:
+    """
+    Search for a movie and return the scored candidates as a list of dicts
+    (without downloading anything). Used by requestServer to build the picker UI.
+    """
+    import json as _json
+    q = title.lower()
+    req_nums = _required_numbers(q)
+
+    def _score_all(candidates: List[Dict], min_seeds: int = MIN_SEEDS) -> List[Dict]:
+        out = []
+        for c in candidates:
+            if not _title_satisfies_numbers(c['title'], req_nums):
+                continue
+            s = _score_movie(c['title'], c['seeds'], is_anime, prefer_4k=prefer_4k, min_seeds=min_seeds)
+            if s is not None:
+                out.append({
+                    'title':  c['title'],
+                    'seeds':  c['seeds'],
+                    'score':  round(s, 1),
+                    'magnet': c.get('magnet', ''),
+                    'slow':   False,
+                })
+        out.sort(key=lambda x: x['score'], reverse=True)
+        return out
+
+    if is_anime:
+        primary = search_nyaa_movie(q) + search_tpb_movie(q)
+    else:
+        primary = search_tpb_movie(q)
+
+    results = _score_all(primary)
+    if not results:
+        results = _score_all(search_yts(q))
+    if not results:
+        all_c = primary + (search_yts(q) if not primary else [])
+        results = _score_all(all_c, min_seeds=MOVIE_SLOW_SEEDS)
+        for r in results:
+            r['slow'] = True
+
+    # deduplicate by magnet
+    seen: set = set()
+    deduped = []
+    for r in results:
+        key = r['magnet'][:60] if r['magnet'] else r['title']
+        if key not in seen:
+            seen.add(key)
+            deduped.append(r)
+
+    return deduped[:20]
+
+
 def download_movie(title: str, is_anime: bool,
                    movies_dir: str, dry_run: bool = False,
                    prefer_4k: bool = False) -> None:
@@ -756,6 +809,18 @@ def download_movie(title: str, is_anime: bool,
     Primary:  Nyaa + TPB (anime) or TPB alone (live-action).
     Fallback: YTS (both types) if primary yields nothing.
     """
+    # If the server passed a pre-chosen magnet (user picked from the picker),
+    # skip searching entirely and download it directly.
+    direct_magnet = os.environ.get('MOVIE_DIRECT_MAGNET', '').strip()
+    if direct_magnet:
+        log.info(f"  Direct magnet requested for: {title}")
+        ok = download_torrent(direct_magnet, movies_dir, dry_run=dry_run)
+        if ok:
+            log.info(f"  {title}: direct download started")
+        else:
+            log.error(f"  {title}: direct download failed")
+        return
+
     q = title.lower()
     req_nums = _required_numbers(q)
     if req_nums:
@@ -1004,10 +1069,21 @@ def main() -> None:
                     help='Treat --movie as anime (searches Nyaa+TPB first, YTS fallback)')
     ap.add_argument('--prefer-4k', action='store_true',
                     help='Prefer 4K/2160p results for movies (large score bonus; falls back to 1080p)')
+    ap.add_argument('--list-candidates', action='store_true',
+                    help='Print top movie candidates as JSON and exit (requires --movie)')
     args = ap.parse_args()
 
     # ── Movie mode: search & download, then exit ──────────────────────────────
     if args.movie:
+        if args.list_candidates:
+            import json as _json
+            results = list_movie_candidates(
+                title=args.movie,
+                is_anime=args.anime_movie,
+                prefer_4k=args.prefer_4k,
+            )
+            print(_json.dumps(results))
+            return
         if args.dry_run:
             log.info("=== DRY-RUN mode — no downloads ===")
         locations = load_locations()

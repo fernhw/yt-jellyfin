@@ -321,6 +321,14 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <div style="font-size:.82rem;color:var(--muted)" id="mv-searching-sub">On the hunt for your movie…</div>
     </div>
 
+    <!-- Step C2: picker (multiple year-ambiguous candidates found) -->
+    <div id="mv-step-picker" class="hidden">
+      <div style="font-size:.95rem;font-weight:800;color:var(--white);margin-bottom:4px">Which version?</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px">We found several different releases &mdash; tap the one you want:</div>
+      <div id="mv-picker-list" style="display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto"></div>
+      <button class="ghost-btn" style="margin-top:16px" onclick="mvBack()">&larr; Back</button>
+    </div>
+
     <!-- Step D: downloading (success) -->
     <div id="mv-step-d" class="hidden" style="text-align:center;padding:24px 0">
       <div style="font-size:2.4rem;margin-bottom:12px">&#9989;</div>
@@ -884,7 +892,7 @@ function mvNext() {
 }
 
 function mvBack() {
-  ['mv-step-b','mv-step-c','mv-step-d','mv-step-e'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  ['mv-step-b','mv-step-c','mv-step-d','mv-step-e','mv-step-picker'].forEach(id => document.getElementById(id).classList.add('hidden'));
   document.getElementById('mv-step-a').classList.remove('hidden');
 }
 
@@ -898,7 +906,7 @@ function mvReset() {
 }
 
 function mvShowStep(id) {
-  ['mv-step-a','mv-step-b','mv-step-c','mv-step-d','mv-step-e'].forEach(s => document.getElementById(s).classList.add('hidden'));
+  ['mv-step-a','mv-step-b','mv-step-c','mv-step-d','mv-step-e','mv-step-picker'].forEach(s => document.getElementById(s).classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
 }
 
@@ -917,13 +925,68 @@ async function mvSubmit(type, titleOverride) {
   _mvType = type;
   _mvTitle = title;
 
-  // Show searching spinner (step C)
+  // Show step C as "checking versions..."
   document.getElementById('mv-searching-label').textContent = '\u201c' + title + '\u201d\u2026';
-  document.getElementById('mv-searching-sub').textContent = type === 'anime'
-    ? 'On the hunt for your movie…' : 'On the hunt for your movie…';
+  document.getElementById('mv-searching-sub').textContent = 'Checking available versions\u2026';
   mvShowStep('mv-step-c');
 
-  // Cycle sub-label for a realistic feel
+  // Fetch candidates synchronously from server
+  let candidates = [];
+  try {
+    const anime = type === 'anime' ? 1 : 0;
+    const r = await api('GET', '/api/movie-candidates?title=' + encodeURIComponent(title)
+      + '&anime=' + anime + '&quality=' + encodeURIComponent(quality));
+    if (r.ok) { const j = await r.json(); candidates = j.candidates || []; }
+  } catch(_) {}
+
+  // Detect year ambiguity — if top results span 2+ different 4-digit years, ask user
+  const _YEAR_RE = /\b(?:19|20)\d{2}\b/;
+  const years = new Set(
+    candidates.slice(0, 10)
+      .map(c => { const m = c.title.match(_YEAR_RE); return m ? m[0] : null; })
+      .filter(Boolean)
+  );
+  if (years.size >= 2) {
+    _buildPicker(candidates, type, title, quality);
+    mvShowStep('mv-step-picker');
+    return;
+  }
+
+  // No ambiguity — auto-download with no specific magnet
+  await _mvFireDownload(title, type, quality, '');
+}
+
+function _buildPicker(candidates, type, title, quality) {
+  const list = document.getElementById('mv-picker-list');
+  list.innerHTML = '';
+  candidates.forEach(c => {
+    const slowBadge = c.slow
+      ? ' <span style="font-size:.62rem;color:#fbbf24;margin-left:4px">\u23f3 slow</span>'
+      : '';
+    const btn = document.createElement('button');
+    btn.className = 'big-btn btn-teal';
+    btn.style.cssText = 'text-align:left;padding:13px 15px;font-size:.82rem;font-weight:600;line-height:1.4;margin:0';
+    btn.innerHTML =
+      '<div>' + _esc(c.title) + slowBadge + '</div>'
+      + '<div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-top:3px">\uD83C\uDF31 ' + c.seeds + ' seeds</div>';
+    btn.onclick = () => mvPickCandidate(c.magnet, c.title, type, title, quality);
+    list.appendChild(btn);
+  });
+}
+
+async function mvPickCandidate(magnet, candidateTitle, type, originalTitle, quality) {
+  document.getElementById('mv-searching-label').textContent = '\u201c' + candidateTitle + '\u201d\u2026';
+  document.getElementById('mv-searching-sub').textContent = 'Queueing your pick\u2026';
+  mvShowStep('mv-step-c');
+  await _mvFireDownload(originalTitle, type, quality, magnet, candidateTitle);
+}
+
+async function _mvFireDownload(title, type, quality, magnet, displayTitle) {
+  const label = displayTitle || title;
+  document.getElementById('mv-searching-label').textContent = '\u201c' + label + '\u201d\u2026';
+  document.getElementById('mv-searching-sub').textContent = 'On the hunt for your movie\u2026';
+
+  // Phrase cycling
   let phraseIdx = 0;
   const phraseTimer = setInterval(() => {
     phraseIdx = (phraseIdx + 1) % _mvSearchPhrases.length;
@@ -935,14 +998,16 @@ async function mvSubmit(type, titleOverride) {
   let knownGids = new Set();
   try {
     const snap = await api('GET', '/api/torrent-state');
-    const snapJson = await snap.json();
-    (snapJson.downloads || []).forEach(d => knownGids.add(d.gid));
+    const sj = await snap.json();
+    (sj.downloads || []).forEach(d => knownGids.add(d.gid));
   } catch(_) {}
 
-  // Fire the request + minimum 4-second spinner
+  const body = { title, anime: type === 'anime', quality };
+  if (magnet) body.magnet = magnet;
+
   await Promise.all([
-    api('POST', '/api/movie', { title, anime: type === 'anime', quality }).catch(() => null),
-    new Promise(res => setTimeout(res, 4000)),
+    api('POST', '/api/movie', body).catch(() => null),
+    new Promise(res => setTimeout(res, magnet ? 1500 : 4000)),
   ]);
   clearInterval(phraseTimer);
 
@@ -958,7 +1023,6 @@ async function mvSubmit(type, titleOverride) {
       const newItem = (pj.downloads || []).find(d => !knownGids.has(d.gid));
       if (newItem) { foundGid = newItem.gid; break; }
     } catch(_) {}
-    // Update spinner sub-text with elapsed time so it feels alive
     const elapsed = Math.round((Date.now() - pollStart) / 1000);
     const sub = document.getElementById('mv-searching-sub');
     if (sub) sub.textContent = 'Still looking\u2026 (' + elapsed + 's)';
@@ -966,16 +1030,14 @@ async function mvSubmit(type, titleOverride) {
 
   const typeLabel = type === 'anime' ? 'Anime' : 'Live-action';
   if (foundGid) {
-    // SUCCESS — show downloading screen, then auto-return to step A
     document.getElementById('mv-ok-label').textContent =
-      '\u201c' + title + '\u201d \u00b7 ' + typeLabel;
+      '\u201c' + label + '\u201d \u00b7 ' + typeLabel;
     mvShowStep('mv-step-d');
     toast('Downloading \u2713');
     setTimeout(() => mvReset(), 4000);
   } else {
-    // FAILURE — show tips + retry screen
     document.getElementById('mv-fail-label').textContent =
-      'We couldn\u2019t find \u201c' + title + '\u201d as ' + typeLabel + '.';
+      'We couldn\u2019t find \u201c' + label + '\u201d as ' + typeLabel + '.';
     document.getElementById('mv-retry-title').value = title;
     mvShowStep('mv-step-e');
   }

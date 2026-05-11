@@ -402,6 +402,36 @@ def library_check():
     return jsonify({'matches': matches[:20]})
 
 
+@app.route('/api/movie-candidates')
+@_require_auth
+def movie_candidates():
+    """Search for movie candidates synchronously and return scored list (no download)."""
+    title = (request.args.get('title') or '').strip()
+    if not title:
+        return jsonify({'error': 'title required'}), 400
+    is_anime  = request.args.get('anime', '0') not in ('0', 'false', '')
+    prefer_4k = request.args.get('quality', '1080').lower() in ('4k', '2160p', '4k2160')
+    cmd = [
+        sys.executable,
+        os.path.join(SCRIPT_DIR, 'showSchedulerSearch.py'),
+        '--movie', title,
+        '--list-candidates',
+    ]
+    if is_anime:  cmd.append('--anime-movie')
+    if prefer_4k: cmd.append('--prefer-4k')
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=50)
+        # last non-empty line that starts with '[' is the JSON
+        for line in reversed(proc.stdout.splitlines()):
+            line = line.strip()
+            if line.startswith('['):
+                candidates = json.loads(line)
+                return jsonify({'candidates': candidates})
+        return jsonify({'candidates': []})
+    except Exception as e:
+        return jsonify({'error': str(e), 'candidates': []}), 500
+
+
 @app.route('/api/movie', methods=['POST'])
 @_require_auth
 def request_movie():
@@ -412,16 +442,28 @@ def request_movie():
     is_anime = bool(data.get('anime'))
     quality = (data.get('quality') or '1080').lower()
     prefer_4k = quality in ('4k', '2160p', '4k2160', '4k/2160p')
-    cmd = [
-        sys.executable,
-        os.path.join(SCRIPT_DIR, 'showSchedulerSearch.py'),
-        '--movie', title,
-    ]
-    if is_anime:
-        cmd.append('--anime-movie')
-    if prefer_4k:
-        cmd.append('--prefer-4k')
-    threading.Thread(target=subprocess.run, args=(cmd,), daemon=True).start()
+    magnet = (data.get('magnet') or '').strip()
+    if magnet:
+        # User picked a specific candidate — download it directly via env var
+        env = dict(os.environ, MOVIE_DIRECT_MAGNET=magnet)
+        cmd = [
+            sys.executable,
+            os.path.join(SCRIPT_DIR, 'showSchedulerSearch.py'),
+            '--movie', title,
+        ]
+        if is_anime:  cmd.append('--anime-movie')
+        if prefer_4k: cmd.append('--prefer-4k')
+        threading.Thread(target=subprocess.run, args=(cmd,),
+                         kwargs={'env': env}, daemon=True).start()
+    else:
+        cmd = [
+            sys.executable,
+            os.path.join(SCRIPT_DIR, 'showSchedulerSearch.py'),
+            '--movie', title,
+        ]
+        if is_anime:  cmd.append('--anime-movie')
+        if prefer_4k: cmd.append('--prefer-4k')
+        threading.Thread(target=subprocess.run, args=(cmd,), daemon=True).start()
     return jsonify({'queued': title, 'anime': is_anime, 'quality': quality}), 202
 
 @app.route('/api/torrent-state')
