@@ -380,24 +380,32 @@ def library_check():
     # Separate plain numbers (years, sequels) from word tokens
     q_numbers = re.findall(r'\b\d+\b', q)
     q_words   = {t for t in re.sub(r'\b\d+\b', '', q).split() if len(t) >= 2}
+    _VIDEO_EXT = {'.mkv', '.mp4', '.avi', '.m4v', '.mov', '.wmv', '.ts', '.mpg', '.mpeg', '.webm'}
     matches = []
     for kind, d in dirs:
         try:
-            entries = os.listdir(d)
+            entries = os.scandir(d)
         except OSError:
             continue
-        for name in entries:
+        for entry in entries:
+            name = entry.name
             if name.startswith('.'):
                 continue
+            # Skip non-video files (images, metadata, trickplay, subtitles, etc.)
+            if not entry.is_dir():
+                if os.path.splitext(name)[1].lower() not in _VIDEO_EXT:
+                    continue
             nl = name.lower()
-            # Word match (strip year suffix from folder name for word comparison)
             nl_clean = re.sub(r'\s*\(\d{4}\)', '', nl)
+            # Strip extension for file-based matching
+            nl_clean = re.sub(r'\.\w{2,4}$', '', nl_clean)
             word_hits = sum(1 for t in q_words if t in nl_clean) if q_words else 0
             word_match = (not q_words) or word_hits >= max(1, len(q_words) - 1)
-            # Number match: every number in the query must appear in the raw folder name
             num_match = all(re.search(r'\b' + re.escape(n) + r'\b', nl) for n in q_numbers)
             if word_match and num_match:
-                matches.append({'name': name, 'kind': kind})
+                # Show clean name without extension
+                display = re.sub(r'\.\w{2,4}$', '', name) if not entry.is_dir() else name
+                matches.append({'name': display, 'kind': kind})
     matches.sort(key=lambda m: (0 if q in m['name'].lower() else 1, m['name']))
     return jsonify({'matches': matches[:20]})
 
