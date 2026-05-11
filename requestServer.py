@@ -396,16 +396,19 @@ def torrent_state():
 @app.route('/api/torrent/<gid>/remove', methods=['POST'])
 @_require_auth
 def torrent_remove(gid: str):
+    import shutil as _shutil
     if not re.fullmatch(r'[0-9a-f]{1,16}', gid):
         abort(400)
-    # Collect file paths before removing so we can delete partial data
-    paths_to_delete: list = []
+    # Collect file paths + base dir before removing
+    base_dir = ''
+    file_paths: list = []
     try:
         info = _aria2_rpc('aria2.tellStatus', [gid, ['files', 'dir']]) or {}
+        base_dir = (info.get('dir') or '').rstrip('/')
         for f in (info.get('files') or []):
             p = (f.get('path') or '').strip()
             if p and p != '[METADATA]':
-                paths_to_delete.append(p)
+                file_paths.append(p)
     except Exception:
         pass
     # Force-remove from aria2
@@ -417,14 +420,28 @@ def torrent_remove(gid: str):
         _aria2_rpc('aria2.removeDownloadResult', [gid])
     except Exception:
         pass
-    # Delete partial files from disk
-    for p in paths_to_delete:
+    # Work out which top-level items to delete.
+    # For a single-file torrent: delete the file + its .aria2 companion.
+    # For a folder torrent: delete the whole subdirectory inside base_dir.
+    to_delete: set = set()
+    for p in file_paths:
+        if base_dir and p.startswith(base_dir + '/'):
+            # First path component inside base_dir
+            rel = p[len(base_dir) + 1:]
+            top = rel.split('/')[0]
+            to_delete.add(os.path.join(base_dir, top))
+        else:
+            to_delete.add(p)
+    for target in to_delete:
         try:
-            if os.path.isfile(p):
-                os.remove(p)
-            elif os.path.isdir(p):
-                import shutil as _shutil
-                _shutil.rmtree(p, ignore_errors=True)
+            if os.path.isdir(target):
+                _shutil.rmtree(target, ignore_errors=True)
+            elif os.path.isfile(target):
+                os.remove(target)
+            # also remove aria2 control file if present
+            ctrl = target + '.aria2'
+            if os.path.isfile(ctrl):
+                os.remove(ctrl)
         except Exception:
             pass
     return jsonify({'removed': gid})
