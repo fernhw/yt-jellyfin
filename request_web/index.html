@@ -1128,7 +1128,7 @@ async function submitShow() {
       await Promise.all(calls);
       toast('Download started \u2193\u2193');
       resetAddForm();
-      showTab('movie');
+      showTab('schedule');
     } else {
       const s = _selectedSeasons[0] || {n: +_gv('f-season') || 1, episodes: +_gv('f-total-ep') || 99};
       const r = await api('POST', '/api/schedule', {
@@ -1402,8 +1402,7 @@ async function _mvFireDownload(title, type, quality, magnet, displayTitle) {
 
   const typeLabel = type === 'anime' ? 'Anime' : 'Live-action';
   if (foundGid) {
-    _dlNames[foundGid] = label;
-    _saveDlNames();
+    _dlNamesSet(foundGid, label);
     document.getElementById('mv-ok-label').textContent =
       '\u201c' + label + '\u201d \u00b7 ' + typeLabel;
     mvShowStep('mv-step-d');
@@ -1428,10 +1427,37 @@ function mvRetry(type) {
 let _pollTimer = null;
 let _stripOpen = false;
 
-// Persistent gid → friendly label map so we can show a real name while
+// Persistent gid → {name, ts} map so we can show a real name while
 // aria2 is still fetching torrent metadata ([METADATA] state).
-const _dlNames = JSON.parse(localStorage.getItem('_dlNames') || '{}');
+// Entries expire after 10 minutes if the GID never appears in torrent-state.
+const _DL_NAMES_EXPIRY_MS = 10 * 60 * 1000;
+const _dlNames = (() => {
+  try {
+    const raw = JSON.parse(localStorage.getItem('_dlNames') || '{}');
+    // Migrate old format (plain string values) and drop them — they have no timestamp
+    const now = Date.now();
+    const out = {};
+    for (const [k, v] of Object.entries(raw)) {
+      if (v && typeof v === 'object' && v.ts && (now - v.ts) < _DL_NAMES_EXPIRY_MS) {
+        out[k] = v;
+      }
+    }
+    return out;
+  } catch(_) { return {}; }
+})();
 function _saveDlNames() { localStorage.setItem('_dlNames', JSON.stringify(_dlNames)); }
+function _dlNamesSet(gid, label) {
+  _dlNames[gid] = { name: label, ts: Date.now() };
+  _saveDlNames();
+}
+function _dlNamesGet(gid) {
+  const entry = _dlNames[gid];
+  if (!entry) return null;
+  if (Date.now() - entry.ts > _DL_NAMES_EXPIRY_MS) {
+    delete _dlNames[gid]; _saveDlNames(); return null;
+  }
+  return entry.name;
+}
 // Returns true when the name aria2 reports is a metadata/hash placeholder.
 function _isMetaName(n) {
   return !n || /^\[METADATA\]/i.test(n) || /^[0-9a-f]{40}$/i.test(n);
@@ -1467,7 +1493,7 @@ async function pollDownloads() {
 
     // Torrents we can actually display: real name, or metadata with a stored label
     const visible = torrents.filter(dl =>
-      !_isMetaName(dl.name) || !!_dlNames[dl.gid]
+      !_isMetaName(dl.name) || !!_dlNamesGet(dl.gid)
     );
 
     const badge = document.getElementById('dl-badge');
@@ -1490,13 +1516,13 @@ async function pollDownloads() {
     torrents.forEach(dl => {
       const gid    = dl.gid || '';
       const isMeta = _isMetaName(dl.name);
-      const stored = _dlNames[gid];
+      const stored = _dlNamesGet(gid);
 
       // Unknown metadata torrent (not submitted via this UI) — hide entirely
       if (isMeta && !stored) return;
 
       // Torrent resolved — discard the stored placeholder
-      if (!isMeta && stored) { delete _dlNames[gid]; _saveDlNames(); }
+      if (!isMeta && _dlNames[gid]) { delete _dlNames[gid]; _saveDlNames(); }
 
       const pct    = Math.min(dl.pct || 0, 100);
       const name   = isMeta ? stored : (dl.name || '(unknown)');

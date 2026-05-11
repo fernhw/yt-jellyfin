@@ -183,8 +183,11 @@ def write_schedule(rows: List[Dict]) -> None:
 # ── Day / window helpers ───────────────────────────────────────────────────────
 
 def _parse_days(days_str: str) -> List[int]:
+    s = days_str.lower().strip()
+    if 'daily' in s:
+        return [0, 1, 2, 3, 4, 5, 6]
     result = []
-    for d in days_str.lower().split(','):
+    for d in s.split(','):
         d = d.strip()
         if d in DAY_MAP:
             result.append(DAY_MAP[d])

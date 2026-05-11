@@ -242,31 +242,8 @@ def _aria2_active_downloads() -> List[Dict]:
     return out
 
 def _ensure_aria2_daemon() -> None:
-    """Start aria2c RPC daemon if it isn't already responding.
-    Also kills any existing aria2c RPC processes that are stuck in UN state."""
+    """Start aria2c RPC daemon if it isn't already responding."""
     global _aria2_proc
-
-    # Kill any aria2c RPC daemon processes stuck in UN (uninterruptible sleep)
-    try:
-        ps = subprocess.run(
-            ['ps', '-axo', 'pid,stat,command'],
-            capture_output=True, text=True, timeout=5,
-        )
-        for line in ps.stdout.splitlines():
-            parts = line.split(None, 2)
-            if len(parts) < 3:
-                continue
-            pid_s, stat, cmd = parts
-            # UN = uninterruptible sleep + not runnable (truly stuck — not just 'U' in stat)
-            if re.match(r'U[Ns]?$', stat) and 'aria2c' in cmd:
-                try:
-                    os.kill(int(pid_s), 9)
-                    log.warning(f'aria2c watchdog: killed stuck UN process {pid_s}')
-                    time.sleep(0.5)
-                except Exception:
-                    pass
-    except Exception:
-        pass
 
     # Already alive and responsive?
     try:
@@ -315,10 +292,8 @@ def _ensure_aria2_daemon() -> None:
         f'--log={ARIA2_LOG}',
         '--log-level=warn',
         # ── Session persistence: survive daemon restarts ──────────────────
-        # Save all active/waiting downloads every 30s so they reload on restart
         f'--save-session={os.path.join(SCRIPT_DIR, "aria2.session")}',
-        '--save-session-interval=10',  # flush every 10s so less is lost on crash
-        '--force-save=true',           # also save paused/error downloads, not just active
+        '--save-session-interval=60',  # flush every 60s (only active/waiting/paused)
         # Reload any saved downloads from last session
         *(
             [f'--input-file={os.path.join(SCRIPT_DIR, "aria2.session")}']
@@ -884,6 +859,12 @@ def torrent_remove(gid: str):
                 os.remove(ctrl)
         except Exception:
             pass
+    # Force an immediate session save so the removal persists even if aria2c
+    # is killed within the next 60s save interval.
+    try:
+        _aria2_rpc('aria2.saveSession')
+    except Exception:
+        pass
     return jsonify({'removed': gid})
 
 @app.route('/api/torrent/<gid>/pause', methods=['POST'])
