@@ -577,15 +577,17 @@ async function _doLibCheck(inputId, warnId) {
     // Detect if user typed a standalone "1"
     const hasOne = /\b1\b/.test(q);
     const oneWarning = hasOne
-      ? ' <span style="color:#fbbf24">(Heads up: adding \u201c1\u201d may not help \u2014 most movies don\u2019t include it in the title!)</span>'
+      ? ' <span style="color:#fbbf24">Heads up: most movies don\u2019t put \u201c1\u201d in the title, so this might not help narrow it down.</span>'
       : '';
 
     const kindLabel = hits[0].kind === 'show' ? 'show' : 'movie';
     const sequelTip = hasOne ? '' :
-      ' If it\u2019s a sequel, spin-off, or remake, try adding a number or year \u2014 e.g. <b>' + _esc(triggeredWord) + ' 2</b> or <b>' + _esc(triggeredWord) + ' 2009</b>.';
+      ' If it\u2019s a sequel or spin-off, feel free to ignore this \u2014 just keep going!'
+      + ' Adding a number or year helps us find the exact version you want'
+      + ' (e.g. <b>' + _esc(triggeredWord) + ' 2</b> or <b>' + _esc(triggeredWord) + ' 2009</b>).';
 
     if (msgEl) msgEl.innerHTML =
-      '\u201c<b>' + _esc(triggeredWord) + '</b>\u201d already has a ' + kindLabel + ' in Jellyfin.'
+      '\u201c<b>' + _esc(triggeredWord) + '</b>\u201d already has a ' + kindLabel + ' in Jellyfin. '
       + sequelTip + oneWarning;
 
     warn.style.display = 'block';
