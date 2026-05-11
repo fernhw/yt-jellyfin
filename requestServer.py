@@ -276,6 +276,61 @@ def _aria2_confirmed_dead() -> bool:
     return dead
 
 
+def _dedup_aria2_session(session_path: str) -> None:
+    """Remove duplicate infohash entries from an aria2 session/input file.
+
+    aria2c crashes with errorCode=12 ("InfoHash already registered") if the
+    same torrent appears more than once in the session file.  This happens when
+    the same magnet is added multiple times (e.g. retries, old watchdog kills
+    mid-save).  We deduplicate by infohash before every launch so aria2c always
+    starts clean.
+    """
+    if not os.path.exists(session_path):
+        return
+    try:
+        import re as _re
+        with open(session_path) as _f:
+            lines = _f.read().splitlines()
+
+        entries: list = []
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            if not line.strip() or line.startswith('#'):
+                i += 1
+                continue
+            url = line
+            opts: list = []
+            i += 1
+            while i < len(lines) and (lines[i].startswith(' ') or lines[i].startswith('\t')):
+                opts.append(lines[i])
+                i += 1
+            entries.append((url, opts))
+
+        seen: set = set()
+        deduped: list = []
+        for url, opts in entries:
+            m = _re.search(r'btih:([0-9a-fA-F]{40})', url, _re.I)
+            key = m.group(1).lower() if m else url
+            if key not in seen:
+                seen.add(key)
+                deduped.append((url, opts))
+
+        removed = len(entries) - len(deduped)
+        if removed:
+            import shutil as _sh
+            _sh.copy(session_path, session_path + '.bak')
+            with open(session_path, 'w') as _f:
+                for url, opts in deduped:
+                    _f.write(url + '\n')
+                    for o in opts:
+                        _f.write(o + '\n')
+            log.warning('aria2c session dedup: removed %d duplicate entries (%d → %d)',
+                        removed, len(entries), len(deduped))
+    except Exception as _e:
+        log.warning('aria2c session dedup failed (non-fatal): %s', _e)
+
+
 def _start_aria2c() -> None:
     """Spawn aria2c daemon and wait up to 15s for RPC port to open."""
     global _aria2_proc
@@ -288,6 +343,8 @@ def _start_aria2c() -> None:
         log.error('aria2c binary not found — cannot start')
         return
     session_path = os.path.join(SCRIPT_DIR, 'aria2.session')
+    # Always deduplicate before launch — prevents errorCode=12 crash loop
+    _dedup_aria2_session(session_path)
     cmd = [
         aria2c_bin,
         '--enable-rpc=true', f'--rpc-listen-port={ARIA2_RPC_PORT}',
@@ -347,9 +404,9 @@ def _aria2_watchdog() -> None:
     """
     Passive watchdog — NO RPC calls, NO proactive kills.
 
-    Checks TCP port every 60s. Only restarts after 3 consecutive checks
-    (3 minutes) all show the port closed, AND _aria2_confirmed_dead() agrees.
-    This way a busy/slow aria2 under heavy download load is never touched.
+    Checks TCP port every 60s. Only restarts after 3 consecutive closed checks
+    (3 minutes) AND _aria2_confirmed_dead() agrees. Session dedup runs inside
+    _start_aria2c() — only on startup/post-crash, never while aria2c is live.
     """
     strikes = 0
     while True:
@@ -971,48 +1028,49 @@ def torrent_remove(gid: str):
         else:
             to_delete.add(p)
 
-    # Always scan for the .aria2 control file by infohash — this catches
-    # [METADATA] entries and any orphaned control files not listed in 'files'.
-    if ih_hex:
-        kv = _load_kv(SECRETS_FILE)
-        scan_dirs = [d for k in ('MOVIES_DIR', 'SHOWS_DIR')
-                     if (d := kv.get(k, '')) and os.path.isdir(d)]
-        for base in scan_dirs:
-            for root, dirs, files in os.walk(base):
-                dirs[:] = [d for d in dirs if not d.startswith('.')]
-                for fname in files:
-                    if not fname.endswith('.aria2'):
-                        continue
-                    aria2_path = os.path.join(root, fname)
-                    try:
-                        with open(aria2_path, 'rb') as fh:
-                            raw = fh.read(30)
-                        if len(raw) >= 30:
-                            if binascii.hexlify(raw[10:30]).decode().lower() == ih_hex:
-                                to_delete.add(aria2_path)
-                                partial = aria2_path[:-6]
-                                if os.path.exists(partial):
-                                    to_delete.add(partial)
-                    except Exception:
-                        pass
     for target in to_delete:
         try:
             if os.path.isdir(target):
                 _shutil.rmtree(target, ignore_errors=True)
+                log.info('torrent_remove: deleted dir %s', target)
             elif os.path.isfile(target):
                 os.remove(target)
-            # also remove aria2 control file if present
+                log.info('torrent_remove: deleted file %s', target)
+            # Companion .aria2 control file at same level (pack torrent case)
             ctrl = target + '.aria2'
             if os.path.isfile(ctrl):
                 os.remove(ctrl)
+                log.info('torrent_remove: deleted control file %s', ctrl)
+        except Exception as _de:
+            log.warning('torrent_remove: could not delete %s: %s', target, _de)
+
+    # Sweep base_dir itself for any leftover .aria2 / .aria2.tmp control files.
+    # These are ALWAYS safe to delete — aria2 only creates them, they serve no
+    # purpose once the download is removed.  This catches:
+    #   • packs where the .aria2 is named after the torrent (not the subdir)
+    #   • orphaned control files from crashed downloads
+    if base_dir and os.path.isdir(base_dir):
+        try:
+            for fname in os.listdir(base_dir):
+                if fname.endswith('.aria2') or fname.endswith('.aria2.tmp'):
+                    ctrl_path = os.path.join(base_dir, fname)
+                    try:
+                        os.remove(ctrl_path)
+                        log.info('torrent_remove: swept leftover control file %s', ctrl_path)
+                    except Exception as _ce:
+                        log.warning('torrent_remove: could not sweep %s: %s', ctrl_path, _ce)
         except Exception:
             pass
-    # Force an immediate session save so the removal persists even if aria2c
-    # is killed within the next 60s save interval.
-    try:
-        _aria2_rpc('aria2.saveSession')
-    except Exception:
-        pass
+
+    # Force an immediate session save so the removal persists across restarts.
+    for _attempt in range(3):
+        try:
+            _aria2_rpc('aria2.saveSession')
+            break
+        except Exception as _se:
+            log.warning('torrent_remove: saveSession attempt %d failed: %s', _attempt + 1, _se)
+            time.sleep(1)
+
     return jsonify({'removed': gid})
 
 @app.route('/api/torrent/<gid>/pause', methods=['POST'])

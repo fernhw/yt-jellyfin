@@ -1795,9 +1795,10 @@ function toggleStrip() {
   document.getElementById('dl-strip-toggle').textContent = _stripOpen ? '\u25b2' : '\u25bc';
 }
 
+let _emptyPollCount = 0;
 function startPolling() {
   if (_pollTimer) return;
-  _pollTimer = setInterval(pollDownloads, 4000);
+  _pollTimer = setInterval(pollDownloads, 2000);
   pollDownloads();
 }
 
@@ -1811,8 +1812,6 @@ async function pollDownloads() {
     const dot   = document.getElementById('dl-dot');
     const pctEl = document.getElementById('dl-nav-pct');
 
-    body.querySelectorAll('.dl-card-row').forEach(el => el.remove());
-
     const torrents = downloads.filter(dl =>
       ['active', 'waiting', 'paused'].includes(dl.status)
     );
@@ -1824,12 +1823,18 @@ async function pollDownloads() {
 
     const badge = document.getElementById('dl-badge');
     if (!visible.length) {
-      idle.classList.remove('hidden');  // safe to show now — we have a confirmed response
+      _emptyPollCount++;
+      if (_emptyPollCount < 2) return; // keep last-known cards for one more poll
+      _emptyPollCount = 0;
+      body.querySelectorAll('.dl-card-row').forEach(el => el.remove());
+      idle.classList.remove('hidden');
       dot.classList.remove('active');
       pctEl.textContent = '';
       badge.style.display = 'none';
       return;
     }
+    _emptyPollCount = 0;
+    body.querySelectorAll('.dl-card-row').forEach(el => el.remove());
 
     idle.classList.add('hidden');
     badge.textContent = visible.length;

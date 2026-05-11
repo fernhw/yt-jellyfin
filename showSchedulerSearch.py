@@ -751,6 +751,41 @@ def _aria2_ensure_daemon() -> bool:
     # Start it
     script_dir = os.path.dirname(os.path.realpath(__file__))
     session_file = os.path.join(script_dir, 'aria2.session')
+    # Deduplicate session file before launch to avoid errorCode=12 crash loop
+    if os.path.exists(session_file):
+        try:
+            import re as _re
+            with open(session_file) as _f:
+                raw_lines = _f.read().splitlines()
+            entries_ss = []
+            i = 0
+            while i < len(raw_lines):
+                ln = raw_lines[i]
+                if not ln.strip() or ln.startswith('#'):
+                    i += 1; continue
+                u = ln; o = []; i += 1
+                while i < len(raw_lines) and (raw_lines[i].startswith(' ') or raw_lines[i].startswith('\t')):
+                    o.append(raw_lines[i]); i += 1
+                entries_ss.append((u, o))
+            seen_ss: set = set()
+            deduped_ss = []
+            for u, o in entries_ss:
+                _m = _re.search(r'btih:([0-9a-fA-F]{40})', u, _re.I)
+                k = _m.group(1).lower() if _m else u
+                if k not in seen_ss:
+                    seen_ss.add(k); deduped_ss.append((u, o))
+            if len(deduped_ss) < len(entries_ss):
+                import shutil as _sh
+                _sh.copy(session_file, session_file + '.bak')
+                with open(session_file, 'w') as _f:
+                    for u, o in deduped_ss:
+                        _f.write(u + '\n')
+                        for ln in o:
+                            _f.write(ln + '\n')
+                log.warning('aria2 session dedup: %d → %d entries', len(entries_ss), len(deduped_ss))
+        except Exception as _de:
+            log.warning('aria2 session dedup failed (non-fatal): %s', _de)
+    session_file = os.path.join(script_dir, 'aria2.session')
     cmd = [
         aria2c_bin,
         f'--rpc-listen-port={ARIA2_RPC_PORT}',
