@@ -288,7 +288,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <input id="movie-title" class="big-input" placeholder="e.g. Dune Part Two"
              onkeydown="if(event.key==='Enter'){document.getElementById('movie-suggest-list').style.display='none';mvNext()}"
              oninput="movieSuggestInput()"
-             onblur="libCheckNow('movie-title','lib-warn-movie');setTimeout(()=>{document.getElementById('movie-suggest-list').style.display='none'},200)"
+             onblur="libCheckNow('movie-title','lib-warn-movie');setTimeout(()=>{document.getElementById('movie-suggest-list').style.display='none'},400)"
              style="font-size:1.15rem;padding:20px 18px;margin-bottom:6px"
              autocomplete="off"/>
       <div id="movie-suggest-list"></div>
@@ -1191,11 +1191,13 @@ function movieSuggestInput() {
       const data = await r.json();
       const items = (data.results || []).slice(0, 8);
       if (!items.length) { list.style.display = 'none'; return; }
-      list.innerHTML = items.map(m =>
-        `<div class="mv-suggest-item" onmousedown="mvSuggestPick(${JSON.stringify(m.title)},${m.year||0})">` +
+      list.innerHTML = items.map(m => {
+        const args = `${JSON.stringify(m.title)},${m.year||0}`;
+        return `<div class="mv-suggest-item" onmousedown="mvSuggestPick(${args})" ontouchstart="mvSuggestPick(${args});event.preventDefault()">` +
         _esc(m.title) +
         (m.year ? `<span class="mv-suggest-year">${m.year}</span>` : '') +
-        `</div>`
+        `</div>`;
+      })
       ).join('');
     } catch(e) { list.style.display = 'none'; }
   }, 400);
