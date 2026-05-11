@@ -98,8 +98,16 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 .progress-fill{height:100%;border-radius:2px;transition:width .4s;background:linear-gradient(90deg,var(--purple),var(--blue))}
 .form-step{display:none}.form-step.active{display:block}
 .step-label{font-size:.63rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
-.step-q{font-size:1.35rem;font-weight:700;margin-bottom:4px;line-height:1.2}
+.step-q{font-size:1.3rem;font-weight:700;margin-bottom:10px;line-height:1.2}
 .step-hint{font-size:.81rem;color:var(--muted);margin-bottom:15px;line-height:1.4}
+.field-label{display:block;font-size:.59rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.tab-hero{margin-bottom:28px}
+.tab-hero-eyebrow{font-size:.57rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--orange);margin-bottom:9px}
+.tab-hero-title{font-size:2rem;font-weight:900;line-height:1.1;letter-spacing:-.03em;color:var(--white);margin:0 0 10px}
+.tab-hero-sub{font-size:.88rem;color:var(--muted);line-height:1.65;margin:0}
+.quality-row{display:flex;align-items:center;justify-content:space-between;margin-top:12px;margin-bottom:2px;gap:10px}
+.quality-select{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:7px 11px;color:var(--muted);font-size:.8rem;outline:none;cursor:pointer;font-family:inherit;flex-shrink:0}
+.ghost-btn{background:none;border:none;color:var(--muted);font-size:.87rem;padding:9px 0;cursor:pointer;font-weight:600;display:block;width:100%;text-align:left}
 .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .type-btn,.qual-btn,.movie-type-btn{padding:15px;border-radius:14px;border:1.5px solid var(--border);background:var(--bg3);color:var(--white);font-size:.93rem;font-weight:600;cursor:pointer;transition:border-color .2s,background .2s;width:100%}
 .type-btn.selected{border-color:var(--purple);background:rgba(167,139,250,.1)}
@@ -137,11 +145,12 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 .ham-item:active,.ham-item:hover{background:rgba(255,255,255,.07)}
 
 /* ── Show mode choice ── */
-.show-mode-btn{width:100%;padding:18px 16px;border-radius:16px;border:1.5px solid var(--border);background:var(--bg3);cursor:pointer;text-align:left;transition:border-color .2s,background .2s;margin-bottom:10px;display:flex;flex-direction:column;gap:5px}
+.show-mode-btn{width:100%;padding:16px 18px;border-radius:16px;border:1.5px solid var(--border);background:var(--bg3);cursor:pointer;text-align:left;transition:border-color .2s,background .2s;margin-bottom:10px;display:flex;flex-direction:row;align-items:center;gap:16px}
 .show-mode-btn:active{border-color:var(--purple);background:rgba(167,139,250,.08)}
-.smb-icon{font-size:1.5rem}
-.smb-title{font-size:1rem;font-weight:700;color:var(--white)}
-.smb-sub{font-size:.8rem;color:var(--muted);line-height:1.4}
+.smb-icon{font-size:1.6rem;flex-shrink:0;line-height:1}
+.smb-body{flex:1;min-width:0}
+.smb-title{font-size:.97rem;font-weight:700;color:var(--white)}
+.smb-sub{font-size:.77rem;color:var(--muted);line-height:1.4;margin-top:2px}
 
 /* ── Inline help tooltips ── */
 .tip-btn{background:none;border:1.5px solid var(--muted);color:var(--muted);width:20px;height:20px;border-radius:50%;font-size:.68rem;font-weight:800;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-left:6px;line-height:1}
@@ -149,6 +158,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 
 @media(max-width:440px){
   .section-title{font-size:1.5rem}
+  .tab-hero-title{font-size:1.65rem}
   .days-grid{grid-template-columns:repeat(4,1fr)}
   .row2{grid-template-columns:1fr}
   .nav-tab{padding:6px 10px;font-size:.78rem}
@@ -239,6 +249,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
   <div class="tab-pane" id="tab-shows">
     <div class="section-label">Schedule</div>
     <div class="section-title" style="color:var(--purple)">Add Show</div>
+    <div class="section-sub">Set it up once &mdash; episodes download themselves.</div>
     <div class="progress-bar"><div class="progress-fill" id="add-prog" style="width:0%"></div></div>
 
     <!-- Step 1: Older or Ongoing -->
@@ -247,13 +258,17 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <div class="step-hint" style="margin-bottom:16px">Pick the option that fits.</div>
       <button class="show-mode-btn" onclick="selShowMode('older')">
         <div class="smb-icon">&#128230;</div>
-        <div class="smb-title">Older Season / Finished Show</div>
-        <div class="smb-sub">The season is already out. Download all episodes right now, all at once.</div>
+        <div class="smb-body">
+          <div class="smb-title">Older / Finished Season</div>
+          <div class="smb-sub">Season is out &mdash; download all episodes right now.</div>
+        </div>
       </button>
       <button class="show-mode-btn" onclick="selShowMode('ongoing')">
         <div class="smb-icon">&#128225;</div>
-        <div class="smb-title">Ongoing Show</div>
-        <div class="smb-sub">Still airing week by week. The app automatically downloads each new episode on its release day.</div>
+        <div class="smb-body">
+          <div class="smb-title">Ongoing Show</div>
+          <div class="smb-sub">Still airing &mdash; auto-downloads each new episode on release day.</div>
+        </div>
       </button>
       <div class="err" id="serr-1"></div>
     </div>
@@ -261,49 +276,47 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
     <!-- Step 2: Show name -->
     <div class="form-step" id="ss-2">
       <div class="step-q">What's it called?</div>
-      <div class="step-label" style="margin-top:16px;margin-bottom:4px">Show name</div>
+      <label class="field-label" style="margin-top:14px" for="f-show-name">Show name</label>
       <input id="f-show-name" class="big-input" placeholder="e.g. Marshals" maxlength="80"
              oninput="autoFillSearch()" onkeydown="if(event.key==='Enter')document.getElementById('f-search-name').focus()"/>
-      <div class="step-label" style="margin-top:12px;margin-bottom:4px">
-        Search term <button class="tip-btn" onclick="tipToggle('tip-search')">?</button>
-      </div>
+      <div class="field-label" style="margin-top:14px">Search term <button class="tip-btn" onclick="tipToggle('tip-search')">?</button></div>
       <div class="tip-box hidden" id="tip-search">
-        What we type into torrent sites to find episodes. Filled in automatically from the show name — only change it if searches aren't finding the right show.<br><br>
-        Example: <b>Re:Zero</b> → search term <b>re zero</b>
+        What we type into torrent sites to find episodes. Filled in automatically from the show name &mdash; only change it if searches aren't finding the right show.<br><br>
+        Example: <b>Re:Zero</b> &rarr; search term <b>re zero</b>
       </div>
-      <input id="f-search-name" class="big-input" placeholder="e.g. marshals" maxlength="80" style="margin-top:6px"
+      <input id="f-search-name" class="big-input" placeholder="e.g. marshals" maxlength="80"
              oninput="markSearchEdited()" onkeydown="if(event.key==='Enter')_goShowStepNext2()"/>
-      <button class="big-btn btn-purple" style="margin-top:14px" onclick="_goShowStepNext2()">Next &rarr;</button>
-      <button class="big-btn btn-muted" onclick="_goShowStep(1)" style="margin-top:6px">&larr; Back</button>
+      <button class="big-btn btn-purple" style="margin-top:16px" onclick="_goShowStepNext2()">Next &rarr;</button>
+      <button class="ghost-btn" onclick="_goShowStep(1)">&larr; Back</button>
       <div class="err" id="serr-2"></div>
     </div>
 
     <!-- Step 3: Season & episodes -->
     <div class="form-step" id="ss-3">
-      <div class="step-q">
-        Season &amp; episodes
-        <button class="tip-btn" onclick="tipToggle('tip-eps')">?</button>
-      </div>
+      <div class="step-q">Season &amp; episodes <button class="tip-btn" onclick="tipToggle('tip-eps')">?</button></div>
       <div class="tip-box hidden" id="tip-eps">
         <b>Season</b> — 1 for first season, 2 for second, etc.<br>
-        <b>Current episode</b> — Which ep to start downloading from. Usually 1.<br>
-        <b>Total episodes</b> — How many in the season. If you don't know, leave “Don't know” checked — downloads will stop automatically once no new episodes appear for 4 days.
+        <b>Current episode</b> — Which ep to start from. Usually 1.<br>
+        <b>Total episodes</b> — Leave "Don't know" checked if unsure — auto-stops after 4 days with no new result.
       </div>
-      <input id="f-season" class="big-input" placeholder="Season number (e.g. 1)" type="number" min="1" style="margin-top:12px;margin-bottom:8px"/>
-      <div id="ss-3-eps" style="margin-bottom:8px">
-        <input id="f-next-ep" class="big-input" placeholder="Current episode (e.g. 1)" type="number" min="1" style="margin-bottom:8px"/>
-        <label id="ss-3-dontknow-lbl" style="display:flex;align-items:flex-start;gap:10px;font-size:.82rem;color:var(--muted);cursor:pointer;margin-bottom:8px">
+      <label class="field-label" style="margin-top:12px" for="f-season">Season number</label>
+      <input id="f-season" class="big-input" placeholder="e.g. 1" type="number" min="1"/>
+      <div id="ss-3-eps" style="margin-top:12px">
+        <label class="field-label" for="f-next-ep">Starting episode</label>
+        <input id="f-next-ep" class="big-input" placeholder="e.g. 1" type="number" min="1" style="margin-bottom:10px"/>
+        <label id="ss-3-dontknow-lbl" style="display:flex;align-items:flex-start;gap:10px;font-size:.82rem;color:var(--muted);cursor:pointer;margin-bottom:10px">
           <input type="checkbox" id="f-dont-know" onchange="toggleDontKnow(this)" checked
                  style="width:18px;height:18px;flex-shrink:0;margin-top:1px;accent-color:var(--purple)"/>
-          <span>Don’t know total episodes — will auto-stop after 4 days without a new result</span>
+          <span>Don't know total episodes — will auto-stop after 4 days without a new result</span>
         </label>
         <div id="ss-3-total-wrap" class="hidden">
-          <input id="f-total-ep" class="big-input" placeholder="Total eps (e.g. 24)" type="number" min="1"/>
+          <label class="field-label" for="f-total-ep">Total episodes in season</label>
+          <input id="f-total-ep" class="big-input" placeholder="e.g. 24" type="number" min="1"/>
         </div>
       </div>
       <div id="ss-3-older-note" class="hidden" style="font-size:.8rem;color:var(--muted);margin-bottom:8px">All episodes will be downloaded automatically (ep 1 &rarr; up to 99).</div>
-      <button class="big-btn btn-purple" onclick="_goShowStepNext3()">Next &rarr;</button>
-      <button class="big-btn btn-muted" onclick="_goShowStep(2)" style="margin-top:6px">&larr; Back</button>
+      <button class="big-btn btn-purple" style="margin-top:6px" onclick="_goShowStepNext3()">Next &rarr;</button>
+      <button class="ghost-btn" onclick="_goShowStep(2)">&larr; Back</button>
       <div class="err" id="serr-3"></div>
     </div>
 
