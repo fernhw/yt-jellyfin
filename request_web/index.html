@@ -491,7 +491,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <div class="step-q">Ready to add?</div>
       <div class="confirm-box" id="show-confirm-preview"></div>
       <button class="big-btn btn-purple" id="add-btn" onclick="submitShow()">
-        <span class="spinner hidden" id="add-spin"></span>Add to Schedule
+        <span class="spinner hidden" id="add-spin"></span><span id="add-btn-label">Add to Schedule</span>
       </button>
       <button class="big-btn btn-muted" onclick="resetAddForm()" style="margin-top:8px">Start over</button>
       <div class="err" id="serr-6"></div>
@@ -767,6 +767,11 @@ function _goShowStep(n) {
   const pos = seq.indexOf(n);
   document.getElementById('add-prog').style.width = (pos < 0 ? 0 : Math.round(pos / (seq.length - 1) * 100)) + '%';
   if (n === 6) _buildShowPreview();
+  // Update confirm button label to match mode
+  if (n === 6) {
+    document.getElementById('add-btn-label').textContent =
+      _showMode === 'older' ? 'Download All Episodes' : 'Add to Schedule';
+  }
   const inp = document.querySelector('#ss-' + n + ' input:not([type=checkbox])');
   if (inp) setTimeout(() => inp.focus(), 50);
 }
@@ -841,31 +846,46 @@ async function submitShow() {
   const spin = document.getElementById('add-spin');
   btn.disabled = true; spin.classList.remove('hidden');
   const name = _gv('f-show-name').trim();
-  const body = {
-    show_name:      name,
-    search_name:    _gv('f-search-name').trim().toLowerCase(),
-    folder:         name,
-    type:           _showType,
-    season:         +_gv('f-season'),
-    next_episode:   +_gv('f-next-ep'),
-    total_episodes: +_gv('f-total-ep'),
-    release_days:   _showMode === 'older' ? 'daily' : _releaseDay,
-    ongoing:        _showMode === 'ongoing',
-  };
+
   try {
-    const r = await api('POST', '/api/schedule', body);
-    if (r.ok) {
-      if (_showMode === 'older') {
-        const rows = await (await api('GET', '/api/schedule')).json();
-        const idx = rows.findIndex(row => row.show_name === name);
-        if (idx >= 0) await api('POST', '/api/schedule/' + idx + '/backlog');
+    if (_showMode === 'older') {
+      // Older/finished show — one call, no permanent schedule entry
+      const r = await api('POST', '/api/show-download', {
+        show_name:      name,
+        search_name:    _gv('f-search-name').trim().toLowerCase(),
+        type:           _showType,
+        season:         +_gv('f-season'),
+        total_episodes: +_gv('f-total-ep'),
+      });
+      if (r.ok) {
+        toast('Download started \u2193\u2193');
+        resetAddForm();
+        showTab('movie');
+      } else {
+        const j = await r.json().catch(() => ({}));
+        document.getElementById('serr-6').textContent = j.error || 'Server error';
       }
-      toast('Show added \u2713');
-      resetAddForm();
-      showTab('schedule');
     } else {
-      const j = await r.json().catch(() => ({}));
-      document.getElementById('serr-6').textContent = j.error || 'Server error';
+      // Ongoing show — add to schedule as normal
+      const r = await api('POST', '/api/schedule', {
+        show_name:      name,
+        search_name:    _gv('f-search-name').trim().toLowerCase(),
+        folder:         name,
+        type:           _showType,
+        season:         +_gv('f-season'),
+        next_episode:   +_gv('f-next-ep'),
+        total_episodes: +_gv('f-total-ep'),
+        release_days:   _releaseDay,
+        ongoing:        true,
+      });
+      if (r.ok) {
+        toast('Show added \u2713');
+        resetAddForm();
+        showTab('schedule');
+      } else {
+        const j = await r.json().catch(() => ({}));
+        document.getElementById('serr-6').textContent = j.error || 'Server error';
+      }
     }
   } catch(e) { document.getElementById('serr-6').textContent = 'Network error'; }
   btn.disabled = false; spin.classList.add('hidden');

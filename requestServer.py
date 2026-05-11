@@ -470,6 +470,58 @@ def add_show():
     write_schedule(rows)
     return jsonify({'added': row['show_name']}), 201
 
+@app.route('/api/show-download', methods=['POST'])
+@_require_auth
+def show_download_direct():
+    """Download all episodes of a finished/older show without permanently adding to schedule.
+    Adds a temporary CSV row, runs the full episode backlog, then removes it when done."""
+    data = request.get_json(force=True)
+    show_name = (data.get('show_name') or '').strip()
+    if not show_name:
+        return jsonify({'error': 'show_name required'}), 400
+    search_name = (data.get('search_name') or show_name).strip().lower()
+    show_type   = (data.get('type') or 'live').strip()
+    season      = int(data.get('season') or 1)
+    total       = int(data.get('total_episodes') or 99)
+
+    # Add a temporary row so the scheduler script can find it
+    rows = read_schedule()
+    if not any(r['show_name'] == show_name for r in rows):
+        rows.append({
+            'show_name':      show_name,
+            'search_name':    search_name,
+            'folder':         show_name,
+            'type':           show_type,
+            'season':         str(season),
+            'next_episode':   '1',
+            'total_episodes': str(total),
+            'release_days':   'daily',
+            'status':         'pending',
+            'search_start':   '', 'search_end': '', 'last_check': '',
+            'week_anchor':    '', 'anchor_episode': '',
+        })
+        write_schedule(rows)
+
+    search_script = os.path.join(SCRIPT_DIR, 'showSchedulerSearch.py')
+
+    def _run_and_cleanup():
+        for _ in range(total):
+            subprocess.run(
+                [sys.executable, search_script, '--show', show_name, '--force'],
+                capture_output=True,
+            )
+            time.sleep(5)
+        # Remove the temporary schedule entry when the download loop finishes
+        try:
+            remaining = [r for r in read_schedule() if r['show_name'] != show_name]
+            write_schedule(remaining)
+        except Exception:
+            pass
+
+    threading.Thread(target=_run_and_cleanup, daemon=True).start()
+    return jsonify({'queued': show_name}), 202
+
+
 @app.route('/api/schedule/<int:idx>/backlog', methods=['POST'])
 @_require_auth
 def backlog_show(idx: int):
