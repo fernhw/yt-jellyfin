@@ -421,6 +421,17 @@ def request_movie():
 @_require_auth
 def torrent_state():
     downloads = _aria2_active_downloads()
+    # Tag slow downloads (flagged by showSchedulerSearch when seeds < threshold)
+    slow_gids: list = []
+    try:
+        with open(os.path.join(SCRIPT_DIR, 'slow_gids.json')) as f:
+            slow_gids = json.load(f)
+    except Exception:
+        pass
+    if slow_gids:
+        for dl in downloads:
+            if dl.get('gid') in slow_gids:
+                dl['slow'] = True
     return jsonify({'downloads': downloads, 'updated': time.time()})
 
 @app.route('/api/torrent/<gid>/remove', methods=['POST'])

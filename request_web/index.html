@@ -1025,11 +1025,15 @@ async function pollDownloads() {
       const card = document.createElement('div');
       card.className = 'dl-card-row';
       card.dataset.gid = gid;
+      const slowBadge = dl.slow
+        ? '<div style="font-size:.68rem;color:#fbbf24;margin-bottom:6px">⏳ Downloading slowly — not many people sharing this one</div>'
+        : '';
       card.innerHTML = [
         '<div class="dl-card-top">',
         '  <div class="dl-card-name" title="' + _esc(name) + '">' + _esc(name) + '</div>',
         '  <div class="dl-card-pct">' + pct + '%</div>',
         '</div>',
+        slowBadge,
         '<div class="dl-bar-outer"><div class="dl-bar-inner" style="width:' + Math.max(pct, 1) + '%"></div></div>',
         '<div class="dl-stats">',
         '  <div class="dl-stat"><span class="dl-stat-arrow">&#11015;</span><b>' + _esc(speed) + '</b></div>',

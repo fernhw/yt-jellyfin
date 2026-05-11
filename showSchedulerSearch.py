@@ -50,8 +50,8 @@ ONESIGNAL_APP_ID  = "c88ae5a3-36df-4301-945f-9da65e63d87c"
 ONESIGNAL_API_URL = "https://onesignal.com/api/v1/notifications"
 REPORT_URL        = "https://report.fernhw.com"
 
-MIN_SEEDS       = 10   # episodes / shows
-MOVIE_MIN_SEEDS = 5    # movies — one-time grab, fewer seeds is fine
+MIN_SEEDS       = 10   # minimum seeds for shows and movies (fast pass)
+MOVIE_SLOW_SEEDS = 2   # fallback floor for movies — "slow download" warning
 SEARCH_DAYS  = 4   # days to keep searching after release day before marking missed
 
 DAY_MAP   = {'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3, 'fri': 4, 'sat': 5, 'sun': 6}
@@ -531,6 +531,23 @@ def _aria2_add(magnet: str, dest_dir: str) -> Optional[str]:
         log.warning(f'  aria2 RPC error: {exc}')
     return None
 
+
+def _mark_slow_gid(gid: str) -> None:
+    """Write GID to slow_gids.json so the server can flag it in the UI."""
+    path = os.path.join(SCRIPT_DIR, 'slow_gids.json')
+    try:
+        try:
+            with open(path) as f:
+                data = json.load(f)
+        except Exception:
+            data = []
+        if gid not in data:
+            data.append(gid)
+        with open(path, 'w') as f:
+            json.dump(data, f)
+    except Exception as exc:
+        log.warning(f'  could not write slow_gids.json: {exc}')
+
 def _aria2_wait(gid: str, timeout_sec: int = 7200) -> bool:
     """Poll aria2 until GID completes. Returns True on success."""
     import time as _time
@@ -551,7 +568,8 @@ def _aria2_wait(gid: str, timeout_sec: int = 7200) -> bool:
     return False
 
 
-def download_torrent(magnet: str, dest_dir: str, dry_run: bool = False) -> bool:
+def download_torrent(magnet: str, dest_dir: str, dry_run: bool = False,
+                     slow_warning: bool = False) -> bool:
     """
     Submit a torrent magnet to aria2c.
     1. Try aria2c RPC daemon (managed by requestServer.py) — live progress in UI.
@@ -567,6 +585,8 @@ def download_torrent(magnet: str, dest_dir: str, dry_run: bool = False) -> bool:
     # ── Try RPC daemon first ──────────────────────────────────────────────────
     gid = _aria2_add(magnet, dest_dir)
     if gid:
+        if slow_warning:
+            _mark_slow_gid(gid)
         return _aria2_wait(gid)
 
     # ── Fallback: direct subprocess ───────────────────────────────────────────
@@ -705,16 +725,17 @@ def _title_satisfies_numbers(torrent_title: str, required: List[str]) -> bool:
 
 
 def _score_movie(title: str, seeds: int, is_anime: bool,
-                 prefer_4k: bool = False) -> Optional[float]:
+                 prefer_4k: bool = False,
+                 min_seeds: int = MIN_SEEDS) -> Optional[float]:
     """Score a movie torrent candidate. Returns None if below requirements."""
-    if seeds < MOVIE_MIN_SEEDS:
+    if seeds < min_seeds:
         return None
     if not _has_min_res(title):
         return None
     show_type = 'anime' if is_anime else 'live'
     if not _has_english(title, show_type, False):
         return None
-    base = score_torrent(title, seeds, show_type, min_seeds=MOVIE_MIN_SEEDS)
+    base = score_torrent(title, seeds, show_type, min_seeds=min_seeds)
     if base is None:
         return None
     # When 4K is preferred, add a large bonus to 4K results so they
@@ -741,19 +762,19 @@ def download_movie(title: str, is_anime: bool,
         log.info(f"  Number filter: torrent title must contain {req_nums}")
     log.info(f"Searching movie: {q}")
 
-    def _score_all(candidates: List[Dict]) -> List[Tuple[float, Dict]]:
+    def _score_all(candidates: List[Dict], min_seeds: int = MIN_SEEDS) -> List[Tuple[float, Dict]]:
         scored: List[Tuple[float, Dict]] = []
         for c in candidates:
             if not _title_satisfies_numbers(c['title'], req_nums):
                 log.debug(f"  skip (number mismatch): {c['title']}")
                 continue
-            s = _score_movie(c['title'], c['seeds'], is_anime, prefer_4k=prefer_4k)
+            s = _score_movie(c['title'], c['seeds'], is_anime, prefer_4k=prefer_4k, min_seeds=min_seeds)
             if s is not None:
                 scored.append((s, c))
         scored.sort(key=lambda x: x[0], reverse=True)
         return scored
 
-    # ── Primary pass ────────────────────────────────────────────────────────
+    # ── Primary pass (10+ seeds) ─────────────────────────────────────────────
     if is_anime:
         primary = search_nyaa_movie(q) + search_tpb_movie(q)
     else:
@@ -764,16 +785,30 @@ def download_movie(title: str, is_anime: bool,
         log.warning(f"  primary pass: no qualifying results — trying YTS fallback")
         scored = _score_all(search_yts(q))
 
+    slow_download = False
     if not scored:
-        log.error(f"  {q}: no qualifying results across all sources (need {MOVIE_MIN_SEEDS}+ seeds, 1080p+, English)")
+        # ── Slow fallback (2+ seeds) ─────────────────────────────────────────
+        log.warning(f"  no fast results — trying slow fallback (>={MOVIE_SLOW_SEEDS} seeds)")
+        all_candidates = primary + (search_yts(q) if not primary else [])
+        scored = _score_all(all_candidates, min_seeds=MOVIE_SLOW_SEEDS)
+        if scored:
+            slow_download = True
+            log.warning(f"  slow fallback found {len(scored)} candidate(s)")
+
+    if not scored:
+        log.error(f"  {q}: no qualifying results across all sources (need {MIN_SEEDS}+ seeds, 1080p+, English)")
         return
 
     best_score, best = scored[0]
-    log.info(f"  Best: {best['title']} | score={best_score:.0f} seeds={best['seeds']}")
+    if slow_download:
+        log.warning(f"  SLOW: {best['title']} | score={best_score:.0f} seeds={best['seeds']} (below normal threshold)")
+    else:
+        log.info(f"  Best: {best['title']} | score={best_score:.0f} seeds={best['seeds']}")
 
-    ok = download_torrent(best['magnet'], movies_dir, dry_run=dry_run)
+    ok = download_torrent(best['magnet'], movies_dir, dry_run=dry_run,
+                          slow_warning=slow_download)
     if ok:
-        log.info(f"  {q}: download complete")
+        log.info(f"  {q}: download {'started (may be slow)' if slow_download else 'complete'}")
     else:
         log.error(f"  {q}: download failed")
 
