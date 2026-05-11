@@ -399,7 +399,7 @@ def library_check():
             if word_match and num_match:
                 matches.append({'name': name, 'kind': kind})
     matches.sort(key=lambda m: (0 if q in m['name'].lower() else 1, m['name']))
-    return jsonify({'matches': matches[:5]})
+    return jsonify({'matches': matches[:20]})
 
 
 @app.route('/api/movie', methods=['POST'])

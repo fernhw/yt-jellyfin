@@ -557,13 +557,25 @@ async function _doLibCheck(inputId, warnId) {
     const data = await r.json();
     const hits = data.matches || [];
     if (hits.length === 0) { warn.style.display = 'none'; return; }
-    const top = hits[0];
-    const kind = top.kind === 'show' ? 'show' : 'movie';
-    const tail = kind === 'show'
-      ? 'If this is a new season or a different show, go ahead \u2014 it won\u2019t overwrite anything.'
-      : 'If this is a sequel or a different film, go ahead \u2014 it won\u2019t overwrite anything.';
     const msgEl = document.getElementById(warnId + '-msg');
-    if (msgEl) msgEl.textContent = '\u201c' + top.name + '\u201d is already in Jellyfin. ' + tail;
+    if (hits.length === 1) {
+      // Single match — gentle note
+      const top = hits[0];
+      const tail = top.kind === 'show'
+        ? 'If this is a new season or a different show, go ahead \u2014 it won\u2019t overwrite anything.'
+        : 'If this is a sequel or a different film, go ahead \u2014 it won\u2019t overwrite anything.';
+      if (msgEl) msgEl.innerHTML = '\u201c' + _esc(top.name) + '\u201d is already in Jellyfin. ' + tail;
+    } else {
+      // Multiple hits — could be movie + show, different years, etc.
+      const list = hits.map(h =>
+        '<div style="margin:2px 0">' + (h.kind==='show'?'&#128250;':'&#127916;') + ' ' + _esc(h.name) + '</div>'
+      ).join('');
+      if (msgEl) msgEl.innerHTML =
+        '<b>We found ' + hits.length + ' titles with that name in Jellyfin.</b> '
+        + 'Add a year to make sure we grab the right one '
+        + '(e.g. <b>' + _esc(q.trim()) + ' 2009</b>):'
+        + '<div style="margin-top:7px;font-size:.74rem;line-height:1.7;opacity:.9">' + list + '</div>';
+    }
     warn.style.display = 'block';
   } catch(e) {}
 }
