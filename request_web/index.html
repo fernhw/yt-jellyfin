@@ -259,8 +259,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <div style="font-size:2.4rem;margin-bottom:12px">&#9989;</div>
       <div style="font-size:1.15rem;font-weight:800;color:var(--teal);margin-bottom:6px">Downloading!</div>
       <div style="font-size:.9rem;color:var(--muted);margin-bottom:4px" id="mv-ok-label"></div>
-      <div style="font-size:.8rem;color:var(--muted);margin-bottom:24px">You can see progress in the bar at the bottom of the screen.</div>
-      <button class="big-btn" onclick="mvReset()">Request another movie</button>
+      <div style="font-size:.8rem;color:var(--muted)">You can see progress in the bar at the bottom of the screen.</div>
     </div>
 
     <!-- Step E: not found — tips + retry -->
@@ -811,11 +810,12 @@ async function mvSubmit(type, titleOverride) {
 
   const typeLabel = type === 'anime' ? 'Anime' : 'Live-action';
   if (foundGid) {
-    // SUCCESS — show downloading screen
+    // SUCCESS — show downloading screen, then auto-return to step A
     document.getElementById('mv-ok-label').textContent =
       '\u201c' + title + '\u201d \u00b7 ' + typeLabel;
     mvShowStep('mv-step-d');
     toast('Downloading \u2713');
+    setTimeout(() => mvReset(), 4000);
   } else {
     // FAILURE — show tips + retry screen
     document.getElementById('mv-fail-label').textContent =
