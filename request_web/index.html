@@ -355,6 +355,10 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <div style="font-size:2.2rem;font-weight:900;color:var(--orange);letter-spacing:-.02em;margin-bottom:6px">Sorry!</div>
       <div style="font-size:1rem;font-weight:700;color:var(--white);margin-bottom:6px">We found multiple movies with that name.</div>
       <div style="font-size:.8rem;color:var(--muted);margin-bottom:18px">Tap the one you&rsquo;re looking for:</div>
+      <div id="mv-cam-warning" style="display:none;margin-bottom:14px;padding:14px 15px;background:rgba(248,113,113,.12);border:1.5px solid rgba(248,113,113,.5);border-radius:14px">
+        <div style="font-size:.95rem;font-weight:800;color:#f87171;margin-bottom:6px">&#127909; Only CAM recordings found</div>
+        <div style="font-size:.8rem;color:#fca5a5;line-height:1.6">A CAM is recorded by someone pointing a camera at a cinema screen. The picture is shaky, dark, and blurry. The sound is muffled and you can hear the audience. It is the worst possible quality &mdash; basically unwatchable on a TV.<br><br>A proper version will be available once the movie releases on streaming or disc. If you still want it now, pick one below.</div>
+      </div>
       <div id="mv-picker-list" style="display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow-y:scroll;scrollbar-width:thin;scrollbar-color:var(--teal) var(--bg3);padding-right:4px"></div>
       <button class="ghost-btn" style="margin-top:16px" onclick="mvBack()">&larr; Back</button>
     </div>
@@ -1290,7 +1294,11 @@ async function mvSubmit(type, titleOverride) {
 
 function _buildPicker(candidates, type, title, quality) {
   const list = document.getElementById('mv-picker-list');
+  const camWarn = document.getElementById('mv-cam-warning');
   list.innerHTML = '';
+
+  const allCam = candidates.length > 0 && candidates.every(c => c.cam);
+  camWarn.style.display = allCam ? 'block' : 'none';
 
   // Group by year (4-digit number 1800-2999 in the title)
   const _YEAR_PICK = /\b(1[89]\d{2}|2\d{3})\b/;
@@ -1329,10 +1337,7 @@ function _buildPicker(candidates, type, title, quality) {
       btn.innerHTML =
         '<div>' + _esc(c.title) + slowBadge + camBadge + '</div>'
         + '<div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-top:3px">\uD83C\uDF31 ' + c.seeds + ' seeds</div>';
-      btn.onclick = () => {
-        if (c.cam && !confirm('This is a CAM \u2014 someone literally pointed a camera at a cinema screen. The picture will be shaky and dark, and you might hear people coughing. Only pick this if nothing better is available. Download anyway?')) return;
-        mvPickCandidate(c.magnet, c.title, type, title, quality);
-      };
+      btn.onclick = () => mvPickCandidate(c.magnet, c.title, type, title, quality);
       list.appendChild(btn);
     });
   });
