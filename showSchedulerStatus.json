@@ -1,5 +1,5 @@
 {
-  "updated": "2026-05-10",
+  "updated": "2026-05-11",
   "shows": [
     {
       "show": "Re Zero",
@@ -7,10 +7,10 @@
       "downloaded": 5,
       "next_ep": 6,
       "total": 13,
-      "week": "W5 \u2713",
+      "week": "W6 due",
       "status": "searching",
       "release_days": "wed",
-      "days_until": 3,
+      "days_until": 2,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-fle-re-zero-starting-life-in-another-world-s03-web-1080p-h-264-e-ac-3-dual-audio.jpg"
     },
@@ -20,10 +20,10 @@
       "downloaded": 6,
       "next_ep": 7,
       "total": 8,
-      "week": "W6 \u2713",
+      "week": "W7 due",
       "status": "pending",
       "release_days": "wed",
-      "days_until": 3,
+      "days_until": 2,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-the-boys.jpg"
     },
@@ -33,10 +33,10 @@
       "downloaded": 8,
       "next_ep": 9,
       "total": 11,
-      "week": "W8 \u2713",
+      "week": "W9 due",
       "status": "pending",
       "release_days": "wed",
-      "days_until": 3,
+      "days_until": 2,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-dorohedoro.jpg"
     },
@@ -46,10 +46,10 @@
       "downloaded": 6,
       "next_ep": 7,
       "total": 12,
-      "week": "W6 \u2713",
+      "week": "W7 due",
       "status": "pending",
       "release_days": "sat",
-      "days_until": 6,
+      "days_until": 5,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-mistress-kanan-is-devilishly-easy.jpg"
     },
@@ -59,10 +59,10 @@
       "downloaded": 5,
       "next_ep": 6,
       "total": 13,
-      "week": "W6 due",
-      "status": "pending",
+      "week": "W7 due",
+      "status": "searching",
       "release_days": "mon",
-      "days_until": 1,
+      "days_until": 0,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-hat-witch-atelier.jpg"
     },
@@ -75,7 +75,7 @@
       "week": "?",
       "status": "pending",
       "release_days": "tue",
-      "days_until": 2,
+      "days_until": 1,
       "is_complete": false,
       "thumb": ""
     }
