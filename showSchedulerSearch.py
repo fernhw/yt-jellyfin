@@ -594,6 +594,22 @@ def _aria2_add(magnet: str, dest_dir: str) -> Optional[str]:
     return None
 
 
+def _register_gid_name(gid: str, name: str) -> None:
+    """Write gid→friendly name to gid_names.json so the UI can show it during [METADATA] phase."""
+    path = os.path.join(SCRIPT_DIR, 'gid_names.json')
+    try:
+        try:
+            with open(path) as f:
+                data = json.load(f)
+        except Exception:
+            data = {}
+        data[gid] = name
+        with open(path, 'w') as f:
+            json.dump(data, f)
+    except Exception as exc:
+        log.warning(f'  could not write gid_names.json: {exc}')
+
+
 def _mark_slow_gid(gid: str) -> None:
     """Write GID to slow_gids.json so the server can flag it in the UI."""
     path = os.path.join(SCRIPT_DIR, 'slow_gids.json')
@@ -648,6 +664,11 @@ def download_torrent(magnet: str, dest_dir: str, dry_run: bool = False,
     if not gid:
         log.error('  could not add torrent to aria2 daemon — download aborted')
         return False
+    # Register a friendly name so the UI doesn't show [METADATA]<hash> while
+    # the torrent is still resolving metadata.
+    friendly = os.path.basename(dest_dir.rstrip('/')) if dest_dir else ''
+    if friendly:
+        _register_gid_name(gid, friendly)
     if slow_warning:
         _mark_slow_gid(gid)
     return _aria2_wait(gid)

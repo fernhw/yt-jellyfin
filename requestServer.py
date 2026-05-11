@@ -175,6 +175,15 @@ _ARIA2_KEYS = [
     'bittorrent', 'files', 'errorMessage',
 ]
 
+def _load_gid_names() -> dict:
+    """Load gid→friendly name registry written by showSchedulerSearch."""
+    try:
+        with open(os.path.join(SCRIPT_DIR, 'gid_names.json')) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
 def _aria2_active_downloads() -> List[Dict]:
     """Return live download list from aria2c RPC."""
     try:
@@ -183,6 +192,7 @@ def _aria2_active_downloads() -> List[Dict]:
         paused  = _aria2_rpc('aria2.tellWaiting', [0, 20, _ARIA2_KEYS]) or []
     except Exception:
         return []
+    gid_names = _load_gid_names()
 
     # tellWaiting returns both waiting and paused; tellActive returns active only.
     # Combine and deduplicate by gid.
@@ -211,6 +221,9 @@ def _aria2_active_downloads() -> List[Dict]:
             files = item.get('files') or []
             if files:
                 name = (files[0].get('path') or '').rsplit('/', 1)[-1]
+        # Fall back to registered friendly name (covers [METADATA] phase)
+        if not name or name.startswith('[METADATA]'):
+            name = gid_names.get(item.get('gid', ''), name)
 
         out.append({
             'gid':         item.get('gid', ''),
@@ -621,19 +634,24 @@ def torrent_remove(gid: str):
     import shutil as _shutil
     if not re.fullmatch(r'[0-9a-f]{1,16}', gid):
         abort(400)
-    # Collect file paths + base dir before removing
+
+    # Collect everything we need BEFORE touching aria2 — once forceRemove is
+    # called the GID is gone and we can't query it anymore.
     base_dir = ''
     file_paths: list = []
+    ih_hex = ''
     try:
-        info = _aria2_rpc('aria2.tellStatus', [gid, ['files', 'dir']]) or {}
+        info = _aria2_rpc('aria2.tellStatus', [gid, ['files', 'dir', 'infoHash']]) or {}
         base_dir = (info.get('dir') or '').rstrip('/')
+        ih_hex   = (info.get('infoHash') or '').lower()
         for f in (info.get('files') or []):
             p = (f.get('path') or '').strip()
             if p and p != '[METADATA]':
                 file_paths.append(p)
     except Exception:
         pass
-    # Force-remove from aria2
+
+    # Remove from aria2 daemon
     try:
         _aria2_rpc('aria2.forceRemove', [gid])
     except Exception:
@@ -642,18 +660,53 @@ def torrent_remove(gid: str):
         _aria2_rpc('aria2.removeDownloadResult', [gid])
     except Exception:
         pass
-    # Work out which top-level items to delete.
-    # For a single-file torrent: delete the file + its .aria2 companion.
-    # For a folder torrent: delete the whole subdirectory inside base_dir.
+
+    # Remove from friendly-name registry
+    try:
+        names_path = os.path.join(SCRIPT_DIR, 'gid_names.json')
+        with open(names_path) as f:
+            names = json.load(f)
+        if gid in names:
+            del names[gid]
+            with open(names_path, 'w') as f:
+                json.dump(names, f)
+    except Exception:
+        pass
+
+    # Build set of files/dirs to delete on disk
     to_delete: set = set()
     for p in file_paths:
         if base_dir and p.startswith(base_dir + '/'):
-            # First path component inside base_dir
             rel = p[len(base_dir) + 1:]
             top = rel.split('/')[0]
             to_delete.add(os.path.join(base_dir, top))
         else:
             to_delete.add(p)
+
+    # Always scan for the .aria2 control file by infohash — this catches
+    # [METADATA] entries and any orphaned control files not listed in 'files'.
+    if ih_hex:
+        kv = _load_kv(SECRETS_FILE)
+        scan_dirs = [d for k in ('MOVIES_DIR', 'SHOWS_DIR')
+                     if (d := kv.get(k, '')) and os.path.isdir(d)]
+        for base in scan_dirs:
+            for root, dirs, files in os.walk(base):
+                dirs[:] = [d for d in dirs if not d.startswith('.')]
+                for fname in files:
+                    if not fname.endswith('.aria2'):
+                        continue
+                    aria2_path = os.path.join(root, fname)
+                    try:
+                        with open(aria2_path, 'rb') as fh:
+                            raw = fh.read(30)
+                        if len(raw) >= 30:
+                            if binascii.hexlify(raw[10:30]).decode().lower() == ih_hex:
+                                to_delete.add(aria2_path)
+                                partial = aria2_path[:-6]
+                                if os.path.exists(partial):
+                                    to_delete.add(partial)
+                    except Exception:
+                        pass
     for target in to_delete:
         try:
             if os.path.isdir(target):
