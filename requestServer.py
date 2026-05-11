@@ -24,6 +24,10 @@ from typing import Dict, List, Optional
 
 from flask import Flask, jsonify, request, send_from_directory, abort, Response
 
+import logging
+logging.basicConfig(level=logging.INFO, format='%(levelname)s  %(message)s')
+log = logging.getLogger(__name__)
+
 # ── Paths ──────────────────────────────────────────────────────────────────────
 SCRIPT_DIR    = os.path.dirname(os.path.realpath(__file__))
 SCHEDULE_CSV  = os.path.join(SCRIPT_DIR, 'showSchedule.csv')
@@ -299,6 +303,76 @@ def _ensure_aria2_daemon() -> None:
         cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
     time.sleep(1.5)  # Wait for RPC socket to be ready
+    # Re-add any dangling .aria2 files left over from before session-save existed
+    try:
+        _resume_dangling_aria2_files()
+    except Exception as e:
+        log.warning(f'aria2c resume-dangling: {e}')
+
+def _resume_dangling_aria2_files() -> None:
+    """
+    Scan MOVIES_DIR and SHOWS_DIR for orphaned .aria2 control files.
+    Each one means a partial download was interrupted without being tracked
+    in the session file.  We reconstruct the magnet from the embedded infohash
+    and re-add it to the daemon — aria2c will find the companion .aria2 file
+    on disk and resume from where it left off.
+    """
+    import struct, binascii
+    locs = _load_kv(LOCATIONS_FILE)
+    scan_dirs = [
+        locs.get('MOVIES_DIR', '/Volumes/Jellyfin/Movies'),
+        locs.get('SHOWS_DIR',  '/Volumes/Jellyfin/Shows'),
+    ]
+    # Ask the daemon which GIDs it already knows about (to avoid duplicates)
+    known_names: set = set()
+    try:
+        active  = _aria2_rpc('aria2.tellActive',  [['files']]) or []
+        waiting = _aria2_rpc('aria2.tellWaiting', [0, 100, ['files']]) or []
+        for item in active + waiting:
+            for f in item.get('files', []):
+                p = f.get('path', '')
+                if p:
+                    known_names.add(os.path.basename(p))
+    except Exception:
+        pass
+
+    for base_dir in scan_dirs:
+        if not os.path.isdir(base_dir):
+            continue
+        for root, dirs, files in os.walk(base_dir):
+            # Skip hidden dirs
+            dirs[:] = [d for d in dirs if not d.startswith('.')]
+            for fname in files:
+                if not fname.endswith('.aria2'):
+                    continue
+                aria2_path = os.path.join(root, fname)
+                partial_name = fname[:-6]  # strip .aria2
+                if partial_name in known_names:
+                    continue  # already tracked
+                try:
+                    with open(aria2_path, 'rb') as fh:
+                        data = fh.read(64)
+                    if len(data) < 30:
+                        continue
+                    version = struct.unpack('>H', data[0:2])[0]
+                    if version != 1:
+                        continue  # unknown format
+                    # v1 layout: 2B version | 4B ? | 4B ? | 20B infohash @ offset 10
+                    infohash = binascii.hexlify(data[10:30]).decode()
+                    # Sanity: must be 40 hex chars of non-zero data
+                    if len(infohash) != 40 or infohash == '0' * 40:
+                        continue
+                    magnet = f'magnet:?xt=urn:btih:{infohash}'
+                    dest_dir = root
+                    options = {
+                        'dir': dest_dir,
+                        'out': partial_name,
+                        'continue': 'true',
+                    }
+                    _aria2_rpc('aria2.addUri', [[magnet], options])
+                    log.info(f'aria2c resume-dangling: re-added {partial_name} ({infohash[:8]}…)')
+                except Exception as e:
+                    log.warning(f'aria2c resume-dangling: skip {fname}: {e}')
 
 def _aria2_watchdog() -> None:
     """Background thread: keep aria2c daemon alive."""
@@ -645,6 +719,12 @@ def favicon():
 if __name__ == '__main__':
     # Start aria2c RPC daemon and watchdog
     _ensure_aria2_daemon()
+    # Always scan for dangling .aria2 files at startup, regardless of whether
+    # the daemon was already running (covers pre-session-save orphans too)
+    try:
+        _resume_dangling_aria2_files()
+    except Exception as e:
+        log.warning(f'startup resume-dangling: {e}')
     wd = threading.Thread(target=_aria2_watchdog, daemon=True)
     wd.start()
 
