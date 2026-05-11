@@ -862,7 +862,7 @@ async function pollDownloads() {
     body.querySelectorAll('.dl-card-row').forEach(el => el.remove());
 
     const torrents = downloads.filter(dl =>
-      dl.seeds !== undefined || dl.peers !== undefined || dl.status === 'active' || dl.status === 'waiting'
+      ['active', 'waiting', 'paused'].includes(dl.status)
     );
 
     const badge = document.getElementById('dl-badge');
@@ -932,10 +932,10 @@ async function pauseToggle(gid, status) {
 }
 
 async function removeDl(gid) {
-  if (!confirm('Remove this download?')) return;
+  if (!confirm('Cancel this download and delete the unfinished file?')) return;
   try {
     await api('POST', '/api/torrent/' + gid + '/remove');
-    toast('Removed \u2713');
+    toast('Cancelled ✓');
     pollDownloads();
   } catch(e) {}
 }

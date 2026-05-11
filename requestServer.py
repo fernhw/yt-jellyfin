@@ -161,11 +161,22 @@ def _aria2_active_downloads() -> List[Dict]:
     try:
         active  = _aria2_rpc('aria2.tellActive',  [_ARIA2_KEYS]) or []
         waiting = _aria2_rpc('aria2.tellWaiting', [0, 20, _ARIA2_KEYS]) or []
+        paused  = _aria2_rpc('aria2.tellWaiting', [0, 20, _ARIA2_KEYS]) or []
     except Exception:
         return []
 
-    out: List[Dict] = []
+    # tellWaiting returns both waiting and paused; tellActive returns active only.
+    # Combine and deduplicate by gid.
+    seen: set = set()
+    combined = []
     for item in active + waiting:
+        g = item.get('gid')
+        if g not in seen:
+            seen.add(g)
+            combined.append(item)
+
+    out: List[Dict] = []
+    for item in combined:
         total     = int(item.get('totalLength')     or 0)
         done      = int(item.get('completedLength') or 0)
         pct       = int(done * 100 / total) if total > 0 else 0
@@ -387,11 +398,33 @@ def torrent_state():
 def torrent_remove(gid: str):
     if not re.fullmatch(r'[0-9a-f]{1,16}', gid):
         abort(400)
+    # Collect file paths before removing so we can delete partial data
+    paths_to_delete: list = []
+    try:
+        info = _aria2_rpc('aria2.tellStatus', [gid, ['files', 'dir']]) or {}
+        for f in (info.get('files') or []):
+            p = (f.get('path') or '').strip()
+            if p and p != '[METADATA]':
+                paths_to_delete.append(p)
+    except Exception:
+        pass
+    # Force-remove from aria2
     try:
         _aria2_rpc('aria2.forceRemove', [gid])
     except Exception:
+        pass
+    try:
+        _aria2_rpc('aria2.removeDownloadResult', [gid])
+    except Exception:
+        pass
+    # Delete partial files from disk
+    for p in paths_to_delete:
         try:
-            _aria2_rpc('aria2.removeDownloadResult', [gid])
+            if os.path.isfile(p):
+                os.remove(p)
+            elif os.path.isdir(p):
+                import shutil as _shutil
+                _shutil.rmtree(p, ignore_errors=True)
         except Exception:
             pass
     return jsonify({'removed': gid})
