@@ -205,12 +205,65 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       </div>
     </div>
 
+    <!-- Help modal -->
+    <div id="mv-help-overlay" onclick="document.getElementById('mv-help-overlay').classList.add('hidden')"
+         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:999;align-items:center;justify-content:center;padding:20px">
+      <div onclick="event.stopPropagation()" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;max-width:460px;width:100%;padding:28px 24px;position:relative;max-height:85vh;overflow-y:auto">
+        <button onclick="document.getElementById('mv-help-overlay').classList.add('hidden')"
+                style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:1.4rem;color:var(--muted);cursor:pointer">&#x2715;</button>
+        <div style="font-size:1.3rem;margin-bottom:4px">&#127916; How to search for a movie</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.65">
+
+          <div style="margin-top:16px;font-weight:700;color:var(--white);font-size:.88rem">Just type the name normally</div>
+          <div style="margin-top:4px">Most of the time you only need the title. For example:<br>
+            <span style="color:var(--teal)">The Lion King</span> &nbsp;·&nbsp;
+            <span style="color:var(--teal)">Moana</span> &nbsp;·&nbsp;
+            <span style="color:var(--teal)">Finding Nemo</span>
+          </div>
+
+          <div style="margin-top:18px;font-weight:700;color:var(--white);font-size:.88rem">When there are sequels &mdash; include the number</div>
+          <div style="margin-top:4px">If there is more than one movie with a similar name, add the number so we grab the right one:<br>
+            <span style="color:var(--teal)">Jurassic Park 2</span> (not just "Jurassic Park")<br>
+            <span style="color:var(--teal)">Toy Story 3</span><br>
+            <span style="color:var(--teal)">How to Train Your Dragon 2</span>
+          </div>
+
+          <div style="margin-top:18px;font-weight:700;color:var(--white);font-size:.88rem">Old classics &mdash; add the year</div>
+          <div style="margin-top:4px">Some titles were used for more than one film over the decades. Adding the year makes sure you get the exact one:<br>
+            <span style="color:var(--teal)">Metropolis 2001</span> (the anime) vs. Metropolis 1927<br>
+            <span style="color:var(--teal)">Cinderella 1950</span> (Disney) vs. a newer version
+          </div>
+
+          <div style="margin-top:18px;font-weight:700;color:var(--white);font-size:.88rem">Didn&rsquo;t work? Tips to try</div>
+          <div style="margin-top:4px">
+            &bull; Check the spelling — even one wrong letter can trip it up<br>
+            &bull; Try a shorter version of a long title<br>
+            &bull; Add the year if it still picks the wrong film
+          </div>
+
+          <div style="margin-top:20px;padding:12px 14px;background:var(--bg3);border-radius:12px;font-size:.79rem;color:var(--muted)">
+            Tip: You can always come back and try again &mdash; requests don&rsquo;t disappear, they just keep searching &#128512;
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Step A: title -->
     <div id="mv-step-a">
-      <div class="field-label">MOVIE TITLE</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div class="field-label" style="margin-bottom:0">MOVIE TITLE</div>
+        <button onclick="var o=document.getElementById('mv-help-overlay');o.style.display='flex';o.classList.remove('hidden')"
+                title="Help"
+                style="background:var(--bg3);border:1px solid var(--border);border-radius:50%;width:20px;height:20px;font-size:.65rem;font-weight:800;color:var(--muted);cursor:pointer;padding:0;flex-shrink:0;line-height:1">?</button>
+      </div>
       <input id="movie-title" class="big-input" placeholder="e.g. Dune Part Two"
              onkeydown="if(event.key==='Enter')mvNext()"
-             style="font-size:1.15rem;padding:20px 18px;margin-bottom:14px"/>
+             style="font-size:1.15rem;padding:20px 18px;margin-bottom:6px"/>
+      <div style="font-size:.73rem;color:var(--muted);margin-bottom:12px;line-height:1.5">
+        Sequels &amp; old classics work better with a number or year &mdash;
+        <span style="color:var(--white)">Toy Story 3</span>,
+        <span style="color:var(--white)">Cinderella 1950</span>
+      </div>
       <details style="margin-bottom:12px">
         <summary style="font-size:.75rem;color:var(--muted);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px">
           <span style="font-size:.7rem">&#9660;</span> Quality (default: 1080p)
@@ -482,6 +535,9 @@ function toggleHamburger(e) {
 }
 document.addEventListener('click', () => {
   if (_hamOpen) { _hamOpen = false; document.getElementById('ham-menu').classList.add('hidden'); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('mv-help-overlay').style.display = 'none';
 });
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
