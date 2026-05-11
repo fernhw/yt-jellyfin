@@ -1402,6 +1402,8 @@ async function _mvFireDownload(title, type, quality, magnet, displayTitle) {
 
   const typeLabel = type === 'anime' ? 'Anime' : 'Live-action';
   if (foundGid) {
+    _dlNames[foundGid] = label;
+    _saveDlNames();
     document.getElementById('mv-ok-label').textContent =
       '\u201c' + label + '\u201d \u00b7 ' + typeLabel;
     mvShowStep('mv-step-d');
@@ -1425,6 +1427,15 @@ function mvRetry(type) {
 // ── Download strip ────────────────────────────────────────────────────────────
 let _pollTimer = null;
 let _stripOpen = false;
+
+// Persistent gid → friendly label map so we can show a real name while
+// aria2 is still fetching torrent metadata ([METADATA] state).
+const _dlNames = JSON.parse(localStorage.getItem('_dlNames') || '{}');
+function _saveDlNames() { localStorage.setItem('_dlNames', JSON.stringify(_dlNames)); }
+// Returns true when the name aria2 reports is a metadata/hash placeholder.
+function _isMetaName(n) {
+  return !n || /^\[METADATA\]/i.test(n) || /^[0-9a-f]{40}$/i.test(n);
+}
 
 function toggleStrip() {
   _stripOpen = !_stripOpen;
@@ -1454,8 +1465,13 @@ async function pollDownloads() {
       ['active', 'waiting', 'paused'].includes(dl.status)
     );
 
+    // Torrents we can actually display: real name, or metadata with a stored label
+    const visible = torrents.filter(dl =>
+      !_isMetaName(dl.name) || !!_dlNames[dl.gid]
+    );
+
     const badge = document.getElementById('dl-badge');
-    if (!torrents.length) {
+    if (!visible.length) {
       idle.classList.remove('hidden');
       dot.classList.remove('active');
       pctEl.textContent = '';
@@ -1464,46 +1480,64 @@ async function pollDownloads() {
     }
 
     idle.classList.add('hidden');
-    badge.textContent = torrents.length;
+    badge.textContent = visible.length;
     badge.style.display = 'inline-flex';
 
-    const fastest = torrents.slice().sort((a, b) => (b.speed_bytes||0) - (a.speed_bytes||0))[0];
+    const fastest = visible.slice().sort((a, b) => (b.speed_bytes||0) - (a.speed_bytes||0))[0];
     dot.classList.add('active');
     pctEl.textContent = (fastest.pct || 0) + '%';
 
     torrents.forEach(dl => {
-      const pct = Math.min(dl.pct || 0, 100);
-      const name = dl.name || '(unknown)';
-      const speed = dl.speed || '0 B/s';
-      const upload = dl.upload || '0 B/s';
-      const seeds = dl.seeds !== undefined ? dl.seeds : '?';
-      const peers = dl.peers !== undefined ? dl.peers : '?';
-      const size  = dl.size  || '';
-      const done  = dl.done  || '';
-      const status = dl.status || 'active';
       const gid    = dl.gid || '';
+      const isMeta = _isMetaName(dl.name);
+      const stored = _dlNames[gid];
+
+      // Unknown metadata torrent (not submitted via this UI) — hide entirely
+      if (isMeta && !stored) return;
+
+      // Torrent resolved — discard the stored placeholder
+      if (!isMeta && stored) { delete _dlNames[gid]; _saveDlNames(); }
+
+      const pct    = Math.min(dl.pct || 0, 100);
+      const name   = isMeta ? stored : (dl.name || '(unknown)');
+      const speed  = dl.speed  || '0 B/s';
+      const upload = dl.upload || '0 B/s';
+      const seeds  = dl.seeds !== undefined ? dl.seeds : '?';
+      const peers  = dl.peers !== undefined ? dl.peers : '?';
+      const size   = dl.size   || '';
+      const done   = dl.done   || '';
+      const status = dl.status || 'active';
 
       const card = document.createElement('div');
       card.className = 'dl-card-row';
       card.dataset.gid = gid;
-      const slowBadge = dl.slow
-        ? '<div style="font-size:.68rem;color:#fbbf24;margin-bottom:6px">⏳ Downloading slowly — not many people sharing this one</div>'
+      if (isMeta) card.style.opacity = '0.5';
+
+      const connectingBadge = isMeta
+        ? '<div style="font-size:.68rem;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:6px"><div class="spinner" style="width:10px;height:10px;border-width:2px"></div>Connecting\u2026</div>'
         : '';
+      const slowBadge = (!isMeta && dl.slow)
+        ? '<div style="font-size:.68rem;color:#fbbf24;margin-bottom:6px">\u23f3 Downloading slowly \u2014 not many people sharing this one</div>'
+        : '';
+
       card.innerHTML = [
         '<div class="dl-card-top">',
         '  <div class="dl-card-name" title="' + _esc(name) + '">' + _esc(name) + '</div>',
-        '  <div class="dl-card-pct">' + pct + '%</div>',
+        '  <div class="dl-card-pct">' + (isMeta ? '' : pct + '%') + '</div>',
         '</div>',
+        connectingBadge,
         slowBadge,
-        '<div class="dl-bar-outer"><div class="dl-bar-inner" style="width:' + Math.max(pct, 1) + '%"></div></div>',
-        '<div class="dl-stats">',
-        '  <div class="dl-stat"><span class="dl-stat-arrow">&#11015;</span><b>' + _esc(speed) + '</b></div>',
-        '  <div class="dl-stat"><span class="dl-stat-arrow">&#11014;</span><b>' + _esc(upload) + '</b></div>',
-        '  <div class="dl-stat">Seeds&nbsp;<b>' + seeds + '</b></div>',
-        '  <div class="dl-stat">Peers&nbsp;<b>' + peers + '</b></div>',
-        (done && size ? '<div class="dl-stat">' + _esc(done) + ' / ' + _esc(size) + '</div>' : ''),
-        '  <div class="dl-stat" style="color:var(--muted)">' + _esc(status) + '</div>',
-        '</div>',
+        isMeta ? '' : '<div class="dl-bar-outer"><div class="dl-bar-inner" style="width:' + Math.max(pct, 1) + '%"></div></div>',
+        isMeta ? '' : [
+          '<div class="dl-stats">',
+          '  <div class="dl-stat"><span class="dl-stat-arrow">&#11015;</span><b>' + _esc(speed) + '</b></div>',
+          '  <div class="dl-stat"><span class="dl-stat-arrow">&#11014;</span><b>' + _esc(upload) + '</b></div>',
+          '  <div class="dl-stat">Seeds&nbsp;<b>' + seeds + '</b></div>',
+          '  <div class="dl-stat">Peers&nbsp;<b>' + peers + '</b></div>',
+          (done && size ? '<div class="dl-stat">' + _esc(done) + ' / ' + _esc(size) + '</div>' : ''),
+          '  <div class="dl-stat" style="color:var(--muted)">' + _esc(status) + '</div>',
+          '</div>',
+        ].join(''),
         gid ? '<div class="dl-card-actions">' +
           '<button class="dl-act-btn" onclick="pauseToggle(\'' + gid + '\', \'' + status + '\')">' +
           (status === 'paused' ? '\u25b6 Resume' : '\u23f8 Pause') + '</button>' +
