@@ -684,6 +684,24 @@ def search_nyaa_movie(title: str) -> List[Dict]:
     return results
 
 
+def _required_numbers(query: str) -> List[str]:
+    """Return every standalone number in the user's query (sequel #, year, etc.)."""
+    return re.findall(r'\b\d+\b', query)
+
+
+def _title_satisfies_numbers(torrent_title: str, required: List[str]) -> bool:
+    """
+    All numbers the user typed must appear as standalone tokens in the
+    torrent title.  If the user typed no numbers, always True.
+    e.g. query 'jurassic park 2' needs '2' in title → rejects the 1993 film.
+    e.g. query 'metropolis 2001' needs '2001' in title → rejects the 1927 film.
+    """
+    if not required:
+        return True
+    found = set(re.findall(r'\b\d+\b', torrent_title))
+    return all(n in found for n in required)
+
+
 def _score_movie(title: str, seeds: int, is_anime: bool,
                  prefer_4k: bool = False) -> Optional[float]:
     """Score a movie torrent candidate. Returns None if below requirements."""
@@ -716,11 +734,17 @@ def download_movie(title: str, is_anime: bool,
     Fallback: YTS (both types) if primary yields nothing.
     """
     q = title.lower()
+    req_nums = _required_numbers(q)
+    if req_nums:
+        log.info(f"  Number filter: torrent title must contain {req_nums}")
     log.info(f"Searching movie: {q}")
 
     def _score_all(candidates: List[Dict]) -> List[Tuple[float, Dict]]:
         scored: List[Tuple[float, Dict]] = []
         for c in candidates:
+            if not _title_satisfies_numbers(c['title'], req_nums):
+                log.debug(f"  skip (number mismatch): {c['title']}")
+                continue
             s = _score_movie(c['title'], c['seeds'], is_anime, prefer_4k=prefer_4k)
             if s is not None:
                 scored.append((s, c))
