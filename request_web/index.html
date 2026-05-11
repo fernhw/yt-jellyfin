@@ -567,24 +567,27 @@ async function _doLibCheck(inputId, warnId) {
     const hits = data.matches || [];
     if (hits.length === 0) { warn.style.display = 'none'; return; }
     const msgEl = document.getElementById(warnId + '-msg');
-    if (hits.length === 1) {
-      // Single match — gentle note
-      const top = hits[0];
-      const tail = top.kind === 'show'
-        ? 'If this is a new season or a different show, go ahead \u2014 it won\u2019t overwrite anything.'
-        : 'If this is a sequel or a different film, go ahead \u2014 it won\u2019t overwrite anything.';
-      if (msgEl) msgEl.innerHTML = '\u201c' + _esc(top.name) + '\u201d is already in Jellyfin. ' + tail;
-    } else {
-      // Multiple hits — could be movie + show, different years, etc.
-      const list = hits.map(h =>
-        '<div style="margin:2px 0">' + (h.kind==='show'?'&#128250;':'&#127916;') + ' ' + _esc(h.name) + '</div>'
-      ).join('');
-      if (msgEl) msgEl.innerHTML =
-        '<b>We found ' + hits.length + ' titles with that name in Jellyfin.</b> '
-        + 'Add a year to make sure we grab the right one '
-        + '(e.g. <b>' + _esc(q.trim()) + ' 2009</b>):'
-        + '<div style="margin-top:7px;font-size:.74rem;line-height:1.7;opacity:.9">' + list + '</div>';
-    }
+
+    // Find which word(s) from the query triggered the match
+    const qWords = q.toLowerCase().split(/\s+/).filter(w => w.length >= 3 && !/^\d+$/.test(w));
+    const triggeredWord = qWords.find(w =>
+      hits.some(h => h.name.toLowerCase().includes(w))
+    ) || qWords[0] || q.split(' ')[0];
+
+    // Detect if user typed a standalone "1"
+    const hasOne = /\b1\b/.test(q);
+    const oneWarning = hasOne
+      ? ' <span style="color:#fbbf24">(Heads up: adding \u201c1\u201d may not help \u2014 most movies don\u2019t include it in the title!)</span>'
+      : '';
+
+    const kindLabel = hits[0].kind === 'show' ? 'show' : 'movie';
+    const sequelTip = hasOne ? '' :
+      ' If it\u2019s a sequel, spin-off, or remake, try adding a number or year \u2014 e.g. <b>' + _esc(triggeredWord) + ' 2</b> or <b>' + _esc(triggeredWord) + ' 2009</b>.';
+
+    if (msgEl) msgEl.innerHTML =
+      '\u201c<b>' + _esc(triggeredWord) + '</b>\u201d already has a ' + kindLabel + ' in Jellyfin.'
+      + sequelTip + oneWarning;
+
     warn.style.display = 'block';
   } catch(e) {}
 }
