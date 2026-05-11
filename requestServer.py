@@ -122,6 +122,7 @@ def _tail_log(n: int = 120) -> str:
 # exposes its live download list to the UI.
 
 _aria2_proc: Optional[subprocess.Popen] = None
+_aria2_last_ok: float = 0.0   # timestamp of last successful getVersion
 
 def _aria2_secret() -> str:
     return _load_kv(SECRETS_FILE).get('ARIA2_SECRET', 'aria2rpc2026')
@@ -243,27 +244,33 @@ def _aria2_active_downloads() -> List[Dict]:
 
 def _ensure_aria2_daemon() -> None:
     """Start aria2c RPC daemon if it isn't already responding."""
-    global _aria2_proc
+    global _aria2_proc, _aria2_last_ok
 
     # Already alive and responsive?
     try:
         _aria2_rpc('aria2.getVersion')
+        _aria2_last_ok = time.time()
         return
     except Exception as _e:
         log.warning(f'aria2c watchdog: getVersion failed: {_e!r}')
 
-    # Not responsive — but it may be starting up (loading session). Retry 3×.
-    for _retry in range(3):
-        time.sleep(5)
+    # Not responsive — but it may be temporarily busy (session save, high I/O).
+    # Retry up to 5× with 10s gaps (50s total) before considering it truly dead.
+    for _retry in range(5):
+        time.sleep(10)
         try:
             _aria2_rpc('aria2.getVersion')
+            _aria2_last_ok = time.time()
             log.info('aria2c watchdog: recovered after retry %d', _retry + 1)
             return
         except Exception:
             pass
 
-    # Still not responding after 15s — check if a stale process holds the port.
-    # Only kill if the process has been running for >30s (i.e. it's truly stuck).
+    # Still not responding after 50s. Only kill if last successful response
+    # was more than 90s ago (guards against a single long stall killing a healthy process).
+    if time.time() - _aria2_last_ok < 90:
+        log.warning('aria2c watchdog: RPC stalled but last OK was recent — skipping kill')
+        return
     try:
         ps = subprocess.run(
             ['lsof', '-nP', f'-iTCP:{ARIA2_RPC_PORT}', '-sTCP:LISTEN'],
@@ -409,7 +416,7 @@ def add_show():
     today = datetime.date.today().isoformat()
     row = {
         'show_name':      data['show_name'].strip(),
-        'search_name':    data['search_name'].strip().lower(),
+        'search_name':    re.sub(r'\s+', ' ', re.sub(r'[^\w\s]', '', data['search_name'])).strip().lower(),
         'folder':         data['folder'].strip(),
         'type':           data['type'].strip(),
         'season':         str(data['season']),
@@ -437,7 +444,7 @@ def show_download_direct():
     show_name = (data.get('show_name') or '').strip()
     if not show_name:
         return jsonify({'error': 'show_name required'}), 400
-    search_name = (data.get('search_name') or show_name).strip().lower()
+    search_name = re.sub(r'\s+', ' ', re.sub(r'[^\w\s]', '', (data.get('search_name') or show_name))).strip().lower()
     show_type   = (data.get('type') or 'live').strip()
     season      = int(data.get('season') or 1)
     total       = int(data.get('total_episodes') or 99)
@@ -728,7 +735,8 @@ def show_seasons():
 @_require_auth
 def movie_candidates():
     """Search for movie candidates synchronously and return scored list (no download)."""
-    title = (request.args.get('title') or '').strip()
+    title = re.sub(r'[^\w\s]', '', (request.args.get('title') or '').strip())
+    title = re.sub(r'\s+', ' ', title).strip()
     if not title:
         return jsonify({'error': 'title required'}), 400
     is_anime  = request.args.get('anime', '0') not in ('0', 'false', '')
@@ -758,7 +766,8 @@ def movie_candidates():
 @_require_auth
 def request_movie():
     data = request.get_json(force=True)
-    title = (data.get('title') or '').strip()
+    title = re.sub(r'[^\w\s]', '', (data.get('title') or '').strip())
+    title = re.sub(r'\s+', ' ', title).strip()
     if not title:
         return jsonify({'error': 'title required'}), 400
     is_anime = bool(data.get('anime'))

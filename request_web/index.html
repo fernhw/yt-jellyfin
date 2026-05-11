@@ -554,13 +554,29 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 
     <!-- Step 6: Confirm -->
     <div class="form-step" id="ss-6">
-      <div class="step-q">Ready?</div>
-      <div class="confirm-box" id="show-confirm-preview"></div>
-      <button class="big-btn btn-purple" id="add-btn" onclick="submitShow()">
-        <span class="spinner hidden" id="add-spin"></span><span id="add-btn-label">Add to Schedule</span>
-      </button>
-      <button class="big-btn btn-muted" onclick="resetAddForm()" style="margin-top:8px">Start over</button>
-      <div class="err" id="serr-6"></div>
+      <!-- Confirm view -->
+      <div id="ss-6-confirm">
+        <div class="step-q">Ready?</div>
+        <div class="confirm-box" id="show-confirm-preview"></div>
+        <div style="font-size:.73rem;color:var(--muted);margin:8px 0 4px;line-height:1.5">No guarantee the show is available or will download quickly &mdash; availability depends on what other people are sharing.</div>
+        <button class="big-btn btn-purple" id="add-btn" onclick="submitShow()">
+          <span class="spinner hidden" id="add-spin"></span><span id="add-btn-label">Add to Schedule</span>
+        </button>
+        <button class="big-btn btn-muted" onclick="resetAddForm()" style="margin-top:8px">Start over</button>
+        <div class="err" id="serr-6"></div>
+      </div>
+      <!-- Searching view (older shows only) -->
+      <div id="ss-6-searching" class="hidden" style="text-align:center;padding:32px 0">
+        <div class="spinner" style="width:36px;height:36px;margin:0 auto 20px;border-width:3.5px"></div>
+        <div style="font-size:1.05rem;font-weight:700;color:var(--white);margin-bottom:8px" id="ss-searching-label">Queuing&hellip;</div>
+        <div style="font-size:.82rem;color:var(--muted)" id="ss-searching-sub">Sending request to server&hellip;</div>
+      </div>
+      <!-- Success view (older shows only) -->
+      <div id="ss-6-done" class="hidden" style="text-align:center;padding:24px 0">
+        <div style="font-size:2.4rem;margin-bottom:12px">&#9989;</div>
+        <div style="font-size:1.15rem;font-weight:800;color:var(--teal);margin-bottom:6px">Downloading!</div>
+        <div style="font-size:.9rem;color:var(--muted)" id="ss-ok-label"></div>
+      </div>
     </div>
   </div>
 
@@ -591,7 +607,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
     <button id="dl-strip-toggle" onclick="event.stopPropagation();toggleStrip()">&#9660;</button>
   </div>
   <div id="dl-strip-body">
-    <div id="dl-strip-idle"><span class="dot-idle"></span>No active downloads</div>
+    <div id="dl-strip-idle" class="hidden"><span class="dot-idle"></span>No active downloads</div>
     <!-- .dl-card-row entries injected by JS -->
   </div>
 </div>
@@ -1122,12 +1138,25 @@ async function submitShow() {
   btn.disabled = true; spin.classList.remove('hidden');
 
   const title  = _pickedShow ? _pickedShow.title : _gv('f-show-name').trim();
-  const search = _pickedShow
-    ? title.toLowerCase().replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim()
-    : _gv('f-search-name').trim().toLowerCase();
+  const _stripSymbols = s => s.toLowerCase().replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim();
+  const search = _stripSymbols(_pickedShow ? title : _gv('f-search-name').trim());
 
   try {
     if (_showMode === 'older') {
+      // Snapshot existing GIDs before submitting
+      let knownGids = new Set();
+      try {
+        const snap = await api('GET', '/api/torrent-state');
+        const sj = await snap.json();
+        (sj.downloads || []).forEach(d => knownGids.add(d.gid));
+      } catch(_) {}
+
+      // Switch to searching view
+      document.getElementById('ss-6-confirm').classList.add('hidden');
+      document.getElementById('ss-6-searching').classList.remove('hidden');
+      document.getElementById('ss-searching-label').textContent = '\u201c' + title + '\u201d\u2026';
+      document.getElementById('ss-searching-sub').textContent = 'Sending request to server\u2026';
+
       const calls = _selectedSeasons.map(s => api('POST', '/api/show-download', {
         show_name:      title + (_selectedSeasons.length > 1 ? ' S' + String(s.n).padStart(2,'0') : ''),
         search_name:    search,
@@ -1136,9 +1165,42 @@ async function submitShow() {
         total_episodes: s.episodes || 99,
       }));
       await Promise.all(calls);
-      toast('Download started \u2193\u2193');
-      resetAddForm();
-      showTab('schedule');
+
+      // Poll torrent-state for a new GID (up to 45s)
+      document.getElementById('ss-searching-sub').textContent = 'Waiting for download to start\u2026';
+      const POLL_MS = 3000, TIMEOUT_MS = 45000;
+      const t0 = Date.now();
+      let foundGid = null;
+      while (Date.now() - t0 < TIMEOUT_MS) {
+        await new Promise(res => setTimeout(res, POLL_MS));
+        try {
+          const pr = await api('GET', '/api/torrent-state');
+          const pj = await pr.json();
+          const newItem = (pj.downloads || []).find(d => !knownGids.has(d.gid));
+          if (newItem) { foundGid = newItem.gid; break; }
+        } catch(_) {}
+        const elapsed = Math.round((Date.now() - t0) / 1000);
+        const sub = document.getElementById('ss-searching-sub');
+        if (sub) sub.textContent = 'Still waiting\u2026 (' + elapsed + 's)';
+      }
+
+      if (foundGid) {
+        _dlNamesSet(foundGid, title);
+        document.getElementById('ss-6-searching').classList.add('hidden');
+        document.getElementById('ss-6-done').classList.remove('hidden');
+        document.getElementById('ss-ok-label').textContent = title + ' \u00b7 episodes queued';
+        toast('Downloading \u2713');
+        setTimeout(() => { resetAddForm(); showTab('schedule'); }, 3000);
+      } else {
+        // Timed out but server accepted — it's running in background
+        document.getElementById('ss-6-searching').classList.add('hidden');
+        document.getElementById('ss-6-done').classList.remove('hidden');
+        document.getElementById('ss-ok-label').textContent = title + ' \u00b7 queued (searching for torrent)';
+        toast('Queued \u2193\u2193');
+        setTimeout(() => { resetAddForm(); showTab('schedule'); }, 3000);
+      }
+      btn.disabled = false; spin.classList.add('hidden');
+      return;
     } else {
       const s = _selectedSeasons[0] || {n: +_gv('f-season') || 1, episodes: +_gv('f-total-ep') || 99};
       const r = await api('POST', '/api/schedule', {
@@ -1181,6 +1243,13 @@ function resetAddForm() {
   ['serr-1','serr-2','serr-3s','serr-3m','serr-4','serr-5','serr-6'].forEach(id => {
     const el = document.getElementById(id); if (el) el.textContent = '';
   });
+  // Reset ss-6 inner views
+  const c = document.getElementById('ss-6-confirm');
+  const s = document.getElementById('ss-6-searching');
+  const d = document.getElementById('ss-6-done');
+  if (c) c.classList.remove('hidden');
+  if (s) s.classList.add('hidden');
+  if (d) d.classList.add('hidden');
   const rows = document.getElementById('season-builder-rows');
   if (rows) rows.innerHTML = '';
   const res = document.getElementById('ss-2-results');
@@ -1508,7 +1577,7 @@ async function pollDownloads() {
 
     const badge = document.getElementById('dl-badge');
     if (!visible.length) {
-      idle.classList.remove('hidden');
+      idle.classList.remove('hidden');  // safe to show now — we have a confirmed response
       dot.classList.remove('active');
       pctEl.textContent = '';
       badge.style.display = 'none';
