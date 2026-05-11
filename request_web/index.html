@@ -279,10 +279,13 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
         <b>Total episodes</b> — How many in this season. Not sure? Guess high — the app skips episodes that don't exist yet.
       </div>
       <input id="f-season" class="big-input" placeholder="Season number (e.g. 1)" type="number" min="1" style="margin-top:12px;margin-bottom:8px"/>
-      <div class="row2" style="margin-bottom:8px">
-        <input id="f-next-ep" class="big-input" placeholder="Start at ep (e.g. 1)" type="number" min="1"/>
-        <input id="f-total-ep" class="big-input" placeholder="Total eps (e.g. 24)" type="number" min="1"/>
+      <div id="ss-3-eps" style="margin-bottom:8px">
+        <div class="row2">
+          <input id="f-next-ep" class="big-input" placeholder="Start at ep (e.g. 1)" type="number" min="1"/>
+          <input id="f-total-ep" class="big-input" placeholder="Total eps (e.g. 24)" type="number" min="1"/>
+        </div>
       </div>
+      <div id="ss-3-older-note" class="hidden" style="font-size:.8rem;color:var(--muted);margin-bottom:8px">All episodes will be downloaded automatically (ep 1 &rarr; up to 99).</div>
       <button class="big-btn btn-purple" onclick="_goShowStepNext3()">Next &rarr;</button>
       <button class="big-btn btn-muted" onclick="_goShowStep(2)" style="margin-top:6px">&larr; Back</button>
       <div class="err" id="serr-3"></div>
@@ -498,6 +501,12 @@ function _goShowStep(n) {
   document.getElementById('ss-' + _showStep).classList.remove('active');
   _showStep = n;
   document.getElementById('ss-' + n).classList.add('active');
+  // For step 3, show/hide ep fields based on mode
+  if (n === 3) {
+    const isOlder = _showMode === 'older';
+    document.getElementById('ss-3-eps').classList.toggle('hidden', isOlder);
+    document.getElementById('ss-3-older-note').classList.toggle('hidden', !isOlder);
+  }
   // progress: older = steps 1,2,3,5,6  ongoing = 1,2,3,4,5,6
   const seq = _showMode === 'ongoing' ? [1,2,3,4,5,6] : [1,2,3,5,6];
   const pos = seq.indexOf(n);
@@ -515,8 +524,14 @@ function _goShowStepNext2() {
 
 function _goShowStepNext3() {
   if (!_gv('f-season'))   { document.getElementById('serr-3').textContent = 'Season number is required'; return; }
-  if (!_gv('f-next-ep'))  { document.getElementById('serr-3').textContent = 'Starting episode is required'; return; }
-  if (!_gv('f-total-ep')) { document.getElementById('serr-3').textContent = 'Total episodes is required'; return; }
+  if (_showMode === 'older') {
+    // Auto-fill ep values for older shows — download everything from ep 1
+    document.getElementById('f-next-ep').value  = '1';
+    document.getElementById('f-total-ep').value = '99';
+  } else {
+    if (!_gv('f-next-ep'))  { document.getElementById('serr-3').textContent = 'Starting episode is required'; return; }
+    if (!_gv('f-total-ep')) { document.getElementById('serr-3').textContent = 'Total episodes is required'; return; }
+  }
   _goShowStep(_showMode === 'ongoing' ? 4 : 5);
 }
 
@@ -545,7 +560,7 @@ function _buildShowPreview() {
     'Mode: <b>' + (_showMode === 'ongoing' ? '\uD83D\uDCE1 Ongoing \u2014 downloads each new episode automatically' : '\uD83D\uDCE6 Older / Finished \u2014 all episodes queued now') + '</b>',
     'Search term: <b>' + _esc(_gv('f-search-name')) + '</b>',
     'Type: <b>' + _showType + '</b>',
-    'Season <b>' + _gv('f-season') + '</b> \u00b7 Start ep <b>' + _gv('f-next-ep') + '</b> \u00b7 Total <b>' + _gv('f-total-ep') + '</b>',
+    'Season <b>' + _gv('f-season') + '</b>' + (_showMode === 'older' ? ' \u00b7 <b>All episodes</b> (ep 1 \u2192 up to 99, auto)' : ' \u00b7 Start ep <b>' + _gv('f-next-ep') + '</b> \u00b7 Total <b>' + _gv('f-total-ep') + '</b>'),
   ];
   if (_showMode === 'ongoing') lines.push('Airs on: <b>' + _releaseDay + '</b>');
   document.getElementById('show-confirm-preview').innerHTML = lines.join('<br>');
