@@ -259,7 +259,13 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       </div>
       <input id="movie-title" class="big-input" placeholder="e.g. Dune Part Two"
              onkeydown="if(event.key==='Enter')mvNext()"
+             oninput="libCheck('movie-title','lib-warn-movie')"
              style="font-size:1.15rem;padding:20px 18px;margin-bottom:6px"/>
+      <div id="lib-warn-movie" style="display:none;margin-bottom:6px;padding:10px 13px;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35);border-radius:12px;font-size:.79rem;line-height:1.5">
+        <span style="font-weight:700;color:var(--orange)">Already in Jellyfin?</span>
+        <span id="lib-warn-movie-text" style="color:var(--muted)"></span><br>
+        <span style="font-size:.73rem;color:var(--muted)">If you still want a better version, go ahead and continue.</span>
+      </div>
       <div style="font-size:.65rem;color:var(--muted);margin-bottom:4px;letter-spacing:.04em">
         Use the English title
       </div>
@@ -388,7 +394,12 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <div class="step-q">What's it called?</div>
       <label class="field-label" style="margin-top:14px" for="f-show-name">Show name</label>
       <input id="f-show-name" class="big-input" placeholder="e.g. Marshals" maxlength="80"
-             oninput="autoFillSearch()" onkeydown="if(event.key==='Enter')document.getElementById('f-search-name').focus()"/>
+             oninput="autoFillSearch();libCheck('f-show-name','lib-warn-show')" onkeydown="if(event.key==='Enter')document.getElementById('f-search-name').focus()"/>
+      <div id="lib-warn-show" style="display:none;margin-top:8px;padding:10px 13px;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35);border-radius:12px;font-size:.79rem;line-height:1.5">
+        <span style="font-weight:700;color:var(--orange)">Already in Jellyfin?</span>
+        <span id="lib-warn-show-text" style="color:var(--muted)"></span><br>
+        <span style="font-size:.73rem;color:var(--muted)">If you still want to track more episodes, go ahead and continue.</span>
+      </div>
       <div class="field-label" style="margin-top:14px">Search term <button class="tip-btn" onclick="tipToggle('tip-search')">?</button></div>
       <div class="tip-box hidden" id="tip-search">
         What we search for to find episodes. Filled in automatically from the show name — only change it if the wrong episodes are coming up.<br><br>
@@ -530,6 +541,29 @@ async function api(method, path, body) {
   const r = await fetch(path, opts);
   if (r.status === 401) { location.href = '/'; throw new Error('401'); }
   return r;
+}
+
+// ── Library duplicate check ───────────────────────────────────────────────────
+const _libCheckTimers = {};
+function libCheck(inputId, warnId) {
+  clearTimeout(_libCheckTimers[inputId]);
+  const q = document.getElementById(inputId).value.trim();
+  const warn = document.getElementById(warnId);
+  if (q.length < 3) { warn.style.display = 'none'; return; }
+  _libCheckTimers[inputId] = setTimeout(async () => {
+    try {
+      const r = await fetch('/api/library-check?q=' + encodeURIComponent(q),
+        {headers: {'X-Auth-Token': TOKEN}});
+      if (!r.ok) return;
+      const data = await r.json();
+      const hits = data.matches || [];
+      if (hits.length === 0) { warn.style.display = 'none'; return; }
+      const names = hits.slice(0, 3).map(h => '\u201c' + h.name + '\u201d').join(', ');
+      const textEl = document.getElementById(warnId + '-text');
+      if (textEl) textEl.textContent = ' ' + names + ' is already there.';
+      warn.style.display = 'block';
+    } catch(e) {}
+  }, 600);
 }
 
 // ── Hamburger ────────────────────────────────────────────────────────────────
@@ -799,6 +833,7 @@ function mvBack() {
 
 function mvReset() {
   document.getElementById('movie-title').value = '';
+  document.getElementById('lib-warn-movie').style.display = 'none';
   const r = document.getElementById('mv-retry-title');
   if (r) r.value = '';
   mvBack();

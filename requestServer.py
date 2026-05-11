@@ -365,6 +365,36 @@ def backlog_show(idx: int):
     return jsonify({'backlog': show_name, 'from_ep': 1, 'total': total}), 202
 
 
+@app.route('/api/library-check')
+@_require_auth
+def library_check():
+    """Fuzzy-match a title against existing Movies + Shows folder names."""
+    q = (request.args.get('q') or '').strip().lower()
+    if not q or len(q) < 2:
+        return jsonify({'matches': []})
+    locs = _load_kv(LOCATIONS_FILE)
+    dirs = [
+        ('movie', locs.get('MOVIES_DIR', '/Volumes/Jellyfin/Movies')),
+        ('show',  locs.get('SHOWS_DIR',  '/Volumes/Jellyfin/Shows')),
+    ]
+    q_tokens = {t for t in re.sub(r'\b\d{4}\b', '', q).split() if len(t) >= 2}
+    matches = []
+    for kind, d in dirs:
+        try:
+            entries = os.listdir(d)
+        except OSError:
+            continue
+        for name in entries:
+            if name.startswith('.'):
+                continue
+            nl = re.sub(r'\s*\(\d{4}\)', '', name.lower())
+            token_hits = sum(1 for t in q_tokens if t in nl) if q_tokens else 0
+            if q in nl or (q_tokens and token_hits >= max(1, len(q_tokens) - 1)):
+                matches.append({'name': name, 'kind': kind})
+    matches.sort(key=lambda m: (0 if q in m['name'].lower() else 1, m['name']))
+    return jsonify({'matches': matches[:5]})
+
+
 @app.route('/api/movie', methods=['POST'])
 @_require_auth
 def request_movie():
