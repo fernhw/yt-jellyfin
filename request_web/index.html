@@ -1320,13 +1320,19 @@ function _buildPicker(candidates, type, title, quality) {
       const slowBadge = c.slow
         ? ' <span style="font-size:.62rem;color:#fbbf24;margin-left:4px">\u23f3 slow</span>'
         : '';
+      const camBadge = c.cam
+        ? ' <span style="font-size:.62rem;color:#f87171;margin-left:4px">\uD83C\uDFA5 CAM \u2014 bad quality</span>'
+        : '';
       const btn = document.createElement('button');
       btn.className = 'big-btn btn-teal';
       btn.style.cssText = 'text-align:left;padding:13px 15px;font-size:.82rem;font-weight:600;line-height:1.4;margin:0';
       btn.innerHTML =
-        '<div>' + _esc(c.title) + slowBadge + '</div>'
+        '<div>' + _esc(c.title) + slowBadge + camBadge + '</div>'
         + '<div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-top:3px">\uD83C\uDF31 ' + c.seeds + ' seeds</div>';
-      btn.onclick = () => mvPickCandidate(c.magnet, c.title, type, title, quality);
+      btn.onclick = () => {
+        if (c.cam && !confirm('This is a CAM \u2014 someone literally pointed a camera at a cinema screen. The picture will be shaky and dark, and you might hear people coughing. Only pick this if nothing better is available. Download anyway?')) return;
+        mvPickCandidate(c.magnet, c.title, type, title, quality);
+      };
       list.appendChild(btn);
     });
   });

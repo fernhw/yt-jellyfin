@@ -822,14 +822,18 @@ def list_movie_candidates(title: str, is_anime: bool,
                 continue
             s = _score_movie(c['title'], c['seeds'], is_anime, prefer_4k=prefer_4k, min_seeds=min_seeds)
             if s is not None:
+                t_lower = c['title'].lower()
+                is_cam = bool(re.search(r'\b(cam|camrip|cam-rip|hdcam|hd-cam|ts|telesync|tele-sync|hdts|pdvd|predvd)\b', t_lower))
                 out.append({
                     'title':  c['title'],
                     'seeds':  c['seeds'],
                     'score':  round(s, 1),
                     'magnet': c.get('magnet', ''),
                     'slow':   False,
+                    'cam':    is_cam,
                 })
-        out.sort(key=lambda x: x['score'], reverse=True)
+        # Sort: non-CAM first (by score), CAM results last (by score)
+        out.sort(key=lambda x: (x['cam'], -x['score']))
         return out
 
     if is_anime:
@@ -845,6 +849,11 @@ def list_movie_candidates(title: str, is_anime: bool,
         results = _score_all(all_c, min_seeds=MOVIE_SLOW_SEEDS)
         for r in results:
             r['slow'] = True
+
+    # Remove CAM results if any non-CAM results exist
+    non_cam = [r for r in results if not r['cam']]
+    if non_cam:
+        results = non_cam
 
     # deduplicate by magnet
     seen: set = set()
