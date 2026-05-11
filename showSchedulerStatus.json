@@ -65,6 +65,19 @@
       "days_until": 1,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-hat-witch-atelier.jpg"
+    },
+    {
+      "show": "marshals",
+      "season": 1,
+      "downloaded": 0,
+      "next_ep": 1,
+      "total": 8,
+      "week": "?",
+      "status": "pending",
+      "release_days": "tue",
+      "days_until": 2,
+      "is_complete": false,
+      "thumb": ""
     }
   ]
 }
