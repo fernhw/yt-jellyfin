@@ -133,11 +133,26 @@ def _aria2_rpc(method: str, params: Optional[List] = None) -> object:
         f'http://127.0.0.1:{ARIA2_RPC_PORT}/jsonrpc',
         data=body, headers={'Content-Type': 'application/json'},
     )
-    with _ureq.urlopen(req, timeout=4) as r:
-        resp = json.load(r)
-    if 'error' in resp:
-        raise RuntimeError(resp['error'].get('message', 'aria2 error'))
-    return resp.get('result')
+    # Run in a thread so a stuck TCP connect can't block forever
+    result = [None]
+    error  = [None]
+    def _call():
+        try:
+            with _ureq.urlopen(req, timeout=4) as r:
+                resp = json.load(r)
+            if 'error' in resp:
+                raise RuntimeError(resp['error'].get('message', 'aria2 error'))
+            result[0] = resp.get('result')
+        except Exception as e:
+            error[0] = e
+    t = threading.Thread(target=_call, daemon=True)
+    t.start()
+    t.join(timeout=6)
+    if t.is_alive():
+        raise RuntimeError('aria2 RPC timeout')
+    if error[0]:
+        raise error[0]
+    return result[0]
 
 def _fmt_speed(bps: int) -> str:
     if bps >= 1_048_576: return f'{bps/1_048_576:.1f} MB/s'
@@ -210,8 +225,32 @@ def _aria2_active_downloads() -> List[Dict]:
     return out
 
 def _ensure_aria2_daemon() -> None:
-    """Start aria2c RPC daemon if it isn't already responding."""
+    """Start aria2c RPC daemon if it isn't already responding.
+    Also kills any existing aria2c RPC processes that are stuck in UN state."""
     global _aria2_proc
+
+    # Kill any aria2c RPC daemon processes stuck in UN (uninterruptible sleep)
+    try:
+        ps = subprocess.run(
+            ['ps', '-axo', 'pid,stat,command'],
+            capture_output=True, text=True, timeout=5,
+        )
+        for line in ps.stdout.splitlines():
+            parts = line.split(None, 2)
+            if len(parts) < 3:
+                continue
+            pid_s, stat, cmd = parts
+            # UN = uninterruptible + stopped; U alone also matches UN
+            if 'U' in stat and 'aria2c' in cmd and 'rpc-listen-port' in cmd:
+                try:
+                    os.kill(int(pid_s), 9)
+                    log.warning(f'aria2c watchdog: killed stuck UN process {pid_s}')
+                    time.sleep(0.5)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
     # Already alive and responsive?
     try:
         _aria2_rpc('aria2.getVersion')
