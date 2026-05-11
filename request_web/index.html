@@ -1191,22 +1191,24 @@ function movieSuggestInput() {
       const data = await r.json();
       const items = (data.results || []).slice(0, 8);
       if (!items.length) { list.style.display = 'none'; return; }
-      list.innerHTML = items.map(m => {
-        const args = `${JSON.stringify(m.title)},${m.year||0}`;
-        return `<div class="mv-suggest-item" onmousedown="mvSuggestPick(${args})" ontouchstart="mvSuggestPick(${args});event.preventDefault()">` +
-        _esc(m.title) +
-        (m.year ? `<span class="mv-suggest-year">${m.year}</span>` : '') +
-        `</div>`;
-      })
+      window._mvSuggestItems = items;
+      list.innerHTML = items.map((m, i) =>
+        `<div class='mv-suggest-item' onmousedown='event.preventDefault();mvSuggestPick(${i})' ontouchstart='event.preventDefault();mvSuggestPick(${i})'>` +
+          _esc(m.title) +
+          (m.year ? `<span class='mv-suggest-year'>${m.year}</span>` : '') +
+          `</div>`
       ).join('');
     } catch(e) { list.style.display = 'none'; }
   }, 400);
 }
 
-function mvSuggestPick(title, year) {
-  document.getElementById('movie-title').value = title;
+function mvSuggestPick(idx) {
+  const m = (window._mvSuggestItems || [])[idx];
+  if (!m) return;
+  document.getElementById('movie-title').value = m.title;
   const list = document.getElementById('movie-suggest-list');
   list.style.display = 'none'; list.innerHTML = '';
+  window._mvSuggestItems = [];
   document.getElementById('movie-title').focus();
 }
 
