@@ -191,17 +191,13 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
   <!-- MOVIES TAB (default) -->
   <div class="tab-pane active" id="tab-movie">
     <div style="margin-bottom:24px">
-      <div class="section-label">One-time download</div>
-      <div style="font-size:2rem;font-weight:900;line-height:1.15;letter-spacing:-.02em;margin-bottom:10px">
-        <span style="color:var(--orange)">In one click</span><br>
-        <span style="font-size:1.35rem;font-weight:700;color:var(--white)">download any movie</span><br>
-        <span style="font-size:1rem;font-weight:400;color:var(--muted)">you can think of &mdash; straight to</span>
-        <span style="font-size:1rem;font-weight:700;color:var(--white)"> Agnos Jellyfin</span>
+      <div class="section-label">Movies</div>
+      <div style="font-size:1.9rem;font-weight:900;line-height:1.15;letter-spacing:-.02em;margin-bottom:8px">
+        <span style="color:var(--orange)">Auto Movie</span><br>
+        <span style="color:var(--white)">Downloader</span>
       </div>
-      <div style="font-size:.92rem;color:var(--muted);line-height:1.6">
-        Write in the <strong style="color:var(--white)">English name</strong> of the movie
-        and wait a few minutes.<br>
-        <span style="font-size:.8rem">A download bar will appear at the bottom of the screen.</span>
+      <div style="font-size:.88rem;color:var(--muted);line-height:1.5">
+        Type a title &mdash; it finds and downloads it straight to Jellyfin for you.
       </div>
     </div>
 
@@ -263,6 +259,9 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <input id="movie-title" class="big-input" placeholder="e.g. Dune Part Two"
              onkeydown="if(event.key==='Enter')mvNext()"
              style="font-size:1.15rem;padding:20px 18px;margin-bottom:6px"/>
+      <div style="font-size:.65rem;color:var(--muted);margin-bottom:4px;letter-spacing:.04em">
+        Use the English title
+      </div>
       <div style="font-size:.73rem;color:var(--muted);margin-bottom:12px;line-height:1.5">
         Sequels &amp; old classics work better with a number or year &mdash;
         <span style="color:var(--white)">Toy Story 3</span>,
@@ -318,8 +317,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
     <div id="mv-step-d" class="hidden" style="text-align:center;padding:24px 0">
       <div style="font-size:2.4rem;margin-bottom:12px">&#9989;</div>
       <div style="font-size:1.15rem;font-weight:800;color:var(--teal);margin-bottom:6px">Downloading!</div>
-      <div style="font-size:.9rem;color:var(--muted);margin-bottom:4px" id="mv-ok-label"></div>
-      <div style="font-size:.8rem;color:var(--muted)">You can see progress in the bar at the bottom of the screen.</div>
+      <div style="font-size:.9rem;color:var(--muted)" id="mv-ok-label"></div>
     </div>
 
     <!-- Step E: not found — tips + retry -->
