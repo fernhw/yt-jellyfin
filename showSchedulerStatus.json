@@ -65,19 +65,6 @@
       "days_until": 1,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-hat-witch-atelier.jpg"
-    },
-    {
-      "show": "knight of seven kingdoms",
-      "season": 1,
-      "downloaded": 6,
-      "next_ep": 7,
-      "total": 9,
-      "week": "?",
-      "status": "pending",
-      "release_days": "mon",
-      "days_until": 1,
-      "is_complete": false,
-      "thumb": "media-thumbs/show-sched-knightofthesevenkingdoms.jpg"
     }
   ]
 }
