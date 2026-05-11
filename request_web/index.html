@@ -130,6 +130,23 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 #toast{position:fixed;bottom:calc(var(--strip-h) + 12px);left:50%;transform:translateX(-50%) translateY(14px);background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:9px 18px;font-size:.86rem;font-weight:600;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;z-index:9999}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* ── Hamburger menu ── */
+#hamburger-btn{background:none;border:1px solid var(--border);color:var(--white);padding:6px 11px;border-radius:8px;font-size:.92rem;cursor:pointer;flex-shrink:0;margin-left:4px}
+#ham-menu{position:fixed;top:var(--nav-h);right:8px;z-index:500;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:6px;min-width:190px;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.ham-item{display:block;width:100%;text-align:left;padding:12px 14px;border-radius:9px;border:none;background:none;color:var(--white);font-size:.9rem;font-weight:600;cursor:pointer;transition:background .15s}
+.ham-item:active,.ham-item:hover{background:rgba(255,255,255,.07)}
+
+/* ── Show mode choice ── */
+.show-mode-btn{width:100%;padding:18px 16px;border-radius:16px;border:1.5px solid var(--border);background:var(--bg3);cursor:pointer;text-align:left;transition:border-color .2s,background .2s;margin-bottom:10px;display:flex;flex-direction:column;gap:5px}
+.show-mode-btn:active{border-color:var(--purple);background:rgba(167,139,250,.08)}
+.smb-icon{font-size:1.5rem}
+.smb-title{font-size:1rem;font-weight:700;color:var(--white)}
+.smb-sub{font-size:.8rem;color:var(--muted);line-height:1.4}
+
+/* ── Inline help tooltips ── */
+.tip-btn{background:none;border:1.5px solid var(--muted);color:var(--muted);width:20px;height:20px;border-radius:50%;font-size:.68rem;font-weight:800;cursor:pointer;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-left:6px;line-height:1}
+.tip-box{background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:11px 13px;font-size:.8rem;color:var(--muted);line-height:1.55;margin-top:7px}
+
 @media(max-width:440px){
   .section-title{font-size:1.5rem}
   .days-grid{grid-template-columns:repeat(4,1fr)}
@@ -144,25 +161,28 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 <nav id="topbar">
   <div class="topbar-brand"><span class="t">re</span><span class="o">q</span></div>
   <div class="nav-tabs">
-    <button class="nav-tab" onclick="showTab('movie')" id="ntab-movie">Movie</button>
-    <button class="nav-tab" onclick="showTab('shows')" id="ntab-shows">Shows</button>
-    <button class="nav-tab" onclick="showTab('add')"   id="ntab-add">+ Add Show</button>
-    <button class="nav-tab" onclick="showTab('current')" id="ntab-current">Current</button>
+    <button class="nav-tab" onclick="showTab('movie')" id="ntab-movie">🎬 Movies</button>
+    <button class="nav-tab" onclick="showTab('shows')" id="ntab-shows">📺 Add Show</button>
   </div>
   <div id="dl-nav-badge">
     <div id="dl-dot"></div>
     <span id="dl-nav-pct"></span>
   </div>
+  <button id="hamburger-btn" onclick="toggleHamburger(event)">☰</button>
 </nav>
+<div id="ham-menu" class="hidden">
+  <button class="ham-item" onclick="showTab('schedule');toggleHamburger()">📋 Current Shows</button>
+  <button class="ham-item" onclick="showTab('current');toggleHamburger()">📄 Logs</button>
+</div>
 
 <!-- ── Tab panes ─────────────────────────────────────────── -->
 <div id="content">
 
-  <!-- MOVIE TAB (default) -->
+  <!-- MOVIES TAB (default) -->
   <div class="tab-pane active" id="tab-movie">
     <div class="section-label">One-time download</div>
-    <div class="section-title" style="color:var(--orange)">Movie</div>
-    <div class="section-sub">Search TPB, Nyaa (anime) and YTS. Downloads straight to Jellyfin Movies.</div>
+    <div class="section-title" style="color:var(--orange)">Movies</div>
+    <div class="section-sub">Search TPB, Nyaa (anime) and YTS. Downloads straight to Jellyfin.</div>
 
     <div class="step-label" style="margin-bottom:6px">Content type</div>
     <div class="movie-type-row">
@@ -170,113 +190,97 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <button class="movie-type-btn" id="mbtn-anime" onclick="selMovieType('anime')">&#127885; Anime</button>
     </div>
 
-    <div class="step-label" style="margin-bottom:6px">Quality preference</div>
-    <div class="qual-row">
+    <div class="step-label" style="margin-bottom:6px">
+      Quality <button class="tip-btn" onclick="tipToggle('tip-quality')">?</button>
+    </div>
+    <div class="tip-box hidden" id="tip-quality">
+      <b>1080p</b> is HD — works great on any TV and downloads faster.<br>
+      <b>4K</b> is ultra-high quality, much larger files. Only needed for a 4K screen.
+    </div>
+    <div class="qual-row" style="margin-top:8px">
       <button class="qual-btn selected" id="qbtn-1080" onclick="selQuality('1080')">1080p</button>
       <button class="qual-btn" id="qbtn-4k" onclick="selQuality('4k')">&#10024; 4K / 2160p</button>
     </div>
-    <p style="font-size:.76rem;color:var(--muted);margin-bottom:14px">
-      4K mode searches for <code style="color:var(--orange)">2160p</code> / <code style="color:var(--orange)">4k</code> markers first.
-      Falls back to 1080p if nothing found.
-    </p>
 
-    <div class="step-label" style="margin-bottom:6px">Title</div>
-    <input id="movie-title" class="big-input" placeholder="e.g. dune part two" onkeydown="if(event.key==='Enter')submitMovie()"/>
+    <div class="step-label" style="margin-bottom:6px;margin-top:14px">Movie title</div>
+    <input id="movie-title" class="big-input" placeholder="e.g. Dune Part Two" onkeydown="if(event.key==='Enter')submitMovie()"/>
     <button class="big-btn btn-orange" id="movie-btn" onclick="submitMovie()" style="margin-top:12px">
       <span class="spinner hidden" id="movie-spin"></span>Queue Download
     </button>
+    <p style="font-size:.76rem;color:var(--muted);margin-top:8px">The download will appear in the strip at the bottom of the screen.</p>
     <div class="err" id="movie-err"></div>
     <div id="movie-ok" class="success-msg hidden"></div>
   </div>
 
-  <!-- SHOWS TAB -->
+  <!-- ADD SHOW TAB (simplified 5-step wizard) -->
   <div class="tab-pane" id="tab-shows">
-    <div class="section-label">Tracking</div>
-    <div class="section-title" style="color:var(--blue)">Shows</div>
-    <div class="section-sub">The scheduler checks for new episodes on their release day and downloads the best available version automatically.</div>
-    <div id="schedule-list" class="show-list"><div class="empty-state">Loading&hellip;</div></div>
-    <button class="big-btn btn-blue" style="margin-top:18px" onclick="showTab('add')">+ Track a New Show</button>
-  </div>
-
-  <!-- ADD SHOW TAB -->
-  <div class="tab-pane" id="tab-add">
     <div class="section-label">Schedule</div>
-    <div class="section-title" style="color:var(--purple)">Track a Show</div>
+    <div class="section-title" style="color:var(--purple)">Add Show</div>
     <div class="progress-bar"><div class="progress-fill" id="add-prog" style="width:0%"></div></div>
 
-    <!-- Step 1: Show name -->
-    <div class="form-step active" id="step-1">
-      <div class="step-label">Step 1 of 8 &mdash; Display name</div>
-      <div class="step-q">What's the show called?</div>
-      <div class="step-hint">This is the name shown in the app &mdash; e.g. <em>Re Zero</em>, <em>The Boys</em></div>
-      <input id="f-show-name" class="big-input" placeholder="Show name" maxlength="80" onkeydown="stepEnter(event,2)"/>
-      <button class="big-btn btn-purple" onclick="goStep(2)">Next &rarr;</button>
-      <div class="err" id="err-1"></div>
+    <!-- Step 1: Older or Ongoing -->
+    <div class="form-step active" id="ss-1">
+      <div class="step-q">What kind of show is this?</div>
+      <div class="step-hint" style="margin-bottom:16px">Pick the option that fits.</div>
+      <button class="show-mode-btn" onclick="selShowMode('older')">
+        <div class="smb-icon">&#128230;</div>
+        <div class="smb-title">Older Season / Finished Show</div>
+        <div class="smb-sub">The season is already out. Download all episodes right now, all at once.</div>
+      </button>
+      <button class="show-mode-btn" onclick="selShowMode('ongoing')">
+        <div class="smb-icon">&#128225;</div>
+        <div class="smb-title">Ongoing Show</div>
+        <div class="smb-sub">Still airing week by week. The app automatically downloads each new episode on its release day.</div>
+      </button>
+      <div class="err" id="serr-1"></div>
     </div>
 
-    <!-- Step 2: Search term -->
-    <div class="form-step" id="step-2">
-      <div class="step-label">Step 2 of 8 &mdash; Torrent search term</div>
-      <div class="step-q">How should we search for it?</div>
-      <div class="step-hint">
-        Lowercase, no punctuation. Use the plain English name the torrent sites use.<br>
-        &rarr; <em>re zero</em> (not <em>Re:Zero</em>), <em>the boys</em>
+    <!-- Step 2: Show name -->
+    <div class="form-step" id="ss-2">
+      <div class="step-q">What's it called?</div>
+      <div class="step-label" style="margin-top:16px;margin-bottom:4px">Show name</div>
+      <input id="f-show-name" class="big-input" placeholder="e.g. Marshals" maxlength="80"
+             oninput="autoFillSearch()" onkeydown="if(event.key==='Enter')document.getElementById('f-search-name').focus()"/>
+      <div class="step-label" style="margin-top:12px;margin-bottom:4px">
+        Search term <button class="tip-btn" onclick="tipToggle('tip-search')">?</button>
       </div>
-      <input id="f-search-name" class="big-input" placeholder="search name" maxlength="80" onkeydown="stepEnter(event,3)"/>
-      <button class="big-btn btn-purple" onclick="goStep(3)">Next &rarr;</button>
-      <button class="big-btn btn-muted" onclick="goStep(1)" style="margin-top:6px">&larr; Back</button>
-      <div class="err" id="err-2"></div>
-    </div>
-
-    <!-- Step 3: Jellyfin folder -->
-    <div class="form-step" id="step-3">
-      <div class="step-label">Step 3 of 8 &mdash; Jellyfin folder</div>
-      <div class="step-q">Which folder in Jellyfin Shows?</div>
-      <div class="step-hint">Exact folder name inside your Shows library &mdash; e.g. <em>Re Zero</em>.<br>Must already exist (or be created) in Jellyfin.</div>
-      <input id="f-folder" class="big-input" placeholder="Folder name" maxlength="120" onkeydown="stepEnter(event,4)"/>
-      <button class="big-btn btn-purple" onclick="goStep(4)">Next &rarr;</button>
-      <button class="big-btn btn-muted" onclick="goStep(2)" style="margin-top:6px">&larr; Back</button>
-      <div class="err" id="err-3"></div>
-    </div>
-
-    <!-- Step 4: Type -->
-    <div class="form-step" id="step-4">
-      <div class="step-label">Step 4 of 8 &mdash; Content type</div>
-      <div class="step-q">Anime or live-action?</div>
-      <div class="step-hint">Anime searches Nyaa.si first. Live-action searches The Pirate Bay and RARBG.</div>
-      <div class="type-grid">
-        <button class="type-btn" onclick="selType('anime',this)">&#127885; Anime</button>
-        <button class="type-btn" onclick="selType('live',this)">&#127916; Live-action</button>
+      <div class="tip-box hidden" id="tip-search">
+        What we type into torrent sites to find episodes. Filled in automatically from the show name — only change it if searches aren't finding the right show.<br><br>
+        Example: <b>Re:Zero</b> → search term <b>re zero</b>
       </div>
-      <button class="big-btn btn-muted" onclick="goStep(3)">&larr; Back</button>
-      <div class="err" id="err-4"></div>
+      <input id="f-search-name" class="big-input" placeholder="e.g. marshals" maxlength="80" style="margin-top:6px"
+             oninput="markSearchEdited()" onkeydown="if(event.key==='Enter')_goShowStepNext2()"/>
+      <button class="big-btn btn-purple" style="margin-top:14px" onclick="_goShowStepNext2()">Next &rarr;</button>
+      <button class="big-btn btn-muted" onclick="_goShowStep(1)" style="margin-top:6px">&larr; Back</button>
+      <div class="err" id="serr-2"></div>
     </div>
 
-    <!-- Step 5: Season + episodes -->
-    <div class="form-step" id="step-5">
-      <div class="step-label">Step 5 of 8 &mdash; Season &amp; episodes</div>
-      <div class="step-q">Which season, and how many episodes?</div>
-      <div class="step-hint">
-        <strong>Next episode</strong> = the first episode to download (usually 1 for a new season).<br>
-        <strong>Total episodes</strong> = how many episodes in the season.
-        Not sure? Add more &mdash; the system handles extras gracefully.
+    <!-- Step 3: Season & episodes -->
+    <div class="form-step" id="ss-3">
+      <div class="step-q">
+        Season &amp; episodes
+        <button class="tip-btn" onclick="tipToggle('tip-eps')">?</button>
       </div>
-      <input id="f-season" class="big-input" placeholder="Season number (e.g. 1)" type="number" min="1" style="margin-bottom:8px"/>
+      <div class="tip-box hidden" id="tip-eps">
+        <b>Season</b> — 1 for first season, 2 for second, etc.<br>
+        <b>Starting episode</b> — Which episode to download first. Usually 1.<br>
+        <b>Total episodes</b> — How many in this season. Not sure? Guess high — the app skips episodes that don't exist yet.
+      </div>
+      <input id="f-season" class="big-input" placeholder="Season number (e.g. 1)" type="number" min="1" style="margin-top:12px;margin-bottom:8px"/>
       <div class="row2" style="margin-bottom:8px">
-        <input id="f-next-ep" class="big-input" placeholder="Next ep (e.g. 1)" type="number" min="1"/>
+        <input id="f-next-ep" class="big-input" placeholder="Start at ep (e.g. 1)" type="number" min="1"/>
         <input id="f-total-ep" class="big-input" placeholder="Total eps (e.g. 24)" type="number" min="1"/>
       </div>
-      <button class="big-btn btn-purple" onclick="goStep(6)">Next &rarr;</button>
-      <button class="big-btn btn-muted" onclick="goStep(4)" style="margin-top:6px">&larr; Back</button>
-      <div class="err" id="err-5"></div>
+      <button class="big-btn btn-purple" onclick="_goShowStepNext3()">Next &rarr;</button>
+      <button class="big-btn btn-muted" onclick="_goShowStep(2)" style="margin-top:6px">&larr; Back</button>
+      <div class="err" id="serr-3"></div>
     </div>
 
-    <!-- Step 6: Release day -->
-    <div class="form-step" id="step-6">
-      <div class="step-label">Step 6 of 8 &mdash; Release day</div>
+    <!-- Step 4: Release day (ongoing only) -->
+    <div class="form-step" id="ss-4">
       <div class="step-q">Which day does it air?</div>
-      <div class="step-hint">New episodes drop on this day. The scheduler searches within a few days of this date to catch delayed uploads.</div>
-      <div class="days-grid">
+      <div class="step-hint">New episodes come out on this day. The app checks a day or two after to make sure the upload is ready.</div>
+      <div class="days-grid" style="margin-top:14px">
         <button class="day-btn" onclick="selDay('mon',this)">Mon</button>
         <button class="day-btn" onclick="selDay('tue',this)">Tue</button>
         <button class="day-btn" onclick="selDay('wed',this)">Wed</button>
@@ -285,55 +289,55 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
         <button class="day-btn" onclick="selDay('sat',this)">Sat</button>
         <button class="day-btn" onclick="selDay('sun',this)">Sun</button>
       </div>
-      <button class="big-btn btn-muted" onclick="goStep(5)">&larr; Back</button>
-      <div class="err" id="err-6"></div>
+      <button class="big-btn btn-muted" onclick="_goShowStep(3)" style="margin-top:8px">&larr; Back</button>
+      <div class="err" id="serr-4"></div>
     </div>
 
-    <!-- Step 7: Ongoing? -->
-    <div class="form-step" id="step-7">
-      <div class="step-label">Step 7 of 8 &mdash; Season status</div>
-      <div class="step-q">Is this season currently airing?</div>
-      <div class="step-hint">
-        If the season is mid-run and you want to catch up on past episodes <strong>immediately</strong>,
-        turn on <em>Download backlog now</em> &mdash; it will queue every episode from 1 up to your "next episode" without waiting for release days.
+    <!-- Step 5: Content type -->
+    <div class="form-step" id="ss-5">
+      <div class="step-q">
+        Anime or live-action?
+        <button class="tip-btn" onclick="tipToggle('tip-type')">?</button>
       </div>
-      <label class="toggle-row">
-        <input type="checkbox" id="f-ongoing"/>
-        <div>
-          <div class="toggle-label">Season is currently airing</div>
-          <div class="toggle-sub">New episodes still releasing week by week</div>
-        </div>
-      </label>
-      <label class="toggle-row">
-        <input type="checkbox" id="f-backlog"/>
-        <div>
-          <div class="toggle-label">&#9660; Download backlog now</div>
-          <div class="toggle-sub">Queue all episodes from ep 1 up to "next episode" immediately</div>
-        </div>
-      </label>
-      <button class="big-btn btn-purple" onclick="goStep(8)">Next &rarr;</button>
-      <button class="big-btn btn-muted" onclick="goStep(6)" style="margin-top:6px">&larr; Back</button>
+      <div class="tip-box hidden" id="tip-type">
+        <b>Anime</b> — searches Nyaa.si, the main anime torrent site.<br>
+        <b>Live-action</b> — searches The Pirate Bay and general sites.
+      </div>
+      <div class="type-grid" style="margin-top:14px">
+        <button class="type-btn" onclick="selShowType('anime',this)">&#127885; Anime</button>
+        <button class="type-btn" onclick="selShowType('live',this)">&#127916; Live-action</button>
+      </div>
+      <button class="big-btn btn-muted" onclick="_goShowStepBack5()" style="margin-top:6px">&larr; Back</button>
+      <div class="err" id="serr-5"></div>
     </div>
 
-    <!-- Step 8: Confirm -->
-    <div class="form-step" id="step-8">
-      <div class="step-label">Step 8 of 8 &mdash; Confirm</div>
+    <!-- Step 6: Confirm -->
+    <div class="form-step" id="ss-6">
       <div class="step-q">Ready to add?</div>
-      <div class="confirm-box" id="confirm-preview"></div>
+      <div class="confirm-box" id="show-confirm-preview"></div>
       <button class="big-btn btn-purple" id="add-btn" onclick="submitShow()">
         <span class="spinner hidden" id="add-spin"></span>Add to Schedule
       </button>
       <button class="big-btn btn-muted" onclick="resetAddForm()" style="margin-top:8px">Start over</button>
-      <div class="err" id="err-8"></div>
+      <div class="err" id="serr-6"></div>
     </div>
   </div>
 
-  <!-- CURRENT TAB -->
+  <!-- CURRENT SHOWS TAB (hamburger) -->
+  <div class="tab-pane" id="tab-schedule">
+    <div class="section-label">Tracking</div>
+    <div class="section-title" style="color:var(--blue)">Current Shows</div>
+    <div class="section-sub">Shows the app is tracking and downloading automatically.</div>
+    <div id="schedule-list" class="show-list"><div class="empty-state">Loading&hellip;</div></div>
+    <button class="big-btn btn-purple" style="margin-top:18px" onclick="showTab('shows')">+ Add a New Show</button>
+  </div>
+
+  <!-- LOGS TAB (hamburger) -->
   <div class="tab-pane" id="tab-current">
-    <div class="section-label">Downloads</div>
-    <div class="section-title" style="color:var(--orange)">Current</div>
-    <div class="section-sub">Live view of active downloads and recent log output.</div>
-    <button class="big-btn btn-muted" onclick="fetchLog(true)" style="margin-bottom:14px">&#8635; Refresh log</button>
+    <div class="section-label">System</div>
+    <div class="section-title" style="color:var(--muted)">Logs</div>
+    <div class="section-sub">Recent activity from the download scheduler.</div>
+    <button class="big-btn btn-muted" onclick="fetchLog(true)" style="margin-bottom:14px">&#8635; Refresh</button>
     <pre id="c-log" class="log-pre">Loading&hellip;</pre>
   </div>
 
@@ -374,21 +378,36 @@ async function api(method, path, body) {
   return r;
 }
 
+// ── Hamburger ────────────────────────────────────────────────────────────────
+let _hamOpen = false;
+function toggleHamburger(e) {
+  if (e) e.stopPropagation();
+  _hamOpen = !_hamOpen;
+  document.getElementById('ham-menu').classList.toggle('hidden', !_hamOpen);
+}
+document.addEventListener('click', () => {
+  if (_hamOpen) { _hamOpen = false; document.getElementById('ham-menu').classList.add('hidden'); }
+});
+
 // ── Tab switching ─────────────────────────────────────────────────────────────
-const TAB_IDS = ['movie','shows','add','current'];
+const TAB_IDS = ['movie','shows','schedule','current'];
 function showTab(name) {
   TAB_IDS.forEach(t => {
     document.getElementById('tab-' + t).classList.toggle('active', t === name);
-    document.getElementById('ntab-' + t).classList.toggle('active', t === name);
+    const nb = document.getElementById('ntab-' + t);
+    if (nb) nb.classList.toggle('active', t === name);
   });
-  if (name === 'current') fetchLog(false);
-  if (name === 'shows')   loadSchedule();
+  if (name === 'current')  fetchLog(false);
+  if (name === 'schedule') loadSchedule();
 }
-// Default tab
 showTab('movie');
-document.getElementById('ntab-movie').classList.add('active');
 
-// ── Shows tab ─────────────────────────────────────────────────────────────────
+// ── Tooltips ─────────────────────────────────────────────────────────────────
+function tipToggle(id) {
+  document.getElementById(id).classList.toggle('hidden');
+}
+
+// ── Current Shows (schedule list) ────────────────────────────────────────────
 async function loadSchedule() {
   const el = document.getElementById('schedule-list');
   el.innerHTML = '<div class="empty-state">Loading\u2026</div>';
@@ -396,7 +415,7 @@ async function loadSchedule() {
     const r = await api('GET', '/api/schedule');
     const rows = await r.json();
     if (!rows.length) {
-      el.innerHTML = '<div class="empty-state">No shows tracked yet.<br>Hit \u201c+ Add Show\u201d to get started.</div>';
+      el.innerHTML = '<div class="empty-state">No shows tracked yet.<br>Tap \u201c+ Add a New Show\u201d below.</div>';
       return;
     }
     el.innerHTML = rows.map((row, i) => {
@@ -415,14 +434,14 @@ async function loadSchedule() {
         '  </div>',
         '  <span class="status-badge ' + sc + '">' + st + '</span>',
         '  <div class="show-card-actions">',
-        '    <button class="icon-btn backlog" title="Download backlog from ep 1 now" onclick="doBacklog(' + i + ',\'' + _esc(row.show_name) + '\',event)">\u2193\u2193</button>',
-        '    <button class="icon-btn del" title="Remove" onclick="deleteShow(' + i + ',event)">\u00d7</button>',
+        '    <button class="icon-btn backlog" title="Download all episodes from ep 1 right now" onclick="doBacklog(' + i + ',\'' + _esc(row.show_name) + '\',event)">\u2193\u2193</button>',
+        '    <button class="icon-btn del" title="Remove this show" onclick="deleteShow(' + i + ',event)">\u00d7</button>',
         '  </div>',
         '</div>',
       ].join('');
     }).join('');
   } catch(e) {
-    el.innerHTML = '<div class="empty-state">Failed to load schedule.</div>';
+    el.innerHTML = '<div class="empty-state">Failed to load.</div>';
   }
 }
 
@@ -436,122 +455,136 @@ async function deleteShow(i, e) {
 
 async function doBacklog(i, name, e) {
   e.stopPropagation();
-  if (!confirm('Queue ALL episodes of \u201c' + name + '\u201d from ep 1 right now?\n\nThis will download them sequentially. Existing downloads continue in parallel.')) return;
+  if (!confirm('Download ALL episodes of \u201c' + name + '\u201d from ep 1 right now?\n\nThis queues everything immediately. Other downloads keep going in parallel.')) return;
   const r = await api('POST', '/api/schedule/' + i + '/backlog');
-  if (r.ok) {
-    toast('Backlog queued for ' + name + ' \u2193\u2193');
-    loadSchedule();
-  } else {
-    toast('Error starting backlog');
-  }
+  if (r.ok) { toast('Backlog started \u2193\u2193'); loadSchedule(); }
+  else toast('Error starting backlog');
 }
 
-// ── Add show wizard ───────────────────────────────────────────────────────────
-const TOTAL_STEPS = 8;
-let _showType = '', _releaseDay = '', _currentStep = 1;
+// ── Add show wizard (simplified) ─────────────────────────────────────────────
+let _showMode = '';   // 'older' | 'ongoing'
+let _showType = '';   // 'anime' | 'live'
+let _releaseDay = '';
+let _showStep = 1;
+let _searchEdited = false;
 
-function goStep(n) {
-  const err = _validate(_currentStep);
-  if (err) { _setErr(_currentStep, err); return; }
-  _setErr(_currentStep, '');
-  document.getElementById('step-' + _currentStep).classList.remove('active');
-  _currentStep = n;
-  document.getElementById('step-' + n).classList.add('active');
-  document.getElementById('add-prog').style.width = ((n - 1) / (TOTAL_STEPS - 1) * 100) + '%';
-  if (n === TOTAL_STEPS) _buildPreview();
-  const inp = document.querySelector('#step-' + n + ' input:not([type=checkbox])');
+function selShowMode(mode) {
+  _showMode = mode;
+  _goShowStep(2);
+}
+
+function autoFillSearch() {
+  if (!_searchEdited) {
+    const v = document.getElementById('f-show-name').value;
+    document.getElementById('f-search-name').value = v.toLowerCase().replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim();
+  }
+}
+function markSearchEdited() { _searchEdited = true; }
+
+function _goShowStep(n) {
+  document.getElementById('serr-' + _showStep).textContent = '';
+  document.getElementById('ss-' + _showStep).classList.remove('active');
+  _showStep = n;
+  document.getElementById('ss-' + n).classList.add('active');
+  // progress: older = steps 1,2,3,5,6  ongoing = 1,2,3,4,5,6
+  const seq = _showMode === 'ongoing' ? [1,2,3,4,5,6] : [1,2,3,5,6];
+  const pos = seq.indexOf(n);
+  document.getElementById('add-prog').style.width = (pos < 0 ? 0 : Math.round(pos / (seq.length - 1) * 100)) + '%';
+  if (n === 6) _buildShowPreview();
+  const inp = document.querySelector('#ss-' + n + ' input:not([type=checkbox])');
   if (inp) setTimeout(() => inp.focus(), 50);
 }
-function stepEnter(e, next) { if (e.key === 'Enter') goStep(next); }
-function _setErr(step, msg) { const el = document.getElementById('err-' + step); if(el) el.textContent = msg; }
-function _gv(id) { return (document.getElementById(id) || {}).value || ''; }
-function _validate(step) {
-  if (step === 1 && !_gv('f-show-name').trim()) return 'Show name is required';
-  if (step === 2 && !_gv('f-search-name').trim()) return 'Search name is required';
-  if (step === 3 && !_gv('f-folder').trim()) return 'Folder name is required';
-  if (step === 4 && !_showType) return 'Pick a type';
-  if (step === 5) {
-    if (!_gv('f-season')) return 'Season number is required';
-    if (!_gv('f-next-ep')) return 'Next episode is required';
-    if (!_gv('f-total-ep')) return 'Total episodes is required (estimate high if unsure)';
-  }
-  if (step === 6 && !_releaseDay) return 'Pick the release day';
-  return '';
+
+function _goShowStepNext2() {
+  if (!_gv('f-show-name').trim()) { document.getElementById('serr-2').textContent = 'Show name is required'; return; }
+  if (!_gv('f-search-name').trim()) { document.getElementById('serr-2').textContent = 'Search term is required'; return; }
+  _goShowStep(3);
 }
-function selType(t, btn) {
-  _showType = t;
-  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  setTimeout(() => goStep(5), 200);
+
+function _goShowStepNext3() {
+  if (!_gv('f-season'))   { document.getElementById('serr-3').textContent = 'Season number is required'; return; }
+  if (!_gv('f-next-ep'))  { document.getElementById('serr-3').textContent = 'Starting episode is required'; return; }
+  if (!_gv('f-total-ep')) { document.getElementById('serr-3').textContent = 'Total episodes is required'; return; }
+  _goShowStep(_showMode === 'ongoing' ? 4 : 5);
 }
+
+function _goShowStepBack5() {
+  _goShowStep(_showMode === 'ongoing' ? 4 : 3);
+}
+
 function selDay(d, btn) {
   _releaseDay = d;
   document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  setTimeout(() => goStep(7), 200);
+  setTimeout(() => _goShowStep(5), 200);
 }
-function _buildPreview() {
-  const ongoing = document.getElementById('f-ongoing').checked;
-  const backlog  = document.getElementById('f-backlog').checked;
-  document.getElementById('confirm-preview').innerHTML = [
-    '<b style="color:var(--white);font-size:1rem">' + _esc(_gv('f-show-name')) + '</b>',
-    'Search: <b>' + _esc(_gv('f-search-name')) + '</b>',
-    'Folder: <b>' + _esc(_gv('f-folder')) + '</b>',
+
+function selShowType(t, btn) {
+  _showType = t;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  setTimeout(() => _goShowStep(6), 200);
+}
+
+function _buildShowPreview() {
+  const name = _gv('f-show-name');
+  const lines = [
+    '<b style="color:var(--white);font-size:1rem">' + _esc(name) + '</b>',
+    'Mode: <b>' + (_showMode === 'ongoing' ? '\uD83D\uDCE1 Ongoing \u2014 downloads each new episode automatically' : '\uD83D\uDCE6 Older / Finished \u2014 all episodes queued now') + '</b>',
+    'Search term: <b>' + _esc(_gv('f-search-name')) + '</b>',
     'Type: <b>' + _showType + '</b>',
-    'Season <b>' + _gv('f-season') + '</b> &middot; Ep <b>' + _gv('f-next-ep') + '</b> of <b>' + _gv('f-total-ep') + '</b>',
-    'Airs: <b>' + _releaseDay + '</b>',
-    'Currently airing: <b>' + (ongoing ? 'Yes' : 'No') + '</b>',
-    backlog ? '<span style="color:var(--orange)">&#9660; Backlog download will start immediately</span>' : '',
-  ].filter(Boolean).join('<br>');
+    'Season <b>' + _gv('f-season') + '</b> \u00b7 Start ep <b>' + _gv('f-next-ep') + '</b> \u00b7 Total <b>' + _gv('f-total-ep') + '</b>',
+  ];
+  if (_showMode === 'ongoing') lines.push('Airs on: <b>' + _releaseDay + '</b>');
+  document.getElementById('show-confirm-preview').innerHTML = lines.join('<br>');
 }
 
 async function submitShow() {
+  if (!_showType) { document.getElementById('serr-6').textContent = 'Pick a content type first'; return; }
   const btn = document.getElementById('add-btn');
   const spin = document.getElementById('add-spin');
   btn.disabled = true; spin.classList.remove('hidden');
+  const name = _gv('f-show-name').trim();
   const body = {
-    show_name:      _gv('f-show-name').trim(),
+    show_name:      name,
     search_name:    _gv('f-search-name').trim().toLowerCase(),
-    folder:         _gv('f-folder').trim(),
+    folder:         name,
     type:           _showType,
     season:         +_gv('f-season'),
     next_episode:   +_gv('f-next-ep'),
     total_episodes: +_gv('f-total-ep'),
-    release_days:   _releaseDay,
-    ongoing:        document.getElementById('f-ongoing').checked,
+    release_days:   _showMode === 'older' ? 'daily' : _releaseDay,
+    ongoing:        _showMode === 'ongoing',
   };
   try {
     const r = await api('POST', '/api/schedule', body);
     if (r.ok) {
-      const j = await r.json();
-      // Trigger backlog if requested
-      if (document.getElementById('f-backlog').checked) {
+      if (_showMode === 'older') {
         const rows = await (await api('GET', '/api/schedule')).json();
-        const idx = rows.findIndex(row => row.show_name === body.show_name);
+        const idx = rows.findIndex(row => row.show_name === name);
         if (idx >= 0) await api('POST', '/api/schedule/' + idx + '/backlog');
       }
       toast('Show added \u2713');
       resetAddForm();
-      showTab('shows');
+      showTab('schedule');
     } else {
       const j = await r.json().catch(() => ({}));
-      _setErr(8, j.error || 'Server error');
+      document.getElementById('serr-6').textContent = j.error || 'Server error';
     }
-  } catch(e) { _setErr(8, 'Network error'); }
+  } catch(e) { document.getElementById('serr-6').textContent = 'Network error'; }
   btn.disabled = false; spin.classList.add('hidden');
 }
 
 function resetAddForm() {
-  _showType = ''; _releaseDay = ''; _currentStep = 1;
-  ['f-show-name','f-search-name','f-folder','f-season','f-next-ep','f-total-ep'].forEach(id => {
+  _showMode = ''; _showType = ''; _releaseDay = ''; _showStep = 1; _searchEdited = false;
+  ['f-show-name','f-search-name','f-season','f-next-ep','f-total-ep'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
-  ['f-ongoing','f-backlog'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.checked = false;
-  });
-  for (let i = 1; i <= TOTAL_STEPS; i++) {
-    document.getElementById('step-' + i).classList.toggle('active', i === 1);
-    _setErr(i, '');
+  for (let i = 1; i <= 6; i++) {
+    const el = document.getElementById('ss-' + i);
+    if (el) el.classList.toggle('active', i === 1);
+    const err = document.getElementById('serr-' + i);
+    if (err) err.textContent = '';
   }
   document.getElementById('add-prog').style.width = '0%';
   document.querySelectorAll('.type-btn,.day-btn').forEach(b => b.classList.remove('selected'));
@@ -580,13 +613,9 @@ async function submitMovie() {
   btn.disabled = true;
   document.getElementById('movie-spin').classList.remove('hidden');
   try {
-    const r = await api('POST', '/api/movie', {
-      title,
-      anime: _movieType === 'anime',
-      quality: _movieQuality,
-    });
+    const r = await api('POST', '/api/movie', { title, anime: _movieType === 'anime', quality: _movieQuality });
     if (r.ok) {
-      document.getElementById('movie-ok').textContent = '\u201c' + title + '\u201d queued \u2014 check the Current tab for progress.';
+      document.getElementById('movie-ok').textContent = '\u201c' + title + '\u201d queued \u2014 the download strip below will show progress.';
       document.getElementById('movie-ok').classList.remove('hidden');
       document.getElementById('movie-title').value = '';
       toast('Queued \u2713');
@@ -594,21 +623,19 @@ async function submitMovie() {
       const j = await r.json().catch(() => ({}));
       document.getElementById('movie-err').textContent = j.error || 'Server error';
     }
-  } catch(e) {
-    document.getElementById('movie-err').textContent = 'Network error';
-  }
+  } catch(e) { document.getElementById('movie-err').textContent = 'Network error'; }
   btn.disabled = false;
   document.getElementById('movie-spin').classList.add('hidden');
 }
 
-// ── Download strip (always visible) ──────────────────────────────────────────
+// ── Download strip ────────────────────────────────────────────────────────────
 let _pollTimer = null;
 let _stripOpen = false;
 
 function toggleStrip() {
   _stripOpen = !_stripOpen;
   document.getElementById('dl-strip-body').style.display = _stripOpen ? 'flex' : 'none';
-  document.getElementById('dl-strip-toggle').textContent = _stripOpen ? '▲' : '▼';
+  document.getElementById('dl-strip-toggle').textContent = _stripOpen ? '\u25b2' : '\u25bc';
 }
 
 function startPolling() {
@@ -626,12 +653,9 @@ async function pollDownloads() {
     const idle  = document.getElementById('dl-strip-idle');
     const dot   = document.getElementById('dl-dot');
     const pctEl = document.getElementById('dl-nav-pct');
-    const lbl   = document.getElementById('dl-strip-label');
 
-    // Remove old cards (keep idle div)
     body.querySelectorAll('.dl-card-row').forEach(el => el.remove());
 
-    // Filter to only torrent downloads (have seeds or are bittorrent-like)
     const torrents = downloads.filter(dl =>
       dl.seeds !== undefined || dl.peers !== undefined || dl.status === 'active' || dl.status === 'waiting'
     );
@@ -649,11 +673,9 @@ async function pollDownloads() {
     badge.textContent = torrents.length;
     badge.style.display = 'inline-flex';
 
-    // Nav badge: show highest-speed download pct
     const fastest = torrents.slice().sort((a, b) => (b.speed_bytes||0) - (a.speed_bytes||0))[0];
-    const firstPct = fastest.pct || 0;
     dot.classList.add('active');
-    pctEl.textContent = firstPct + '%';
+    pctEl.textContent = (fastest.pct || 0) + '%';
 
     torrents.forEach(dl => {
       const pct = Math.min(dl.pct || 0, 100);
@@ -686,8 +708,8 @@ async function pollDownloads() {
         '</div>',
         gid ? '<div class="dl-card-actions">' +
           '<button class="dl-act-btn" onclick="pauseToggle(\'' + gid + '\', \'' + status + '\')">' +
-          (status === 'paused' ? '▶ Resume' : '⏸ Pause') + '</button>' +
-          '<button class="dl-act-btn remove" onclick="removeDl(\'' + gid + '\')">✕ Remove</button>' +
+          (status === 'paused' ? '\u25b6 Resume' : '\u23f8 Pause') + '</button>' +
+          '<button class="dl-act-btn remove" onclick="removeDl(\'' + gid + '\')">\u2715 Remove</button>' +
           '</div>' : '',
       ].join('');
       body.appendChild(card);
@@ -708,12 +730,12 @@ async function removeDl(gid) {
   if (!confirm('Remove this download?')) return;
   try {
     await api('POST', '/api/torrent/' + gid + '/remove');
-    toast('Removed ✓');
+    toast('Removed \u2713');
     pollDownloads();
   } catch(e) {}
 }
 
-// ── Log (current tab) ─────────────────────────────────────────────────────────
+// ── Log ───────────────────────────────────────────────────────────────────────
 async function fetchLog(scroll) {
   try {
     const r = await api('GET', '/api/log?lines=120');
@@ -727,6 +749,7 @@ async function fetchLog(scroll) {
 // ── Utilities ─────────────────────────────────────────────────────────────────
 function _esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function _pad(n) { return String(n || 0).padStart(2, '0'); }
+function _gv(id) { return (document.getElementById(id) || {}).value || ''; }
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
