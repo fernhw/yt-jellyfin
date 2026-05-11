@@ -515,20 +515,73 @@ def _aria2_rpc_ss(method: str, params: Optional[List] = None) -> object:
         raise RuntimeError(resp['error'].get('message', 'aria2 rpc error'))
     return resp.get('result')
 
-def _aria2_add(magnet: str, dest_dir: str) -> Optional[str]:
-    """Add a torrent to the aria2c daemon. Returns GID string or None."""
+def _aria2_ensure_daemon() -> bool:
+    """Start aria2c RPC daemon if not running. Returns True if daemon is ready."""
+    aria2c_bin = shutil.which('aria2c') or '/opt/homebrew/bin/aria2c' or '/usr/local/bin/aria2c'
+    if not aria2c_bin or not os.path.exists(aria2c_bin):
+        log.error('  aria2c not found — install with: brew install aria2')
+        return False
+    # Test if already up
     try:
-        gid = _aria2_rpc_ss('aria2.addUri', [
-            [magnet],
-            {'dir': dest_dir, 'seed-time': '0', 'file-allocation': 'falloc'},
-        ])
-        if gid:
-            log.info(f"  aria2 RPC → GID {gid}")
-            return str(gid)
-    except urllib.error.URLError:
-        log.warning('  aria2 daemon not reachable — falling back to direct aria2c')
-    except Exception as exc:
-        log.warning(f'  aria2 RPC error: {exc}')
+        _aria2_rpc_ss('aria2.getVersion')
+        return True
+    except Exception:
+        pass
+    # Start it
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    session_file = os.path.join(script_dir, 'aria2.session')
+    cmd = [
+        aria2c_bin,
+        f'--rpc-listen-port={ARIA2_RPC_PORT}',
+        f'--rpc-secret={_aria2_secret_ss()}',
+        '--enable-rpc=true', '--rpc-listen-all=false',
+        '--seed-time=0', '--max-concurrent-downloads=5',
+        '--save-session=' + os.path.join(script_dir, 'aria2.session'),
+        '--save-session-interval=30', '--continue=true',
+        '--daemon=true', '--quiet=true',
+    ]
+    if os.path.exists(session_file):
+        cmd.append(f'--input-file={session_file}')
+    try:
+        subprocess.run(cmd, timeout=10, check=True)
+    except Exception as e:
+        log.error(f'  failed to start aria2c daemon: {e}')
+        return False
+    # Wait up to 5s for it to accept connections
+    import time as _t
+    for _ in range(10):
+        _t.sleep(0.5)
+        try:
+            _aria2_rpc_ss('aria2.getVersion')
+            log.info('  aria2c daemon started by showSchedulerSearch')
+            return True
+        except Exception:
+            pass
+    log.error('  aria2c daemon did not start in time')
+    return False
+
+
+def _aria2_add(magnet: str, dest_dir: str) -> Optional[str]:
+    """Add a torrent to the aria2c RPC daemon. Starts daemon if not running. Returns GID or None."""
+    for attempt in range(2):
+        try:
+            gid = _aria2_rpc_ss('aria2.addUri', [
+                [magnet],
+                {'dir': dest_dir, 'seed-time': '0', 'file-allocation': 'falloc'},
+            ])
+            if gid:
+                log.info(f"  aria2 RPC → GID {gid}")
+                return str(gid)
+        except urllib.error.URLError:
+            if attempt == 0:
+                log.warning('  aria2 daemon not reachable — attempting to start it')
+                if not _aria2_ensure_daemon():
+                    break
+            else:
+                log.error('  aria2 daemon still not reachable after start attempt')
+        except Exception as exc:
+            log.warning(f'  aria2 RPC error: {exc}')
+            break
     return None
 
 
@@ -571,9 +624,9 @@ def _aria2_wait(gid: str, timeout_sec: int = 7200) -> bool:
 def download_torrent(magnet: str, dest_dir: str, dry_run: bool = False,
                      slow_warning: bool = False) -> bool:
     """
-    Submit a torrent magnet to aria2c.
-    1. Try aria2c RPC daemon (managed by requestServer.py) — live progress in UI.
-    2. Fall back to direct aria2c subprocess if daemon is not running.
+    Submit a torrent magnet to the aria2c RPC daemon.
+    Never runs a direct subprocess — all downloads must go through the daemon
+    so they are visible in the UI and managed by the watchdog.
     Returns True on success.
     """
     if dry_run:
@@ -582,38 +635,13 @@ def download_torrent(magnet: str, dest_dir: str, dry_run: bool = False,
 
     os.makedirs(dest_dir, exist_ok=True)
 
-    # ── Try RPC daemon first ──────────────────────────────────────────────────
     gid = _aria2_add(magnet, dest_dir)
-    if gid:
-        if slow_warning:
-            _mark_slow_gid(gid)
-        return _aria2_wait(gid)
-
-    # ── Fallback: direct subprocess ───────────────────────────────────────────
-    aria2c_bin = (
-        shutil.which('aria2c')
-        or '/opt/homebrew/bin/aria2c'
-        or '/usr/local/bin/aria2c'
-    )
-    cmd = [
-        aria2c_bin,
-        '--seed-time=0',
-        f'--dir={dest_dir}',
-        '--summary-interval=30',
-        '--console-log-level=notice',
-        '--file-allocation=falloc',
-        magnet,
-    ]
-    log.info(f"  aria2c direct → {dest_dir}")
-    try:
-        result = subprocess.run(cmd, timeout=7200)
-        return result.returncode == 0
-    except FileNotFoundError:
-        log.error("  aria2c not found — install with: brew install aria2")
+    if not gid:
+        log.error('  could not add torrent to aria2 daemon — download aborted')
         return False
-    except subprocess.TimeoutExpired:
-        log.error("  aria2c timed out after 2 hours")
-        return False
+    if slow_warning:
+        _mark_slow_gid(gid)
+    return _aria2_wait(gid)
 
 # ── Movie search ─────────────────────────────────────────────────────────────
 
