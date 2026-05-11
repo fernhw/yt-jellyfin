@@ -903,8 +903,13 @@ async function _pickShow(idx) {
       return;
     }
     window._loadedSeasons = seasons;
-    const defaultChecked = i => _showMode === 'older' ? true : i === seasons.length - 1;
-    list.innerHTML = seasons.map((ss, i) => `
+    // For older mode: hide announced (no premiere date yet) seasons — nothing to download
+    const visibleSeasons = _showMode === 'older'
+      ? seasons.filter(ss => !ss.upcoming)
+      : seasons;
+    if (_showMode === 'older') window._loadedSeasons = visibleSeasons;
+    const defaultChecked = i => _showMode === 'older' ? true : i === visibleSeasons.length - 1;
+    list.innerHTML = visibleSeasons.map((ss, i) => `
       <button class="season-check-row ${defaultChecked(i) ? 'selected' : ''}" id="scr-${i}"
               onclick="toggleSeasonRow(${i})">
         <input type="checkbox" ${defaultChecked(i) ? 'checked' : ''}
@@ -913,8 +918,8 @@ async function _pickShow(idx) {
         <span class="season-check-ep">${ss.episodes && ss.episodes < 99 ? ss.episodes + ' eps' : ''}</span>
       </button>
     `).join('');
-    _selectedSeasons = _showMode === 'older' ? [...seasons]
-      : seasons.length ? [seasons[seasons.length - 1]] : seasons;
+    _selectedSeasons = _showMode === 'older' ? [...visibleSeasons]
+      : visibleSeasons.length ? [visibleSeasons[visibleSeasons.length - 1]] : visibleSeasons;
   } catch(e) {
     spinner.style.display = 'none';
     list.innerHTML = '<div style="font-size:.82rem;color:var(--muted);padding:8px 0">Could not load seasons. All episodes will be downloaded.</div>';
@@ -1197,11 +1202,10 @@ function movieSuggestInput() {
 }
 
 function mvSuggestPick(title, year) {
-  const clean = (year && !title.includes(String(year))) ? title + ' ' + year : title;
-  document.getElementById('movie-title').value = clean;
+  document.getElementById('movie-title').value = title;
   const list = document.getElementById('movie-suggest-list');
   list.style.display = 'none'; list.innerHTML = '';
-  mvNext();
+  document.getElementById('movie-title').focus();
 }
 
 // ── Movie tab ─────────────────────────────────────────────────────────────────

@@ -741,7 +741,8 @@ def show_seasons():
                 n  = s.get('number')
                 ep = s.get('episodeOrder') or s.get('numberOfEpisodes') or 0
                 if n and n > 0:
-                    seasons.append({'n': n, 'episodes': ep or 99})
+                    upcoming = not s.get('premiereDate')  # announced but not yet airing
+                    seasons.append({'n': n, 'episodes': ep or 99, 'upcoming': upcoming})
             return jsonify({'seasons': seasons})
         except Exception as e:
             log.warning('show-seasons tvmaze error: %s', e)
