@@ -323,9 +323,10 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 
     <!-- Step C2: picker (multiple year-ambiguous candidates found) -->
     <div id="mv-step-picker" class="hidden">
-      <div style="font-size:.95rem;font-weight:800;color:var(--white);margin-bottom:4px">Which version?</div>
-      <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px">We found several different releases &mdash; tap the one you want:</div>
-      <div id="mv-picker-list" style="display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto"></div>
+      <div style="font-size:2.2rem;font-weight:900;color:var(--orange);letter-spacing:-.02em;margin-bottom:6px">Sorry!</div>
+      <div style="font-size:1rem;font-weight:700;color:var(--white);margin-bottom:6px">We found multiple movies with that name.</div>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:18px">Tap the one you&rsquo;re looking for:</div>
+      <div id="mv-picker-list" style="display:flex;flex-direction:column;gap:8px;max-height:55vh;overflow-y:auto"></div>
       <button class="ghost-btn" style="margin-top:16px" onclick="mvBack()">&larr; Back</button>
     </div>
 
