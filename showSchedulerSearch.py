@@ -50,7 +50,8 @@ ONESIGNAL_APP_ID  = "c88ae5a3-36df-4301-945f-9da65e63d87c"
 ONESIGNAL_API_URL = "https://onesignal.com/api/v1/notifications"
 REPORT_URL        = "https://report.fernhw.com"
 
-MIN_SEEDS    = 10
+MIN_SEEDS       = 10   # episodes / shows
+MOVIE_MIN_SEEDS = 5    # movies — one-time grab, fewer seeds is fine
 SEARCH_DAYS  = 4   # days to keep searching after release day before marking missed
 
 DAY_MAP   = {'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3, 'fri': 4, 'sat': 5, 'sun': 6}
@@ -306,12 +307,13 @@ def _has_min_res(title: str) -> bool:
 
 
 def score_torrent(title: str, seeds: int, show_type: str,
-                  nyaa_en_cat: bool = False) -> Optional[float]:
+                  nyaa_en_cat: bool = False,
+                  min_seeds: int = MIN_SEEDS) -> Optional[float]:
     """
     Score a candidate torrent.  Returns None if below minimum requirements.
     Higher score = better pick.
     """
-    if seeds < MIN_SEEDS:
+    if seeds < min_seeds:
         return None
     if not _has_min_res(title):
         return None
@@ -705,14 +707,14 @@ def _title_satisfies_numbers(torrent_title: str, required: List[str]) -> bool:
 def _score_movie(title: str, seeds: int, is_anime: bool,
                  prefer_4k: bool = False) -> Optional[float]:
     """Score a movie torrent candidate. Returns None if below requirements."""
-    if seeds < MIN_SEEDS:
+    if seeds < MOVIE_MIN_SEEDS:
         return None
     if not _has_min_res(title):
         return None
     show_type = 'anime' if is_anime else 'live'
     if not _has_english(title, show_type, False):
         return None
-    base = score_torrent(title, seeds, show_type)
+    base = score_torrent(title, seeds, show_type, min_seeds=MOVIE_MIN_SEEDS)
     if base is None:
         return None
     # When 4K is preferred, add a large bonus to 4K results so they
@@ -763,7 +765,7 @@ def download_movie(title: str, is_anime: bool,
         scored = _score_all(search_yts(q))
 
     if not scored:
-        log.error(f"  {q}: no qualifying results across all sources (need {MIN_SEEDS}+ seeds, 1080p+, English)")
+        log.error(f"  {q}: no qualifying results across all sources (need {MOVIE_MIN_SEEDS}+ seeds, 1080p+, English)")
         return
 
     best_score, best = scored[0]
