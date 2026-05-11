@@ -251,7 +251,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
     <div id="mv-step-c" class="hidden" style="text-align:center;padding:32px 0">
       <div class="spinner" style="width:36px;height:36px;margin:0 auto 20px;border-width:3.5px"></div>
       <div style="font-size:1.05rem;font-weight:700;color:var(--white);margin-bottom:8px" id="mv-searching-label">Searching&hellip;</div>
-      <div style="font-size:.82rem;color:var(--muted)" id="mv-searching-sub">Checking torrent sites for your movie</div>
+      <div style="font-size:.82rem;color:var(--muted)" id="mv-searching-sub">On the hunt for your movie…</div>
     </div>
 
     <!-- Step D: downloading (success) -->
@@ -332,7 +332,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
              oninput="autoFillSearch()" onkeydown="if(event.key==='Enter')document.getElementById('f-search-name').focus()"/>
       <div class="field-label" style="margin-top:14px">Search term <button class="tip-btn" onclick="tipToggle('tip-search')">?</button></div>
       <div class="tip-box hidden" id="tip-search">
-        What we type into torrent sites to find episodes. Filled in automatically from the show name &mdash; only change it if searches aren't finding the right show.<br><br>
+        What we search for to find episodes. Filled in automatically from the show name — only change it if the wrong episodes are coming up.<br><br>
         Example: <b>Re:Zero</b> &rarr; search term <b>re zero</b>
       </div>
       <input id="f-search-name" class="big-input" placeholder="e.g. marshals" maxlength="80"
@@ -395,8 +395,8 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
         <button class="tip-btn" onclick="tipToggle('tip-type')">?</button>
       </div>
       <div class="tip-box hidden" id="tip-type">
-        <b>Anime</b> — searches Nyaa.si, the main anime torrent site.<br>
-        <b>Live-action</b> — searches The Pirate Bay and general sites.
+        <b>Anime</b> — searches Japanese animation sources.<br>
+        <b>Live-action</b> — searches international movie &amp; TV sources.
       </div>
       <div class="type-grid" style="margin-top:14px">
         <button class="type-btn" onclick="selShowType('anime',this)">&#127885; Anime</button>
@@ -748,10 +748,11 @@ function mvShowStep(id) {
 }
 
 const _mvSearchPhrases = [
-  'Checking torrent sites\u2026',
-  'Looking for your movie\u2026',
-  'Searching anime sources\u2026',
-  'Almost there\u2026',
+  'Sending out the scouts\u2026',
+  'Checking every corner of the internet\u2026',
+  'Clue found! Following the trail\u2026',
+  'Locking onto your movie\u2026',
+  'Almost got it\u2026',
 ];
 
 async function mvSubmit(type, titleOverride) {
@@ -764,7 +765,7 @@ async function mvSubmit(type, titleOverride) {
   // Show searching spinner (step C)
   document.getElementById('mv-searching-label').textContent = '\u201c' + title + '\u201d\u2026';
   document.getElementById('mv-searching-sub').textContent = type === 'anime'
-    ? 'Checking anime torrent sites' : 'Checking torrent sites';
+    ? 'On the hunt for your movie…' : 'On the hunt for your movie…';
   mvShowStep('mv-step-c');
 
   // Cycle sub-label for a realistic feel
