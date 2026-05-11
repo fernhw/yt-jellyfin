@@ -286,13 +286,18 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       </div>
       <div class="tip-box hidden" id="tip-eps">
         <b>Season</b> — 1 for first season, 2 for second, etc.<br>
-        <b>Starting episode</b> — Which episode to download first. Usually 1.<br>
-        <b>Total episodes</b> — How many in this season. Not sure? Guess high — the app skips episodes that don't exist yet.
+        <b>Current episode</b> — Which ep to start downloading from. Usually 1.<br>
+        <b>Total episodes</b> — How many in the season. If you don't know, leave “Don't know” checked — downloads will stop automatically once no new episodes appear for 4 days.
       </div>
       <input id="f-season" class="big-input" placeholder="Season number (e.g. 1)" type="number" min="1" style="margin-top:12px;margin-bottom:8px"/>
       <div id="ss-3-eps" style="margin-bottom:8px">
-        <div class="row2">
-          <input id="f-next-ep" class="big-input" placeholder="Start at ep (e.g. 1)" type="number" min="1"/>
+        <input id="f-next-ep" class="big-input" placeholder="Current episode (e.g. 1)" type="number" min="1" style="margin-bottom:8px"/>
+        <label id="ss-3-dontknow-lbl" style="display:flex;align-items:flex-start;gap:10px;font-size:.82rem;color:var(--muted);cursor:pointer;margin-bottom:8px">
+          <input type="checkbox" id="f-dont-know" onchange="toggleDontKnow(this)" checked
+                 style="width:18px;height:18px;flex-shrink:0;margin-top:1px;accent-color:var(--purple)"/>
+          <span>Don’t know total episodes — will auto-stop after 4 days without a new result</span>
+        </label>
+        <div id="ss-3-total-wrap" class="hidden">
           <input id="f-total-ep" class="big-input" placeholder="Total eps (e.g. 24)" type="number" min="1"/>
         </div>
       </div>
@@ -517,6 +522,14 @@ function _goShowStep(n) {
     const isOlder = _showMode === 'older';
     document.getElementById('ss-3-eps').classList.toggle('hidden', isOlder);
     document.getElementById('ss-3-older-note').classList.toggle('hidden', !isOlder);
+    if (!isOlder) {
+      // Reset "don't know" checkbox to checked default when entering step 3 for ongoing
+      const cb = document.getElementById('f-dont-know');
+      if (cb && !document.getElementById('f-total-ep').value) {
+        cb.checked = true;
+        document.getElementById('ss-3-total-wrap').classList.add('hidden');
+      }
+    }
   }
   // progress: older = steps 1,2,3,5,6  ongoing = 1,2,3,4,5,6
   const seq = _showMode === 'ongoing' ? [1,2,3,4,5,6] : [1,2,3,5,6];
@@ -533,6 +546,11 @@ function _goShowStepNext2() {
   _goShowStep(3);
 }
 
+function toggleDontKnow(cb) {
+  document.getElementById('ss-3-total-wrap').classList.toggle('hidden', cb.checked);
+  if (cb.checked) document.getElementById('f-total-ep').value = '';
+}
+
 function _goShowStepNext3() {
   if (!_gv('f-season'))   { document.getElementById('serr-3').textContent = 'Season number is required'; return; }
   if (_showMode === 'older') {
@@ -540,8 +558,13 @@ function _goShowStepNext3() {
     document.getElementById('f-next-ep').value  = '1';
     document.getElementById('f-total-ep').value = '99';
   } else {
-    if (!_gv('f-next-ep'))  { document.getElementById('serr-3').textContent = 'Starting episode is required'; return; }
-    if (!_gv('f-total-ep')) { document.getElementById('serr-3').textContent = 'Total episodes is required'; return; }
+    if (!_gv('f-next-ep'))  { document.getElementById('serr-3').textContent = 'Current episode is required'; return; }
+    const dontKnow = document.getElementById('f-dont-know').checked;
+    if (dontKnow) {
+      document.getElementById('f-total-ep').value = '99';  // sentinel: auto-stop after 4 days no result
+    } else {
+      if (!_gv('f-total-ep')) { document.getElementById('serr-3').textContent = 'Enter total episodes or check “Don’t know”'; return; }
+    }
   }
   _goShowStep(_showMode === 'ongoing' ? 4 : 5);
 }
@@ -571,7 +594,11 @@ function _buildShowPreview() {
     'Mode: <b>' + (_showMode === 'ongoing' ? '\uD83D\uDCE1 Ongoing \u2014 downloads each new episode automatically' : '\uD83D\uDCE6 Older / Finished \u2014 all episodes queued now') + '</b>',
     'Search term: <b>' + _esc(_gv('f-search-name')) + '</b>',
     'Type: <b>' + _showType + '</b>',
-    'Season <b>' + _gv('f-season') + '</b>' + (_showMode === 'older' ? ' \u00b7 <b>All episodes</b> (ep 1 \u2192 up to 99, auto)' : ' \u00b7 Start ep <b>' + _gv('f-next-ep') + '</b> \u00b7 Total <b>' + _gv('f-total-ep') + '</b>'),
+    'Season <b>' + _gv('f-season') + '</b>' + (
+      _showMode === 'older' ? ' \u00b7 <b>All episodes</b> (ep 1 \u2192 up to 99, auto)' :
+      _gv('f-total-ep') === '99' ? ' \u00b7 From ep <b>' + _gv('f-next-ep') + '</b> \u00b7 <b>auto-stop</b> when no new ep found for 4 days' :
+      ' \u00b7 From ep <b>' + _gv('f-next-ep') + '</b> \u00b7 Total <b>' + _gv('f-total-ep') + '</b>'
+    ),
   ];
   if (_showMode === 'ongoing') lines.push('Airs on: <b>' + _releaseDay + '</b>');
   document.getElementById('show-confirm-preview').innerHTML = lines.join('<br>');

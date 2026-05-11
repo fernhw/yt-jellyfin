@@ -853,12 +853,26 @@ def process_show(row: dict, locations: dict,
         if end_s:
             try:
                 if today > datetime.date.fromisoformat(end_s):
-                    row['status'] = 'missed'
-                    log.warning(f"  {label}: search window expired → missed")
-                    onesignal_push(
-                        f"⚠ {show_name} not found",
-                        f"{label} — no result after {SEARCH_DAYS} days. Check manually.",
-                    )
+                    if total >= 99:
+                        # Open-ended total (don't know) → assume season is over, auto-withdraw
+                        row['status']       = 'complete'
+                        row['search_start'] = ''
+                        row['search_end']   = ''
+                        log.warning(
+                            f"  {label}: no result after {SEARCH_DAYS} days"
+                            f" (open-ended total) → auto-withdrawn as complete"
+                        )
+                        onesignal_push(
+                            f"✅ {show_name} — auto-complete",
+                            f"No new episode found after {SEARCH_DAYS} days — assumed season ended at ep {episode - 1}.",
+                        )
+                    else:
+                        row['status'] = 'missed'
+                        log.warning(f"  {label}: search window expired → missed")
+                        onesignal_push(
+                            f"⚠ {show_name} not found",
+                            f"{label} — no result after {SEARCH_DAYS} days. Check manually.",
+                        )
             except ValueError:
                 pass
         return row
