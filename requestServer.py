@@ -157,17 +157,15 @@ _ARIA2_KEYS = [
 ]
 
 def _aria2_active_downloads() -> List[Dict]:
-    """Return live download list from aria2c RPC (active + waiting + recent stopped)."""
+    """Return live download list from aria2c RPC."""
     try:
         active  = _aria2_rpc('aria2.tellActive',  [_ARIA2_KEYS]) or []
         waiting = _aria2_rpc('aria2.tellWaiting', [0, 20, _ARIA2_KEYS]) or []
-        stopped = _aria2_rpc('aria2.tellStopped', [0, 10, _ARIA2_KEYS]) or []
     except Exception:
         return []
-    stopped = [s for s in stopped if s.get('status') in ('complete', 'removed')]
 
     out: List[Dict] = []
-    for item in active + waiting + stopped:
+    for item in active + waiting:
         total     = int(item.get('totalLength')     or 0)
         done      = int(item.get('completedLength') or 0)
         pct       = int(done * 100 / total) if total > 0 else 0
