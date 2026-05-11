@@ -34,12 +34,12 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 .tab-pane.active{display:block}
 
 /* ── Fixed download strip ── */
-#dl-strip{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(13,17,23,.98);border-top:1px solid var(--border);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:8px 14px 10px;display:flex;flex-direction:column;gap:7px;transition:max-height .3s}
-#dl-strip.expanded{max-height:600px}
-#dl-strip-header{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;padding:2px 0}
+#dl-strip{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(13,17,23,.98);border-top:1px solid var(--border);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:8px 14px env(safe-area-inset-bottom,10px);display:flex;flex-direction:column;gap:0;transition:none}
+#dl-strip-header{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;padding:4px 0}
 #dl-strip-label{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);flex:1}
+#dl-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--orange);color:#1a0800;font-size:.65rem;font-weight:800;margin-left:4px;display:none}
 #dl-strip-toggle{font-size:.72rem;color:var(--muted);padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;flex-shrink:0}
-#dl-strip-body{display:flex;flex-direction:column;gap:8px;overflow:hidden}
+#dl-strip-body{display:none;flex-direction:column;gap:8px;max-height:52vh;overflow-y:auto;overflow-x:hidden;padding-top:8px;-webkit-overflow-scrolling:touch}
 #dl-strip-idle{color:var(--muted);font-size:.78rem;display:flex;align-items:center;gap:8px;padding:4px 0}
 #dl-strip-idle .dot-idle{width:6px;height:6px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);flex-shrink:0}
 .dl-card-row{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
@@ -342,8 +342,8 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 <!-- ── Persistent bottom download strip ─────────────────── -->
 <div id="dl-strip">
   <div id="dl-strip-header" onclick="toggleStrip()">
-    <span id="dl-strip-label">&#11015; Downloads</span>
-    <button id="dl-strip-toggle" onclick="event.stopPropagation();toggleStrip()">&#9650;</button>
+    <span id="dl-strip-label">&#11015; Downloads<span id="dl-badge"></span></span>
+    <button id="dl-strip-toggle" onclick="event.stopPropagation();toggleStrip()">&#9660;</button>
   </div>
   <div id="dl-strip-body">
     <div id="dl-strip-idle"><span class="dot-idle"></span>No active downloads</div>
@@ -603,11 +603,11 @@ async function submitMovie() {
 
 // ── Download strip (always visible) ──────────────────────────────────────────
 let _pollTimer = null;
-let _stripOpen = true;
+let _stripOpen = false;
 
 function toggleStrip() {
   _stripOpen = !_stripOpen;
-  document.getElementById('dl-strip-body').style.display = _stripOpen ? '' : 'none';
+  document.getElementById('dl-strip-body').style.display = _stripOpen ? 'flex' : 'none';
   document.getElementById('dl-strip-toggle').textContent = _stripOpen ? '▲' : '▼';
 }
 
@@ -636,16 +636,18 @@ async function pollDownloads() {
       dl.seeds !== undefined || dl.peers !== undefined || dl.status === 'active' || dl.status === 'waiting'
     );
 
+    const badge = document.getElementById('dl-badge');
     if (!torrents.length) {
       idle.classList.remove('hidden');
       dot.classList.remove('active');
       pctEl.textContent = '';
-      lbl.textContent = '⬇ Downloads';
+      badge.style.display = 'none';
       return;
     }
 
     idle.classList.add('hidden');
-    lbl.textContent = '⬇ Downloads (' + torrents.length + ' active)';
+    badge.textContent = torrents.length;
+    badge.style.display = 'inline-flex';
 
     // Nav badge: show highest-speed download pct
     const fastest = torrents.slice().sort((a, b) => (b.speed_bytes||0) - (a.speed_bytes||0))[0];
