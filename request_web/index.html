@@ -259,8 +259,9 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       </div>
       <input id="movie-title" class="big-input" placeholder="e.g. Dune Part Two"
              onkeydown="if(event.key==='Enter')mvNext()"
-             oninput="libCheck('movie-title','lib-warn-movie')"
+             oninput="libCheck('movie-title','lib-warn-movie');inputHint('movie-title','input-hint-movie')"
              style="font-size:1.15rem;padding:20px 18px;margin-bottom:6px"/>
+      <div id="input-hint-movie" style="display:none;margin-bottom:6px;padding:9px 13px;background:rgba(250,204,21,.07);border:1px solid rgba(250,204,21,.3);border-radius:12px;font-size:.79rem;color:#fde68a;line-height:1.5"></div>
       <div id="lib-warn-movie" style="display:none;margin-bottom:6px;padding:10px 13px;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35);border-radius:12px;font-size:.79rem;line-height:1.5">
         <span style="font-weight:700;color:var(--orange)">Already in Jellyfin?</span>
         <span id="lib-warn-movie-text" style="color:var(--muted)"></span><br>
@@ -394,7 +395,8 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <div class="step-q">What's it called?</div>
       <label class="field-label" style="margin-top:14px" for="f-show-name">Show name</label>
       <input id="f-show-name" class="big-input" placeholder="e.g. Marshals" maxlength="80"
-             oninput="autoFillSearch();libCheck('f-show-name','lib-warn-show')" onkeydown="if(event.key==='Enter')document.getElementById('f-search-name').focus()"/>
+             oninput="autoFillSearch();libCheck('f-show-name','lib-warn-show');inputHint('f-show-name','input-hint-show')" onkeydown="if(event.key==='Enter')document.getElementById('f-search-name').focus()"/>
+      <div id="input-hint-show" style="display:none;margin-top:6px;padding:9px 13px;background:rgba(250,204,21,.07);border:1px solid rgba(250,204,21,.3);border-radius:12px;font-size:.79rem;color:#fde68a;line-height:1.5"></div>
       <div id="lib-warn-show" style="display:none;margin-top:8px;padding:10px 13px;background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.35);border-radius:12px;font-size:.79rem;line-height:1.5">
         <span style="font-weight:700;color:var(--orange)">Already in Jellyfin?</span>
         <span id="lib-warn-show-text" style="color:var(--muted)"></span><br>
@@ -564,6 +566,34 @@ function libCheck(inputId, warnId) {
       warn.style.display = 'block';
     } catch(e) {}
   }, 600);
+}
+
+// ── Typing hints: symbols + roman numerals ────────────────────────────────────
+const _ROMAN_MAP = {
+  III:'3', IV:'4', VI:'6', VII:'7', VIII:'8', IX:'9',
+  XI:'11', XII:'12', XIII:'13', XIV:'14', XV:'15',
+  XVI:'16', XVII:'17', XVIII:'18', XIX:'19', XX:'20',
+};
+const _ROMAN_RE = /\b(XVIII|XVII|XVI|XIV|XIII|VIII|VII|XIX|XII|VI|XI|XX|IV|IX|III|XV)\b/i;
+
+function inputHint(inputId, hintId) {
+  const val = document.getElementById(inputId).value;
+  const hint = document.getElementById(hintId);
+  if (val.length < 3) { hint.style.display = 'none'; return; }
+  const tips = [];
+  // Special symbols that break searches
+  const symMatch = val.match(/[:!?&#@$%^*\[\]{}<>\\|~]/);
+  if (symMatch) tips.push('Remove the <b>' + symMatch[0] + '</b> symbol — searches work better without it');
+  // Roman numerals III and above
+  const rmMatch = val.match(_ROMAN_RE);
+  if (rmMatch) {
+    const rn = rmMatch[1].toUpperCase();
+    const num = _ROMAN_MAP[rn] || rn;
+    tips.push('Write <b>' + num + '</b> instead of <b>' + rn + '</b>');
+  }
+  if (!tips.length) { hint.style.display = 'none'; return; }
+  hint.innerHTML = '✏️ ' + tips.join(' &nbsp;&middot;&nbsp; ');
+  hint.style.display = 'block';
 }
 
 // ── Hamburger ────────────────────────────────────────────────────────────────
@@ -834,6 +864,7 @@ function mvBack() {
 function mvReset() {
   document.getElementById('movie-title').value = '';
   document.getElementById('lib-warn-movie').style.display = 'none';
+  document.getElementById('input-hint-movie').style.display = 'none';
   const r = document.getElementById('mv-retry-title');
   if (r) r.value = '';
   mvBack();
