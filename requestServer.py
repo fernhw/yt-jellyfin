@@ -245,7 +245,7 @@ def _ensure_aria2_daemon() -> None:
                 continue
             pid_s, stat, cmd = parts
             # UN = uninterruptible + stopped; U alone also matches UN
-            if 'U' in stat and 'aria2c' in cmd and 'rpc-listen-port' in cmd:
+            if 'U' in stat and 'aria2c' in cmd:
                 try:
                     os.kill(int(pid_s), 9)
                     log.warning(f'aria2c watchdog: killed stuck UN process {pid_s}')
@@ -720,11 +720,9 @@ if __name__ == '__main__':
     # Start aria2c RPC daemon and watchdog
     _ensure_aria2_daemon()
     # Always scan for dangling .aria2 files at startup, regardless of whether
-    # the daemon was already running (covers pre-session-save orphans too)
-    try:
-        _resume_dangling_aria2_files()
-    except Exception as e:
-        log.warning(f'startup resume-dangling: {e}')
+    # the daemon was already running (covers pre-session-save orphans too).
+    # Run in a background thread so Flask starts immediately.
+    threading.Thread(target=_resume_dangling_aria2_files, daemon=True).start()
     wd = threading.Thread(target=_aria2_watchdog, daemon=True)
     wd.start()
 
