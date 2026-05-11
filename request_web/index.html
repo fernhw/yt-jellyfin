@@ -726,7 +726,17 @@ function showTab(name) {
     if (nb) nb.classList.toggle('active', t === name);
   });
   if (name === 'current')  fetchLog(false);
-  if (name === 'schedule') loadSchedule();
+  if (name === 'schedule') { loadSchedule(); _startSchedulePoll(); }
+  else _stopSchedulePoll();
+}
+
+let _schedulePollTimer = null;
+function _startSchedulePoll() {
+  if (_schedulePollTimer) return;
+  _schedulePollTimer = setInterval(loadSchedule, 8000);
+}
+function _stopSchedulePoll() {
+  if (_schedulePollTimer) { clearInterval(_schedulePollTimer); _schedulePollTimer = null; }
 }
 showTab('movie');
 

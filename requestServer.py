@@ -142,7 +142,7 @@ def _aria2_rpc(method: str, params: Optional[List] = None) -> object:
     error  = [None]
     def _call():
         try:
-            with _ureq.urlopen(req, timeout=4) as r:
+            with _ureq.urlopen(req, timeout=10) as r:
                 resp = json.load(r)
             if 'error' in resp:
                 raise RuntimeError(resp['error'].get('message', 'aria2 error'))
@@ -151,7 +151,7 @@ def _aria2_rpc(method: str, params: Optional[List] = None) -> object:
             error[0] = e
     t = threading.Thread(target=_call, daemon=True)
     t.start()
-    t.join(timeout=6)
+    t.join(timeout=12)
     if t.is_alive():
         raise RuntimeError('aria2 RPC timeout')
     if error[0]:
@@ -249,23 +249,60 @@ def _ensure_aria2_daemon() -> None:
     try:
         _aria2_rpc('aria2.getVersion')
         return
-    except Exception:
-        pass
+    except Exception as _e:
+        log.warning(f'aria2c watchdog: getVersion failed: {_e!r}')
 
-    # Not responsive — kill any stale process holding the port before relaunching.
+    # Not responsive — but it may be starting up (loading session). Retry 3×.
+    for _retry in range(3):
+        time.sleep(5)
+        try:
+            _aria2_rpc('aria2.getVersion')
+            log.info('aria2c watchdog: recovered after retry %d', _retry + 1)
+            return
+        except Exception:
+            pass
+
+    # Still not responding after 15s — check if a stale process holds the port.
+    # Only kill if the process has been running for >30s (i.e. it's truly stuck).
     try:
         ps = subprocess.run(
-            ['lsof', '-ti', f':{ARIA2_RPC_PORT}'],
+            ['lsof', '-nP', f'-iTCP:{ARIA2_RPC_PORT}', '-sTCP:LISTEN'],
             capture_output=True, text=True, timeout=5,
         )
-        for pid_s in ps.stdout.split():
+        pids_to_kill = []
+        # Parse lsof table output (header: COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME)
+        for line in ps.stdout.splitlines()[1:]:  # skip header
+            cols = line.split()
+            if len(cols) < 2:
+                continue
             try:
-                os.kill(int(pid_s), 9)
-                log.warning(f'aria2c watchdog: killed stale process on port {ARIA2_RPC_PORT} pid={pid_s}')
+                pid = int(cols[1])
+                # Check process start time — skip if recently started (< 45s)
+                stat_r = subprocess.run(
+                    ['ps', '-o', 'etime=', '-p', str(pid)],
+                    capture_output=True, text=True, timeout=3,
+                )
+                etime = stat_r.stdout.strip()  # format: [[DD-]HH:]MM:SS
+                # Parse to seconds
+                parts = etime.replace('-', ':').split(':')
+                secs = sum(int(p) * m for p, m in zip(reversed(parts), [1, 60, 3600, 86400]))
+                if secs >= 45:
+                    pids_to_kill.append(pid)
+                else:
+                    log.info(f'aria2c watchdog: process {pid} too young ({secs}s), waiting')
             except Exception:
                 pass
-        if ps.stdout.strip():
-            time.sleep(0.5)
+        for pid in pids_to_kill:
+            try:
+                os.kill(pid, 9)
+                log.warning(f'aria2c watchdog: killed stale process on port {ARIA2_RPC_PORT} pid={pid}')
+            except Exception:
+                pass
+        if pids_to_kill:
+            time.sleep(1)
+        elif ps.stdout.strip():
+            # Process too young, back off — it's still starting up
+            return
     except Exception:
         pass
 
