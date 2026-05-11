@@ -264,7 +264,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
              style="font-size:1.15rem;padding:20px 18px;margin-bottom:6px"/>
       <div id="input-hint-movie" style="display:none;margin-bottom:6px;padding:9px 13px;background:rgba(250,204,21,.07);border:1px solid rgba(250,204,21,.3);border-radius:12px;font-size:.79rem;color:#fde68a;line-height:1.5"></div>
       <div id="lib-warn-movie" style="display:none;margin-bottom:6px;padding:10px 13px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);border-radius:12px;font-size:.79rem;color:#93c5fd;line-height:1.55">
-        &#128204; We found something with a similar name already in Jellyfin. If this is a sequel or a different film, go ahead &mdash; it won&rsquo;t overwrite anything.
+        &#128204; <span id="lib-warn-movie-msg"></span>
       </div>
       <div style="font-size:.65rem;color:var(--muted);margin-bottom:4px;letter-spacing:.04em">
         Use the English title
@@ -398,7 +398,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
              onblur="libCheckNow('f-show-name','lib-warn-show')" onkeydown="if(event.key==='Enter')document.getElementById('f-search-name').focus()"/>
       <div id="input-hint-show" style="display:none;margin-top:6px;padding:9px 13px;background:rgba(250,204,21,.07);border:1px solid rgba(250,204,21,.3);border-radius:12px;font-size:.79rem;color:#fde68a;line-height:1.5"></div>
       <div id="lib-warn-show" style="display:none;margin-top:8px;padding:10px 13px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);border-radius:12px;font-size:.79rem;color:#93c5fd;line-height:1.55">
-        &#128204; We found a show with a similar name already in Jellyfin. If this is a new season or a different show, go ahead &mdash; it won&rsquo;t overwrite anything.
+        &#128204; <span id="lib-warn-show-msg"></span>
       </div>
       <div class="field-label" style="margin-top:14px">Search term <button class="tip-btn" onclick="tipToggle('tip-search')">?</button></div>
       <div class="tip-box hidden" id="tip-search">
@@ -554,7 +554,16 @@ async function _doLibCheck(inputId, warnId) {
       {headers: {'X-Auth-Token': TOKEN}});
     if (!r.ok) return;
     const data = await r.json();
-    warn.style.display = (data.matches || []).length > 0 ? 'block' : 'none';
+    const hits = data.matches || [];
+    if (hits.length === 0) { warn.style.display = 'none'; return; }
+    const top = hits[0];
+    const kind = top.kind === 'show' ? 'show' : 'movie';
+    const tail = kind === 'show'
+      ? 'If this is a new season or a different show, go ahead \u2014 it won\u2019t overwrite anything.'
+      : 'If this is a sequel or a different film, go ahead \u2014 it won\u2019t overwrite anything.';
+    const msgEl = document.getElementById(warnId + '-msg');
+    if (msgEl) msgEl.textContent = '\u201c' + top.name + '\u201d is already in Jellyfin. ' + tail;
+    warn.style.display = 'block';
   } catch(e) {}
 }
 function libCheckSpace(inputId, warnId) {
