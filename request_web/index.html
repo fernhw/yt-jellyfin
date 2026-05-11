@@ -231,17 +231,62 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <div class="step-hint" style="margin-bottom:16px" id="mv-title-echo"></div>
       <button class="show-mode-btn" onclick="mvSubmit('live')">
         <div class="smb-icon">&#127916;</div>
-        <div class="smb-title">Live-action / Western</div>
-        <div class="smb-sub">Hollywood, foreign films, documentaries</div>
+        <div class="smb-body">
+          <div class="smb-title">Live-action / Western</div>
+          <div class="smb-sub">Hollywood, foreign films, documentaries &mdash; also 3D animated films</div>
+        </div>
       </button>
       <button class="show-mode-btn" onclick="mvSubmit('anime')">
         <div class="smb-icon">&#127885;</div>
-        <div class="smb-title">Anime / Japanese Animation</div>
-        <div class="smb-sub">Searches Nyaa.si and anime-specific sources</div>
+        <div class="smb-body">
+          <div class="smb-title">Anime / Japanese Animation</div>
+          <div class="smb-sub">Japanese animated films, Ghibli, etc.</div>
+        </div>
       </button>
-      <button class="big-btn btn-muted" onclick="mvBack()" style="margin-top:4px">&larr; Back</button>
+      <button class="ghost-btn" onclick="mvBack()">&larr; Back</button>
       <div class="err" id="movie-err2"></div>
-      <div id="movie-ok" class="success-msg hidden"></div>
+    </div>
+
+    <!-- Step C: searching spinner -->
+    <div id="mv-step-c" class="hidden" style="text-align:center;padding:32px 0">
+      <div class="spinner" style="width:36px;height:36px;margin:0 auto 20px;border-width:3.5px"></div>
+      <div style="font-size:1.05rem;font-weight:700;color:var(--white);margin-bottom:8px" id="mv-searching-label">Searching&hellip;</div>
+      <div style="font-size:.82rem;color:var(--muted)" id="mv-searching-sub">Checking torrent sites for your movie</div>
+    </div>
+
+    <!-- Step D: queued + tips + retry -->
+    <div id="mv-step-d" class="hidden">
+      <div style="background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.25);border-radius:14px;padding:16px 18px;margin-bottom:20px">
+        <div style="font-size:1.05rem;font-weight:800;color:var(--teal);margin-bottom:4px">Sent to download!</div>
+        <div style="font-size:.88rem;color:var(--muted)" id="mv-queued-label"></div>
+        <div style="font-size:.8rem;color:var(--muted);margin-top:6px">The download bar will appear at the bottom. Usually takes 1&ndash;5 minutes.</div>
+      </div>
+
+      <div style="margin-bottom:18px">
+        <div style="font-size:.95rem;font-weight:700;color:var(--white);margin-bottom:12px">If nothing appears after a few minutes&hellip;</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.8;background:var(--bg3);border-radius:12px;padding:14px 16px">
+          The title might be hard to find. Common reasons:
+          <ul style="margin:10px 0 0 16px;padding:0">
+            <li style="margin-bottom:8px"><b style="color:var(--white)">Special characters or numbers in the title</b><br>
+              Instead of writing <span style="color:var(--orange)">Lupin III: The First</span> try just <span style="color:var(--teal)">Lupin First</span> &mdash; simpler keywords find more results</li>
+            <li style="margin-bottom:8px"><b style="color:var(--white)">3D or CGI animated movies</b><br>
+              Try <b>Live-action</b> instead of Anime &mdash; films like Lupin The First or Spider-Verse are often listed under western releases</li>
+            <li style="margin-bottom:8px"><b style="color:var(--white)">Long or complex titles</b><br>
+              Use only 2&ndash;3 key words. Example: <span style="color:var(--orange)">My Hero Academia: Heroes Rising</span> &rarr; <span style="color:var(--teal)">Hero Academia Rising</span></li>
+            <li><b style="color:var(--white)">Try the other type</b><br>
+              If you chose Anime and nothing came, try Live-action (and vice versa)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="font-size:.63rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Try a different search</div>
+      <input id="mv-retry-title" class="big-input" placeholder="e.g. Lupin First" style="margin-bottom:10px"
+             onkeydown="if(event.key==='Enter')mvRetry('live')"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="big-btn btn-orange" style="margin-top:0" onclick="mvRetry('live')">Live-action</button>
+        <button class="big-btn btn-purple" style="margin-top:0" onclick="mvRetry('anime')">Anime</button>
+      </div>
+      <button class="ghost-btn" onclick="mvReset()" style="margin-top:6px">Start over</button>
     </div>
   </div>
 
@@ -669,6 +714,8 @@ function resetAddForm() {
 }
 
 // ── Movie tab ─────────────────────────────────────────────────────────────────
+let _mvType = '', _mvTitle = '';
+
 function mvNext() {
   const title = document.getElementById('movie-title').value.trim();
   if (!title) { document.getElementById('movie-err').textContent = 'Enter a movie title first'; return; }
@@ -679,33 +726,71 @@ function mvNext() {
 }
 
 function mvBack() {
-  document.getElementById('mv-step-b').classList.add('hidden');
+  ['mv-step-b','mv-step-c','mv-step-d'].forEach(id => document.getElementById(id).classList.add('hidden'));
   document.getElementById('mv-step-a').classList.remove('hidden');
   document.getElementById('movie-err2').textContent = '';
-  document.getElementById('movie-ok').classList.add('hidden');
 }
 
-async function mvSubmit(type) {
-  const title = document.getElementById('movie-title').value.trim();
+function mvReset() {
+  document.getElementById('movie-title').value = '';
+  document.getElementById('mv-retry-title').value = '';
+  mvBack();
+}
+
+function mvShowStep(id) {
+  ['mv-step-a','mv-step-b','mv-step-c','mv-step-d'].forEach(s => document.getElementById(s).classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+const _mvSearchPhrases = [
+  'Checking torrent sites\u2026',
+  'Looking for your movie\u2026',
+  'Searching anime sources\u2026',
+  'Almost there\u2026',
+];
+
+async function mvSubmit(type, titleOverride) {
+  const title = (titleOverride || document.getElementById('movie-title').value).trim();
   const quality = document.getElementById('movie-quality').value;
-  document.getElementById('movie-err2').textContent = '';
-  document.getElementById('movie-ok').classList.add('hidden');
-  // Briefly disable buttons
-  document.querySelectorAll('#mv-step-b .show-mode-btn').forEach(b => b.disabled = true);
-  try {
-    const r = await api('POST', '/api/movie', { title, anime: type === 'anime', quality });
-    if (r.ok) {
-      document.getElementById('movie-ok').textContent = '\u201c' + title + '\u201d queued \u2014 the strip below will show progress.';
-      document.getElementById('movie-ok').classList.remove('hidden');
-      document.getElementById('movie-title').value = '';
-      toast('Queued \u2713');
-      setTimeout(() => mvBack(), 1800);
-    } else {
-      const j = await r.json().catch(() => ({}));
-      document.getElementById('movie-err2').textContent = j.error || 'Server error';
-    }
-  } catch(e) { document.getElementById('movie-err2').textContent = 'Network error'; }
-  document.querySelectorAll('#mv-step-b .show-mode-btn').forEach(b => b.disabled = false);
+  if (!title) return;
+  _mvType = type;
+  _mvTitle = title;
+
+  // Show searching spinner (step C)
+  document.getElementById('mv-searching-label').textContent = '\u201c' + title + '\u201d\u2026';
+  document.getElementById('mv-searching-sub').textContent = type === 'anime'
+    ? 'Checking anime torrent sites' : 'Checking torrent sites';
+  mvShowStep('mv-step-c');
+
+  // Cycle sub-label for a realistic feel
+  let phraseIdx = 0;
+  const phraseTimer = setInterval(() => {
+    phraseIdx = (phraseIdx + 1) % _mvSearchPhrases.length;
+    const el = document.getElementById('mv-searching-sub');
+    if (el) el.textContent = _mvSearchPhrases[phraseIdx];
+  }, 1400);
+
+  // Fire the request in parallel with the 4-second minimum wait
+  const [r] = await Promise.all([
+    api('POST', '/api/movie', { title, anime: type === 'anime', quality }).catch(() => null),
+    new Promise(res => setTimeout(res, 4000)),
+  ]);
+  clearInterval(phraseTimer);
+
+  // Show step D (queued + tips)
+  const typeLabel = type === 'anime' ? 'Anime' : 'Live-action';
+  document.getElementById('mv-queued-label').innerHTML =
+    '\u201c' + _esc(title) + '\u201d \u00b7 ' + typeLabel;
+  document.getElementById('mv-retry-title').value = title;
+  mvShowStep('mv-step-d');
+  toast('Queued \u2713');
+}
+
+function mvRetry(type) {
+  const t = document.getElementById('mv-retry-title').value.trim();
+  if (!t) { document.getElementById('mv-retry-title').focus(); return; }
+  document.getElementById('movie-title').value = t;
+  mvSubmit(type, t);
 }
 
 // ── Download strip ────────────────────────────────────────────────────────────
