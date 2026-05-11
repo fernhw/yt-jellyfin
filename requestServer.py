@@ -127,36 +127,23 @@ def _aria2_secret() -> str:
     return _load_kv(SECRETS_FILE).get('ARIA2_SECRET', 'aria2rpc2026')
 
 def _aria2_rpc(method: str, params: Optional[List] = None) -> object:
-    """Call aria2 JSON-RPC.  Raises on error or timeout."""
-    import urllib.request as _ureq
+    """Call aria2 JSON-RPC. Uses http.client directly so the socket is always closed."""
+    import http.client
     body = json.dumps({
         'jsonrpc': '2.0', 'id': 'srv', 'method': method,
         'params': [f'token:{_aria2_secret()}'] + (params or []),
     }).encode()
-    req = _ureq.Request(
-        f'http://127.0.0.1:{ARIA2_RPC_PORT}/jsonrpc',
-        data=body, headers={'Content-Type': 'application/json'},
-    )
-    # Run in a thread so a stuck TCP connect can't block forever
-    result = [None]
-    error  = [None]
-    def _call():
-        try:
-            with _ureq.urlopen(req, timeout=10) as r:
-                resp = json.load(r)
-            if 'error' in resp:
-                raise RuntimeError(resp['error'].get('message', 'aria2 error'))
-            result[0] = resp.get('result')
-        except Exception as e:
-            error[0] = e
-    t = threading.Thread(target=_call, daemon=True)
-    t.start()
-    t.join(timeout=12)
-    if t.is_alive():
-        raise RuntimeError('aria2 RPC timeout')
-    if error[0]:
-        raise error[0]
-    return result[0]
+    conn = http.client.HTTPConnection('127.0.0.1', ARIA2_RPC_PORT, timeout=4)
+    try:
+        conn.request('POST', '/jsonrpc', body=body,
+                     headers={'Content-Type': 'application/json'})
+        resp = conn.getresponse()
+        data = json.loads(resp.read())
+        if 'error' in data:
+            raise RuntimeError(data['error'].get('message', 'aria2 error'))
+        return data.get('result')
+    finally:
+        conn.close()
 
 def _fmt_speed(bps: int) -> str:
     if bps >= 1_048_576: return f'{bps/1_048_576:.1f} MB/s'
@@ -172,8 +159,10 @@ def _fmt_size(b: int) -> str:
 _ARIA2_KEYS = [
     'gid', 'status', 'totalLength', 'completedLength',
     'downloadSpeed', 'uploadSpeed', 'numSeeders', 'connections',
-    'bittorrent', 'files', 'errorMessage',
+    'bittorrent', 'errorMessage',
 ]
+# Keys used only when we need the file path for name fallback
+_ARIA2_KEYS_WITH_FILES = _ARIA2_KEYS + ['files']
 
 def _load_gid_names() -> dict:
     """Load gid→friendly name registry written by showSchedulerSearch."""
@@ -184,14 +173,17 @@ def _load_gid_names() -> dict:
         return {}
 
 
+_last_downloads_cache: List[Dict] = []
+
 def _aria2_active_downloads() -> List[Dict]:
-    """Return live download list from aria2c RPC."""
+    """Return live download list from aria2c RPC. Returns last-known-good on timeout."""
+    global _last_downloads_cache
     try:
         active  = _aria2_rpc('aria2.tellActive',  [_ARIA2_KEYS]) or []
         # tellWaiting returns both queued and paused items
         waiting = _aria2_rpc('aria2.tellWaiting', [0, 50, _ARIA2_KEYS]) or []
     except Exception:
-        return []
+        return _last_downloads_cache
     gid_names = _load_gid_names()
 
     # tellWaiting returns both waiting and paused; tellActive returns active only.
@@ -217,10 +209,6 @@ def _aria2_active_downloads() -> List[Dict]:
 
         bt   = item.get('bittorrent') or {}
         name = (bt.get('info') or {}).get('name', '')
-        if not name:
-            files = item.get('files') or []
-            if files:
-                name = (files[0].get('path') or '').rsplit('/', 1)[-1]
         # Fall back to registered friendly name (covers [METADATA] phase)
         if not name or name.startswith('[METADATA]'):
             name = gid_names.get(item.get('gid', ''), name)
@@ -239,6 +227,7 @@ def _aria2_active_downloads() -> List[Dict]:
             'done':        _fmt_size(done),
             'total_bytes': total,
         })
+    _last_downloads_cache = out
     return out
 
 def _aria2_port_open() -> bool:
