@@ -254,32 +254,39 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <div style="font-size:.82rem;color:var(--muted)" id="mv-searching-sub">Checking torrent sites for your movie</div>
     </div>
 
-    <!-- Step D: queued + tips + retry -->
-    <div id="mv-step-d" class="hidden">
-      <div style="background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.25);border-radius:14px;padding:16px 18px;margin-bottom:20px">
-        <div style="font-size:1.05rem;font-weight:800;color:var(--teal);margin-bottom:4px">Sent to download!</div>
-        <div style="font-size:.88rem;color:var(--muted)" id="mv-queued-label"></div>
-        <div style="font-size:.8rem;color:var(--muted);margin-top:6px">The download bar will appear at the bottom. Usually takes 1&ndash;5 minutes.</div>
+    <!-- Step D: downloading (success) -->
+    <div id="mv-step-d" class="hidden" style="text-align:center;padding:24px 0">
+      <div style="font-size:2.4rem;margin-bottom:12px">&#9989;</div>
+      <div style="font-size:1.15rem;font-weight:800;color:var(--teal);margin-bottom:6px">Downloading!</div>
+      <div style="font-size:.9rem;color:var(--muted);margin-bottom:4px" id="mv-ok-label"></div>
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:24px">You can see progress in the bar at the bottom of the screen.</div>
+      <button class="big-btn" onclick="mvReset()">Request another movie</button>
+    </div>
+
+    <!-- Step E: not found — tips + retry -->
+    <div id="mv-step-e" class="hidden">
+      <div style="background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.25);border-radius:14px;padding:16px 18px;margin-bottom:20px">
+        <div style="font-size:1.05rem;font-weight:800;color:var(--orange);margin-bottom:4px">Couldn&rsquo;t find it :(</div>
+        <div style="font-size:.88rem;color:var(--muted)" id="mv-fail-label"></div>
       </div>
 
       <div style="margin-bottom:18px">
-        <div style="font-size:.95rem;font-weight:700;color:var(--white);margin-bottom:12px">If nothing appears after a few minutes&hellip;</div>
+        <div style="font-size:.92rem;font-weight:700;color:var(--white);margin-bottom:12px">Try these fixes:</div>
         <div style="font-size:.82rem;color:var(--muted);line-height:1.8;background:var(--bg3);border-radius:12px;padding:14px 16px">
-          The title might be hard to find. Common reasons:
-          <ul style="margin:10px 0 0 16px;padding:0">
-            <li style="margin-bottom:8px"><b style="color:var(--white)">Special characters or numbers in the title</b><br>
-              Instead of writing <span style="color:var(--orange)">Lupin III: The First</span> try just <span style="color:var(--teal)">Lupin First</span> &mdash; simpler keywords find more results</li>
+          <ul style="margin:0 0 0 16px;padding:0">
+            <li style="margin-bottom:8px"><b style="color:var(--white)">Remove special characters</b><br>
+              Instead of <span style="color:var(--orange)">Lupin III: The First</span> try <span style="color:var(--teal)">Lupin First</span></li>
             <li style="margin-bottom:8px"><b style="color:var(--white)">3D or CGI animated movies</b><br>
-              Try <b>Live-action</b> instead of Anime &mdash; films like Lupin The First or Spider-Verse are often listed under western releases</li>
-            <li style="margin-bottom:8px"><b style="color:var(--white)">Long or complex titles</b><br>
-              Use only 2&ndash;3 key words. Example: <span style="color:var(--orange)">My Hero Academia: Heroes Rising</span> &rarr; <span style="color:var(--teal)">Hero Academia Rising</span></li>
+              Try <b>Live-action</b> &mdash; films like Lupin or Spider-Verse are often listed under western releases</li>
+            <li style="margin-bottom:8px"><b style="color:var(--white)">Use fewer words</b><br>
+              <span style="color:var(--orange)">My Hero Academia: Heroes Rising</span> &rarr; <span style="color:var(--teal)">Hero Academia Rising</span></li>
             <li><b style="color:var(--white)">Try the other type</b><br>
-              If you chose Anime and nothing came, try Live-action (and vice versa)</li>
+              If you picked Anime and it didn&rsquo;t work, try Live-action (and vice versa)</li>
           </ul>
         </div>
       </div>
 
-      <div style="font-size:.63rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Try a different search</div>
+      <div style="font-size:.63rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Search again</div>
       <input id="mv-retry-title" class="big-input" placeholder="e.g. Lupin First" style="margin-bottom:10px"
              onkeydown="if(event.key==='Enter')mvRetry('live')"/>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -726,19 +733,20 @@ function mvNext() {
 }
 
 function mvBack() {
-  ['mv-step-b','mv-step-c','mv-step-d'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  ['mv-step-b','mv-step-c','mv-step-d','mv-step-e'].forEach(id => document.getElementById(id).classList.add('hidden'));
   document.getElementById('mv-step-a').classList.remove('hidden');
   document.getElementById('movie-err2').textContent = '';
 }
 
 function mvReset() {
   document.getElementById('movie-title').value = '';
-  document.getElementById('mv-retry-title').value = '';
+  const r = document.getElementById('mv-retry-title');
+  if (r) r.value = '';
   mvBack();
 }
 
 function mvShowStep(id) {
-  ['mv-step-a','mv-step-b','mv-step-c','mv-step-d'].forEach(s => document.getElementById(s).classList.add('hidden'));
+  ['mv-step-a','mv-step-b','mv-step-c','mv-step-d','mv-step-e'].forEach(s => document.getElementById(s).classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
 }
 
@@ -770,20 +778,53 @@ async function mvSubmit(type, titleOverride) {
     if (el) el.textContent = _mvSearchPhrases[phraseIdx];
   }, 1400);
 
-  // Fire the request in parallel with the 4-second minimum wait
-  const [r] = await Promise.all([
+  // Snapshot existing GIDs before submitting
+  let knownGids = new Set();
+  try {
+    const snap = await api('GET', '/api/torrent-state');
+    const snapJson = await snap.json();
+    (snapJson.downloads || []).forEach(d => knownGids.add(d.gid));
+  } catch(_) {}
+
+  // Fire the request + minimum 4-second spinner
+  await Promise.all([
     api('POST', '/api/movie', { title, anime: type === 'anime', quality }).catch(() => null),
     new Promise(res => setTimeout(res, 4000)),
   ]);
   clearInterval(phraseTimer);
 
-  // Show step D (queued + tips)
+  // Poll torrent-state for up to 45s waiting for a new GID to appear
+  const POLL_INTERVAL = 3000, POLL_TIMEOUT = 45000;
+  const pollStart = Date.now();
+  let foundGid = null;
+  while (Date.now() - pollStart < POLL_TIMEOUT) {
+    await new Promise(res => setTimeout(res, POLL_INTERVAL));
+    try {
+      const pr = await api('GET', '/api/torrent-state');
+      const pj = await pr.json();
+      const newItem = (pj.downloads || []).find(d => !knownGids.has(d.gid));
+      if (newItem) { foundGid = newItem.gid; break; }
+    } catch(_) {}
+    // Update spinner sub-text with elapsed time so it feels alive
+    const elapsed = Math.round((Date.now() - pollStart) / 1000);
+    const sub = document.getElementById('mv-searching-sub');
+    if (sub) sub.textContent = 'Still looking\u2026 (' + elapsed + 's)';
+  }
+
   const typeLabel = type === 'anime' ? 'Anime' : 'Live-action';
-  document.getElementById('mv-queued-label').innerHTML =
-    '\u201c' + _esc(title) + '\u201d \u00b7 ' + typeLabel;
-  document.getElementById('mv-retry-title').value = title;
-  mvShowStep('mv-step-d');
-  toast('Queued \u2713');
+  if (foundGid) {
+    // SUCCESS — show downloading screen
+    document.getElementById('mv-ok-label').textContent =
+      '\u201c' + title + '\u201d \u00b7 ' + typeLabel;
+    mvShowStep('mv-step-d');
+    toast('Downloading \u2713');
+  } else {
+    // FAILURE — show tips + retry screen
+    document.getElementById('mv-fail-label').textContent =
+      'We couldn\u2019t find \u201c' + title + '\u201d as ' + typeLabel + '.';
+    document.getElementById('mv-retry-title').value = title;
+    mvShowStep('mv-step-e');
+  }
 }
 
 function mvRetry(type) {
