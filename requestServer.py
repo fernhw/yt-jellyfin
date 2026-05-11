@@ -377,7 +377,9 @@ def library_check():
         ('movie', locs.get('MOVIES_DIR', '/Volumes/Jellyfin/Movies')),
         ('show',  locs.get('SHOWS_DIR',  '/Volumes/Jellyfin/Shows')),
     ]
-    q_tokens = {t for t in re.sub(r'\b\d{4}\b', '', q).split() if len(t) >= 2}
+    # Separate plain numbers (years, sequels) from word tokens
+    q_numbers = re.findall(r'\b\d+\b', q)
+    q_words   = {t for t in re.sub(r'\b\d+\b', '', q).split() if len(t) >= 2}
     matches = []
     for kind, d in dirs:
         try:
@@ -387,9 +389,14 @@ def library_check():
         for name in entries:
             if name.startswith('.'):
                 continue
-            nl = re.sub(r'\s*\(\d{4}\)', '', name.lower())
-            token_hits = sum(1 for t in q_tokens if t in nl) if q_tokens else 0
-            if q in nl or (q_tokens and token_hits >= max(1, len(q_tokens) - 1)):
+            nl = name.lower()
+            # Word match (strip year suffix from folder name for word comparison)
+            nl_clean = re.sub(r'\s*\(\d{4}\)', '', nl)
+            word_hits = sum(1 for t in q_words if t in nl_clean) if q_words else 0
+            word_match = (not q_words) or word_hits >= max(1, len(q_words) - 1)
+            # Number match: every number in the query must appear in the raw folder name
+            num_match = all(re.search(r'\b' + re.escape(n) + r'\b', nl) for n in q_numbers)
+            if word_match and num_match:
                 matches.append({'name': name, 'kind': kind})
     matches.sort(key=lambda m: (0 if q in m['name'].lower() else 1, m['name']))
     return jsonify({'matches': matches[:5]})
