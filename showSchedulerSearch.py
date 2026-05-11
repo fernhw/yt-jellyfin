@@ -321,6 +321,15 @@ def score_torrent(title: str, seeds: int, show_type: str,
         return None
 
     t = title.lower()
+
+    # ── Hard reject: raw encrypted disc dumps (AACS/BD+ DRM — Jellyfin can't play) ──
+    # "COMPLETE.BLURAY" / "COMPLETE.UHD.BLURAY" = full disc backup, DRM intact.
+    # REMUX is fine (DRM stripped lossless copy) — only reject COMPLETE disc dumps.
+    if 'complete' in t and ('bluray' in t or 'blu-ray' in t or '.bd.' in t or 'bdr' in t):
+        return None
+    # Raw Blu-ray disc structure folders
+    if 'bdmv' in t:
+        return None
     score = min(seeds, 500) * 0.3   # seeds → up to 150 pts
 
     # ── Resolution ──────────────────────────────────────────────────────────
