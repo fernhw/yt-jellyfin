@@ -1907,6 +1907,12 @@ async function pollDownloads() {
       const speedB  = dl.speed_bytes || 0;
       const eta     = (!isMeta && status !== 'paused') ? _fmtEta(totalB, speedB, pct) : null;
       const etaCol  = _etaColor(pct);
+      const seedN   = typeof seeds === 'number' ? seeds : parseInt(seeds) || 0;
+
+      // No-signal ETA panel explanation when stalled with 0 seeders
+      const noSeedEtaFallback = seedN === 0
+        ? '<div class="dl-eta-value" style="font-size:.75rem;color:#f87171;line-height:1.2">No<br>signal</div><div class="dl-eta-label" style="font-size:.52rem;margin-top:4px;line-height:1.3;color:var(--muted)">waiting for<br>a server</div>'
+        : '<div class="dl-eta-value" style="font-size:.82rem;color:' + etaCol + '">' + pct + '%</div><div class="dl-eta-label">loading</div>';
 
       const etaPanel = isMeta
         ? '<div class="dl-eta-panel"><div class="dl-eta-value" style="font-size:.9rem;color:var(--muted)">&#8987;</div><div class="dl-eta-label">connecting</div></div>'
@@ -1917,8 +1923,26 @@ async function pollDownloads() {
                 ? '<div class="dl-eta-value" style="font-size:.9rem;color:var(--muted)">&#9208;</div><div class="dl-eta-label">paused</div>'
                 : status === 'complete'
                   ? '<div class="dl-eta-value" style="font-size:1.1rem;color:var(--teal)">&#10003;</div><div class="dl-eta-label">done</div>'
-                  : '<div class="dl-eta-value" style="font-size:.82rem;color:' + etaCol + '">' + pct + '%</div><div class="dl-eta-label">loading</div>'
+                  : noSeedEtaFallback
           ) + '</div>';
+
+      // Signal bar seeder visualiser: 4 bars, height grows, color = health
+      function _seederBars(n) {
+        const bars  = n === 0 ? 0 : n <= 3 ? 1 : n <= 10 ? 2 : n <= 30 ? 3 : 4;
+        const label = n === 0 ? 'No signal' : n <= 3 ? 'Weak' : n <= 10 ? 'Fair' : n <= 30 ? 'Good' : 'Strong';
+        const col   = n === 0 ? '#7a8fa0' : n <= 3 ? '#f87171' : n <= 10 ? '#fbbf24' : n <= 30 ? '#4ade80' : '#2dd4bf';
+        let bHtml = '<div style="display:flex;align-items:flex-end;gap:2px">';
+        for (let i = 1; i <= 4; i++) {
+          const h = 5 + i * 4;
+          bHtml += '<div style="width:5px;height:' + h + 'px;border-radius:2px 2px 1px 1px;background:' + (i <= bars ? col : 'var(--bg3)') + '"></div>';
+        }
+        bHtml += '</div>';
+        return bHtml +
+          '<div style="display:flex;flex-direction:column;margin-left:6px;justify-content:center">' +
+            '<span style="font-size:.62rem;font-weight:700;color:' + col + ';line-height:1">' + label + '</span>' +
+            (n > 0 ? '<span style="font-size:.56rem;color:var(--muted);line-height:1.3">' + n + ' server' + (n !== 1 ? 's' : '') + '</span>' : '<span style="font-size:.54rem;color:var(--muted);line-height:1.3">no servers yet</span>') +
+          '</div>';
+      }
 
       card.innerHTML = [
         etaPanel,
@@ -1933,29 +1957,16 @@ async function pollDownloads() {
         isMeta ? '' : [
           '<div class="dl-stats">',
           '  <div class="dl-stat"><span class="dl-stat-arrow">&#11015;</span><b>' + _esc(speed) + '</b></div>',
-          '  <div class="dl-stat"><span class="dl-stat-arrow">&#11014;</span><b>' + _esc(upload) + '</b></div>',
           (done && size ? '<div class="dl-stat">' + _esc(done) + ' / ' + _esc(size) + '</div>' : ''),
           '  <div class="dl-stat" style="color:var(--muted)">' + _esc(status) + '</div>',
           '</div>',
         ].join(''),
         gid ? (function(){
-          const MAX_ICONS = 8;
-          const n = typeof seeds === 'number' ? seeds : parseInt(seeds) || 0;
-          let seedHtml;
-          if (n === 0) {
-            seedHtml = '<span style="font-size:.63rem;color:var(--muted)">No computers available</span>';
-          } else if (n <= MAX_ICONS) {
-            seedHtml = Array(n).fill('\uD83D\uDCBB').join('') +
-              '<span style="font-size:.6rem;color:var(--muted);margin-left:4px">' + n + ' computer' + (n !== 1 ? 's' : '') + '</span>';
-          } else {
-            seedHtml = Array(MAX_ICONS).fill('\uD83D\uDCBB').join('') +
-              '<span style="font-size:.6rem;color:var(--muted);margin-left:4px">+' + (n - MAX_ICONS) + ' more &nbsp;&mdash;&nbsp;' + n + ' computers</span>';
-          }
           return '<div class="dl-card-actions">' +
             '<button class="dl-act-btn" onclick="pauseToggle(\'' + gid + '\', \'' + status + '\')">' +
             (status === 'paused' ? '\u25b6 Resume' : '\u23f8 Pause') + '</button>' +
             '<button class="dl-act-btn remove" onclick="removeDl(\'' + gid + '\')">\u2715 Remove</button>' +
-            '<div style="margin-left:auto;display:flex;align-items:center;font-size:.78rem;line-height:1;gap:1px">' + seedHtml + '</div>' +
+            '<div style="margin-left:auto;display:flex;align-items:center">' + _seederBars(seedN) + '</div>' +
             '</div>';
         })() : '',
         '</div>',
