@@ -665,6 +665,13 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
           <div class="smb-sub">Paste an album URL from downloads.khinsider.com</div>
         </div>
       </button>
+      <button class="show-mode-btn" onclick="muPickType('spotify')">
+        <div class="smb-icon">&#127925;</div>
+        <div class="smb-body">
+          <div class="smb-title" style="color:#1DB954">Spotify</div>
+          <div class="smb-sub">Paste a Spotify album, playlist, or track URL &mdash; downloads via YouTube Music</div>
+        </div>
+      </button>
     </div>
 
     <!-- M2: Search input step -->
@@ -685,6 +692,19 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <button id="mu-2-continue" class="big-btn btn-teal" onclick="muSearchSubmit()" style="display:none;margin-top:4px">Search &rarr;</button>
       <button class="ghost-btn" onclick="muGoStep('mu-1')">&larr; Back</button>
       <div class="err" id="mu-err-2"></div>
+    </div>
+
+    <!-- M2-spotify: Spotify URL paste -->
+    <div class="form-step" id="mu-2-spotify">
+      <div class="step-q">Paste Spotify URL</div>
+      <div class="step-hint" style="margin-bottom:12px">Album, playlist, or track &mdash; e.g. https://open.spotify.com/album/&hellip;</div>
+      <input id="mu-spotify-url-input" class="big-input" placeholder="https://open.spotify.com/album/..." autocomplete="off"
+             oninput="muSpotifyUrlInput()"
+             onkeydown="if(event.key==='Enter')muSpotifyUrlSubmit()"
+             style="margin-bottom:8px"/>
+      <button id="mu-spotify-url-go" class="big-btn" style="background:#1DB954;color:#000;display:none" onclick="muSpotifyUrlSubmit()">Download via Spotify &rarr;</button>
+      <button class="ghost-btn" onclick="muGoStep('mu-1')">&larr; Back</button>
+      <div class="err" id="mu-err-spotify-url"></div>
     </div>
 
     <!-- M2-kh: KHInsider URL paste -->
@@ -756,6 +776,18 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
     <div class="section-sub">Recent activity from the download scheduler.</div>
     <button class="big-btn btn-muted" onclick="fetchLog(true)" style="margin-bottom:14px">&#8635; Refresh</button>
     <pre id="c-log" class="log-pre">Loading&hellip;</pre>
+
+    <!-- Error Reporter -->
+    <div style="margin-top:28px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Error Reporter</span>
+        <span id="err-badge" style="display:none;background:#f87171;color:#fff;border-radius:99px;font-size:.68rem;font-weight:700;padding:1px 7px"></span>
+        <button class="ghost-btn" style="margin-left:auto;font-size:.75rem;padding:4px 12px" onclick="fetchErrors()">&#8635; Refresh</button>
+      </div>
+      <div id="err-reporter-list" style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:.8rem;color:var(--muted)">Loading&hellip;</div>
+      </div>
+    </div>
   </div>
 
 </div><!-- /#content -->
@@ -913,7 +945,7 @@ function showTab(name) {
     const nb = document.getElementById('ntab-' + t);
     if (nb) nb.classList.toggle('active', t === name);
   });
-  if (name === 'current')  fetchLog(false);
+  if (name === 'current')  { fetchLog(false); fetchErrors(); }
   if (name === 'schedule') { loadSchedule(); _startSchedulePoll(); }
   else _stopSchedulePoll();
 }
@@ -2247,7 +2279,7 @@ function muGoStep(id) {
   _muStep = id;
   const next = document.getElementById(id);
   if (next) next.classList.add('active');
-  const pcts = {'mu-1':0,'mu-2':33,'mu-2-kh':33,'mu-3-tpb':70,'mu-3-kh':70,'mu-done':100};
+  const pcts = {'mu-1':0,'mu-2':33,'mu-2-kh':33,'mu-2-spotify':33,'mu-3-tpb':70,'mu-3-kh':70,'mu-done':100};
   document.getElementById('mu-prog').style.width = (pcts[id] || 0) + '%';
   const inp = next && next.querySelector('input:not([type=checkbox])');
   if (inp) setTimeout(() => inp.focus(), 60);
@@ -2274,6 +2306,13 @@ function muPickType(type) {
     document.getElementById('mu-err-kh-url').textContent = '';
     return;
   }
+  if (type === 'spotify') {
+    muGoStep('mu-2-spotify');
+    document.getElementById('mu-spotify-url-input').value = '';
+    document.getElementById('mu-spotify-url-go').style.display = 'none';
+    document.getElementById('mu-err-spotify-url').textContent = '';
+    return;
+  }
   if (type === 'mainstream') {
     q2.textContent    = 'What album or artist?';
     hint.textContent  = 'e.g. "Linkin Park Meteora" or "Radiohead OK Computer"';
@@ -2288,6 +2327,37 @@ function muPickType(type) {
     inp.placeholder   = 'e.g. "Arca Kick I"';
   }
   muGoStep('mu-2');
+}
+
+function muSpotifyUrlInput() {
+  const v = (document.getElementById('mu-spotify-url-input').value || '').trim();
+  document.getElementById('mu-spotify-url-go').style.display =
+    /^https:\/\/open\.spotify\.com\/(track|album|playlist|artist)\//.test(v) ? 'block' : 'none';
+}
+
+async function muSpotifyUrlSubmit() {
+  const url = (document.getElementById('mu-spotify-url-input').value || '').trim();
+  const errEl = document.getElementById('mu-err-spotify-url');
+  errEl.textContent = '';
+  if (!/^https:\/\/open\.spotify\.com\/(track|album|playlist|artist)\//.test(url)) {
+    errEl.textContent = 'Must be an open.spotify.com URL';
+    return;
+  }
+  document.getElementById('mu-spotify-url-go').disabled = true;
+  document.getElementById('mu-spotify-url-go').textContent = 'Starting\u2026';
+  try {
+    const r = await api('POST', '/api/spotify', {url, query: url.split('/').slice(-2).join(' ')});
+    const data = await r.json();
+    if (data.error) { errEl.textContent = data.error; return; }
+    document.getElementById('mu-done-title').textContent = 'Downloading via Spotify!';
+    document.getElementById('mu-done-sub').textContent = 'spotdl is fetching tracks from YouTube Music \u2014 check back in a few minutes.';
+    muGoStep('mu-done');
+  } catch(e) {
+    errEl.textContent = 'Request failed';
+  } finally {
+    document.getElementById('mu-spotify-url-go').disabled = false;
+    document.getElementById('mu-spotify-url-go').textContent = 'Download via Spotify \u2192';
+  }
 }
 
 function muKhUrlInput() {
@@ -2569,6 +2639,37 @@ async function fetchLog(scroll) {
     el.textContent = txt;
     if (scroll !== false) el.scrollTop = el.scrollHeight;
   } catch(e) {}
+}
+
+async function fetchErrors() {
+  const list  = document.getElementById('err-reporter-list');
+  const badge = document.getElementById('err-badge');
+  try {
+    const r    = await api('GET', '/api/errors?limit=50');
+    const data = await r.json();
+    const errs = data.errors || [];
+    if (!errs.length) {
+      list.innerHTML = '<div style="font-size:.8rem;color:var(--muted)">No errors recorded.</div>';
+      badge.style.display = 'none';
+      return;
+    }
+    badge.textContent   = errs.length;
+    badge.style.display = 'inline';
+    list.innerHTML = errs.map(e => {
+      const d    = new Date(e.ts * 1000);
+      const ts   = d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const col  = e.level === 'ERROR' ? '#f87171' : '#f59e0b';
+      return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:.75rem">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:3px">
+          <span style="color:${col};font-weight:700;font-size:.68rem">${_esc(e.level)}</span>
+          <span style="color:var(--muted)">${ts}</span>
+        </div>
+        <div style="color:var(--text);white-space:pre-wrap;word-break:break-word">${_esc(e.msg)}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="font-size:.8rem;color:#f87171">Failed to load errors.</div>';
+  }
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────

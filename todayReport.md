@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-12
 
-> *Good morning! Here's what landed on Tuesday, May 12, 2026 at 11:38 AM.*
-> **YT Mirror:** 754.63 GB used · 1.11 TB free
+> *Good afternoon! Here's what landed on Tuesday, May 12, 2026 at 03:00 PM.*
+> **YT Mirror:** 754.62 GB used · 1.11 TB free
 
 ## Priority Videos
 
@@ -19,4 +19,10 @@ No priority uploads today — your favorites are taking a break.
 - **The Truth Might Not Be Out There...** — *Internet Today* · downloaded 03:35 AM · not podcastable
 
 ---
+
+
+## 🚨 VPN Not Active — Downloads Skipped
+
+**Could not reach geo-IP check — VPN status unknown, aborting for safety.**
+All downloads were skipped at 2026-05-12 15:00:01 to protect your real IP. Re-enable ProtonVPN and re-run the downloader.
 

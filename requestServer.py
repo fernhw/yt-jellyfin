@@ -119,6 +119,21 @@ def _tail_log(n: int = 120) -> str:
 _kh_downloads: Dict[str, Dict] = {}
 _kh_lock = threading.Lock()
 
+# ── Spotify / spotdl download tracking ────────────────────────────────────────
+_spotdl_downloads: Dict[str, Dict] = {}
+_spotdl_lock = threading.Lock()
+
+def _spotdl_bin() -> str:
+    """Return path to spotdl, preferring the pip-installed user binary."""
+    for candidate in (
+        os.path.expanduser('~/Library/Python/3.9/bin/spotdl'),
+        shutil.which('spotdl'),
+        '/usr/local/bin/spotdl',
+    ):
+        if candidate and os.path.isfile(candidate):
+            return candidate
+    raise RuntimeError('spotdl not found — run: pip3 install spotdl')
+
 # ── Per-instance aria2c management ─────────────────────────────────────────────
 # Each download gets its own dedicated aria2c process on a unique port (6810–6910).
 # The central monitor thread polls each instance and aggregates state for the UI.
@@ -1198,6 +1213,160 @@ def music_remove(token: str):
     with _kh_lock:
         _kh_downloads.pop(token, None)
     return jsonify({'removed': token})
+
+
+@app.route('/api/spotify', methods=['POST'])
+@_require_auth
+def spotify_download():
+    """
+    Start a spotdl download.
+    Body: {url: 'https://open.spotify.com/album/...', query: 'optional label'}
+    spotdl resolves each track via YouTube Music and downloads MP3s.
+    """
+    data      = request.get_json(force=True) or {}
+    url       = (data.get('url') or '').strip()
+    query     = (data.get('query') or '').strip()
+
+    # Validate: must be a Spotify URL for track/album/playlist/artist
+    if not re.match(
+        r'^https://open\.spotify\.com/(track|album|playlist|artist)/[A-Za-z0-9]+',
+        url
+    ):
+        return jsonify({'error': 'Invalid Spotify URL'}), 400
+
+    locs      = _load_kv(LOCATIONS_FILE)
+    music_dir = locs.get('MUSIC_DIR', '/Volumes/Jellyfin/Music')
+
+    try:
+        binary = _spotdl_bin()
+    except RuntimeError as e:
+        return jsonify({'error': str(e)}), 500
+
+    token = os.urandom(4).hex()
+    state: Dict = {
+        'token':        token,
+        'name':         query or url.split('/')[-1],
+        'url':          url,
+        'status':       'starting',
+        'lines':        [],     # last N stdout lines for progress display
+        'done':         0,
+        'total':        0,
+        'dest':         music_dir,
+        'started_at':   time.time(),
+        'completed_at': 0.0,
+    }
+    with _spotdl_lock:
+        _spotdl_downloads[token] = state
+
+    def _run():
+        try:
+            cmd = [binary, 'download', url, '--output', music_dir]
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, bufsize=1,
+            )
+            state['status'] = 'active'
+            state['pid']    = proc.pid
+            for line in proc.stdout:
+                line = line.rstrip()
+                if not line:
+                    continue
+                state['lines'] = (state['lines'] + [line])[-40:]
+                # spotdl prints "Downloaded N/M songs" or "Downloaded "Title""
+                m = re.search(r'Downloaded\s+(\d+)/(\d+)', line)
+                if m:
+                    state['done']  = int(m.group(1))
+                    state['total'] = int(m.group(2))
+                elif re.search(r'Downloaded\s+"', line):
+                    state['done'] = state.get('done', 0) + 1
+                log.info('[spotdl:%s] %s', token, line)
+            proc.wait()
+            state['status']       = 'complete' if proc.returncode == 0 else 'error'
+            state['completed_at'] = time.time()
+            if proc.returncode != 0:
+                state['error'] = f'spotdl exited {proc.returncode}'
+        except Exception as e:
+            state['status']       = 'error'
+            state['error']        = str(e)
+            state['completed_at'] = time.time()
+            log.exception('spotdl %s failed', token)
+
+    threading.Thread(target=_run, daemon=True).start()
+    return jsonify({'token': token}), 202
+
+
+@app.route('/api/spotify-state')
+@_require_auth
+def spotify_state():
+    """Progress for all active/recent spotdl downloads."""
+    with _spotdl_lock:
+        now      = time.time()
+        snapshot = []
+        to_clean = []
+        for token, st in _spotdl_downloads.items():
+            completed_at = st.get('completed_at', 0.0)
+            if completed_at and now - completed_at > 300:
+                to_clean.append(token)
+                continue
+            snapshot.append({k: v for k, v in st.items() if k not in ('pid',)})
+        for t in to_clean:
+            _spotdl_downloads.pop(t, None)
+    return jsonify({'downloads': snapshot})
+
+
+@app.route('/api/spotify/<token>/remove', methods=['POST'])
+@_require_auth
+def spotify_remove(token: str):
+    if not re.fullmatch(r'[0-9a-f]{4,16}', token):
+        abort(400)
+    with _spotdl_lock:
+        st = _spotdl_downloads.pop(token, None)
+    if st is None:
+        return jsonify({'error': 'not found'}), 404
+    pid = st.get('pid')
+    if pid:
+        try:
+            os.kill(pid, 15)  # SIGTERM
+        except Exception:
+            pass
+    return jsonify({'removed': token})
+
+
+# ── Error log endpoint ─────────────────────────────────────────────────────────
+
+_error_log: List[Dict] = []   # in-memory ring buffer, max 200 entries
+_error_log_lock = threading.Lock()
+
+class _ErrorCapture(logging.Handler):
+    """Captures ERROR+ log records into the in-memory ring buffer."""
+    def emit(self, record: logging.LogRecord) -> None:
+        if record.levelno < logging.WARNING:
+            return
+        entry = {
+            'ts':      record.created,
+            'level':   record.levelname,
+            'msg':     self.format(record),
+        }
+        with _error_log_lock:
+            _error_log.append(entry)
+            if len(_error_log) > 200:
+                del _error_log[0]
+
+_capture_handler = _ErrorCapture()
+_capture_handler.setFormatter(logging.Formatter('%(message)s'))
+logging.getLogger().addHandler(_capture_handler)
+
+
+@app.route('/api/errors')
+@_require_auth
+def get_errors():
+    """Return recent WARNING/ERROR log entries from this server process."""
+    limit = min(int(request.args.get('limit', 50)), 200)
+    with _error_log_lock:
+        entries = list(_error_log[-limit:])
+    return jsonify({'errors': entries[::-1]})  # newest first
+
 
 # ── Static UI ──────────────────────────────────────────────────────────────────
 
