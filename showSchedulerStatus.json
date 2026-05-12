@@ -52,32 +52,6 @@
       "days_until": 0,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-hat-witch-atelier.jpg"
-    },
-    {
-      "show": "Attack on Titan S02",
-      "season": 2,
-      "downloaded": 0,
-      "next_ep": 1,
-      "total": 12,
-      "week": "?",
-      "status": "searching",
-      "release_days": "daily",
-      "days_until": 0,
-      "is_complete": false,
-      "thumb": ""
-    },
-    {
-      "show": "Digimon: Digital Monsters S02",
-      "season": 2,
-      "downloaded": 0,
-      "next_ep": 1,
-      "total": 50,
-      "week": "?",
-      "status": "searching",
-      "release_days": "daily",
-      "days_until": 0,
-      "is_complete": false,
-      "thumb": ""
     }
   ]
 }

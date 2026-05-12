@@ -943,15 +943,18 @@ def _score_movie(title: str, seeds: int, is_anime: bool,
     show_type = 'anime' if is_anime else 'live'
     if not _has_english(title, show_type, False):
         return None
+    t = title.lower()
+    # When 1080p is explicitly selected, hard-reject any 4K/2160p result so it
+    # never auto-wins purely from the resolution bonus in score_torrent.
+    if not prefer_4k and ('2160p' in t or '4k' in t):
+        return None
     base = score_torrent(title, seeds, show_type, min_seeds=min_seeds)
     if base is None:
         return None
-    # When 4K is preferred, add a large bonus to 4K results so they
-    # always sort above 1080p candidates.
-    if prefer_4k:
-        t = title.lower()
-        if '2160p' in t or '4k' in t:
-            base += 200
+    # When 4K is preferred, boost 4K results so they sort above any 1080p that
+    # happens to appear (score_torrent itself only gives +80 for 4K vs +50 for 1080p).
+    if prefer_4k and ('2160p' in t or '4k' in t):
+        base += 200
     return base
 
 
