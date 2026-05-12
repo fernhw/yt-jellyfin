@@ -124,15 +124,32 @@ _spotdl_downloads: Dict[str, Dict] = {}
 _spotdl_lock = threading.Lock()
 
 def _spotdl_bin() -> str:
-    """Return path to spotdl, preferring the pip-installed user binary."""
+    """Return path to spotdl, preferring Homebrew Python 3.12 install."""
     for candidate in (
-        os.path.expanduser('~/Library/Python/3.9/bin/spotdl'),
+        '/opt/homebrew/bin/spotdl',                           # Python 3.12 install (preferred)
+        os.path.expanduser('~/Library/Python/3.9/bin/spotdl'),  # old Python 3.9 install
         shutil.which('spotdl'),
         '/usr/local/bin/spotdl',
     ):
         if candidate and os.path.isfile(candidate):
             return candidate
-    raise RuntimeError('spotdl not found — run: pip3 install spotdl')
+    raise RuntimeError('spotdl not found — run: DYLD_LIBRARY_PATH=/opt/homebrew/opt/expat/lib /opt/homebrew/bin/pip3.12 install --break-system-packages spotdl')
+
+
+def _spotdl_env() -> dict:
+    """Build env for spotdl subprocess — ensures Homebrew expat is found on macOS."""
+    env = os.environ.copy()
+    # Homebrew Python 3.12 on macOS 26 needs this to load pyexpat / libexpat
+    expat_lib = '/opt/homebrew/opt/expat/lib'
+    if os.path.isdir(expat_lib):
+        existing = env.get('DYLD_LIBRARY_PATH', '')
+        env['DYLD_LIBRARY_PATH'] = (expat_lib + ':' + existing).rstrip(':')
+    # Pass Spotify credentials if configured in secrets.md
+    s = _load_kv(SECRETS_FILE)
+    if s.get('SPOTIFY_CLIENT_ID'):
+        env.setdefault('SPOTIPY_CLIENT_ID',     s['SPOTIFY_CLIENT_ID'])
+        env.setdefault('SPOTIPY_CLIENT_SECRET', s.get('SPOTIFY_CLIENT_SECRET', ''))
+    return env
 
 # ── Per-instance aria2c management ─────────────────────────────────────────────
 # Each download gets its own dedicated aria2c process on a unique port (6810–6910).
@@ -1265,6 +1282,7 @@ def spotify_download():
                 cmd,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 text=True, bufsize=1,
+                env=_spotdl_env(),
             )
             state['status'] = 'active'
             state['pid']    = proc.pid

@@ -113,15 +113,38 @@ def suggest_artist_mb(query: str, limit: int = 8) -> List[Dict]:
 
 
 # ── KHInsider ─────────────────────────────────────────────────────────────────
+# KHInsider is behind Cloudflare; urllib/curl both get 403.
+# curl_cffi with Chrome TLS fingerprint impersonation bypasses it.
 
 KH_BASE = 'https://downloads.khinsider.com'
 
-_KH_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
-                  'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-    'Accept-Language': 'en-US,en;q=0.9',
-    'Accept': 'text/html,application/xhtml+xml,*/*;q=0.8',
-}
+
+def _kh_get(url: str, referer: str = KH_BASE, timeout: int = 20) -> str:
+    """Fetch a KHInsider URL using curl_cffi Chrome impersonation."""
+    try:
+        from curl_cffi import requests as _cffi_req  # type: ignore
+        r = _cffi_req.get(
+            url,
+            impersonate='chrome124',
+            headers={
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Referer': referer,
+            },
+            timeout=timeout,
+        )
+        r.raise_for_status()
+        return r.text
+    except ImportError:
+        # Fallback: plain urllib (will 403 on Cloudflare-protected pages)
+        import urllib.request as _ur
+        req = _ur.Request(url, headers={
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
+                          'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': referer,
+        })
+        with _ur.urlopen(req, timeout=timeout) as resp:
+            return resp.read().decode('utf-8', errors='replace')
 
 
 def search_khinsider(query: str, limit: int = 10) -> List[Dict]:
@@ -130,10 +153,8 @@ def search_khinsider(query: str, limit: int = 10) -> List[Dict]:
     Returns list of {name, url}.
     """
     url = KH_BASE + '/search?search=' + urllib.parse.quote(query)
-    req = urllib.request.Request(url, headers=_KH_HEADERS)
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
-            html = resp.read().decode('utf-8', errors='replace')
+        html = _kh_get(url)
     except Exception as e:
         log.warning('KHInsider search error: %s', e)
         return []
@@ -164,10 +185,8 @@ def fetch_khinsider_tracks(album_url: str) -> Tuple[str, List[Dict]]:
 
     detail_url is the per-track page; the actual MP3 URL is one level deeper.
     """
-    req = urllib.request.Request(album_url, headers=_KH_HEADERS)
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
-            html = resp.read().decode('utf-8', errors='replace')
+        html = _kh_get(album_url)
     except Exception as e:
         log.error('KHInsider album fetch error: %s', e)
         return ('', [])
@@ -224,10 +243,8 @@ def _resolve_kh_direct_url(detail_url: str) -> Optional[str]:
     The page contains an <audio> tag or a direct link like:
       <a href="https://...cdn.../.../track.mp3">Click here to download</a>
     """
-    req = urllib.request.Request(detail_url, headers={**_KH_HEADERS, 'Referer': KH_BASE})
     try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
-            html = resp.read().decode('utf-8', errors='replace')
+        html = _kh_get(detail_url, referer=KH_BASE)
     except Exception:
         return None
 
@@ -299,14 +316,16 @@ def download_khinsider_album(
             continue
 
         try:
-            dl_req = urllib.request.Request(direct_url, headers={
-                **_KH_HEADERS,
-                'Referer': album_url,
-            })
-            with urllib.request.urlopen(dl_req, timeout=120) as resp:
-                data = resp.read()
+            from curl_cffi import requests as _cffi_req  # type: ignore
+            dl_resp = _cffi_req.get(
+                direct_url,
+                impersonate='chrome124',
+                headers={'Referer': album_url},
+                timeout=120,
+            )
+            dl_resp.raise_for_status()
             with open(out_path, 'wb') as f:
-                f.write(data)
+                f.write(dl_resp.content)
             state['done'] += 1
             log.info('KH downloaded: %s', safe_fname)
         except Exception as e:

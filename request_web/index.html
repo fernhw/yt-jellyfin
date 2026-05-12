@@ -751,11 +751,32 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 
     <!-- M-done -->
     <div class="form-step" id="mu-done">
-      <div style="text-align:center;padding:32px 0">
+      <div style="text-align:center;padding:32px 0 16px">
         <div style="font-size:2.4rem;margin-bottom:12px">&#9989;</div>
         <div style="font-size:1.1rem;font-weight:800;color:var(--teal);margin-bottom:6px" id="mu-done-title">Downloading!</div>
         <div style="font-size:.9rem;color:var(--muted)" id="mu-done-sub"></div>
-        <button class="big-btn btn-teal" onclick="muReset()" style="margin-top:22px;max-width:220px">Get more music</button>
+      </div>
+      <!-- Live progress panel (shown while download is active) -->
+      <div id="mu-progress-panel" style="display:none;margin:0 0 16px;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+        <div style="background:var(--card);padding:10px 14px;display:flex;align-items:center;gap:8px">
+          <span id="mu-prog-icon" style="font-size:1.2rem">&#9201;</span>
+          <span id="mu-prog-title" style="font-size:.88rem;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+          <span id="mu-prog-badge" style="font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--teal);color:#000"></span>
+        </div>
+        <div style="padding:10px 14px">
+          <div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:4px">
+            <span id="mu-prog-counts"></span>
+            <span id="mu-prog-current" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%;text-align:right"></span>
+          </div>
+          <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div id="mu-prog-bar" style="height:100%;width:0%;background:var(--teal);border-radius:3px;transition:width .4s"></div>
+          </div>
+        </div>
+        <div id="mu-prog-lines" style="max-height:120px;overflow-y:auto;background:var(--bg);padding:8px 14px;font-size:.7rem;font-family:monospace;color:var(--muted);display:none"></div>
+        <div id="mu-prog-error" style="display:none;padding:8px 14px;font-size:.8rem;color:#f87171"></div>
+      </div>
+      <div style="text-align:center;padding-bottom:20px">
+        <button class="big-btn btn-teal" onclick="muReset()" style="max-width:220px">Get more music</button>
       </div>
     </div>
   </div>
@@ -2350,8 +2371,9 @@ async function muSpotifyUrlSubmit() {
     const data = await r.json();
     if (data.error) { errEl.textContent = data.error; return; }
     document.getElementById('mu-done-title').textContent = 'Downloading via Spotify!';
-    document.getElementById('mu-done-sub').textContent = 'spotdl is fetching tracks from YouTube Music \u2014 check back in a few minutes.';
+    document.getElementById('mu-done-sub').textContent = 'spotdl is fetching tracks from YouTube Music\u2026';
     muGoStep('mu-done');
+    _muStartProgressPoll('spotify', data.token);
   } catch(e) {
     errEl.textContent = 'Request failed';
   } finally {
@@ -2589,8 +2611,9 @@ async function muKhDownload() {
     const data = await r.json();
     if (data.error) { document.getElementById('mu-err-kh').textContent = data.error; return; }
     document.getElementById('mu-done-title').textContent = 'Downloading!';
-    document.getElementById('mu-done-sub').textContent   = 'Fetching tracks from KHInsider\u2026 check back in a few minutes.';
+    document.getElementById('mu-done-sub').textContent   = 'Fetching tracks from KHInsider…';
     muGoStep('mu-done');
+    _muStartProgressPoll('kh', data.token);
   } catch(e) {
     document.getElementById('mu-err-kh').textContent = 'Request failed';
   }
@@ -2614,7 +2637,93 @@ async function _muPickTorrent(i) {
   }
 }
 
+// ── Music download live progress polling ─────────────────────────────────────
+let _muProgressTimer = null;
+
+function _muStartProgressPoll(kind, token) {
+  if (!token) return;
+  const panel = document.getElementById('mu-progress-panel');
+  panel.style.display = 'block';
+  document.getElementById('mu-prog-lines').style.display = kind === 'spotify' ? 'block' : 'none';
+  _muProgressTimer && clearInterval(_muProgressTimer);
+  _muProgressTimer = setInterval(() => _muProgressTick(kind, token), 2000);
+  _muProgressTick(kind, token);
+}
+
+async function _muProgressTick(kind, token) {
+  const endpoint = kind === 'spotify' ? '/api/spotify-state' : '/api/music-state';
+  try {
+    const r   = await api('GET', endpoint);
+    const data = await r.json();
+    const downloads = data.downloads || [];
+    const st = downloads.find(d => d.token === token);
+    if (!st) return;
+    _muRenderProgress(kind, st);
+    if (st.status === 'complete' || st.status === 'complete_partial' || st.status === 'error' || st.status === 'removed') {
+      clearInterval(_muProgressTimer);
+      _muProgressTimer = null;
+    }
+  } catch(e) { /* silently ignore */ }
+}
+
+function _muRenderProgress(kind, st) {
+  const statusLabels = {
+    starting: 'Starting…', active: 'Downloading',
+    complete: 'Complete ✓', complete_partial: 'Done (partial ⚠)',
+    error: 'Error ✗', removed: 'Removed'
+  };
+  const statusColors = {
+    starting: '#888', active: 'var(--teal)',
+    complete: '#4ade80', complete_partial: '#facc15',
+    error: '#f87171', removed: '#888'
+  };
+  const status  = st.status || 'active';
+  const total   = st.total || 0;
+  const done    = st.done  || 0;
+  const failed  = st.failed || 0;
+  const name    = st.album || st.name || '';
+  const current = st.current || '';
+  const pct     = total > 0 ? Math.round(done / total * 100) : (status === 'complete' ? 100 : 0);
+
+  document.getElementById('mu-prog-icon').textContent =
+    status === 'complete' ? '\u2705' : status === 'error' ? '\u274c' : status === 'complete_partial' ? '\u26a0\ufe0f' : '\u23f3';
+  document.getElementById('mu-prog-title').textContent   = name;
+  document.getElementById('mu-prog-badge').textContent   = statusLabels[status] || status;
+  document.getElementById('mu-prog-badge').style.background = statusColors[status] || '#888';
+  document.getElementById('mu-prog-bar').style.width     = pct + '%';
+  document.getElementById('mu-prog-counts').textContent  =
+    total > 0 ? `${done}/${total} tracks${failed ? ' (' + failed + ' failed)' : ''}` : '';
+  document.getElementById('mu-prog-current').textContent = current;
+
+  const errEl = document.getElementById('mu-prog-error');
+  if (st.error) {
+    errEl.textContent    = st.error;
+    errEl.style.display  = 'block';
+  } else {
+    errEl.style.display  = 'none';
+  }
+
+  const linesEl = document.getElementById('mu-prog-lines');
+  if (kind === 'spotify' && st.lines && st.lines.length) {
+    linesEl.innerHTML = st.lines.map(l => _esc(l)).join('\n');
+    linesEl.scrollTop = linesEl.scrollHeight;
+  }
+
+  // Update subtitle when finished
+  if (status === 'complete') {
+    document.getElementById('mu-done-sub').textContent = `${done} tracks downloaded to Music library.`;
+  } else if (status === 'complete_partial') {
+    document.getElementById('mu-done-sub').textContent = `${done}/${total} tracks downloaded (${failed} failed).`;
+  } else if (status === 'error') {
+    document.getElementById('mu-done-sub').textContent = st.error || 'Download failed.';
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function muReset() {
+  _muProgressTimer && clearInterval(_muProgressTimer);
+  _muProgressTimer = null;
+  document.getElementById('mu-progress-panel').style.display = 'none';
   _muType = ''; _muKhUrl = '';
   _muKhSearchResults = []; _muTpbResults = [];
   document.getElementById('mu-search-input').value         = '';

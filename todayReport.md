@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-12
 
-> *Good evening! Here's what landed on Tuesday, May 12, 2026 at 05:22 PM.*
-> **YT Mirror:** 754.04 GB used · 1.14 TB free
+> *Good evening! Here's what landed on Tuesday, May 12, 2026 at 06:23 PM.*
+> **YT Mirror:** 754.95 GB used · 1.13 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@
 
 ## Non-Priority Videos
 
+- **GameStop's eBay Takeover Is One Man's Payday, At Your Expense** — *Bellular News* · downloaded 06:21 PM · podcastable
 - **"Men G00n to You!" Responding to Hasan's MELTDOWN About Me** — *Shoe0nHead* · downloaded 05:17 PM · podcastable
 - **DF Direct Q+A: Do We Need Next-Gen Graphics? Can Switch 2 Last 6-7 Years? Switch 2 OLED?** — *Digital Foundry* · downloaded 05:15 PM · not podcastable
 - **I almost lost everything.** — *jakkuh* · downloaded 05:13 PM · not podcastable
