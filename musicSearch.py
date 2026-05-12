@@ -320,6 +320,8 @@ def _tpb_single_search(query: str) -> List[Dict]:
             continue
         name   = (item.get('name') or '').strip()
         seeds  = int(item.get('seeders') or 0)
+        if seeds < 2:
+            continue
         size_b = int(item.get('size')    or 0)
         magnet = (
             f'magnet:?xt=urn:btih:{ih}'

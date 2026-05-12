@@ -2253,7 +2253,7 @@ function muPickType(type) {
     inp.placeholder   = 'Artist \u2014 Album';
   } else if (type === 'soundtrack') {
     q2.textContent    = 'What soundtrack?';
-    hint.textContent  = 'Game, anime, or film name \u2014 searches KHInsider first';
+    hint.textContent  = 'Game, anime, or film name \u2014 deep-searches every OST / Soundtrack / Score variation';
     inp.placeholder   = 'e.g. "Final Fantasy VII" or "Cowboy Bebop"';
   } else {
     q2.textContent    = 'What are you looking for?';
@@ -2323,43 +2323,8 @@ async function muSearchSubmit() {
   document.getElementById('mu-suggest-list').style.display = 'none';
 
   if (_muType === 'soundtrack') {
-    try {
-      const r = await api('GET', '/api/music-kh-search?q=' + encodeURIComponent(q));
-      const data = await r.json();
-      document.getElementById('mu-2-spinner').style.display = 'none';
-      _muKhSearchResults = data.results || [];
-      const khRes = document.getElementById('mu-kh-results');
-      if (!_muKhSearchResults.length) {
-        khRes.innerHTML =
-          '<div style="font-size:.82rem;color:var(--muted);padding:8px 2px">Nothing found on KHInsider.</div>';
-        const fallbackBtn = document.createElement('button');
-        fallbackBtn.className = 'big-btn btn-muted';
-        fallbackBtn.style.marginTop = '10px';
-        fallbackBtn.textContent = 'Search torrent sites instead \u2192';
-        fallbackBtn.onclick = () => _muRunTpb(q, true);
-        khRes.appendChild(fallbackBtn);
-        khRes.style.display = 'block';
-        document.getElementById('mu-2-continue').style.display = 'none';
-      } else {
-        khRes.innerHTML = _muKhSearchResults.map((a, i) =>
-          `<button class="show-result-card" onclick="_muPickKhAlbum(${i})">
-            <div class="show-result-info">
-              <div class="show-result-title">${_esc(a.name)}</div>
-              <div class="show-result-meta">KHInsider</div>
-            </div>
-          </button>`
-        ).join('');
-        khRes.style.display = 'block';
-        // "not here" fallback
-        const contBtn = document.getElementById('mu-2-continue');
-        contBtn.textContent = 'Not here \u2014 try torrent sites \u2192';
-        contBtn.onclick = () => _muRunTpb(q, true);
-        contBtn.style.display = 'flex';
-      }
-    } catch(e) {
-      document.getElementById('mu-2-spinner').style.display = 'none';
-      document.getElementById('mu-err-2').textContent = 'Search failed \u2014 check your connection';
-    }
+    document.getElementById('mu-2-spinner').style.display = 'none';
+    _muRunTpb(q, true);
     return;
   }
 

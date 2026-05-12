@@ -1153,8 +1153,8 @@ def request_music():
     elif magnet:
         folder_name = re.sub(r'[^\w\s\-]', '_', query)[:80].strip() if query else 'music'
         dest = os.path.join(music_dir, folder_name)
-        os.makedirs(dest, exist_ok=True)
         try:
+            os.makedirs(dest, exist_ok=True)
             inst = _start_instance(query or 'Music', magnet, dest)
             return jsonify({'token': inst['token'], 'type': 'torrent'}), 202
         except Exception as e:
