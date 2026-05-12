@@ -42,7 +42,7 @@ SECRETS_FILE  = os.path.join(SCRIPT_DIR, "secrets.md")
 LOCATIONS_FILE = os.path.join(SCRIPT_DIR, "locations.md")
 LOG_FILE      = os.path.join(SCRIPT_DIR, "showScheduler.log")
 
-ARIA2_RPC_PORT = 6802
+PORT          = 8770
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -702,13 +702,14 @@ def scan_seasons(search_name: str, show_type: str, seasons_info: List[Dict]) -> 
 
     return {'seasons': all_seasons}
 
-# ── Download via aria2c RPC daemon ─────────────────────────────────────────────
-# When requestServer.py is running it keeps an aria2c daemon alive on port
-# ARIA2_RPC_PORT.  All downloads go through aria2.addUri so they appear in the
-# UI overlay in real-time (speed, peers, seeders, progress).
-# Falls back to a direct aria2c subprocess call if the daemon is unreachable.
+# ── Download dispatch ──────────────────────────────────────────────────────────
+# Torrents are submitted to requestServer's /api/add-torrent endpoint.
+# requestServer spawns a dedicated aria2c instance per torrent.
+# Architecture: showSchedulerSearch → requestServer (central) → aria2c instance
 
-def _aria2_secret_ss() -> str:
+def _web_token_hash() -> str:
+    """Compute the auth token used by requestServer (SHA-256 of WEB_PASS)."""
+    import hashlib as _hl
     kv: Dict[str, str] = {}
     try:
         with open(SECRETS_FILE) as f:
@@ -719,142 +720,39 @@ def _aria2_secret_ss() -> str:
                     kv[k.strip()] = v.strip()
     except Exception:
         pass
-    return kv.get('ARIA2_SECRET', 'aria2rpc2026')
+    import socket as _sock
+    raw = kv.get('WEB_PASS') or _hl.sha256(_sock.gethostname().encode()).hexdigest()[:16]
+    return _hl.sha256(raw.encode()).hexdigest()
 
-def _aria2_rpc_ss(method: str, params: Optional[List] = None) -> object:
-    body = json.dumps({
-        'jsonrpc': '2.0', 'id': 'ss', 'method': method,
-        'params': [f'token:{_aria2_secret_ss()}'] + (params or []),
-    }).encode()
+
+def _aria2_add(magnet: str, dest_dir: str, name: str = '') -> Optional[str]:
+    """Submit a torrent to requestServer's central dispatcher. Returns token or None."""
+    if not name:
+        name = os.path.basename(dest_dir.rstrip('/')) or magnet[:60]
+    body = json.dumps({'magnet': magnet, 'dest': dest_dir, 'name': name}).encode()
     req = urllib.request.Request(
-        f'http://127.0.0.1:{ARIA2_RPC_PORT}/jsonrpc',
-        data=body, headers={'Content-Type': 'application/json'},
+        'http://127.0.0.1:8770/api/add-torrent',
+        data=body,
+        headers={'Content-Type': 'application/json',
+                 'X-Auth-Token': _web_token_hash()},
+        method='POST',
     )
-    with urllib.request.urlopen(req, timeout=5) as r:
-        resp = json.load(r)
-    if 'error' in resp:
-        raise RuntimeError(resp['error'].get('message', 'aria2 rpc error'))
-    return resp.get('result')
-
-def _aria2_ensure_daemon() -> bool:
-    """Start aria2c RPC daemon if not running. Returns True if daemon is ready."""
-    aria2c_bin = shutil.which('aria2c') or '/opt/homebrew/bin/aria2c' or '/usr/local/bin/aria2c'
-    if not aria2c_bin or not os.path.exists(aria2c_bin):
-        log.error('  aria2c not found — install with: brew install aria2')
-        return False
-    # Test if already up
     try:
-        _aria2_rpc_ss('aria2.getVersion')
-        return True
-    except Exception:
-        pass
-    # Start it
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    session_file = os.path.join(script_dir, 'aria2.session')
-    # Deduplicate session file before launch to avoid errorCode=12 crash loop
-    if os.path.exists(session_file):
-        try:
-            import re as _re
-            with open(session_file) as _f:
-                raw_lines = _f.read().splitlines()
-            entries_ss = []
-            i = 0
-            while i < len(raw_lines):
-                ln = raw_lines[i]
-                if not ln.strip() or ln.startswith('#'):
-                    i += 1; continue
-                u = ln; o = []; i += 1
-                while i < len(raw_lines) and (raw_lines[i].startswith(' ') or raw_lines[i].startswith('\t')):
-                    o.append(raw_lines[i]); i += 1
-                entries_ss.append((u, o))
-            seen_ss: set = set()
-            deduped_ss = []
-            for u, o in entries_ss:
-                _m = _re.search(r'btih:([0-9a-fA-F]{40})', u, _re.I)
-                k = _m.group(1).lower() if _m else u
-                if k not in seen_ss:
-                    seen_ss.add(k); deduped_ss.append((u, o))
-            if len(deduped_ss) < len(entries_ss):
-                import shutil as _sh
-                _sh.copy(session_file, session_file + '.bak')
-                with open(session_file, 'w') as _f:
-                    for u, o in deduped_ss:
-                        _f.write(u + '\n')
-                        for ln in o:
-                            _f.write(ln + '\n')
-                log.warning('aria2 session dedup: %d → %d entries', len(entries_ss), len(deduped_ss))
-        except Exception as _de:
-            log.warning('aria2 session dedup failed (non-fatal): %s', _de)
-    session_file = os.path.join(script_dir, 'aria2.session')
-    cmd = [
-        aria2c_bin,
-        f'--rpc-listen-port={ARIA2_RPC_PORT}',
-        f'--rpc-secret={_aria2_secret_ss()}',
-        '--enable-rpc=true', '--rpc-listen-all=false',
-        '--seed-time=0', '--max-concurrent-downloads=5',
-        '--save-session=' + os.path.join(script_dir, 'aria2.session'),
-        '--save-session-interval=30', '--continue=true',
-        '--daemon=true', '--quiet=true',
-    ]
-    if os.path.exists(session_file):
-        cmd.append(f'--input-file={session_file}')
-    try:
-        subprocess.run(cmd, timeout=10, check=True)
+        with urllib.request.urlopen(req, timeout=15) as r:
+            resp = json.load(r)
+        token = resp.get('token')
+        if token:
+            log.info(f'  dispatched → token {token}')
+            return token
+        log.error(f'  add-torrent failed: {resp}')
     except Exception as e:
-        log.error(f'  failed to start aria2c daemon: {e}')
-        return False
-    # Wait up to 5s for it to accept connections
-    import time as _t
-    for _ in range(10):
-        _t.sleep(0.5)
-        try:
-            _aria2_rpc_ss('aria2.getVersion')
-            log.info('  aria2c daemon started by showSchedulerSearch')
-            return True
-        except Exception:
-            pass
-    log.error('  aria2c daemon did not start in time')
-    return False
-
-
-def _aria2_add(magnet: str, dest_dir: str) -> Optional[str]:
-    """Add a torrent to the aria2c RPC daemon. Starts daemon if not running. Returns GID or None."""
-    for attempt in range(2):
-        try:
-            gid = _aria2_rpc_ss('aria2.addUri', [
-                [magnet],
-                {'dir': dest_dir, 'seed-time': '0', 'file-allocation': 'falloc'},
-            ])
-            if gid:
-                log.info(f"  aria2 RPC → GID {gid}")
-                return str(gid)
-        except urllib.error.URLError:
-            if attempt == 0:
-                log.warning('  aria2 daemon not reachable — attempting to start it')
-                if not _aria2_ensure_daemon():
-                    break
-            else:
-                log.error('  aria2 daemon still not reachable after start attempt')
-        except Exception as exc:
-            log.warning(f'  aria2 RPC error: {exc}')
-            break
+        log.error(f'  add-torrent request failed: {e}')
     return None
 
 
 def _register_gid_name(gid: str, name: str) -> None:
-    """Write gid→friendly name to gid_names.json so the UI can show it during [METADATA] phase."""
-    path = os.path.join(SCRIPT_DIR, 'gid_names.json')
-    try:
-        try:
-            with open(path) as f:
-                data = json.load(f)
-        except Exception:
-            data = {}
-        data[gid] = name
-        with open(path, 'w') as f:
-            json.dump(data, f)
-    except Exception as exc:
-        log.warning(f'  could not write gid_names.json: {exc}')
+    """No-op — name is now registered via /api/add-torrent body."""
+    pass
 
 
 def _mark_slow_gid(gid: str) -> None:
@@ -873,23 +771,32 @@ def _mark_slow_gid(gid: str) -> None:
     except Exception as exc:
         log.warning(f'  could not write slow_gids.json: {exc}')
 
-def _aria2_wait(gid: str, timeout_sec: int = 7200) -> bool:
-    """Poll aria2 until GID completes. Returns True on success."""
+def _aria2_wait(token: str, timeout_sec: int = 7200) -> bool:
+    """Poll requestServer until the token's download completes. Returns True on success."""
     import time as _time
-    deadline = _time.time() + timeout_sec
+    web_token = _web_token_hash()
+    deadline  = _time.time() + timeout_sec
     while _time.time() < deadline:
         _time.sleep(8)
         try:
-            item = _aria2_rpc_ss('aria2.tellStatus', [gid, ['status', 'errorMessage']])
-            status = (item or {}).get('status', '')
-            if status == 'complete':
+            req = urllib.request.Request(
+                'http://127.0.0.1:8770/api/torrent-state',
+                headers={'X-Auth-Token': web_token},
+            )
+            with urllib.request.urlopen(req, timeout=10) as r:
+                data = json.load(r)
+            found = next((dl for dl in (data.get('downloads') or [])
+                          if dl.get('gid') == token), None)
+            if found is None:
+                return True   # cleaned up — assumed complete
+            if found['status'] == 'complete':
                 return True
-            if status == 'error':
-                log.error(f'  GID {gid} error: {(item or {}).get("errorMessage")}')
+            if found['status'] == 'error':
+                log.error(f'  token {token} errored')
                 return False
         except Exception:
             pass
-    log.error(f'  GID {gid} timed out after {timeout_sec}s')
+    log.error(f'  token {token} timed out after {timeout_sec}s')
     return False
 
 
@@ -907,18 +814,14 @@ def download_torrent(magnet: str, dest_dir: str, dry_run: bool = False,
 
     os.makedirs(dest_dir, exist_ok=True)
 
-    gid = _aria2_add(magnet, dest_dir)
-    if not gid:
-        log.error('  could not add torrent to aria2 daemon — download aborted')
-        return False
-    # Register a friendly name so the UI doesn't show [METADATA]<hash> while
-    # the torrent is still resolving metadata.
     friendly = os.path.basename(dest_dir.rstrip('/')) if dest_dir else ''
-    if friendly:
-        _register_gid_name(gid, friendly)
+    token = _aria2_add(magnet, dest_dir, name=friendly)
+    if not token:
+        log.error('  could not dispatch torrent — download aborted')
+        return False
     if slow_warning:
-        _mark_slow_gid(gid)
-    return _aria2_wait(gid)
+        _mark_slow_gid(token)
+    return _aria2_wait(token)
 
 # ── Movie search ─────────────────────────────────────────────────────────────
 

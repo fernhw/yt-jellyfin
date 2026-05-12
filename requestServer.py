@@ -38,7 +38,6 @@ DOWNLOADER_LOG = os.path.join(SCRIPT_DIR, 'downloader.log')
 ARIA2_LOG     = os.path.join(SCRIPT_DIR, 'aria2.log')
 STATIC_DIR    = os.path.join(SCRIPT_DIR, 'request_web')
 PORT          = 8770
-ARIA2_RPC_PORT = 6802
 
 CSV_FIELDS = [
     'show_name', 'search_name', 'folder', 'type', 'season', 'next_episode',
@@ -115,35 +114,26 @@ def _tail_log(n: int = 120) -> str:
             pass
     return ''.join(lines[-n:])
 
-# ── aria2c RPC helpers ─────────────────────────────────────────────────────────
-# aria2c is managed as a persistent RPC daemon (port 6802).
-# All downloads go through it — showSchedulerSearch.py and download.sh both
-# call aria2.addUri via RPC.  This server starts/monitors the daemon and
-# exposes its live download list to the UI.
+# ── Per-instance aria2c management ─────────────────────────────────────────────
+# Each download gets its own dedicated aria2c process on a unique port (6810–6910).
+# The central monitor thread polls each instance and aggregates state for the UI.
+# Architecture: site → requestServer (central) → per-download aria2c instances
 
-_aria2_proc: Optional[subprocess.Popen] = None
+_PORT_BASE = 6810   # instance port pool start
+_PORT_MAX  = 6910   # instance port pool end (100 concurrent max)
+_INST_KEYS = [
+    'gid', 'status', 'totalLength', 'completedLength',
+    'downloadSpeed', 'uploadSpeed', 'numSeeders', 'connections',
+    'bittorrent',
+]
+
+# Registry: token → instance state dict
+# token is 8 random hex chars used as the opaque gid in the UI
+_instances: Dict[str, Dict]  = {}
+_instances_lock = threading.Lock()
 
 def _aria2_secret() -> str:
     return _load_kv(SECRETS_FILE).get('ARIA2_SECRET', 'aria2rpc2026')
-
-def _aria2_rpc(method: str, params: Optional[List] = None) -> object:
-    """Call aria2 JSON-RPC. Uses http.client directly so the socket is always closed."""
-    import http.client
-    body = json.dumps({
-        'jsonrpc': '2.0', 'id': 'srv', 'method': method,
-        'params': [f'token:{_aria2_secret()}'] + (params or []),
-    }).encode()
-    conn = http.client.HTTPConnection('127.0.0.1', ARIA2_RPC_PORT, timeout=4)
-    try:
-        conn.request('POST', '/jsonrpc', body=body,
-                     headers={'Content-Type': 'application/json'})
-        resp = conn.getresponse()
-        data = json.loads(resp.read())
-        if 'error' in data:
-            raise RuntimeError(data['error'].get('message', 'aria2 error'))
-        return data.get('result')
-    finally:
-        conn.close()
 
 def _fmt_speed(bps: int) -> str:
     if bps >= 1_048_576: return f'{bps/1_048_576:.1f} MB/s'
@@ -156,268 +146,232 @@ def _fmt_size(b: int) -> str:
     if b >= 1024:          return f'{b/1024:.0f} KB'
     return f'{b} B'
 
-_ARIA2_KEYS = [
-    'gid', 'status', 'totalLength', 'completedLength',
-    'downloadSpeed', 'uploadSpeed', 'numSeeders', 'connections',
-    'bittorrent', 'errorMessage',
-]
-# Keys used only when we need the file path for name fallback
-_ARIA2_KEYS_WITH_FILES = _ARIA2_KEYS + ['files']
-
-def _load_gid_names() -> dict:
-    """Load gid→friendly name registry written by showSchedulerSearch."""
+def _inst_rpc(port: int, method: str, params: Optional[List] = None) -> object:
+    """JSON-RPC call to a specific aria2c instance. Socket always closed after call."""
+    import http.client
+    body = json.dumps({
+        'jsonrpc': '2.0', 'id': 'c', 'method': method,
+        'params': [f'token:{_aria2_secret()}'] + (params or []),
+    }).encode()
+    conn = http.client.HTTPConnection('127.0.0.1', port, timeout=3)
     try:
-        with open(os.path.join(SCRIPT_DIR, 'gid_names.json')) as f:
-            return json.load(f)
-    except Exception:
-        return {}
+        conn.request('POST', '/jsonrpc', body=body,
+                     headers={'Content-Type': 'application/json'})
+        resp = conn.getresponse()
+        data = json.loads(resp.read())
+        if 'error' in data:
+            raise RuntimeError(data['error'].get('message', 'aria2 error'))
+        return data.get('result')
+    finally:
+        conn.close()
 
-
-_last_downloads_cache: List[Dict] = []
-
-def _aria2_active_downloads() -> List[Dict]:
-    """Return live download list from aria2c RPC. Returns last-known-good on timeout."""
-    global _last_downloads_cache
+def _inst_port_open(port: int) -> bool:
     try:
-        active  = _aria2_rpc('aria2.tellActive',  [_ARIA2_KEYS]) or []
-        # tellWaiting returns both queued and paused items
-        waiting = _aria2_rpc('aria2.tellWaiting', [0, 50, _ARIA2_KEYS]) or []
-    except Exception:
-        return _last_downloads_cache
-    gid_names = _load_gid_names()
-
-    # tellWaiting returns both waiting and paused; tellActive returns active only.
-    # Combine and deduplicate by gid.
-    seen: set = set()
-    combined = []
-    for item in active + waiting:
-        g = item.get('gid')
-        if g not in seen:
-            seen.add(g)
-            combined.append(item)
-
-    out: List[Dict] = []
-    for item in combined:
-        total     = int(item.get('totalLength')     or 0)
-        done      = int(item.get('completedLength') or 0)
-        pct       = int(done * 100 / total) if total > 0 else 0
-        speed_b   = int(item.get('downloadSpeed')  or 0)
-        up_b      = int(item.get('uploadSpeed')    or 0)
-        seeds     = int(item.get('numSeeders')     or 0)
-        peers     = int(item.get('connections')    or 0)
-        status    = item.get('status', 'active')
-
-        bt   = item.get('bittorrent') or {}
-        name = (bt.get('info') or {}).get('name', '')
-        # Fall back to registered friendly name (covers [METADATA] phase)
-        if not name or name.startswith('[METADATA]'):
-            name = gid_names.get(item.get('gid', ''), name)
-
-        out.append({
-            'gid':         item.get('gid', ''),
-            'name':        name or '(unknown)',
-            'pct':         pct,
-            'speed':       _fmt_speed(speed_b),
-            'speed_bytes': speed_b,
-            'upload':      _fmt_speed(up_b),
-            'seeds':       seeds,
-            'peers':       peers,
-            'status':      status,
-            'size':        _fmt_size(total),
-            'done':        _fmt_size(done),
-            'total_bytes': total,
-        })
-    _last_downloads_cache = out
-    return out
-
-def _aria2_port_open() -> bool:
-    """Non-RPC check: can we TCP-connect to aria2's RPC port? No RPC overhead."""
-    import socket
-    try:
-        with socket.create_connection(('127.0.0.1', ARIA2_RPC_PORT), timeout=2):
+        with socket.create_connection(('127.0.0.1', port), timeout=1):
             return True
     except Exception:
         return False
 
+def _alloc_port() -> int:
+    """Allocate next free port from pool. Must be called with _instances_lock held."""
+    used = {inst['port'] for inst in _instances.values()}
+    for p in range(_PORT_BASE, _PORT_MAX + 1):
+        if p not in used:
+            return p
+    raise RuntimeError('no free aria2c ports available')
 
-def _aria2_confirmed_dead() -> bool:
+def _start_instance(name: str, magnet: str, dest: str) -> Dict:
     """
-    Multi-direction dead confirmation. Returns True ONLY when ALL three checks
-    agree aria2 is gone. No RPC calls — process state, TCP connect, and lsof.
+    Spawn a dedicated aria2c process for a single download.
+    Returns the instance dict (token, port, live status fields).
+    Raises RuntimeError if aria2c fails to start or the magnet cannot be added.
     """
-    global _aria2_proc
-    c = {}
-    # 1. Our own Popen exited?
-    c['proc_exited'] = (_aria2_proc is None or _aria2_proc.poll() is not None)
-    # 2. TCP port closed?
-    c['port_closed'] = not _aria2_port_open()
-    # 3. lsof sees nothing listening on port
-    try:
-        r = subprocess.run(
-            ['lsof', '-nP', f'-iTCP:{ARIA2_RPC_PORT}', '-sTCP:LISTEN'],
-            capture_output=True, text=True, timeout=5,
-        )
-        c['lsof_empty'] = len(r.stdout.splitlines()) <= 1
-    except Exception:
-        c['lsof_empty'] = False  # can't confirm → treat as alive
-    dead = all(c.values())
-    log.warning('aria2c dead-check: %s → confirmed_dead=%s', c, dead)
-    return dead
-
-
-def _dedup_aria2_session(session_path: str) -> None:
-    """Remove duplicate infohash entries from an aria2 session/input file.
-
-    aria2c crashes with errorCode=12 ("InfoHash already registered") if the
-    same torrent appears more than once in the session file.  This happens when
-    the same magnet is added multiple times (e.g. retries, old watchdog kills
-    mid-save).  We deduplicate by infohash before every launch so aria2c always
-    starts clean.
-    """
-    if not os.path.exists(session_path):
-        return
-    try:
-        import re as _re
-        with open(session_path) as _f:
-            lines = _f.read().splitlines()
-
-        entries: list = []
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            if not line.strip() or line.startswith('#'):
-                i += 1
-                continue
-            url = line
-            opts: list = []
-            i += 1
-            while i < len(lines) and (lines[i].startswith(' ') or lines[i].startswith('\t')):
-                opts.append(lines[i])
-                i += 1
-            entries.append((url, opts))
-
-        seen: set = set()
-        deduped: list = []
-        for url, opts in entries:
-            m = _re.search(r'btih:([0-9a-fA-F]{40})', url, _re.I)
-            key = m.group(1).lower() if m else url
-            if key not in seen:
-                seen.add(key)
-                deduped.append((url, opts))
-
-        removed = len(entries) - len(deduped)
-        if removed:
-            import shutil as _sh
-            _sh.copy(session_path, session_path + '.bak')
-            with open(session_path, 'w') as _f:
-                for url, opts in deduped:
-                    _f.write(url + '\n')
-                    for o in opts:
-                        _f.write(o + '\n')
-            log.warning('aria2c session dedup: removed %d duplicate entries (%d → %d)',
-                        removed, len(entries), len(deduped))
-    except Exception as _e:
-        log.warning('aria2c session dedup failed (non-fatal): %s', _e)
-
-
-def _start_aria2c() -> None:
-    """Spawn aria2c daemon and wait up to 15s for RPC port to open."""
-    global _aria2_proc
     aria2c_bin = (
         shutil.which('aria2c')
         or '/opt/homebrew/bin/aria2c'
         or '/usr/local/bin/aria2c'
     )
     if not aria2c_bin or not os.path.exists(aria2c_bin):
-        log.error('aria2c binary not found — cannot start')
-        return
-    session_path = os.path.join(SCRIPT_DIR, 'aria2.session')
-    # Always deduplicate before launch — prevents errorCode=12 crash loop
-    _dedup_aria2_session(session_path)
+        raise RuntimeError('aria2c binary not found')
+
+    with _instances_lock:
+        port  = _alloc_port()
+        token = os.urandom(4).hex()
+        while token in _instances:
+            token = os.urandom(4).hex()
+        # Reserve slot so concurrent calls don't take the same port
+        _instances[token] = {'token': token, 'port': port, 'status': 'starting', 'name': name}
+
+    log_dir      = os.path.join('/tmp', f'aria2-{token}')
+    session_path = os.path.join(log_dir, 'aria2.session')
+    os.makedirs(log_dir, exist_ok=True)
+
     cmd = [
         aria2c_bin,
-        '--enable-rpc=true', f'--rpc-listen-port={ARIA2_RPC_PORT}',
-        f'--rpc-secret={_aria2_secret()}', '--rpc-allow-origin-all=true',
-        '--enable-color=false', '--seed-time=0', '--file-allocation=falloc',
-        '--max-concurrent-downloads=16', '--allow-overwrite=true',
+        '--enable-rpc=true', f'--rpc-listen-port={port}',
+        f'--rpc-secret={_aria2_secret()}',
+        '--rpc-allow-origin-all=false', '--rpc-listen-all=false',
+        '--enable-color=false', '--seed-time=0',
+        '--max-concurrent-downloads=1',
+        '--file-allocation=falloc', '--allow-overwrite=true',
         '--auto-file-renaming=false',
-        f'--log={ARIA2_LOG}', '--log-level=warn',
-        f'--save-session={session_path}', '--save-session-interval=60',
-        *([f'--input-file={session_path}'] if os.path.exists(session_path) else []),
+        f'--log={os.path.join(log_dir, "aria2.log")}', '--log-level=warn',
+        f'--save-session={session_path}', '--save-session-interval=30',
         '--continue=true',
     ]
-    _aria2_proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    log.info('aria2c started pid=%d', _aria2_proc.pid)
+    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
     for _ in range(10):
-        time.sleep(1.5)
-        if _aria2_port_open():
-            log.info('aria2c RPC port ready')
-            return
-    log.warning('aria2c started but RPC port not open after 15s — continuing')
-
-
-def _aria2_add_uri_safe(uri: str, opts: dict) -> str:
-    """
-    aria2.addUri with on-demand restart.
-
-    1. Try the RPC call directly — fast path, works 99.9% of the time.
-    2. On failure: multi-direction dead-check (proc + TCP + lsof).
-    3. Confirmed dead → restart, wait for RPC, re-add, return GID.
-    4. NOT confirmed dead (aria2 busy/slow) → raise, let caller surface error.
-    """
-    try:
-        return _aria2_rpc('aria2.addUri', [[uri], opts])
-    except Exception as e_first:
-        log.warning('aria2c addUri failed (%r) — running full dead-check', e_first)
-
-    if not _aria2_confirmed_dead():
-        # Process is alive but slow — do NOT restart, surface error to user
-        raise RuntimeError('aria2c is busy/unresponsive but not confirmed dead — try again in a moment')
-
-    # All three checks confirm dead — safe to restart
-    log.warning('aria2c confirmed dead — restarting and re-adding torrent')
-    _start_aria2c()
-    for _ in range(5):
-        time.sleep(3)
-        try:
-            _aria2_rpc('aria2.getVersion')
+        time.sleep(0.5)
+        if _inst_port_open(port):
             break
-        except Exception:
-            pass
     else:
-        raise RuntimeError('aria2c restarted but RPC did not come up in time')
-    return _aria2_rpc('aria2.addUri', [[uri], opts])
+        proc.kill()
+        with _instances_lock:
+            _instances.pop(token, None)
+        raise RuntimeError(f'aria2c port {port} not open after 5s')
 
+    try:
+        aria2_gid = _inst_rpc(port, 'aria2.addUri',
+                               [[magnet], {'dir': dest, 'seed-time': '0',
+                                           'file-allocation': 'falloc'}])
+    except Exception as e:
+        proc.kill()
+        with _instances_lock:
+            _instances.pop(token, None)
+        raise RuntimeError(f'aria2.addUri failed: {e}')
 
-def _aria2_watchdog() -> None:
-    """
-    Passive watchdog — NO RPC calls, NO proactive kills.
+    inst: Dict = {
+        'token':        token,
+        'port':         port,
+        'name':         name,
+        'magnet':       magnet,
+        'dest':         dest,
+        'proc':         proc,
+        'log_dir':      log_dir,
+        'aria2_gid':    str(aria2_gid or ''),
+        # Live status updated by _instance_monitor
+        'pct':          0,
+        'speed':        '0 B/s',
+        'speed_bytes':  0,
+        'upload':       '0 B/s',
+        'seeds':        0,
+        'peers':        0,
+        'status':       'active',
+        'size':         '',
+        'done':         '',
+        'total_bytes':  0,
+        'slow':         False,
+        'started_at':   time.time(),
+        'completed_at': 0.0,
+    }
+    with _instances_lock:
+        _instances[token] = inst
+    log.info('aria2c instance started  token=%s  port=%d  name=%r', token, port, name)
+    return inst
 
-    Checks TCP port every 60s. Only restarts after 3 consecutive closed checks
-    (3 minutes) AND _aria2_confirmed_dead() agrees. Session dedup runs inside
-    _start_aria2c() — only on startup/post-crash, never while aria2c is live.
-    """
-    strikes = 0
-    while True:
-        time.sleep(60)
+def _stop_instance(token: str) -> None:
+    """Remove instance from registry, shutdown its aria2c process, clean up tmp dir."""
+    with _instances_lock:
+        inst = _instances.pop(token, None)
+    if inst is None:
+        return
+    port    = inst.get('port', 0)
+    proc    = inst.get('proc')
+    log_dir = inst.get('log_dir', '')
+    if port:
         try:
-            if _aria2_port_open():
-                if strikes > 0:
-                    log.info('aria2c passive check: port open again, resetting')
-                strikes = 0
-            else:
-                strikes += 1
-                log.warning('aria2c passive check: port %d closed (strike %d/3)',
-                            ARIA2_RPC_PORT, strikes)
-                if strikes >= 3:
-                    if _aria2_confirmed_dead():
-                        log.warning('aria2c passive watchdog: confirmed dead after 3 min — restarting')
-                        _start_aria2c()
-                    else:
-                        log.info('aria2c passive watchdog: port closed but proc/lsof say alive — not restarting')
-                    strikes = 0
+            _inst_rpc(port, 'aria2.shutdown')
         except Exception:
             pass
+    if proc:
+        try:
+            proc.wait(timeout=3)
+        except Exception:
+            pass
+        if proc.poll() is None:
+            proc.kill()
+    if log_dir and os.path.isdir(log_dir):
+        try:
+            shutil.rmtree(log_dir, ignore_errors=True)
+        except Exception:
+            pass
+    log.info('aria2c instance stopped  token=%s  port=%d', token, port)
+
+
+def _instance_monitor() -> None:
+    """
+    Background thread: polls every active aria2c instance every 3s,
+    updates the state cache, and auto-cleans completed instances after
+    a 5-minute display window. No RPC calls block the Flask request path.
+    """
+    while True:
+        time.sleep(3)
+        with _instances_lock:
+            snapshot = [(t, dict(i)) for t, i in _instances.items()
+                        if i.get('status') != 'starting']
+        slow_tokens: set = set()
+        try:
+            with open(os.path.join(SCRIPT_DIR, 'slow_gids.json')) as _sf:
+                slow_tokens = set(json.load(_sf))
+        except Exception:
+            pass
+
+        for token, inst in snapshot:
+            port = inst['port']
+            proc = inst.get('proc')
+            if proc and proc.poll() is not None:
+                with _instances_lock:
+                    if token in _instances and _instances[token]['status'] not in ('complete', 'removed'):
+                        _instances[token]['status'] = 'error'
+                continue
+            try:
+                active = _inst_rpc(port, 'aria2.tellActive',  [_INST_KEYS]) or []
+                items  = active or (_inst_rpc(port, 'aria2.tellWaiting', [0, 1, _INST_KEYS]) or [])
+                if not items:
+                    stopped = _inst_rpc(port, 'aria2.tellStopped', [0, 1, _INST_KEYS]) or []
+                    if stopped and stopped[0].get('status') == 'complete':
+                        with _instances_lock:
+                            if token in _instances:
+                                _instances[token]['pct']    = 100
+                                _instances[token]['status'] = 'complete'
+                                if not _instances[token]['completed_at']:
+                                    _instances[token]['completed_at'] = time.time()
+                        completed_at = _instances.get(token, {}).get('completed_at', 0.0)
+                        if completed_at and time.time() - completed_at > 300:
+                            log.info('instance %s complete, cleaning up', token)
+                            _stop_instance(token)
+                    continue
+
+                item    = items[0]
+                total   = int(item.get('totalLength')     or 0)
+                done    = int(item.get('completedLength') or 0)
+                pct     = int(done * 100 / total) if total > 0 else 0
+                speed_b = int(item.get('downloadSpeed')   or 0)
+                up_b    = int(item.get('uploadSpeed')     or 0)
+                seeds   = int(item.get('numSeeders')      or 0)
+                peers   = int(item.get('connections')     or 0)
+                status  = item.get('status', 'active')
+                bt_name = ((item.get('bittorrent') or {}).get('info') or {}).get('name', '')
+                with _instances_lock:
+                    if token not in _instances:
+                        continue
+                    i = _instances[token]
+                    i['pct']         = pct
+                    i['speed']       = _fmt_speed(speed_b)
+                    i['speed_bytes'] = speed_b
+                    i['upload']      = _fmt_speed(up_b)
+                    i['seeds']       = seeds
+                    i['peers']       = peers
+                    i['status']      = status
+                    i['size']        = _fmt_size(total)
+                    i['done']        = _fmt_size(done)
+                    i['total_bytes'] = total
+                    i['slow']        = token in slow_tokens
+                    if bt_name and not bt_name.startswith('[METADATA]'):
+                        i['name']    = bt_name
+            except Exception:
+                pass  # transient RPC error — try again next cycle
 
 # ── API routes ─────────────────────────────────────────────────────────────────
 
@@ -582,57 +536,33 @@ def show_scan():
 @app.route('/api/show-download-batch', methods=['POST'])
 @_require_auth
 def show_download_batch():
-    """Add a list of magnets directly to aria2c for immediate download.
-    No scheduler involvement — for older/complete show downloads only."""
-    data = request.get_json(force=True)
+    """Start a dedicated aria2c instance per torrent for immediate batch download."""
+    data      = request.get_json(force=True)
     show_name = (data.get('show_name') or '').strip()
-    items = data.get('items') or []   # [{magnet, label}]
+    items     = data.get('items') or []
     if not show_name or not items:
         return jsonify({'error': 'show_name and items required'}), 400
 
-    try:
-        locs = _load_kv(LOCATIONS_FILE)
-        shows_dir = locs.get('SHOWS_DIR', '/Volumes/Jellyfin/Shows')
-        dest = os.path.join(shows_dir, show_name)
-        # aria2c creates the download directory itself; avoid makedirs so Flask
-        # doesn't need filesystem access to the media volume.
+    locs      = _load_kv(LOCATIONS_FILE)
+    shows_dir = locs.get('SHOWS_DIR', '/Volumes/Jellyfin/Shows')
+    dest      = os.path.join(shows_dir, show_name)
 
-        # Load and patch gid_names.json so the UI shows friendly names
-        names_path = os.path.join(SCRIPT_DIR, 'gid_names.json')
+    started = []
+    for item in items:
+        magnet = (item.get('magnet') or '').strip()
+        label  = (item.get('label')  or show_name).strip()
+        if not magnet:
+            continue
         try:
-            with open(names_path) as f:
-                gid_names = json.load(f)
-        except Exception:
-            gid_names = {}
-
-        gids = []
-        for item in items:
-            magnet = (item.get('magnet') or '').strip()
-            label = (item.get('label') or show_name).strip()
-            if not magnet:
-                continue
-            try:
-                gid = _aria2_add_uri_safe(magnet, {'dir': dest, 'seed-time': '0'})
-                if gid:
-                    gid_str = str(gid)
-                    gids.append({'gid': gid_str, 'label': label})
-                    gid_names[gid_str] = label
-            except Exception as e:
-                log.warning('show_download_batch: failed to add %r: %s', label, e)
-
-        try:
-            with open(names_path, 'w') as f:
-                json.dump(gid_names, f)
+            inst = _start_instance(label, magnet, dest)
+            started.append({'gid': inst['token'], 'label': label})
         except Exception as e:
-            log.warning('show_download_batch: could not write gid_names.json: %s', e)
+            log.warning('show_download_batch: failed to start %r: %s', label, e)
 
-        if not gids:
-            return jsonify({'error': 'no torrents were added — aria2c may be unavailable', 'gids': []}), 500
+    if not started:
+        return jsonify({'error': 'no torrents started — aria2c may be unavailable'}), 500
 
-        return jsonify({'gids': gids, 'count': len(gids)}), 200
-    except Exception as e:
-        log.exception('show_download_batch unexpected error')
-        return jsonify({'error': str(e)}), 500
+    return jsonify({'gids': started, 'count': len(started)}), 200
 
 
 @app.route('/api/schedule/<int:idx>/backlog', methods=['POST'])
@@ -945,144 +875,134 @@ def request_movie():
         threading.Thread(target=subprocess.run, args=(cmd,), daemon=True).start()
     return jsonify({'queued': title, 'anime': is_anime, 'quality': quality}), 202
 
+@app.route('/api/add-torrent', methods=['POST'])
+@_require_auth
+def add_torrent():
+    """Create a dedicated aria2c instance for a single torrent."""
+    data   = request.get_json(force=True) or {}
+    name   = (data.get('name')   or '').strip()
+    magnet = (data.get('magnet') or '').strip()
+    dest   = (data.get('dest')   or '').strip()
+    if not magnet or not dest:
+        return jsonify({'error': 'magnet and dest required'}), 400
+    if not name:
+        name = os.path.basename(dest.rstrip('/')) or magnet[:60]
+    try:
+        inst = _start_instance(name, magnet, dest)
+        return jsonify({'token': inst['token'], 'port': inst['port']})
+    except Exception as e:
+        log.exception('add-torrent failed')
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/torrent-state')
 @_require_auth
 def torrent_state():
-    downloads = _aria2_active_downloads()
-    # Tag slow downloads (flagged by showSchedulerSearch when seeds < threshold)
-    slow_gids: list = []
-    try:
-        with open(os.path.join(SCRIPT_DIR, 'slow_gids.json')) as f:
-            slow_gids = json.load(f)
-    except Exception:
-        pass
-    if slow_gids:
-        for dl in downloads:
-            if dl.get('gid') in slow_gids:
-                dl['slow'] = True
+    with _instances_lock:
+        snapshot = [dict(i) for i in _instances.values()
+                    if i.get('status') != 'starting']
+    downloads = [{
+        'gid':         inst['token'],
+        'name':        inst.get('name', '(unknown)'),
+        'pct':         inst.get('pct', 0),
+        'speed':       inst.get('speed', '0 B/s'),
+        'speed_bytes': inst.get('speed_bytes', 0),
+        'upload':      inst.get('upload', '0 B/s'),
+        'seeds':       inst.get('seeds', 0),
+        'peers':       inst.get('peers', 0),
+        'status':      inst.get('status', 'active'),
+        'size':        inst.get('size', ''),
+        'done':        inst.get('done', ''),
+        'total_bytes': inst.get('total_bytes', 0),
+        'slow':        inst.get('slow', False),
+    } for inst in snapshot]
     return jsonify({'downloads': downloads, 'updated': time.time()})
 
-@app.route('/api/torrent/<gid>/remove', methods=['POST'])
+@app.route('/api/torrent/<token>/remove', methods=['POST'])
 @_require_auth
-def torrent_remove(gid: str):
-    import shutil as _shutil
-    if not re.fullmatch(r'[0-9a-f]{1,16}', gid):
+def torrent_remove(token: str):
+    if not re.fullmatch(r'[0-9a-f]{4,16}', token):
         abort(400)
+    with _instances_lock:
+        inst = _instances.get(token)
+    if inst is None:
+        return jsonify({'error': 'not found'}), 404
 
-    # Collect everything we need BEFORE touching aria2 — once forceRemove is
-    # called the GID is gone and we can't query it anymore.
-    base_dir = ''
+    port      = inst['port']
+    aria2_gid = inst.get('aria2_gid', '')
+    dest      = inst.get('dest', '')
+
+    # Collect file list before removing from aria2
     file_paths: list = []
-    ih_hex = ''
-    try:
-        info = _aria2_rpc('aria2.tellStatus', [gid, ['files', 'dir', 'infoHash']]) or {}
-        base_dir = (info.get('dir') or '').rstrip('/')
-        ih_hex   = (info.get('infoHash') or '').lower()
-        for f in (info.get('files') or []):
-            p = (f.get('path') or '').strip()
-            if p and p != '[METADATA]':
-                file_paths.append(p)
-    except Exception:
-        pass
+    base_dir = dest
+    if aria2_gid and port:
+        try:
+            info = _inst_rpc(port, 'aria2.tellStatus',
+                             [aria2_gid, ['files', 'dir', 'infoHash']]) or {}
+            base_dir = (info.get('dir') or dest).rstrip('/')
+            for f in (info.get('files') or []):
+                p = (f.get('path') or '').strip()
+                if p and p != '[METADATA]':
+                    file_paths.append(p)
+        except Exception:
+            pass
 
-    # Remove from aria2 daemon
-    try:
-        _aria2_rpc('aria2.forceRemove', [gid])
-    except Exception:
-        pass
-    try:
-        _aria2_rpc('aria2.removeDownloadResult', [gid])
-    except Exception:
-        pass
+    # Stop instance (removes from registry, kills process, cleans tmp dir)
+    _stop_instance(token)
 
-    # Remove from friendly-name registry
-    try:
-        names_path = os.path.join(SCRIPT_DIR, 'gid_names.json')
-        with open(names_path) as f:
-            names = json.load(f)
-        if gid in names:
-            del names[gid]
-            with open(names_path, 'w') as f:
-                json.dump(names, f)
-    except Exception:
-        pass
-
-    # Build set of files/dirs to delete on disk
+    # Delete downloaded files
     to_delete: set = set()
     for p in file_paths:
         if base_dir and p.startswith(base_dir + '/'):
-            rel = p[len(base_dir) + 1:]
-            top = rel.split('/')[0]
+            top = p[len(base_dir) + 1:].split('/')[0]
             to_delete.add(os.path.join(base_dir, top))
         else:
             to_delete.add(p)
+    if not to_delete and dest:
+        to_delete.add(dest)
 
     for target in to_delete:
         try:
             if os.path.isdir(target):
-                _shutil.rmtree(target, ignore_errors=True)
+                shutil.rmtree(target, ignore_errors=True)
                 log.info('torrent_remove: deleted dir %s', target)
             elif os.path.isfile(target):
                 os.remove(target)
                 log.info('torrent_remove: deleted file %s', target)
-            # Companion .aria2 control file at same level (pack torrent case)
-            ctrl = target + '.aria2'
-            if os.path.isfile(ctrl):
-                os.remove(ctrl)
-                log.info('torrent_remove: deleted control file %s', ctrl)
         except Exception as _de:
             log.warning('torrent_remove: could not delete %s: %s', target, _de)
 
-    # Sweep base_dir itself for any leftover .aria2 / .aria2.tmp control files.
-    # These are ALWAYS safe to delete — aria2 only creates them, they serve no
-    # purpose once the download is removed.  This catches:
-    #   • packs where the .aria2 is named after the torrent (not the subdir)
-    #   • orphaned control files from crashed downloads
-    if base_dir and os.path.isdir(base_dir):
-        try:
-            for fname in os.listdir(base_dir):
-                if fname.endswith('.aria2') or fname.endswith('.aria2.tmp'):
-                    ctrl_path = os.path.join(base_dir, fname)
-                    try:
-                        os.remove(ctrl_path)
-                        log.info('torrent_remove: swept leftover control file %s', ctrl_path)
-                    except Exception as _ce:
-                        log.warning('torrent_remove: could not sweep %s: %s', ctrl_path, _ce)
-        except Exception:
-            pass
+    return jsonify({'removed': token})
 
-    # Force an immediate session save so the removal persists across restarts.
-    for _attempt in range(3):
-        try:
-            _aria2_rpc('aria2.saveSession')
-            break
-        except Exception as _se:
-            log.warning('torrent_remove: saveSession attempt %d failed: %s', _attempt + 1, _se)
-            time.sleep(1)
-
-    return jsonify({'removed': gid})
-
-@app.route('/api/torrent/<gid>/pause', methods=['POST'])
+@app.route('/api/torrent/<token>/pause', methods=['POST'])
 @_require_auth
-def torrent_pause(gid: str):
-    if not re.fullmatch(r'[0-9a-f]{1,16}', gid):
+def torrent_pause(token: str):
+    if not re.fullmatch(r'[0-9a-f]{4,16}', token):
         abort(400)
+    with _instances_lock:
+        inst = _instances.get(token)
+    if inst is None:
+        return jsonify({'error': 'not found'}), 404
     try:
-        _aria2_rpc('aria2.pause', [gid])
+        _inst_rpc(inst['port'], 'aria2.pause', [inst['aria2_gid']])
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    return jsonify({'paused': gid})
+    return jsonify({'paused': token})
 
-@app.route('/api/torrent/<gid>/unpause', methods=['POST'])
+@app.route('/api/torrent/<token>/unpause', methods=['POST'])
 @_require_auth
-def torrent_unpause(gid: str):
-    if not re.fullmatch(r'[0-9a-f]{1,16}', gid):
+def torrent_unpause(token: str):
+    if not re.fullmatch(r'[0-9a-f]{4,16}', token):
         abort(400)
+    with _instances_lock:
+        inst = _instances.get(token)
+    if inst is None:
+        return jsonify({'error': 'not found'}), 404
     try:
-        _aria2_rpc('aria2.unpause', [gid])
+        _inst_rpc(inst['port'], 'aria2.unpause', [inst['aria2_gid']])
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    return jsonify({'unpaused': gid})
+    return jsonify({'unpaused': token})
 
 @app.route('/api/log')
 @_require_auth
@@ -1111,19 +1031,16 @@ def favicon():
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    # Start aria2c RPC daemon and watchdog
-    if not _aria2_port_open():
-        _start_aria2c()
-    else:
-        log.info('aria2c already running on port %d', ARIA2_RPC_PORT)
-    wd = threading.Thread(target=_aria2_watchdog, daemon=True)
-    wd.start()
+    # Start central instance monitor
+    # Each download gets its own aria2c spawned on demand via _start_instance()
+    monitor = threading.Thread(target=_instance_monitor, daemon=True)
+    monitor.start()
 
     kv = _load_kv(SECRETS_FILE)
     pw = kv.get('WEB_PASS', '(using hostname fallback)')
     aria2_sec = kv.get('ARIA2_SECRET', 'aria2rpc2026')
     print(f"  request server  → http://localhost:{PORT}")
-    print(f"  aria2c RPC      → http://localhost:{ARIA2_RPC_PORT}")
+    print(f"  aria2c port pool → {_PORT_BASE}–{_PORT_MAX}")
     print(f"  aria2 secret    : {aria2_sec}")
     print(f"  web password    : {pw}")
     print(f"  token hash      : {_web_password_hash()[:16]}...")
