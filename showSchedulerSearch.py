@@ -52,6 +52,7 @@ REPORT_URL        = "https://report.fernhw.com"
 
 MIN_SEEDS       = 10   # minimum seeds for shows and movies (fast pass)
 MOVIE_SLOW_SEEDS = 2   # fallback floor for movies — "slow download" warning
+SHOW_SLOW_SEEDS  = 2   # fallback floor for shows — used when no fast results
 SEARCH_DAYS  = 4   # days to keep searching after release day before marking missed
 
 DAY_MAP   = {'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3, 'fri': 4, 'sat': 5, 'sun': 6}
@@ -1191,8 +1192,22 @@ def process_show(row: dict, locations: dict,
             if s is not None:
                 candidates.append((s, r))
 
+    # Slow fallback — retry with lower seed floor (mirrors movie behaviour)
     if not candidates:
-        log.info(f"  {label}: no qualifying results (1080p + English + {MIN_SEEDS}+ seeds)")
+        log.warning(f"  {label}: no fast results — trying slow fallback (>={SHOW_SLOW_SEEDS} seeds)")
+        if show_type == 'anime':
+            for r in search_nyaa(search_name, season, episode):
+                s = score_torrent(r['title'], r['seeds'], show_type, nyaa_en_cat=True, min_seeds=SHOW_SLOW_SEEDS)
+                if s is not None:
+                    candidates.append((s, r))
+        if show_type == 'live' or not candidates:
+            for r in search_tpb(search_name, season, episode):
+                s = score_torrent(r['title'], r['seeds'], show_type, min_seeds=SHOW_SLOW_SEEDS)
+                if s is not None:
+                    candidates.append((s, r))
+
+    if not candidates:
+        log.info(f"  {label}: no qualifying results (1080p + English + {SHOW_SLOW_SEEDS}+ seeds)")
 
         # Check window expiry
         end_s = row.get('search_end', '').strip()

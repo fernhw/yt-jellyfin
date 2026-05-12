@@ -204,6 +204,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 .mv-suggest-item:last-child{border-bottom:none}
 .mv-suggest-item:active,.mv-suggest-item:hover{background:rgba(45,212,191,.09);color:var(--teal)}
 .mv-suggest-year{font-size:.78rem;font-weight:400;color:var(--muted);margin-left:8px;flex-shrink:0}
+@media(max-width:720px){#movie-suggest-list{max-height:120px}}
 </style>
 </head>
 <body>
@@ -1016,8 +1017,7 @@ function _goFromSeasons() {
     _goShowStep('ss-4');
   } else {
     _ss5BackStep = 'ss-3s';
-    if (_showType) { _buildShowPreview(); _goShowStep('ss-6'); }
-    else _goShowStep('ss-5');
+    _goToTypeStep();
   }
 }
 
@@ -1085,7 +1085,7 @@ function _validateManual() {
     if (!seasons.length) { errEl.textContent = 'Add at least one season'; return; }
     _selectedSeasons = seasons;
     _ss5BackStep = 'ss-3m';
-    _goShowStep('ss-5');
+    _goToTypeStep();
   } else {
     if (!_gv('f-season'))   { errEl.textContent = 'Season number is required'; return; }
     if (!_gv('f-next-ep'))  { errEl.textContent = 'Starting episode is required'; return; }
@@ -1115,7 +1115,13 @@ function selDay(d, btn) {
   _releaseDay = d;
   document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  setTimeout(() => _goShowStep('ss-5'), 200);
+  setTimeout(() => _goToTypeStep(), 200);
+}
+
+function _goToTypeStep() {
+  document.querySelectorAll('#ss-5 .type-btn').forEach(b =>
+    b.classList.toggle('selected', _showType && b.getAttribute('onclick').includes("'" + _showType + "'")));
+  _goShowStep('ss-5');
 }
 
 function selShowType(t, btn) {
@@ -1544,6 +1550,7 @@ function movieSuggestInput() {
           (m.year ? `<span class='mv-suggest-year'>${m.year}</span>` : '') +
           `</div>`
       ).join('');
+      list.scrollIntoView({behavior:'smooth', block:'nearest'});
     } catch(e) { list.style.display = 'none'; }
   }, 400);
 }
