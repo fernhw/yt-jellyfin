@@ -462,6 +462,27 @@ def search_nyaa(search_name: str, season: int, episode: int) -> List[Dict]:
     log.info(f"  Nyaa → {len(results)} raw results")
     return results
 
+
+def search_nyaa_bare_ep(search_name: str, episode: int) -> List[Dict]:
+    """Search Nyaa.si using anime-style episode notation (name - EP).
+
+    Most Nyaa anime releases use '- 09' format rather than 'S01E09'.
+    Used as a fallback when the standard S01E query returns no results.
+    """
+    query = f"{search_name} - {episode:02d}"
+    url = (
+        f"https://nyaa.si/?f=0&c=1_2"
+        f"&q={urllib.parse.quote(query)}"
+        f"&s=seeders&o=desc"
+    )
+    log.info(f"  Nyaa bare-ep query: {query}")
+    body = _fetch(url)
+    if not body:
+        return []
+    results = _parse_nyaa_html(body)
+    log.info(f"  Nyaa bare-ep → {len(results)} raw results")
+    return results
+
 # ── ThePirateBay (apibay.org JSON API) ────────────────────────────────────────
 
 _TPB_TRACKERS = [
@@ -673,6 +694,12 @@ def scan_seasons(search_name: str, show_type: str, seasons_info: List[Dict]) -> 
                     sc, ws = score_torrent_relaxed(r['title'], r['seeds'], show_type, nyaa_en_cat=True)
                     if sc is not None:
                         candidates.append((sc, ws, r))
+                # Fallback: anime releases often use '- 09' format, not 'S01E09'
+                if not candidates:
+                    for r in search_nyaa_bare_ep(search_name, ep):
+                        sc, ws = score_torrent_relaxed(r['title'], r['seeds'], show_type, nyaa_en_cat=True)
+                        if sc is not None:
+                            candidates.append((sc, ws, r))
             if show_type == 'live' or not candidates:
                 for r in search_tpb(search_name, season_n, ep):
                     sc, ws = score_torrent_relaxed(r['title'], r['seeds'], show_type)

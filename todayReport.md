@@ -1,30 +1,7 @@
-# What to Watch — 2026-05-11
+# What to Watch — 2026-05-12
 
-> *Good evening! Here's what landed on Monday, May 11, 2026 at 11:42 PM.*
+> *Good morning! Here's what landed on Tuesday, May 12, 2026 at 12:35 AM.*
 > **YT Mirror:** 764.13 GB used · 1.10 TB free
 
-## Priority Videos
-
-- **your controller SUCKS** — *FLEEKAZOID* · downloaded 03:07 PM · not podcastable
-- **Screw it. Animal Farm review** — *Schaffrillas Productions* · downloaded 03:06 PM · podcastable
-
----
-
-## Non-Priority Videos
-
-- **This is Bad.** — *TechLinked* · downloaded 11:39 PM · podcastable
-- **Hyrule Warriors: Age of Imprisonment — Mineru Trailer — Nintendo Switch 2** — *Nintendo of America* · downloaded 11:37 PM · not podcastable
-- **They gave this a 10 out of 10..** — *Asmongold TV* · downloaded 07:05 PM · not podcastable
-- **Why New Smartphone Cameras Feel Worse** — *Marques Brownlee* · downloaded 05:08 PM · not podcastable
-- **Hollywood never learns..** — *Asmongold TV* · downloaded 03:14 PM · not podcastable
-- **Everybody is talking about this game..** — *Asmongold TV* · downloaded 03:13 PM · not podcastable
-- **DF Direct Weekly #263: Star Fox Returns, Switch 2 Price Hike, Nvidia GTX 10-Series 10th Anniversary!** — *Digital Foundry* · downloaded 11:38 AM · not podcastable
-- **Final Fantasy 8 Is an Unequivocal Design MESS | Design Delve** — *Second Wind* · downloaded 11:35 AM · podcastable
-- **Experiencing Pinball At Home! Star Wars: Fall of the Empire Review** — *LGR* · downloaded 09:39 AM · not podcastable
-- **This is what leftists are defending..** — *Asmongold TV* · downloaded 09:37 AM · not podcastable
-- **Iran has no idea what's coming..** — *Asmongold TV* · downloaded 07:21 AM · not podcastable
-- **SO WHOLESOME! AVISTAR, STAR: ANIS & NEON: VISON EYE BOND STORY | Goddess of Victory: NIKKE VOD** — *Yessenia* · downloaded 07:19 AM · not podcastable
-- **How Rockstar fit an entire city into PlayStation 2 memory** — *Game Maker's Toolkit* · downloaded 07:07 AM · not podcastable · *42 days since their last upload*
-
----
+Nothing new today. All channels scanned — nobody posted. Check back later.
 
