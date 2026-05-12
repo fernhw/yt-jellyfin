@@ -510,7 +510,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       </div>
       <label class="field-label" style="margin-top:12px">Search term <button class="tip-btn" onclick="tipToggle('tip-search')">?</button></label>
       <div class="tip-box hidden" id="tip-search">
-        What we search for on torrent sites &mdash; auto-filled from the show name. Change it only if wrong episodes appear.<br><br>
+        What we search for &mdash; auto-filled from the show name. Change it only if wrong episodes appear.<br><br>
         Example: <b>Re:Zero</b> &rarr; search term <b>re zero</b>
       </div>
       <input id="f-search-name" class="big-input" placeholder="e.g. naruto" maxlength="80"
@@ -639,24 +639,12 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 </div><!-- /#content -->
 
 <!-- ── Persistent bottom download strip ─────────────────── -->
-<!-- Torrent info overlay -->
+<!-- Download info overlay -->
 <div id="dl-info-overlay" onclick="if(event.target===this||event.target.id==='dl-info-overlay-bg')closeDlInfo()">
   <div id="dl-info-overlay-bg"></div>
   <div id="dl-info-sheet">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <span style="font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Torrent Info</span>
-      <button onclick="closeDlInfo()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:2px 6px;line-height:1">&times;</button>
-    </div>
-    <div id="dl-info-body"></div>
-  </div>
-</div>
-
-<!-- Torrent info overlay -->
-<div id="dl-info-overlay" onclick="if(event.target===this||event.target.id==='dl-info-overlay-bg')closeDlInfo()">
-  <div id="dl-info-overlay-bg"></div>
-  <div id="dl-info-sheet">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <span style="font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Torrent Info</span>
+      <span style="font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Download Info</span>
       <button onclick="closeDlInfo()" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer;padding:2px 8px;line-height:1">&times;</button>
     </div>
     <div id="dl-info-body"></div>
@@ -1463,7 +1451,7 @@ function _rebuildScanItems() {
   const warnEl = document.getElementById('ss-scan-warnings');
   if (warnEl) {
     const lines = [];
-    if (allWarnings.has('non_english')) lines.push('\u26a0 Some torrents may not be in English \u2014 double-check before confirming.');
+    if (allWarnings.has('non_english')) lines.push('\u26a0 Some results may not be in English \u2014 double-check before confirming.');
     if (allWarnings.has('no_1080p'))    lines.push('\u26a0 Some episodes are not available in 1080p/4K \u2014 older shows sometimes only have SD releases.');
     warnEl.innerHTML = lines.join('<br>');
   }
@@ -1510,7 +1498,7 @@ async function _doShowBatchDownload() {
     document.getElementById('ss-6-preview').classList.add('hidden');
     document.getElementById('ss-6-done').classList.remove('hidden');
     document.getElementById('ss-ok-label').textContent =
-      (window._scanTitle || 'Show') + ' \u00b7 ' + j.count + ' torrent' + (j.count > 1 ? 's' : '') + ' queued';
+      (window._scanTitle || 'Show') + ' \u00b7 ' + j.count + ' download' + (j.count > 1 ? 's' : '') + ' queued';
     toast('Downloading \u2713');
     setTimeout(() => { resetAddForm(); showTab('shows'); }, 3000);
   } catch(e) {
