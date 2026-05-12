@@ -915,6 +915,9 @@ def torrent_state():
         'done':        inst.get('done', ''),
         'total_bytes': inst.get('total_bytes', 0),
         'slow':        inst.get('slow', False),
+        'dest':        inst.get('dest', ''),
+        'magnet':      inst.get('magnet', ''),
+        'started_at':  inst.get('started_at', 0),
     } for inst in snapshot]
     return jsonify({'downloads': downloads, 'updated': time.time()})
 

@@ -198,6 +198,17 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 .season-add-btn{background:none;border:1.5px dashed var(--border);border-radius:10px;color:var(--muted);padding:10px;width:100%;cursor:pointer;font-size:.84rem;font-weight:600;margin-bottom:4px;transition:border-color .2s,color .2s}
 .season-add-btn:hover{border-color:var(--purple);color:var(--purple)}
 
+/* ── Torrent info overlay ── */
+#dl-info-overlay{position:fixed;inset:0;z-index:9000;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;opacity:0;transition:opacity .2s}
+#dl-info-overlay.open{pointer-events:all;opacity:1}
+#dl-info-overlay-bg{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+#dl-info-sheet{position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:22px 22px 0 0;padding:20px 18px calc(env(safe-area-inset-bottom,10px) + 20px);width:100%;max-width:520px;max-height:80vh;overflow-y:auto;-webkit-overflow-scrolling:touch;transform:translateY(32px);transition:transform .2s}
+#dl-info-overlay.open #dl-info-sheet{transform:translateY(0)}
+.dl-info-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);align-items:flex-start}
+.dl-info-row:last-child{border-bottom:none}
+.dl-info-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);flex-shrink:0;width:72px;padding-top:2px}
+.dl-info-val{font-size:.84rem;color:var(--white);flex:1;word-break:break-all;line-height:1.4}
+
 /* ── Movie autocomplete ── */
 #movie-suggest-list{background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius);overflow-y:auto;overflow-x:hidden;max-height:38vh;margin-bottom:8px;display:none;-webkit-overflow-scrolling:touch}
 .mv-suggest-item{padding:12px 15px;cursor:pointer;border-bottom:1px solid var(--border);font-size:.92rem;font-weight:600;color:var(--white);display:flex;justify-content:space-between;align-items:center;transition:background .15s}
@@ -628,6 +639,30 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 </div><!-- /#content -->
 
 <!-- ── Persistent bottom download strip ─────────────────── -->
+<!-- Torrent info overlay -->
+<div id="dl-info-overlay" onclick="if(event.target===this||event.target.id==='dl-info-overlay-bg')closeDlInfo()">
+  <div id="dl-info-overlay-bg"></div>
+  <div id="dl-info-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <span style="font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Torrent Info</span>
+      <button onclick="closeDlInfo()" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:2px 6px;line-height:1">&times;</button>
+    </div>
+    <div id="dl-info-body"></div>
+  </div>
+</div>
+
+<!-- Torrent info overlay -->
+<div id="dl-info-overlay" onclick="if(event.target===this||event.target.id==='dl-info-overlay-bg')closeDlInfo()">
+  <div id="dl-info-overlay-bg"></div>
+  <div id="dl-info-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <span style="font-size:.72rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Torrent Info</span>
+      <button onclick="closeDlInfo()" style="background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer;padding:2px 8px;line-height:1">&times;</button>
+    </div>
+    <div id="dl-info-body"></div>
+  </div>
+</div>
+
 <div id="dl-strip">
   <div id="dl-strip-header" onclick="toggleStrip()">
     <span id="dl-strip-label">&#11015; Downloads<span id="dl-badge"></span></span>
@@ -1119,8 +1154,7 @@ function selDay(d, btn) {
 }
 
 function _goToTypeStep() {
-  document.querySelectorAll('#ss-5 .type-btn').forEach(b =>
-    b.classList.toggle('selected', _showType && b.getAttribute('onclick').includes("'" + _showType + "'")));
+  document.querySelectorAll('#ss-5 .type-btn').forEach(b => b.classList.remove('selected'));
   _goShowStep('ss-5');
 }
 
@@ -1478,7 +1512,7 @@ async function _doShowBatchDownload() {
     document.getElementById('ss-ok-label').textContent =
       (window._scanTitle || 'Show') + ' \u00b7 ' + j.count + ' torrent' + (j.count > 1 ? 's' : '') + ' queued';
     toast('Downloading \u2713');
-    setTimeout(() => { resetAddForm(); showTab('current'); }, 3000);
+    setTimeout(() => { resetAddForm(); showTab('shows'); }, 3000);
   } catch(e) {
     errEl.textContent = 'Network error: ' + (e.message || e);
     btn.disabled = false;
@@ -1545,7 +1579,7 @@ function movieSuggestInput() {
       if (!items.length) { list.style.display = 'none'; return; }
       window._mvSuggestItems = items;
       list.innerHTML = items.map((m, i) =>
-        `<div class='mv-suggest-item' onmousedown='event.preventDefault();mvSuggestPick(${i})' ontouchstart='event.preventDefault();mvSuggestPick(${i})'>` +
+        `<div class='mv-suggest-item' onmousedown='event.preventDefault();mvSuggestPick(${i})' ontouchstart='_mvTouchStart(event)' ontouchend='_mvTouchEnd(event,${i})'>` +
           _esc(m.title) +
           (m.year ? `<span class='mv-suggest-year'>${m.year}</span>` : '') +
           `</div>`
@@ -1553,6 +1587,15 @@ function movieSuggestInput() {
       list.scrollIntoView({behavior:'smooth', block:'nearest'});
     } catch(e) { list.style.display = 'none'; }
   }, 400);
+}
+
+let _mvTouchY = 0;
+function _mvTouchStart(e) { _mvTouchY = e.touches[0].clientY; }
+function _mvTouchEnd(e, i) {
+  if (Math.abs(e.changedTouches[0].clientY - _mvTouchY) < 10) {
+    e.preventDefault();
+    mvSuggestPick(i);
+  }
 }
 
 function mvSuggestPick(idx) {
@@ -1876,6 +1919,10 @@ async function pollDownloads() {
       // Torrent resolved — discard the stored placeholder
       if (!isMeta && _dlNames[gid]) { delete _dlNames[gid]; _saveDlNames(); }
 
+      // Store full dl snapshot for (i) overlay
+      window._dlDataMap = window._dlDataMap || {};
+      window._dlDataMap[gid] = dl;
+
       const pct    = Math.min(dl.pct || 0, 100);
       const name   = isMeta ? stored : (dl.name || '(unknown)');
       const speed  = dl.speed  || '0 B/s';
@@ -1998,6 +2045,7 @@ async function pollDownloads() {
         gid ? (function(){
           return '<div class="dl-card-actions">' +
             '<button class="dl-act-btn" title="' + (status === 'paused' ? 'Resume' : 'Pause') + '" onclick="pauseToggle(\'' + gid + '\', \'' + status + '\')">' + (status === 'paused' ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>' : '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>') + '</button>' +
+            '<button class="dl-act-btn" title="Info" onclick="showDlInfo(\'' + gid + '\')">&#x2139;&#xFE0E;</button>' +
             '<button class="dl-act-btn remove" title="Remove" onclick="removeDl(\'' + gid + '\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14H6L5,6"/><path d="M10,11v6M14,11v6"/><path d="M9,6V4h6v2"/></svg></button>' +
             '<div style="margin-left:auto;display:flex;align-items:center">' + _seederBars(seedN) + '</div>' +
             '</div>';
@@ -2026,6 +2074,39 @@ async function removeDl(gid) {
     pollDownloads();
   } catch(e) {}
 }
+
+function showDlInfo(gid) {
+  const dl = (window._dlDataMap || {})[gid];
+  if (!dl) return;
+  const rows = [
+    ['Name',     dl.name || '—'],
+    ['Status',   dl.status || '—'],
+    ['Progress', (dl.pct || 0) + '%  (' + (dl.done || '0') + ' / ' + (dl.size || '?') + ')'],
+    ['Download', dl.speed || '0 B/s'],
+    ['Upload',   dl.upload || '0 B/s'],
+    ['Seeds',    String(dl.seeds !== undefined ? dl.seeds : '?')],
+    ['Peers',    String(dl.peers !== undefined ? dl.peers : '?')],
+    ['Folder',   dl.dest || '—'],
+    ['Started',  dl.started_at ? new Date(dl.started_at * 1000).toLocaleString() : '—'],
+  ];
+  if (dl.magnet) {
+    const ih = (dl.magnet.match(/btih:([0-9a-fA-F]+)/i) || [])[1] || '';
+    rows.push(['Hash', ih || dl.magnet.slice(0, 60) + '…']);
+  }
+  document.getElementById('dl-info-body').innerHTML = rows.map(([label, val]) =>
+    '<div class="dl-info-row">' +
+      '<span class="dl-info-label">' + _esc(label) + '</span>' +
+      '<span class="dl-info-val">' + _esc(val) + '</span>' +
+    '</div>'
+  ).join('');
+  document.getElementById('dl-info-overlay').classList.add('open');
+}
+
+function closeDlInfo() {
+  document.getElementById('dl-info-overlay').classList.remove('open');
+}
+
+
 
 // ── Log ───────────────────────────────────────────────────────────────────────
 async function fetchLog(scroll) {
