@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 200" width="620" height="200">
+  <rect width="620" height="200" fill="#0d1117"/>
+
+  <text x="66"  y="185" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#6b7280" text-anchor="middle">A</text>
+  <text x="196" y="185" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#6b7280" text-anchor="middle">B</text>
+  <text x="326" y="185" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#6b7280" text-anchor="middle">C</text>
+  <text x="456" y="185" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#6b7280" text-anchor="middle">D</text>
+
+  <!-- A: orange circle, heavy-lid tired eyes, down-curve mouth, teal sweat -->
+  <g transform="translate(66,95)">
+    <circle cx="0" cy="0" r="56" fill="#f97316"/>
+    <ellipse cx="-17" cy="-10" rx="11" ry="13" fill="white"/>
+    <rect x="-29" y="-24" width="24" height="11" fill="#f97316"/>
+    <circle cx="-16" cy="-6" r="6" fill="#1a0800"/>
+    <circle cx="-13" cy="-10" r="3" fill="white"/>
+    <ellipse cx="17" cy="-10" rx="11" ry="13" fill="white"/>
+    <rect x="5" y="-24" width="24" height="11" fill="#f97316"/>
+    <circle cx="16" cy="-6" r="6" fill="#1a0800"/>
+    <circle cx="19" cy="-10" r="3" fill="white"/>
+    <path d="M-12,22 Q0,14 12,22" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="48" cy="-30" r="5.5" fill="#2dd4bf"/>
+    <polygon points="48,-24.5 44,-37 52,-37" fill="#2dd4bf"/>
+  </g>
+
+  <!-- B: dark teal rounded square, slit eyes, inward brows, frown -->
+  <g transform="translate(196,95)">
+    <rect x="-50" y="-52" width="100" height="104" rx="22" fill="#1a5c55"/>
+    <rect x="-30" y="-14" width="22" height="8" rx="4" fill="white"/>
+    <rect x="-26" y="-14" width="10" height="8" rx="2" fill="#0d2e2b"/>
+    <rect x="8" y="-14" width="22" height="8" rx="4" fill="white"/>
+    <rect x="14" y="-14" width="10" height="8" rx="2" fill="#0d2e2b"/>
+    <line x1="-30" y1="-24" x2="-10" y2="-20" stroke="#2dd4bf" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="30"  y1="-24" x2="10"  y2="-20" stroke="#2dd4bf" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M-16,22 Q0,14 16,22" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- C: purple egg, asymmetric eyes (left bigger = stress), squiggle mouth -->
+  <g transform="translate(326,95)">
+    <ellipse cx="0" cy="5" rx="46" ry="56" fill="#7c5ccc"/>
+    <circle cx="-16" cy="-10" r="13" fill="white"/>
+    <circle cx="-14" cy="-8"  r="7"  fill="#1a0d33"/>
+    <circle cx="-10" cy="-13" r="3"  fill="white"/>
+    <circle cx="15"  cy="-10" r="9"  fill="white"/>
+    <circle cx="16"  cy="-8"  r="5"  fill="#1a0d33"/>
+    <circle cx="18"  cy="-13" r="2"  fill="white"/>
+    <path d="M-10,22 Q-4,18 0,22 Q4,26 10,22" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- D: dark warm body, orange flat-top eyes, teal sweat -->
+  <g transform="translate(456,95)">
+    <ellipse cx="0" cy="4" rx="50" ry="48" fill="#1e1510"/>
+    <ellipse cx="-15" cy="-8" rx="10" ry="12" fill="#f97316"/>
+    <rect x="-26" y="-21" width="22" height="10" fill="#1e1510"/>
+    <circle cx="-14" cy="-4" r="5" fill="#0d0a07"/>
+    <circle cx="-11" cy="-7" r="2.5" fill="#ffd0a0"/>
+    <ellipse cx="15"  cy="-8" rx="10" ry="12" fill="#f97316"/>
+    <rect x="4"   y="-21" width="22" height="10" fill="#1e1510"/>
+    <circle cx="14"  cy="-4" r="5" fill="#0d0a07"/>
+    <circle cx="17"  cy="-7" r="2.5" fill="#ffd0a0"/>
+    <path d="M-11,20 Q0,14 11,20" stroke="#f97316" stroke-width="3" fill="none" stroke-linecap="round" opacity=".8"/>
+    <circle cx="41" cy="-33" r="5" fill="#2dd4bf"/>
+    <polygon points="41,-28 37.5,-40 44.5,-40" fill="#2dd4bf"/>
+  </g>
+</svg>

@@ -226,6 +226,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
   <div class="nav-tabs">
     <button class="nav-tab" onclick="showTab('movie')" id="ntab-movie">🎬 Movies</button>
     <button class="nav-tab" onclick="showTab('shows')" id="ntab-shows">📺 Add Show</button>
+    <button class="nav-tab" onclick="showTab('music')" id="ntab-music">🎵 Music</button>
   </div>
   <div id="dl-nav-badge">
     <div id="dl-dot"></div>
@@ -352,19 +353,23 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
         <div class="smb-icon">&#127916;</div>
         <div class="smb-body">
           <div class="smb-title">Live-action</div>
-          <div class="smb-sub">Hollywood, foreign films, documentaries, 3D animated films</div>
+          <div class="smb-sub">Hollywood, foreign films, documentaries</div>
+        </div>
+      </button>
+      <button class="show-mode-btn" onclick="mvSubmit('animated')">
+        <div class="smb-icon">&#127800;</div>
+        <div class="smb-body">
+          <div class="smb-title">Animated / Mainstream Anime</div>
+          <div class="smb-sub">Pixar, DreamWorks, Spider-Verse, Akira, Ghost in the Shell, Redline &mdash; well-known animated films</div>
         </div>
       </button>
       <button class="show-mode-btn" onclick="mvSubmit('anime')">
         <div class="smb-icon">&#127885;</div>
         <div class="smb-body">
-          <div class="smb-title">Anime</div>
-          <div class="smb-sub">Japanese animated films, Ghibli, Makoto Shinkai, etc.</div>
+          <div class="smb-title">Niche Anime</div>
+          <div class="smb-sub">Underground or niche Japanese animation &mdash; not widely known outside anime circles</div>
         </div>
       </button>
-      <div style="font-size:.73rem;color:var(--muted);line-height:1.6;padding:10px 14px;background:var(--bg3);border-radius:12px;margin-top:4px;margin-bottom:12px">
-        <span style="color:var(--white);font-weight:700">Big popular anime films</span> (like <em>Redline</em>, <em>Akira</em>, <em>Ghost in the Shell</em>) sometimes work better as <span style="color:var(--white)">Live-action</span> &mdash; niche anime sites skip titles once they get famous. If Anime doesn&rsquo;t find it, try again and pick Live-action.
-      </div>
       <button class="ghost-btn" onclick="mvBack()">&larr; Back</button>
     </div>
 
@@ -421,9 +426,10 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <div style="font-size:.63rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Search again</div>
       <input id="mv-retry-title" class="big-input" placeholder="e.g. Lupin First" style="margin-bottom:10px"
              onkeydown="if(event.key==='Enter')mvRetry('live')"/>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         <button class="big-btn btn-orange" style="margin-top:0" onclick="mvRetry('live')">Live-action</button>
-        <button class="big-btn btn-purple" style="margin-top:0" onclick="mvRetry('anime')">Anime</button>
+        <button class="big-btn btn-teal" style="margin-top:0" onclick="mvRetry('animated')">Animated</button>
+        <button class="big-btn btn-purple" style="margin-top:0" onclick="mvRetry('anime')">Niche Anime</button>
       </div>
       <button class="ghost-btn" onclick="mvReset()" style="margin-top:6px">Start over</button>
     </div>
@@ -466,6 +472,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
         <div class="spinner" style="margin:0 auto"></div>
       </div>
       <div id="ss-2-results"></div>
+      <button id="ss-2-continue" class="big-btn btn-purple" onclick="_useTypedShowName()" style="display:none;margin-top:10px">Continue with this name &rarr;</button>
 
       <div style="display:flex;align-items:center;gap:10px;margin:18px 0 12px">
         <div style="flex:1;height:1px;background:var(--border)"></div>
@@ -614,6 +621,101 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
         <div style="font-size:2.4rem;margin-bottom:12px">&#9989;</div>
         <div style="font-size:1.15rem;font-weight:800;color:var(--teal);margin-bottom:6px">Downloading!</div>
         <div style="font-size:.9rem;color:var(--muted)" id="ss-ok-label"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MUSIC TAB -->
+  <div class="tab-pane" id="tab-music">
+    <!-- progress bar -->
+    <div style="height:3px;background:var(--border);border-radius:3px;margin-bottom:22px;overflow:hidden">
+      <div id="mu-prog" style="height:100%;background:var(--teal);border-radius:3px;width:0%;transition:width .4s"></div>
+    </div>
+
+    <!-- M1: Type picker -->
+    <div class="form-step active" id="mu-1">
+      <div class="section-label">Music</div>
+      <div class="section-title" style="color:var(--teal)">Get Music</div>
+      <div class="section-sub" style="margin-bottom:20px">What kind of music do you want?</div>
+      <button class="show-mode-btn" onclick="muPickType('mainstream')">
+        <div class="smb-icon">&#127925;</div>
+        <div class="smb-body">
+          <div class="smb-title">Mainstream</div>
+          <div class="smb-sub">Albums &amp; artists &mdash; Linkin Park, Taylor Swift, Radiohead</div>
+        </div>
+      </button>
+      <button class="show-mode-btn" onclick="muPickType('soundtrack')">
+        <div class="smb-icon">&#127918;</div>
+        <div class="smb-body">
+          <div class="smb-title">Soundtrack / OST</div>
+          <div class="smb-sub">Game, anime, or film scores &mdash; searches dedicated soundtrack sites first</div>
+        </div>
+      </button>
+      <button class="show-mode-btn" onclick="muPickType('niche')">
+        <div class="smb-icon">&#128269;</div>
+        <div class="smb-body">
+          <div class="smb-title">Niche / Deep Search</div>
+          <div class="smb-sub">Rare releases, underground &mdash; runs every search variation</div>
+        </div>
+      </button>
+    </div>
+
+    <!-- M2: Search input step -->
+    <div class="form-step" id="mu-2">
+      <div class="step-q" id="mu-2-q"></div>
+      <div class="step-hint" id="mu-2-hint" style="margin-bottom:12px"></div>
+      <input id="mu-search-input" class="big-input" placeholder="" autocomplete="off"
+             oninput="muSearchInput()"
+             onkeydown="if(event.key==='Enter')muSearchSubmit()"
+             style="margin-bottom:8px"/>
+      <!-- Mainstream MusicBrainz autocomplete -->
+      <div id="mu-suggest-list" style="display:none;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:8px"></div>
+      <!-- KHInsider search results (soundtrack mode) -->
+      <div id="mu-kh-results" style="display:none;margin-bottom:8px"></div>
+      <div id="mu-2-spinner" style="display:none;text-align:center;padding:14px 0">
+        <div class="spinner" style="margin:0 auto"></div>
+      </div>
+      <button id="mu-2-continue" class="big-btn btn-teal" onclick="muSearchSubmit()" style="display:none;margin-top:4px">Search &rarr;</button>
+      <button class="ghost-btn" onclick="muGoStep('mu-1')">&larr; Back</button>
+      <div class="err" id="mu-err-2"></div>
+    </div>
+
+    <!-- M3-tpb: Torrent results -->
+    <div class="form-step" id="mu-3-tpb">
+      <div class="step-q" id="mu-3-tpb-q">Pick a result</div>
+      <div class="step-hint" id="mu-3-tpb-hint" style="margin-bottom:12px">Sorted by seeders.</div>
+      <div id="mu-3-tpb-spinner" style="display:none;text-align:center;padding:18px 0">
+        <div class="spinner" style="margin:0 auto 10px"></div>
+        <div style="font-size:.8rem;color:var(--muted)">Searching&hellip;</div>
+      </div>
+      <div id="mu-tpb-list" style="max-height:55vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px"></div>
+      <button class="ghost-btn" onclick="muGoStep('mu-2')">&larr; Back</button>
+      <div class="err" id="mu-err-3"></div>
+    </div>
+
+    <!-- M3-kh: KHInsider album confirm -->
+    <div class="form-step" id="mu-3-kh">
+      <div class="step-q" id="mu-3-kh-title">Album</div>
+      <div id="mu-3-kh-spinner" style="display:none;text-align:center;padding:14px 0">
+        <div class="spinner" style="margin:0 auto 8px"></div>
+        <div style="font-size:.8rem;color:var(--muted)">Loading track list&hellip;</div>
+      </div>
+      <div id="mu-3-kh-body" style="display:none">
+        <div style="font-size:.8rem;color:var(--muted);margin-bottom:10px" id="mu-3-kh-count"></div>
+        <div id="mu-3-kh-tracks" style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 14px;max-height:38vh;overflow-y:auto;font-size:.79rem;color:var(--muted);line-height:2;margin-bottom:14px"></div>
+        <button class="big-btn btn-teal" onclick="muKhDownload()">Download All Tracks</button>
+        <button class="big-btn btn-muted" onclick="muGoStep('mu-2')" style="margin-top:8px">&larr; Back</button>
+      </div>
+      <div class="err" id="mu-err-kh"></div>
+    </div>
+
+    <!-- M-done -->
+    <div class="form-step" id="mu-done">
+      <div style="text-align:center;padding:32px 0">
+        <div style="font-size:2.4rem;margin-bottom:12px">&#9989;</div>
+        <div style="font-size:1.1rem;font-weight:800;color:var(--teal);margin-bottom:6px" id="mu-done-title">Downloading!</div>
+        <div style="font-size:.9rem;color:var(--muted)" id="mu-done-sub"></div>
+        <button class="big-btn btn-teal" onclick="muReset()" style="margin-top:22px;max-width:220px">Get more music</button>
       </div>
     </div>
   </div>
@@ -784,7 +886,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
-const TAB_IDS = ['movie','shows','schedule','current'];
+const TAB_IDS = ['movie','shows','music','schedule','current'];
 function showTab(name) {
   TAB_IDS.forEach(t => {
     document.getElementById('tab-' + t).classList.toggle('active', t === name);
@@ -884,6 +986,8 @@ function selShowMode(mode) {
   if (f) f.value = '';
   const r = document.getElementById('ss-2-results');
   if (r) r.innerHTML = '';
+  const cb = document.getElementById('ss-2-continue');
+  if (cb) cb.style.display = 'none';
   _goShowStep('ss-2');
 }
 
@@ -921,6 +1025,8 @@ function showSearchInput() {
   const q = (document.getElementById('f-show-search').value || '').trim();
   const results = document.getElementById('ss-2-results');
   const spinner = document.getElementById('ss-2-spinner');
+  const contBtn = document.getElementById('ss-2-continue');
+  if (contBtn) contBtn.style.display = q.length >= 2 ? 'flex' : 'none';
   if (q.length < 2) { results.innerHTML = ''; spinner.style.display = 'none'; return; }
   spinner.style.display = 'block';
   results.innerHTML = '';
@@ -1045,6 +1151,16 @@ function _goFromSeasons() {
 }
 
 // ── Manual entry ──────────────────────────────────────────────────────────────
+function _useTypedShowName() {
+  const q = (document.getElementById('f-show-search').value || '').trim();
+  if (!q) return;
+  const nameEl   = document.getElementById('f-show-name');
+  const searchEl = document.getElementById('f-search-name');
+  if (nameEl)   nameEl.value   = q;
+  if (searchEl) searchEl.value = q.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/  +/g, ' ').trim();
+  _startManual();
+}
+
 function _startManual() {
   _showInputMethod = 'manual';
   _pickedShow = null;
@@ -2092,6 +2208,296 @@ function showDlInfo(gid) {
 
 function closeDlInfo() {
   document.getElementById('dl-info-overlay').classList.remove('open');
+}
+
+
+// ── Music tab ─────────────────────────────────────────────────────────────────
+let _muType   = '';   // 'mainstream' | 'soundtrack' | 'niche'
+let _muStep   = 'mu-1';
+let _muSuggestTimer = null;
+let _muSuggestItems = [];
+let _muKhUrl  = '';
+let _muKhSearchResults = [];
+let _muTpbResults = [];
+
+function muGoStep(id) {
+  if (_muStep === id) return;
+  const cur = document.getElementById(_muStep);
+  if (cur) cur.classList.remove('active');
+  _muStep = id;
+  const next = document.getElementById(id);
+  if (next) next.classList.add('active');
+  const pcts = {'mu-1':0,'mu-2':33,'mu-3-tpb':70,'mu-3-kh':70,'mu-done':100};
+  document.getElementById('mu-prog').style.width = (pcts[id] || 0) + '%';
+  const inp = next && next.querySelector('input:not([type=checkbox])');
+  if (inp) setTimeout(() => inp.focus(), 60);
+}
+
+function muPickType(type) {
+  _muType = type;
+  const q2   = document.getElementById('mu-2-q');
+  const hint = document.getElementById('mu-2-hint');
+  const inp  = document.getElementById('mu-search-input');
+  document.getElementById('mu-kh-results').style.display    = 'none';
+  document.getElementById('mu-kh-results').innerHTML        = '';
+  document.getElementById('mu-suggest-list').style.display  = 'none';
+  document.getElementById('mu-suggest-list').innerHTML      = '';
+  document.getElementById('mu-2-continue').style.display    = 'none';
+  document.getElementById('mu-2-continue').textContent      = 'Search \u2192';
+  document.getElementById('mu-2-continue').onclick          = muSearchSubmit;
+  document.getElementById('mu-err-2').textContent           = '';
+  inp.value = '';
+  if (type === 'mainstream') {
+    q2.textContent    = 'What album or artist?';
+    hint.textContent  = 'e.g. "Linkin Park Meteora" or "Radiohead OK Computer"';
+    inp.placeholder   = 'Artist \u2014 Album';
+  } else if (type === 'soundtrack') {
+    q2.textContent    = 'What soundtrack?';
+    hint.textContent  = 'Game, anime, or film name \u2014 searches KHInsider first';
+    inp.placeholder   = 'e.g. "Final Fantasy VII" or "Cowboy Bebop"';
+  } else {
+    q2.textContent    = 'What are you looking for?';
+    hint.textContent  = 'Artist, album, any combination \u2014 we\'ll try every variation';
+    inp.placeholder   = 'e.g. "Arca Kick I"';
+  }
+  muGoStep('mu-2');
+}
+
+function muSearchInput() {
+  clearTimeout(_muSuggestTimer);
+  const q      = (document.getElementById('mu-search-input').value || '').trim();
+  const contBtn = document.getElementById('mu-2-continue');
+  if (q.length >= 2) {
+    contBtn.style.display = 'flex';
+  } else {
+    contBtn.style.display = 'none';
+    document.getElementById('mu-suggest-list').style.display = 'none';
+    return;
+  }
+  if (_muType !== 'mainstream') return;
+  _muSuggestTimer = setTimeout(() => _muFetchSuggest(q), 420);
+}
+
+async function _muFetchSuggest(q) {
+  const list = document.getElementById('mu-suggest-list');
+  try {
+    const r = await api('GET', '/api/music-suggest?q=' + encodeURIComponent(q));
+    const data = await r.json();
+    const items = data.results || [];
+    _muSuggestItems = items;
+    if (!items.length) { list.style.display = 'none'; return; }
+    list.innerHTML = items.map((m, i) =>
+      `<div class="mv-suggest-item"
+           onmousedown="event.preventDefault();_muPickSuggest(${i})"
+           ontouchstart="_mvTouchStart(event)"
+           ontouchend="_muTouchEnd(event,${i})">
+        <span>${_esc((m.artist ? m.artist + ' \u2014 ' : '') + m.album)}</span>
+        <span class="mv-suggest-year">${m.year || ''}</span>
+      </div>`
+    ).join('');
+    list.style.display = 'block';
+  } catch(e) { list.style.display = 'none'; }
+}
+
+function _muTouchEnd(e, i) {
+  if (Math.abs(e.changedTouches[0].clientY - _mvTouchY) < 10) {
+    e.preventDefault();
+    _muPickSuggest(i);
+  }
+}
+
+function _muPickSuggest(i) {
+  const m = _muSuggestItems[i];
+  if (!m) return;
+  document.getElementById('mu-search-input').value = (m.artist ? m.artist + ' - ' : '') + m.album;
+  document.getElementById('mu-suggest-list').style.display = 'none';
+  muSearchSubmit();
+}
+
+async function muSearchSubmit() {
+  const q = (document.getElementById('mu-search-input').value || '').trim();
+  if (!q) { document.getElementById('mu-err-2').textContent = 'Enter a name first'; return; }
+  document.getElementById('mu-err-2').textContent      = '';
+  document.getElementById('mu-2-spinner').style.display = 'block';
+  document.getElementById('mu-2-continue').style.display = 'none';
+  document.getElementById('mu-suggest-list').style.display = 'none';
+
+  if (_muType === 'soundtrack') {
+    try {
+      const r = await api('GET', '/api/music-kh-search?q=' + encodeURIComponent(q));
+      const data = await r.json();
+      document.getElementById('mu-2-spinner').style.display = 'none';
+      _muKhSearchResults = data.results || [];
+      const khRes = document.getElementById('mu-kh-results');
+      if (!_muKhSearchResults.length) {
+        khRes.innerHTML =
+          '<div style="font-size:.82rem;color:var(--muted);padding:8px 2px">Nothing found on KHInsider.</div>';
+        const fallbackBtn = document.createElement('button');
+        fallbackBtn.className = 'big-btn btn-muted';
+        fallbackBtn.style.marginTop = '10px';
+        fallbackBtn.textContent = 'Search torrent sites instead \u2192';
+        fallbackBtn.onclick = () => _muRunTpb(q, true);
+        khRes.appendChild(fallbackBtn);
+        khRes.style.display = 'block';
+        document.getElementById('mu-2-continue').style.display = 'none';
+      } else {
+        khRes.innerHTML = _muKhSearchResults.map((a, i) =>
+          `<button class="show-result-card" onclick="_muPickKhAlbum(${i})">
+            <div class="show-result-info">
+              <div class="show-result-title">${_esc(a.name)}</div>
+              <div class="show-result-meta">KHInsider</div>
+            </div>
+          </button>`
+        ).join('');
+        khRes.style.display = 'block';
+        // "not here" fallback
+        const contBtn = document.getElementById('mu-2-continue');
+        contBtn.textContent = 'Not here \u2014 try torrent sites \u2192';
+        contBtn.onclick = () => _muRunTpb(q, true);
+        contBtn.style.display = 'flex';
+      }
+    } catch(e) {
+      document.getElementById('mu-2-spinner').style.display = 'none';
+      document.getElementById('mu-err-2').textContent = 'Search failed \u2014 check your connection';
+    }
+    return;
+  }
+
+  // Mainstream or Niche → straight to TPB
+  document.getElementById('mu-2-spinner').style.display = 'none';
+  _muRunTpb(q, _muType === 'niche');
+}
+
+async function _muRunTpb(q, niche) {
+  muGoStep('mu-3-tpb');
+  const qEl      = document.getElementById('mu-3-tpb-q');
+  const hintEl   = document.getElementById('mu-3-tpb-hint');
+  const spinner  = document.getElementById('mu-3-tpb-spinner');
+  const list     = document.getElementById('mu-tpb-list');
+  const errEl    = document.getElementById('mu-err-3');
+  qEl.textContent   = niche ? 'Deep search results' : 'Pick a result';
+  hintEl.textContent = niche
+    ? 'Searched with OST / Soundtrack / Score / FLAC variations \u2014 sorted by seeders'
+    : 'Sorted by seeders';
+  spinner.style.display = 'block';
+  list.innerHTML = '';
+  errEl.textContent = '';
+  try {
+    const r = await api('GET',
+      '/api/music-tpb-search?niche=' + (niche ? '1' : '0') +
+      '&q=' + encodeURIComponent(q)
+    );
+    const data = await r.json();
+    spinner.style.display = 'none';
+    _muTpbResults = data.results || [];
+    if (!_muTpbResults.length) {
+      list.innerHTML = '<div style="font-size:.82rem;color:var(--muted);padding:12px 0">No results \u2014 try a different search or check the spelling.</div>';
+      return;
+    }
+    list.innerHTML = _muTpbResults.map((t, i) => {
+      const s = t.seeds;
+      const sc = s > 20 ? 'var(--teal)' : s > 5 ? '#f59e0b' : '#f87171';
+      const sz = t.size_bytes > 0
+        ? (t.size_bytes >= 1073741824
+            ? (t.size_bytes / 1073741824).toFixed(1) + '\u202fGB'
+            : (t.size_bytes / 1048576).toFixed(0) + '\u202fMB')
+        : '';
+      return `<button class="show-result-card" onclick="_muPickTorrent(${i})">
+        <div class="show-result-info" style="width:100%">
+          <div class="show-result-title" style="font-size:.82rem;white-space:normal;line-height:1.35">${_esc(t.title)}</div>
+          <div class="show-result-meta">
+            <span style="color:${sc}">${s} seeds</span>
+            ${sz ? '\u00b7 ' + sz : ''}
+          </div>
+        </div>
+      </button>`;
+    }).join('');
+  } catch(e) {
+    spinner.style.display = 'none';
+    errEl.textContent = 'Search failed \u2014 check your connection';
+  }
+}
+
+async function _muPickKhAlbum(i) {
+  const album = _muKhSearchResults[i];
+  if (!album) return;
+  _muKhUrl = album.url;
+  const titleEl   = document.getElementById('mu-3-kh-title');
+  const spinnerEl = document.getElementById('mu-3-kh-spinner');
+  const bodyEl    = document.getElementById('mu-3-kh-body');
+  const countEl   = document.getElementById('mu-3-kh-count');
+  const tracksEl  = document.getElementById('mu-3-kh-tracks');
+  titleEl.textContent = album.name;
+  spinnerEl.style.display = 'block';
+  bodyEl.style.display    = 'none';
+  document.getElementById('mu-err-kh').textContent = '';
+  muGoStep('mu-3-kh');
+  try {
+    const r = await api('GET', '/api/music-kh-tracks?url=' + encodeURIComponent(album.url));
+    const data = await r.json();
+    spinnerEl.style.display = 'none';
+    if (data.error) {
+      document.getElementById('mu-err-kh').textContent = data.error;
+      return;
+    }
+    const tracks = data.tracks || [];
+    countEl.textContent = tracks.length + ' tracks';
+    tracksEl.innerHTML  = tracks.map(t => _esc(t)).join('<br>');
+    bodyEl.style.display = 'block';
+  } catch(e) {
+    spinnerEl.style.display = 'none';
+    document.getElementById('mu-err-kh').textContent = 'Failed to load track list \u2014 try again';
+  }
+}
+
+async function muKhDownload() {
+  const q = (document.getElementById('mu-search-input').value || '').trim();
+  document.getElementById('mu-err-kh').textContent = '';
+  try {
+    const r = await api('POST', '/api/music', {type: 'soundtrack', query: q, kh_url: _muKhUrl});
+    const data = await r.json();
+    if (data.error) { document.getElementById('mu-err-kh').textContent = data.error; return; }
+    document.getElementById('mu-done-title').textContent = 'Downloading!';
+    document.getElementById('mu-done-sub').textContent   = 'Fetching tracks from KHInsider\u2026 check back in a few minutes.';
+    muGoStep('mu-done');
+  } catch(e) {
+    document.getElementById('mu-err-kh').textContent = 'Request failed';
+  }
+}
+
+async function _muPickTorrent(i) {
+  const t = _muTpbResults[i];
+  if (!t) return;
+  const q = (document.getElementById('mu-search-input').value || '').trim();
+  document.getElementById('mu-err-3').textContent = '';
+  try {
+    const r = await api('POST', '/api/music', {type: _muType, query: q, magnet: t.magnet});
+    const data = await r.json();
+    if (data.error) { document.getElementById('mu-err-3').textContent = data.error; return; }
+    document.getElementById('mu-done-title').textContent = 'Downloading!';
+    document.getElementById('mu-done-sub').textContent   = t.title;
+    muGoStep('mu-done');
+    startPollDownloads();
+  } catch(e) {
+    document.getElementById('mu-err-3').textContent = 'Request failed';
+  }
+}
+
+function muReset() {
+  _muType = ''; _muKhUrl = '';
+  _muKhSearchResults = []; _muTpbResults = [];
+  document.getElementById('mu-search-input').value         = '';
+  document.getElementById('mu-kh-results').style.display   = 'none';
+  document.getElementById('mu-kh-results').innerHTML       = '';
+  document.getElementById('mu-suggest-list').style.display = 'none';
+  document.getElementById('mu-suggest-list').innerHTML     = '';
+  document.getElementById('mu-2-continue').style.display   = 'none';
+  document.getElementById('mu-tpb-list').innerHTML         = '';
+  document.getElementById('mu-prog').style.width           = '0%';
+  ['mu-err-2','mu-err-3','mu-err-kh'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = '';
+  });
+  muGoStep('mu-1');
 }
 
 

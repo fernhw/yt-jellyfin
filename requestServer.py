@@ -114,6 +114,11 @@ def _tail_log(n: int = 120) -> str:
             pass
     return ''.join(lines[-n:])
 
+# ── KHInsider download tracking ───────────────────────────────────────────────
+# KHInsider downloads are HTTP-based (no aria2c).  Tracked separately.
+_kh_downloads: Dict[str, Dict] = {}
+_kh_lock = threading.Lock()
+
 # ── Per-instance aria2c management ─────────────────────────────────────────────
 # Each download gets its own dedicated aria2c process on a unique port (6810–6910).
 # The central monitor thread polls each instance and aggregates state for the UI.
@@ -1012,6 +1017,188 @@ def torrent_unpause(token: str):
 def get_log():
     n = min(int(request.args.get('lines', 80)), 300)
     return Response(_tail_log(n), mimetype='text/plain')
+
+
+# ── Music API ──────────────────────────────────────────────────────────────────
+
+@app.route('/api/music-suggest')
+@_require_auth
+def music_suggest():
+    """MusicBrainz release-group search for mainstream music autocomplete."""
+    q = (request.args.get('q') or '').strip()
+    if not q or len(q) < 2:
+        return jsonify({'results': []})
+    try:
+        sys.path.insert(0, SCRIPT_DIR)
+        from musicSearch import suggest_music_mb
+        return jsonify({'results': suggest_music_mb(q)})
+    except Exception as e:
+        log.warning('music-suggest error: %s', e)
+        return jsonify({'results': []})
+
+
+@app.route('/api/music-kh-search')
+@_require_auth
+def music_kh_search():
+    """Search KHInsider for soundtrack albums."""
+    q = (request.args.get('q') or '').strip()
+    if not q or len(q) < 2:
+        return jsonify({'results': []})
+    try:
+        from musicSearch import search_khinsider
+        return jsonify({'results': search_khinsider(q)})
+    except Exception as e:
+        log.warning('music-kh-search error: %s', e)
+        return jsonify({'results': []})
+
+
+@app.route('/api/music-kh-tracks')
+@_require_auth
+def music_kh_tracks():
+    """Fetch track list from a KHInsider album URL."""
+    url = (request.args.get('url') or '').strip()
+    if not url or not url.startswith('https://downloads.khinsider.com/'):
+        return jsonify({'error': 'invalid url'}), 400
+    try:
+        from musicSearch import fetch_khinsider_tracks
+        album_name, tracks = fetch_khinsider_tracks(url)
+        if not tracks:
+            return jsonify({'error': 'No tracks found — the album page may have changed.', 'count': 0, 'tracks': []})
+        return jsonify({
+            'album':  album_name,
+            'tracks': [t['title'] for t in tracks],
+            'count':  len(tracks),
+        })
+    except Exception as e:
+        log.exception('music-kh-tracks error')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/music-tpb-search')
+@_require_auth
+def music_tpb_search():
+    """Search TPB for music torrents. niche=1 fires multiple query variations."""
+    q     = (request.args.get('q')     or '').strip()
+    niche = request.args.get('niche', '0') == '1'
+    if not q or len(q) < 2:
+        return jsonify({'results': []})
+    try:
+        from musicSearch import search_tpb_music
+        return jsonify({'results': search_tpb_music(q, niche=niche)})
+    except Exception as e:
+        log.warning('music-tpb-search error: %s', e)
+        return jsonify({'results': []})
+
+
+@app.route('/api/music', methods=['POST'])
+@_require_auth
+def request_music():
+    """
+    Submit a music download.
+    Body: {type, query, magnet?, kh_url?}
+      kh_url   → KHInsider HTTP download (tracked in _kh_downloads)
+      magnet   → aria2c torrent (tracked in _instances, same as movies)
+    """
+    data     = request.get_json(force=True) or {}
+    mtype    = (data.get('type')    or '').strip()
+    query    = (data.get('query')   or '').strip()
+    magnet   = (data.get('magnet')  or '').strip()
+    kh_url   = (data.get('kh_url') or '').strip()
+
+    locs      = _load_kv(LOCATIONS_FILE)
+    music_dir = locs.get('MUSIC_DIR', '/Volumes/Jellyfin/Music')
+
+    if kh_url:
+        # Validate URL is actually KHInsider to prevent SSRF
+        if not re.match(r'^https://downloads\.khinsider\.com/game-soundtracks/album/[\w\-]+/?$', kh_url):
+            return jsonify({'error': 'invalid kh_url'}), 400
+        folder_name = re.sub(r'[^\w\s\-]', '_', query or kh_url.rstrip('/').split('/')[-1])[:80].strip()
+        dest        = os.path.join(music_dir, folder_name)
+
+        stop_ev = threading.Event()
+        token   = os.urandom(4).hex()
+        state: Dict = {
+            'token':        token,
+            'name':         query or folder_name,
+            'type':         'kh',
+            'status':       'starting',
+            'total':        0,
+            'done':         0,
+            'failed':       0,
+            'current':      '',
+            'dest':         dest,
+            'kh_url':       kh_url,
+            '_stop':        stop_ev,
+            'started_at':   time.time(),
+            'completed_at': 0.0,
+        }
+        with _kh_lock:
+            _kh_downloads[token] = state
+
+        def _run_kh():
+            try:
+                from musicSearch import download_khinsider_album
+                download_khinsider_album(kh_url, dest, state, stop_ev)
+            except Exception as e:
+                state['status'] = 'error'
+                state['error']  = str(e)
+            if state.get('status') in ('complete', 'complete_partial'):
+                state['completed_at'] = time.time()
+            log.info('KH download %s finished: status=%s done=%s/%s',
+                     token, state['status'], state.get('done'), state.get('total'))
+
+        threading.Thread(target=_run_kh, daemon=True).start()
+        return jsonify({'token': token, 'type': 'kh'}), 202
+
+    elif magnet:
+        folder_name = re.sub(r'[^\w\s\-]', '_', query)[:80].strip() if query else 'music'
+        dest = os.path.join(music_dir, folder_name)
+        os.makedirs(dest, exist_ok=True)
+        try:
+            inst = _start_instance(query or 'Music', magnet, dest)
+            return jsonify({'token': inst['token'], 'type': 'torrent'}), 202
+        except Exception as e:
+            log.exception('music torrent start failed')
+            return jsonify({'error': str(e)}), 500
+
+    else:
+        return jsonify({'error': 'magnet or kh_url required'}), 400
+
+
+@app.route('/api/music-state')
+@_require_auth
+def music_state():
+    """KHInsider download progress for all active/recent downloads."""
+    with _kh_lock:
+        now      = time.time()
+        snapshot = []
+        to_clean = []
+        for token, st in _kh_downloads.items():
+            completed_at = st.get('completed_at', 0.0)
+            if completed_at and now - completed_at > 300:
+                to_clean.append(token)
+                continue
+            snapshot.append({k: v for k, v in st.items() if k != '_stop'})
+        for t in to_clean:
+            _kh_downloads.pop(t, None)
+    return jsonify({'downloads': snapshot})
+
+
+@app.route('/api/music/<token>/remove', methods=['POST'])
+@_require_auth
+def music_remove(token: str):
+    if not re.fullmatch(r'[0-9a-f]{4,16}', token):
+        abort(400)
+    with _kh_lock:
+        st = _kh_downloads.get(token)
+    if st is None:
+        return jsonify({'error': 'not found'}), 404
+    stop_ev = st.get('_stop')
+    if stop_ev:
+        stop_ev.set()
+    with _kh_lock:
+        _kh_downloads.pop(token, None)
+    return jsonify({'removed': token})
 
 # ── Static UI ──────────────────────────────────────────────────────────────────
 
