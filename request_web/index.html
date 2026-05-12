@@ -658,6 +658,13 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
           <div class="smb-sub">Rare releases, underground &mdash; runs every search variation</div>
         </div>
       </button>
+      <button class="show-mode-btn" onclick="muPickType('khlink')">
+        <div class="smb-icon">&#128279;</div>
+        <div class="smb-body">
+          <div class="smb-title">KHInsider Link</div>
+          <div class="smb-sub">Paste an album URL from downloads.khinsider.com</div>
+        </div>
+      </button>
     </div>
 
     <!-- M2: Search input step -->
@@ -678,6 +685,19 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <button id="mu-2-continue" class="big-btn btn-teal" onclick="muSearchSubmit()" style="display:none;margin-top:4px">Search &rarr;</button>
       <button class="ghost-btn" onclick="muGoStep('mu-1')">&larr; Back</button>
       <div class="err" id="mu-err-2"></div>
+    </div>
+
+    <!-- M2-kh: KHInsider URL paste -->
+    <div class="form-step" id="mu-2-kh">
+      <div class="step-q">Paste KHInsider album URL</div>
+      <div class="step-hint" style="margin-bottom:12px">e.g. https://downloads.khinsider.com/game-soundtracks/album/final-fantasy-vii</div>
+      <input id="mu-kh-url-input" class="big-input" placeholder="https://downloads.khinsider.com/game-soundtracks/album/..." autocomplete="off"
+             oninput="muKhUrlInput()"
+             onkeydown="if(event.key==='Enter')muKhUrlSubmit()"
+             style="margin-bottom:8px"/>
+      <button id="mu-kh-url-go" class="big-btn btn-teal" onclick="muKhUrlSubmit()" style="display:none">Download &rarr;</button>
+      <button class="ghost-btn" onclick="muGoStep('mu-1')">&larr; Back</button>
+      <div class="err" id="mu-err-kh-url"></div>
     </div>
 
     <!-- M3-tpb: Torrent results -->
@@ -2227,7 +2247,7 @@ function muGoStep(id) {
   _muStep = id;
   const next = document.getElementById(id);
   if (next) next.classList.add('active');
-  const pcts = {'mu-1':0,'mu-2':33,'mu-3-tpb':70,'mu-3-kh':70,'mu-done':100};
+  const pcts = {'mu-1':0,'mu-2':33,'mu-2-kh':33,'mu-3-tpb':70,'mu-3-kh':70,'mu-done':100};
   document.getElementById('mu-prog').style.width = (pcts[id] || 0) + '%';
   const inp = next && next.querySelector('input:not([type=checkbox])');
   if (inp) setTimeout(() => inp.focus(), 60);
@@ -2247,6 +2267,13 @@ function muPickType(type) {
   document.getElementById('mu-2-continue').onclick          = muSearchSubmit;
   document.getElementById('mu-err-2').textContent           = '';
   inp.value = '';
+  if (type === 'khlink') {
+    muGoStep('mu-2-kh');
+    document.getElementById('mu-kh-url-input').value = '';
+    document.getElementById('mu-kh-url-go').style.display = 'none';
+    document.getElementById('mu-err-kh-url').textContent = '';
+    return;
+  }
   if (type === 'mainstream') {
     q2.textContent    = 'What album or artist?';
     hint.textContent  = 'e.g. "Linkin Park Meteora" or "Radiohead OK Computer"';
@@ -2261,6 +2288,48 @@ function muPickType(type) {
     inp.placeholder   = 'e.g. "Arca Kick I"';
   }
   muGoStep('mu-2');
+}
+
+function muKhUrlInput() {
+  const v = (document.getElementById('mu-kh-url-input').value || '').trim();
+  document.getElementById('mu-kh-url-go').style.display =
+    v.startsWith('https://downloads.khinsider.com/game-soundtracks/album/') ? 'flex' : 'none';
+}
+
+async function muKhUrlSubmit() {
+  const url = (document.getElementById('mu-kh-url-input').value || '').trim();
+  const errEl = document.getElementById('mu-err-kh-url');
+  errEl.textContent = '';
+  if (!url.startsWith('https://downloads.khinsider.com/game-soundtracks/album/')) {
+    errEl.textContent = 'Must be a downloads.khinsider.com album URL';
+    return;
+  }
+  // Show track list first via mu-3-kh step
+  _muKhUrl = url;
+  const titleEl   = document.getElementById('mu-3-kh-title');
+  const spinnerEl = document.getElementById('mu-3-kh-spinner');
+  const bodyEl    = document.getElementById('mu-3-kh-body');
+  const countEl   = document.getElementById('mu-3-kh-count');
+  const tracksEl  = document.getElementById('mu-3-kh-tracks');
+  titleEl.textContent = url.split('/').pop();
+  spinnerEl.style.display = 'block';
+  bodyEl.style.display    = 'none';
+  document.getElementById('mu-err-kh').textContent = '';
+  muGoStep('mu-3-kh');
+  try {
+    const r = await api('GET', '/api/music-kh-tracks?url=' + encodeURIComponent(url));
+    const data = await r.json();
+    spinnerEl.style.display = 'none';
+    if (data.error) { document.getElementById('mu-err-kh').textContent = data.error; return; }
+    titleEl.textContent = data.album || url.split('/').pop();
+    const tracks = data.tracks || [];
+    countEl.textContent = tracks.length + ' tracks';
+    tracksEl.innerHTML  = tracks.map(t => _esc(t)).join('<br>');
+    bodyEl.style.display = 'block';
+  } catch(e) {
+    spinnerEl.style.display = 'none';
+    document.getElementById('mu-err-kh').textContent = 'Failed to load track list \u2014 check the URL';
+  }
 }
 
 function muSearchInput() {
@@ -2323,8 +2392,32 @@ async function muSearchSubmit() {
   document.getElementById('mu-suggest-list').style.display = 'none';
 
   if (_muType === 'soundtrack') {
-    document.getElementById('mu-2-spinner').style.display = 'none';
-    _muRunTpb(q, true);
+    // Search KHInsider first; fall back to niche TPB if blocked or no results
+    try {
+      const r = await api('GET', '/api/music-kh-search?q=' + encodeURIComponent(q));
+      const data = await r.json();
+      document.getElementById('mu-2-spinner').style.display = 'none';
+      const results = data.results || [];
+      _muKhSearchResults = results;
+      const khDiv = document.getElementById('mu-kh-results');
+      if (results.length) {
+        khDiv.innerHTML = results.map((a, i) =>
+          `<button class="show-result-card" onclick="_muPickKhAlbum(${i})">
+            <div class="show-result-info" style="width:100%">
+              <div class="show-result-title" style="font-size:.82rem;white-space:normal;line-height:1.35">${_esc(a.name)}</div>
+            </div>
+          </button>`
+        ).join('') +
+        `<button class="ghost-btn" style="margin-top:8px;font-size:.8rem" onclick="_muRunTpb(document.getElementById('mu-search-input').value.trim(),true)">Not on KHInsider \u2014 search torrents instead \u2192</button>`;
+        khDiv.style.display = 'block';
+      } else {
+        // No KH results (or blocked) → niche TPB
+        _muRunTpb(q, true);
+      }
+    } catch(e) {
+      document.getElementById('mu-2-spinner').style.display = 'none';
+      _muRunTpb(q, true);
+    }
     return;
   }
 

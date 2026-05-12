@@ -1151,11 +1151,10 @@ def request_music():
         return jsonify({'token': token, 'type': 'kh'}), 202
 
     elif magnet:
-        folder_name = re.sub(r'[^\w\s\-]', '_', query)[:80].strip() if query else 'music'
-        dest = os.path.join(music_dir, folder_name)
         try:
-            os.makedirs(dest, exist_ok=True)
-            inst = _start_instance(query or 'Music', magnet, dest)
+            # Download directly into music_dir — torrent's own folder structure
+            # organises the content. Avoids makedirs on the network volume.
+            inst = _start_instance(query or 'Music', magnet, music_dir)
             return jsonify({'token': inst['token'], 'type': 'torrent'}), 202
         except Exception as e:
             log.exception('music torrent start failed')
