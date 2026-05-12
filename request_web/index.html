@@ -40,28 +40,36 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 #dl-strip-label{font-size:.7rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);flex:1}
 #dl-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--orange);color:#1a0800;font-size:.65rem;font-weight:800;margin-left:4px;display:none}
 #dl-strip-toggle{font-size:.72rem;color:var(--muted);padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;flex-shrink:0}
-#dl-strip-body{display:none;flex-direction:column;gap:8px;max-height:52vh;overflow-y:auto;overflow-x:hidden;padding-top:8px;-webkit-overflow-scrolling:touch}
+#dl-strip-body{display:none;flex-direction:column;gap:8px;max-height:52vh;overflow-y:auto;overflow-x:hidden;padding-top:8px;padding-bottom:48px;-webkit-overflow-scrolling:touch}
 #dl-strip-idle{color:var(--muted);font-size:.78rem;display:flex;align-items:center;gap:8px;padding:4px 0}
 #dl-strip-idle .dot-idle{width:6px;height:6px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);flex-shrink:0}
 .dl-card-row{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:stretch;gap:12px}
-.dl-eta-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;width:72px;padding:4px 0;border-right:1px solid var(--border);margin-right:2px}
-.dl-eta-value{font-size:1.5rem;font-weight:900;color:var(--white);line-height:1;text-align:center;letter-spacing:-.5px}
-.dl-eta-unit{font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:3px;text-align:center}
-.dl-eta-label{font-size:.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:1px;text-align:center}
+.dl-eta-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;width:68px;min-width:68px;padding:4px 10px 4px 6px;border-right:1px solid var(--border);margin-right:6px;text-align:center}
+.dl-eta-value{font-size:1.5rem;font-weight:900;color:var(--white);line-height:1;letter-spacing:-.5px;display:block;text-align:center;width:100%}
+.dl-eta-unit{font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:3px;display:block;text-align:center;width:100%}
+.dl-eta-label{font-size:.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:1px;display:block;text-align:center;width:100%}
 .dl-card-body{flex:1;min-width:0}
 .dl-card-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .dl-card-name{flex:1;min-width:0;font-size:.82rem;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dl-card-pct{flex-shrink:0;font-size:.78rem;font-weight:800;color:var(--orange);min-width:32px;text-align:right}
 .dl-bar-outer{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:7px}
 .dl-bar-inner{height:100%;background:linear-gradient(90deg,var(--orange),var(--teal));border-radius:3px;transition:width .7s}
-.dl-stats{display:flex;gap:12px;flex-wrap:wrap}
-.dl-stat{font-size:.67rem;color:var(--muted);display:flex;align-items:center;gap:3px}
+.dl-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:1px}
+.dl-stats.dl-stats-toggle{cursor:pointer;user-select:none}
+.dl-stats-toggle .dl-stat-detail{display:none}
+.dl-stats-toggle.expanded .dl-stat-summary{display:none}
+.dl-stats-toggle.expanded .dl-stat-detail{display:flex;gap:8px;flex-wrap:wrap}
+.dl-stat-summary{font-size:.62rem;color:var(--muted);font-style:italic;letter-spacing:.01em;display:flex;align-items:center;gap:4px}
+.dl-stat-summary b{color:var(--white);font-style:normal;font-weight:700}
+.dl-stats-toggle .dl-stat-summary::after{content:'···';font-size:.5rem;opacity:.35;margin-left:3px;font-style:normal}
+.dl-stat{font-size:.6rem;color:var(--muted);display:flex;align-items:center;gap:2px}
 .dl-stat b{color:var(--white);font-weight:700}
-.dl-stat-arrow{font-size:.6rem}
+.dl-stat-arrow{font-size:.55rem}
+.dl-stat b{color:var(--white);font-weight:700}
 .dl-card-actions{display:flex;gap:5px;margin-top:6px;align-items:center}
-.dl-act-btn{font-size:.68rem;padding:3px 9px;border-radius:6px;border:none;cursor:pointer;font-weight:700;background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
-.dl-act-btn:hover{color:var(--white)}
-.dl-act-btn.remove:hover{color:#f87171;border-color:#f87171}
+.dl-act-btn{background:none;border:none;padding:3px 5px;cursor:pointer;color:var(--white);display:flex;align-items:center;opacity:.45;line-height:1}
+.dl-act-btn:hover{opacity:1}
+.dl-act-btn.remove:hover{color:#f87171}
 
 /* ── Typography ── */
 .section-label{font-size:.6rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
@@ -191,7 +199,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 .season-add-btn:hover{border-color:var(--purple);color:var(--purple)}
 
 /* ── Movie autocomplete ── */
-#movie-suggest-list{background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:8px;display:none}
+#movie-suggest-list{background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius);overflow-y:auto;overflow-x:hidden;max-height:38vh;margin-bottom:8px;display:none;-webkit-overflow-scrolling:touch}
 .mv-suggest-item{padding:12px 15px;cursor:pointer;border-bottom:1px solid var(--border);font-size:.92rem;font-weight:600;color:var(--white);display:flex;justify-content:space-between;align-items:center;transition:background .15s}
 .mv-suggest-item:last-child{border-bottom:none}
 .mv-suggest-item:active,.mv-suggest-item:hover{background:rgba(45,212,191,.09);color:var(--teal)}
@@ -1543,7 +1551,8 @@ function movieSuggestInput() {
 function mvSuggestPick(idx) {
   const m = (window._mvSuggestItems || [])[idx];
   if (!m) return;
-  document.getElementById('movie-title').value = m.title;
+  const isSingleWord = m.title.trim().indexOf(' ') === -1;
+  document.getElementById('movie-title').value = (isSingleWord && m.year) ? m.title + ' ' + m.year : m.title;
   const list = document.getElementById('movie-suggest-list');
   list.style.display = 'none'; list.innerHTML = '';
   window._mvSuggestItems = [];
@@ -1887,13 +1896,25 @@ async function pollDownloads() {
         if (!totalB || speedB < 1024 || pctVal >= 100) return null;
         const remainB = totalB * (1 - pctVal / 100);
         const secs = remainB / speedB;
-        if (secs < 60)   return { value: '<1',  unit: 'min',  label: 'left' };
-        if (secs < 3600) return { value: Math.round(secs / 60), unit: 'min',  label: 'left' };
+        if (secs < 60)   return { value: '1',  unit: 'min',  label: 'left', secs };
+        if (secs < 3600) return { value: Math.round(secs / 60), unit: 'min',  label: 'left', secs };
         const h = Math.floor(secs / 3600);
         const m = Math.round((secs % 3600) / 60);
         const hStr = h + (m >= 6 ? '.' + Math.round(m / 6) : '');
-        if (h < 24)      return { value: hStr,  unit: 'hr',   label: 'left' };
-        return { value: Math.round(h / 24), unit: 'day' + (Math.round(h/24) !== 1 ? 's' : ''), label: 'left' };
+        if (h < 24)      return { value: hStr,  unit: 'hr',   label: 'left', secs };
+        return { value: Math.round(h / 24), unit: 'day' + (Math.round(h/24) !== 1 ? 's' : ''), label: 'left', secs };
+      }
+      function _fmtFinishAt(secs) {
+        const d = new Date(Date.now() + secs * 1000);
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        // Show day if finishing tomorrow or later
+        const todayDay = new Date().getDate();
+        if (d.getDate() !== todayDay) {
+          const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+          return days[d.getDay()] + ' ' + hh + ':' + mm;
+        }
+        return hh + ':' + mm;
       }
       // Interpolate orange→teal based on pct: 0%=orange #f97316, 100%=teal #2dd4bf
       function _etaColor(pctVal) {
@@ -1944,6 +1965,18 @@ async function pollDownloads() {
           '</div>';
       }
 
+      // Default stat line: finish-at clock time. Hover/tap reveals speed+size detail.
+      const finishAtStr = eta ? 'Ready at <b>' + _fmtFinishAt(eta.secs) + '</b>' : '';
+      const detailStats = [
+        '<span class="dl-stat"><span class="dl-stat-arrow">&#11015;</span><b>' + _esc(speed) + '</b></span>',
+        (done && size ? '<span class="dl-stat">' + _esc(done) + ' / ' + _esc(size) + '</span>' : ''),
+        (status !== 'active' ? '<span class="dl-stat" style="color:var(--muted)">' + _esc(status) + '</span>' : ''),
+      ].join('');
+      const statsHtml = '<div class="dl-stats dl-stats-toggle" onclick="this.classList.toggle(\'expanded\')" title="Tap for details">' +
+        '<span class="dl-stat-summary">' + (finishAtStr || detailStats) + '</span>' +
+        '<span class="dl-stat-detail">' + detailStats + '</span>' +
+        '</div>';
+
       card.innerHTML = [
         etaPanel,
         '<div class="dl-card-body">',
@@ -1954,18 +1987,11 @@ async function pollDownloads() {
         connectingBadge,
         slowBadge,
         isMeta ? '' : '<div class="dl-bar-outer"><div class="dl-bar-inner" style="width:' + Math.max(pct, 1) + '%"></div></div>',
-        isMeta ? '' : [
-          '<div class="dl-stats">',
-          '  <div class="dl-stat"><span class="dl-stat-arrow">&#11015;</span><b>' + _esc(speed) + '</b></div>',
-          (done && size ? '<div class="dl-stat">' + _esc(done) + ' / ' + _esc(size) + '</div>' : ''),
-          '  <div class="dl-stat" style="color:var(--muted)">' + _esc(status) + '</div>',
-          '</div>',
-        ].join(''),
+        isMeta ? '' : statsHtml,
         gid ? (function(){
           return '<div class="dl-card-actions">' +
-            '<button class="dl-act-btn" onclick="pauseToggle(\'' + gid + '\', \'' + status + '\')">' +
-            (status === 'paused' ? '\u25b6 Resume' : '\u23f8 Pause') + '</button>' +
-            '<button class="dl-act-btn remove" onclick="removeDl(\'' + gid + '\')">\u2715 Remove</button>' +
+            '<button class="dl-act-btn" title="' + (status === 'paused' ? 'Resume' : 'Pause') + '" onclick="pauseToggle(\'' + gid + '\', \'' + status + '\')">' + (status === 'paused' ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>' : '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="3" width="4" height="18"/><rect x="15" y="3" width="4" height="18"/></svg>') + '</button>' +
+            '<button class="dl-act-btn remove" title="Remove" onclick="removeDl(\'' + gid + '\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14H6L5,6"/><path d="M10,11v6M14,11v6"/><path d="M9,6V4h6v2"/></svg></button>' +
             '<div style="margin-left:auto;display:flex;align-items:center">' + _seederBars(seedN) + '</div>' +
             '</div>';
         })() : '',
