@@ -2425,15 +2425,18 @@ async function _muFetchSuggest(q) {
     const items = data.results || [];
     _muSuggestItems = items;
     if (!items.length) { list.style.display = 'none'; return; }
-    list.innerHTML = items.map((m, i) =>
-      `<div class="mv-suggest-item"
+    list.innerHTML = items.map((m, i) => {
+      const sub = [m.type, m.disambiguation].filter(Boolean).join(' \u00b7 ');
+      return `<div class="mv-suggest-item"
            onmousedown="event.preventDefault();_muPickSuggest(${i})"
            ontouchstart="_mvTouchStart(event)"
            ontouchend="_muTouchEnd(event,${i})">
-        <span>${_esc((m.artist ? m.artist + ' \u2014 ' : '') + m.album)}</span>
-        <span class="mv-suggest-year">${m.year || ''}</span>
-      </div>`
-    ).join('');
+        <span style="display:flex;flex-direction:column;gap:2px">
+          <span>${_esc(m.name)}</span>
+          ${sub ? `<span style="font-size:.72rem;color:var(--muted)">${_esc(sub)}</span>` : ''}
+        </span>
+      </div>`;
+    }).join('');
     list.style.display = 'block';
   } catch(e) { list.style.display = 'none'; }
 }
@@ -2448,7 +2451,7 @@ function _muTouchEnd(e, i) {
 function _muPickSuggest(i) {
   const m = _muSuggestItems[i];
   if (!m) return;
-  document.getElementById('mu-search-input').value = (m.artist ? m.artist + ' - ' : '') + m.album;
+  document.getElementById('mu-search-input').value = m.name;
   document.getElementById('mu-suggest-list').style.display = 'none';
   muSearchSubmit();
 }

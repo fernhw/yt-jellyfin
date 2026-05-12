@@ -1039,14 +1039,14 @@ def get_log():
 @app.route('/api/music-suggest')
 @_require_auth
 def music_suggest():
-    """MusicBrainz release-group search for mainstream music autocomplete."""
+    """MusicBrainz artist search for mainstream music autocomplete."""
     q = (request.args.get('q') or '').strip()
     if not q or len(q) < 2:
         return jsonify({'results': []})
     try:
         sys.path.insert(0, SCRIPT_DIR)
-        from musicSearch import suggest_music_mb
-        return jsonify({'results': suggest_music_mb(q)})
+        from musicSearch import suggest_artist_mb
+        return jsonify({'results': suggest_artist_mb(q)})
     except Exception as e:
         log.warning('music-suggest error: %s', e)
         return jsonify({'results': []})

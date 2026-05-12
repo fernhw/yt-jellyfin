@@ -71,6 +71,47 @@ def suggest_music_mb(query: str, limit: int = 8) -> List[Dict]:
     return results
 
 
+def suggest_artist_mb(query: str, limit: int = 8) -> List[Dict]:
+    """
+    Search MusicBrainz artists/bands/composers matching query.
+    Returns list of {name, type, disambiguation, mb_id}.
+    Used for torrent-based music search where artist name is the useful search term.
+    """
+    url = (
+        'https://musicbrainz.org/ws/2/artist?fmt=json'
+        '&limit=' + str(limit) +
+        '&query=' + urllib.parse.quote(query)
+    )
+    req = urllib.request.Request(url, headers={
+        'User-Agent': 'JellyfinReq/1.0 (personal; contact@localhost)',
+        'Accept': 'application/json',
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read())
+    except Exception as e:
+        log.warning('MusicBrainz artist search error: %s', e)
+        return []
+
+    results: List[Dict] = []
+    seen: set = set()
+    for artist in (data.get('artists') or []):
+        name = (artist.get('name') or '').strip()
+        if not name or name.lower() in seen:
+            continue
+        seen.add(name.lower())
+        atype = (artist.get('type') or '').strip()  # Person, Group, Orchestra, Choir, etc.
+        disambiguation = (artist.get('disambiguation') or '').strip()
+        mb_id = artist.get('id', '')
+        results.append({
+            'name': name,
+            'type': atype,
+            'disambiguation': disambiguation,
+            'mb_id': mb_id,
+        })
+    return results
+
+
 # ── KHInsider ─────────────────────────────────────────────────────────────────
 
 KH_BASE = 'https://downloads.khinsider.com'
