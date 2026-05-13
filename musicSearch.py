@@ -322,29 +322,12 @@ def download_khinsider_album(
         state['error']  = 'No tracks found on album page — the URL may be wrong.'
         return False
 
-    # Ensure parent is writable (detached Python.app processes can lose FDA on macOS)
-    parent_dir = os.path.dirname(dest_dir)
-    if parent_dir and os.path.isdir(parent_dir) and not os.access(parent_dir, os.W_OK):
-        try:
-            os.chmod(parent_dir, 0o755)
-        except OSError as e:
-            state['status'] = 'error'
-            state['error']  = (
-                f'Cannot write to {parent_dir}: {e}. '
-                'On macOS, grant Full Disk Access to Terminal or the Python app in '
-                'System Settings → Privacy & Security → Full Disk Access.'
-            )
-            return False
-
-    try:
-        os.makedirs(dest_dir, exist_ok=True)
-    except OSError as e:
+    import subprocess
+    r = subprocess.run(['mkdir', '-p', dest_dir], capture_output=True, text=True)
+    log.info('KH mkdir [%s] rc=%s stderr=%r', dest_dir, r.returncode, r.stderr)
+    if r.returncode != 0:
         state['status'] = 'error'
-        state['error']  = (
-            f'Cannot create download directory {dest_dir}: {e}. '
-            'On macOS, grant Full Disk Access to Terminal or the Python app in '
-            'System Settings → Privacy & Security → Full Disk Access.'
-        )
+        state['error']  = f'mkdir failed ({r.returncode}): {r.stderr.strip() or dest_dir}'
         return False
     state.update({
         'total':   len(tracks),
@@ -375,7 +358,7 @@ def download_khinsider_album(
             safe_fname = re.sub(r'[^\w\s\-]', '_', track['title'])[:80] + '.mp3'
         out_path = os.path.join(dest_dir, safe_fname)
 
-        if os.path.exists(out_path):
+        if subprocess.run(['test', '-f', out_path]).returncode == 0:
             state['done'] += 1
             continue
 
@@ -388,8 +371,12 @@ def download_khinsider_album(
                 timeout=120,
             )
             dl_resp.raise_for_status()
-            with open(out_path, 'wb') as f:
-                f.write(dl_resp.content)
+            # Write to /tmp first, then mv into place — avoids TCC issues on external volumes
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                tmp.write(dl_resp.content)
+                tmp_path = tmp.name
+            subprocess.run(['mv', tmp_path, out_path], check=True)
             state['done'] += 1
             log.info('KH downloaded: %s', safe_fname)
         except Exception as e:
