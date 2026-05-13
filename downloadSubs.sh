@@ -105,13 +105,6 @@ update_vars() {
     final_skip_list="${prev_skip_list}${SKIP_ITEMS}"
   fi
 
-  # Preserve keys/config lines that must survive a rewrite
-  _preserved=""
-  for _key in last_batch_notify last_media_notify; do
-    _val=$(grep "^${_key}=" "$VARS_FILE" 2>/dev/null | cut -d= -f2-)
-    [ -n "$_val" ] && _preserved="${_preserved}${_key}=${_val}\n"
-  done
-
   cat > "$VARS_FILE" <<EOF
 last_scan=$now_ms
 total_videos=$total
@@ -128,8 +121,6 @@ downloaded_list=$final_dl_list
 deleted_list=$final_del_list
 skipped_list=$final_skip_list
 EOF
-  # Restore preserved keys
-  [ -n "$_preserved" ] && printf '%b' "$_preserved" >> "$VARS_FILE"
 }
 
 get_channels() {
@@ -373,25 +364,6 @@ if [ ! -d "/Volumes/Darrel4tb" ]; then
   exit 1
 fi
 
-# ── VPN guard ─────────────────────────────────────────────────────────────────
-# Ecuador = home country. If the exit IP resolves to EC (or is unreachable),
-# we are NOT behind ProtonVPN — abort immediately to avoid exposing real IP.
-if [ "$MODE" != "thumbs-only" ] && [ "$MODE" != "collage-only" ]; then
-  _vpn_country=$(curl -sf --max-time 8 "https://ipinfo.io/country" 2>/dev/null | tr -d '[:space:]')
-  if [ "$_vpn_country" = "EC" ] || [ -z "$_vpn_country" ]; then
-    if [ "$_vpn_country" = "EC" ]; then
-      _vpn_msg="Exit IP is Ecuador (EC) — ProtonVPN is not active."
-    else
-      _vpn_msg="Could not reach geo-IP check — VPN status unknown, aborting for safety."
-    fi
-    echo "VPN ERROR: $_vpn_msg Skipping all downloads."
-    printf '%s|%s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$_vpn_msg" > "$SCRIPT_DIR/.vpn_skip"
-    [ -x "$REPORT_MAKER" ] && "$REPORT_MAKER"
-    exit 1
-  fi
-  echo "  VPN check OK — exit country: $_vpn_country"
-fi
-
 # Prevent overlapping runs (skip lock for thumbs-only — read-only safe)
 if [ "$MODE" != "thumbs-only" ]; then
   if [ -f "$LOCKFILE" ]; then
@@ -459,7 +431,7 @@ while IFS= read -r channel_url <&3; do
   echo "Scanning $label ..."
 
   # Fast flat-playlist: just IDs, ~1s per channel
-  video_ids=$(yt-dlp --flat-playlist --print id --playlist-end "$SCAN_DEPTH" --extractor-args "youtube:player_client=mweb,android_vr" "$clean_url" 2>/dev/null) || true
+  video_ids=$(yt-dlp --flat-playlist --print id --playlist-end "$SCAN_DEPTH" "$clean_url" 2>/dev/null) || true
 
   if [ -z "$video_ids" ]; then
     echo "  WARN: no videos returned"
@@ -849,7 +821,7 @@ if [ -f "$COLLAGE_MAKER" ]; then
   python3 "$COLLAGE_MAKER"
 fi
 
-# Generate daily report (also handles push notifications)
+# Generate daily report
 if [ -x "$REPORT_MAKER" ]; then
   "$REPORT_MAKER"
 fi
