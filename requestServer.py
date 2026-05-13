@@ -1053,6 +1053,21 @@ def get_log():
 
 # ── Music API ──────────────────────────────────────────────────────────────────
 
+@app.route('/api/music-artist-albums')
+@_require_auth
+def music_artist_albums():
+    """Fetch albums for a specific artist from MusicBrainz. Used by the album picker step."""
+    artist = (request.args.get('artist') or '').strip()
+    if not artist or len(artist) < 2:
+        return jsonify({'results': []})
+    try:
+        from musicSearch import get_artist_albums_mb
+        return jsonify({'results': get_artist_albums_mb(artist)})
+    except Exception as e:
+        log.warning('music-artist-albums error: %s', e)
+        return jsonify({'results': []})
+
+
 @app.route('/api/music-suggest')
 @_require_auth
 def music_suggest():
@@ -1111,7 +1126,8 @@ def show_search_preview():
 
 @app.route('/api/music-kh-tracks')
 @_require_auth
-def music_kh_tracks():    """Fetch track list from a KHInsider album URL."""
+def music_kh_tracks():
+    """Fetch track list from a KHInsider album URL."""
     url = (request.args.get('url') or '').strip()
     if not url or not url.startswith('https://downloads.khinsider.com/'):
         return jsonify({'error': 'invalid url'}), 400

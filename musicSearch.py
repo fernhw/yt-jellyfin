@@ -71,15 +71,66 @@ def suggest_music_mb(query: str, limit: int = 8) -> List[Dict]:
     return results
 
 
+def get_artist_albums_mb(artist_name: str, limit: int = 30) -> List[Dict]:
+    """
+    Fetch studio albums for a specific artist from MusicBrainz release-groups.
+    Returns [{album, year, mb_id}] sorted by year ascending.
+    """
+    safe = artist_name.replace('"', '').replace('\\', '')
+    query = (
+        f'artist:"{safe}" AND primarytype:album'
+        ' NOT secondarytype:live'
+        ' NOT secondarytype:compilation'
+        ' NOT secondarytype:remix'
+        ' NOT secondarytype:interview'
+        ' NOT secondarytype:demo'
+        ' NOT secondarytype:mixtape'
+    )
+    url = (
+        'https://musicbrainz.org/ws/2/release-group?fmt=json'
+        '&limit=' + str(limit) +
+        '&query=' + urllib.parse.quote(query)
+    )
+    req = urllib.request.Request(url, headers={
+        'User-Agent': 'JellyfinReq/1.0 (personal; contact@localhost)',
+        'Accept': 'application/json',
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read())
+    except Exception as e:
+        log.warning('MusicBrainz artist albums error: %s', e)
+        return []
+
+    results: List[Dict] = []
+    seen: set = set()
+    _SKIP_SECONDARY = {'Live', 'Compilation', 'Remix', 'DJ-mix', 'Mixtape/Street', 'Demo', 'Interview', 'Spokenword', 'Audiobook'}
+    for rg in (data.get('release-groups') or []):
+        album = (rg.get('title') or '').strip()
+        if not album or album.lower() in seen:
+            continue
+        sec_types = set(rg.get('secondary-types') or [])
+        if sec_types & _SKIP_SECONDARY:
+            continue
+        seen.add(album.lower())
+        year_raw = (rg.get('first-release-date') or '')[:4]
+        year = int(year_raw) if year_raw.isdigit() else None
+        results.append({'album': album, 'year': year, 'mb_id': rg.get('id', '')})
+
+    results.sort(key=lambda r: (r['year'] or 9999))
+    return results
+
+
 def suggest_artist_mb(query: str, limit: int = 8) -> List[Dict]:
     """
     Search MusicBrainz artists/bands/composers matching query.
     Returns list of {name, type, disambiguation, mb_id}.
-    Used for torrent-based music search where artist name is the useful search term.
+    Only includes music-creator types: Person, Group, Orchestra, Choir.
     """
+    _CREATOR_TYPES = {'Person', 'Group', 'Orchestra', 'Choir'}
     url = (
         'https://musicbrainz.org/ws/2/artist?fmt=json'
-        '&limit=' + str(limit) +
+        '&limit=20'
         '&query=' + urllib.parse.quote(query)
     )
     req = urllib.request.Request(url, headers={
@@ -99,8 +150,10 @@ def suggest_artist_mb(query: str, limit: int = 8) -> List[Dict]:
         name = (artist.get('name') or '').strip()
         if not name or name.lower() in seen:
             continue
+        atype = (artist.get('type') or '').strip()
+        if atype not in _CREATOR_TYPES:
+            continue
         seen.add(name.lower())
-        atype = (artist.get('type') or '').strip()  # Person, Group, Orchestra, Choir, etc.
         disambiguation = (artist.get('disambiguation') or '').strip()
         mb_id = artist.get('id', '')
         results.append({
@@ -109,6 +162,8 @@ def suggest_artist_mb(query: str, limit: int = 8) -> List[Dict]:
             'disambiguation': disambiguation,
             'mb_id': mb_id,
         })
+        if len(results) >= limit:
+            break
     return results
 
 
@@ -152,6 +207,7 @@ def search_khinsider(query: str, limit: int = 10) -> List[Dict]:
     Search KHInsider for soundtrack albums matching query.
     Returns list of {name, url}.
     """
+    from bs4 import BeautifulSoup
     url = KH_BASE + '/search?search=' + urllib.parse.quote(query)
     try:
         html = _kh_get(url)
@@ -159,20 +215,19 @@ def search_khinsider(query: str, limit: int = 10) -> List[Dict]:
         log.warning('KHInsider search error: %s', e)
         return []
 
+    soup = BeautifulSoup(html, 'html.parser')
     results: List[Dict] = []
     seen: set = set()
-    # KHInsider search result links: <a href="/game-soundtracks/album/slug">Name</a>
-    for m in re.finditer(
-        r'<a\s+href="(/game-soundtracks/album/[^"#?]+)"[^>]*>(.*?)</a>',
-        html, re.DOTALL | re.IGNORECASE
-    ):
-        path = m.group(1).strip()
-        raw_name = re.sub(r'<[^>]+>', '', m.group(2)).strip()
-        name = re.sub(r'\s+', ' ', raw_name)
+    for a in soup.find_all('a', href=True):
+        href = a['href']
+        if '/game-soundtracks/album/' not in href:
+            continue
+        path = href if href.startswith('http') else KH_BASE + href
+        name = a.get_text(strip=True)
         if not name or len(name) > 250 or path in seen:
             continue
         seen.add(path)
-        results.append({'name': name, 'url': KH_BASE + path})
+        results.append({'name': name, 'url': path})
         if len(results) >= limit:
             break
     return results
@@ -182,57 +237,41 @@ def fetch_khinsider_tracks(album_url: str) -> Tuple[str, List[Dict]]:
     """
     Fetch the track list from a KHInsider album page.
     Returns (album_name, [{title, detail_url}]).
-
-    detail_url is the per-track page; the actual MP3 URL is one level deeper.
     """
+    from bs4 import BeautifulSoup
     try:
         html = _kh_get(album_url)
     except Exception as e:
         log.error('KHInsider album fetch error: %s', e)
         return ('', [])
 
-    # Album title — several possible patterns KHInsider uses
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # Album title
     album_name = ''
-    for pat in (
-        r'<h2[^>]*class="albumTitle"[^>]*>\s*(.*?)\s*</h2>',
-        r'<h2[^>]*>\s*(.*?)\s*</h2>',
-        r'<title>\s*(.*?)\s*[|\-]',
-    ):
-        m = re.search(pat, html, re.DOTALL | re.IGNORECASE)
-        if m:
-            album_name = re.sub(r'<[^>]+>', '', m.group(1)).strip()
-            if album_name:
-                break
+    title_tag = soup.find('h2', class_='albumTitle') or soup.find('h2')
+    if title_tag:
+        album_name = title_tag.get_text(strip=True)
+    if not album_name and soup.title:
+        album_name = soup.title.get_text(strip=True).split('|')[0].split('-')[0].strip()
+
+    song_list = soup.find(id='songlist')
+    if not song_list:
+        log.error('KHInsider: no #songlist found on %s', album_url)
+        return (album_name, [])
 
     tracks: List[Dict] = []
     seen: set = set()
-
-    # Track links in the album song-list table
-    # Pattern A: direct .mp3/.flac links to detail pages
-    for m in re.finditer(
-        r'<a\s+href="(/game-soundtracks/album/[^"]+\.(?:mp3|flac|ogg))"[^>]*>([^<]+)</a>',
-        html, re.IGNORECASE
-    ):
-        path  = m.group(1)
-        title = m.group(2).strip()
-        url   = KH_BASE + path
-        if url not in seen and title:
-            seen.add(url)
-            tracks.append({'title': title, 'detail_url': url})
-
-    # Pattern B: <td class="clickable-row"><a href="...">title</a></td>
-    if not tracks:
-        for m in re.finditer(
-            r'class="clickable-row"[^>]*>\s*<a\s+href="([^"]+)"[^>]*>([^<]+)</a>',
-            html, re.IGNORECASE
-        ):
-            path  = m.group(1)
-            title = m.group(2).strip()
-            if not path.startswith('http'):
-                path = KH_BASE + path
-            if path not in seen and title:
-                seen.add(path)
-                tracks.append({'title': title, 'detail_url': path})
+    for a in song_list.find_all('a', href=True):
+        href = a['href']
+        if 'mp3' not in href.lower() and 'flac' not in href.lower() and 'ogg' not in href.lower():
+            continue
+        detail_url = href if href.startswith('http') else KH_BASE + href
+        if detail_url in seen:
+            continue
+        seen.add(detail_url)
+        title = a.get_text(strip=True) or 'Unknown'
+        tracks.append({'title': title, 'detail_url': detail_url})
 
     return (album_name, tracks)
 
@@ -240,24 +279,26 @@ def fetch_khinsider_tracks(album_url: str) -> Tuple[str, List[Dict]]:
 def _resolve_kh_direct_url(detail_url: str) -> Optional[str]:
     """
     Fetch the per-track KHInsider page and extract the direct CDN download URL.
-    The page contains an <audio> tag or a direct link like:
-      <a href="https://...cdn.../.../track.mp3">Click here to download</a>
     """
+    from bs4 import BeautifulSoup
     try:
         html = _kh_get(detail_url, referer=KH_BASE)
     except Exception:
         return None
 
-    # Priority order: audio src, then explicit download anchor
-    patterns = [
-        r'<audio[^>]+src="(https://[^"]+\.(?:mp3|flac|ogg)[^"]*)"',
-        r'<source[^>]+src="(https://[^"]+\.(?:mp3|flac|ogg)[^"]*)"',
-        r'href="(https://[^"]+\.(?:mp3|flac)[^"]*)"',
-    ]
-    for pat in patterns:
-        m = re.search(pat, html, re.IGNORECASE)
-        if m:
-            return m.group(1)
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # Prioritize: FLAC > WAV > MP3 via <audio src=...>
+    for fmt in ('flac', 'wav', 'mp3', 'ogg'):
+        audio = soup.find('audio', src=lambda x: x and fmt in x.lower() if x else False)
+        if audio and audio.get('src'):
+            return audio['src']
+
+    # Fallback: any audio tag
+    audio = soup.find('audio')
+    if audio and audio.get('src'):
+        return audio['src']
+
     return None
 
 
@@ -281,7 +322,30 @@ def download_khinsider_album(
         state['error']  = 'No tracks found on album page — the URL may be wrong.'
         return False
 
-    os.makedirs(dest_dir, exist_ok=True)
+    # Ensure parent is writable (detached Python.app processes can lose FDA on macOS)
+    parent_dir = os.path.dirname(dest_dir)
+    if parent_dir and os.path.isdir(parent_dir) and not os.access(parent_dir, os.W_OK):
+        try:
+            os.chmod(parent_dir, 0o755)
+        except OSError as e:
+            state['status'] = 'error'
+            state['error']  = (
+                f'Cannot write to {parent_dir}: {e}. '
+                'On macOS, grant Full Disk Access to Terminal or the Python app in '
+                'System Settings → Privacy & Security → Full Disk Access.'
+            )
+            return False
+
+    try:
+        os.makedirs(dest_dir, exist_ok=True)
+    except OSError as e:
+        state['status'] = 'error'
+        state['error']  = (
+            f'Cannot create download directory {dest_dir}: {e}. '
+            'On macOS, grant Full Disk Access to Terminal or the Python app in '
+            'System Settings → Privacy & Security → Full Disk Access.'
+        )
+        return False
     state.update({
         'total':   len(tracks),
         'done':    0,

@@ -2556,7 +2556,8 @@ async function _muFetchSuggest(q) {
     if (!items.length) { list.style.display = 'none'; return; }
     list.innerHTML = items.map((m, i) => {
       const primary = m.artist || m.name || '';
-      const sub = m.album || [m.type, m.disambiguation].filter(Boolean).join(' \u00b7 ');
+      const typeLabel = {Person:'Artist', Group:'Band', Orchestra:'Orchestra', Choir:'Choir'}[m.type] || m.type;
+      const sub = [typeLabel, m.disambiguation].filter(Boolean).join(' \u00b7 ');
       return `<div class="mv-suggest-item"
            onmousedown="event.preventDefault();_muPickSuggest(${i})"
            ontouchstart="_mvTouchStart(event)"
@@ -2581,7 +2582,7 @@ function _muTouchEnd(e, i) {
 function _muPickSuggest(i) {
   const m = _muSuggestItems[i];
   if (!m) return;
-  document.getElementById('mu-search-input').value = m.artist || m.name || '';
+  document.getElementById('mu-search-input').value = m.name || '';
   document.getElementById('mu-suggest-list').style.display = 'none';
   muSearchSubmit();
 }
