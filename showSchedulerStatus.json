@@ -52,6 +52,19 @@
       "days_until": 5,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-hat-witch-atelier.jpg"
+    },
+    {
+      "show": "Re:Zero kara Hajimeru Isekai Seikatsu",
+      "season": 4,
+      "downloaded": 2,
+      "next_ep": 3,
+      "total": 99,
+      "week": "?",
+      "status": "pending",
+      "release_days": "wed",
+      "days_until": 0,
+      "is_complete": false,
+      "thumb": "media-thumbs/show-sched-re-zero-kara-hajimeru-isekai-seikatsu.jpg"
     }
   ]
 }
