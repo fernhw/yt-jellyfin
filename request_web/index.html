@@ -517,7 +517,7 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       </div>
       <label class="field-label" style="margin-top:12px">Search term <button class="tip-btn" onclick="tipToggle('tip-search')">?</button></label>
       <div class="tip-box hidden" id="tip-search">
-        Short name used to search Nyaa/TPB &mdash; <strong>keep it under 20 characters</strong>.<br><br>
+        Short name used to search Nyaa/TPB &mdash; <strong>keep it under 14 characters</strong>.<br><br>
         Example: <b>Re Zero Starting Life in a New World</b> &rarr; <b>re zero</b><br>
         Example: <b>Atelier of Witch Hat</b> &rarr; <b>witch hat atelier</b>
       </div>
@@ -557,9 +557,9 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
     <div class="form-step" id="ss-3short">
       <div class="step-q">What should we search for?</div>
       <div class="step-hint" style="margin-bottom:14px">&ldquo;<span id="ss-3short-fullname" style="color:var(--purple)"></span>&rdquo; is too long to find on Nyaa.<br>Type a short version &mdash; 2&ndash;3 key words.<br><br>Example: <em id="ss-3short-example"></em></div>
-      <input id="f-search-short" class="big-input" placeholder="e.g. re zero" maxlength="20"
+      <input id="f-search-short" class="big-input" placeholder="e.g. re zero" maxlength="14"
              oninput="_shortNameInput()"/>
-      <div style="font-size:.72rem;color:var(--muted);margin-top:4px;text-align:right"><span id="ss-3short-len">0</span>/20</div>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:4px;text-align:right"><span id="ss-3short-len">0</span>/14</div>
       <div id="ss-3short-preview" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:12px;overflow:hidden">
         <div style="padding:8px 13px;background:var(--card);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px">
           <span>Nyaa results</span>
@@ -729,12 +729,10 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
 
     <!-- M2-kh: KHInsider URL paste -->
     <div class="form-step" id="mu-2-kh">
-      <div class="step-q">Paste KHInsider album URL</div>
+      <div class="step-q">Paste KHInsider album URL(s)</div>
       <div class="step-hint" style="margin-bottom:12px">e.g. https://downloads.khinsider.com/game-soundtracks/album/final-fantasy-vii</div>
-      <input id="mu-kh-url-input" class="big-input" placeholder="https://downloads.khinsider.com/game-soundtracks/album/..." autocomplete="off"
-             oninput="muKhUrlInput()"
-             onkeydown="if(event.key==='Enter')muKhUrlSubmit()"
-             style="margin-bottom:8px"/>
+      <div id="mu-kh-url-rows" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
+      <button onclick="muKhAddRow()" style="width:100%;background:none;border:1.5px dashed var(--border);border-radius:var(--radius);padding:11px;color:var(--muted);cursor:pointer;font-size:.88rem;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:10px"><span style="font-size:1.15rem;line-height:1">+</span> Add another album</button>
       <button id="mu-kh-url-go" class="big-btn btn-teal" onclick="muKhUrlSubmit()" style="display:none">Download &rarr;</button>
       <button class="ghost-btn" onclick="muGoStep('mu-1')">&larr; Back</button>
       <div class="err" id="mu-err-kh-url"></div>
@@ -1065,7 +1063,8 @@ let _showMode = '';        // 'older' | 'ongoing'
 let _showType = '';        // 'anime' | 'live'
 let _releaseDay = '';
 let _showStep = 'ss-1';   // current step element ID
-let _showInputMethod = ''; // 'search' | 'manual'
+let _showInputMethod = '';
+let _ss3shortNextStep = '';  // 'type' = search-picked path, '' = manual path
 let _pickedShow = null;    // {title, type, source, source_id} from search
 let _selectedSeasons = []; // [{n, episodes}]
 let _searchEdited = false;
@@ -1313,7 +1312,7 @@ function _validateManual() {
   errEl.textContent = '';
 
   // If search name is too long, go to the dedicated short-name step
-  if (search.length > 20) {
+  if (search.length > 14) {
     const fullEl = document.getElementById('ss-3short-fullname');
     const exEl   = document.getElementById('ss-3short-example');
     if (fullEl) fullEl.textContent = name;
@@ -1401,12 +1400,20 @@ async function _shortNamePreview(term) {
 function _confirmShortName() {
   const val    = (document.getElementById('f-search-short').value || '').trim();
   const errEl  = document.getElementById('serr-3short');
-  if (!val)       { errEl.textContent = 'Type a short search name first'; return; }
-  if (val.length > 20) { errEl.textContent = 'Must be 20 characters or less'; return; }
-  // Write back into the hidden f-search-name field and proceed
+  if (!val)            { errEl.textContent = 'Type a short search name first'; return; }
+  if (val.length > 14) { errEl.textContent = 'Must be 14 characters or less'; return; }
   document.getElementById('f-search-name').value = val;
   errEl.textContent = '';
-  // Continue with the normal flow from ss-3m validation
+
+  // Search-picked path: short name is stored; proceed straight to type step
+  if (_ss3shortNextStep === 'type') {
+    _ss3shortNextStep = '';
+    document.querySelectorAll('#ss-5 .type-btn').forEach(b => b.classList.remove('selected'));
+    _goShowStep('ss-5');
+    return;
+  }
+
+  // Manual entry path: continue normal ss-3m flow
   if (_showMode === 'older') {
     const seasons = _getManualSeasons();
     if (!seasons.length) { errEl.textContent = 'Add at least one season'; return; }
@@ -1438,6 +1445,23 @@ function selDay(d, btn) {
 }
 
 function _goToTypeStep() {
+  // If search-picked show has a title that strips to > 14 chars, ask for a short name first
+  if (_pickedShow && _showInputMethod === 'search') {
+    const stripped = _pickedShow.title.toLowerCase().replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim();
+    if (stripped.length > 14) {
+      const fullEl = document.getElementById('ss-3short-fullname');
+      const exEl   = document.getElementById('ss-3short-example');
+      if (fullEl) fullEl.textContent = _pickedShow.title;
+      if (exEl)   exEl.textContent   = _pickedShow.title.split(' ').slice(0,2).join(' ').toLowerCase().replace(/[^\w\s]/g,'').trim();
+      document.getElementById('f-search-short').value = '';
+      document.getElementById('ss-3short-len').textContent = '0';
+      document.getElementById('ss-3short-preview').style.display = 'none';
+      document.getElementById('serr-3short').textContent = '';
+      _ss3shortNextStep = 'type';
+      _goShowStep('ss-3short');
+      return;
+    }
+  }
   document.querySelectorAll('#ss-5 .type-btn').forEach(b => b.classList.remove('selected'));
   _goShowStep('ss-5');
 }
@@ -1489,7 +1513,9 @@ async function submitShow() {
 
   const title  = _pickedShow ? _pickedShow.title : _gv('f-show-name').trim();
   const _stripSymbols = s => s.toLowerCase().replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim();
-  const search = _stripSymbols(_pickedShow ? title : _gv('f-search-name').trim());
+  // Use the explicit short name (set by _confirmShortName) if present, otherwise strip the title
+  const _explicitSearch = _gv('f-search-name').trim();
+  const search = _explicitSearch || _stripSymbols(title);
 
   try {
     if (_showMode === 'older') {
@@ -2393,6 +2419,7 @@ function closeDlInfo() {
 
 // ── Music tab ─────────────────────────────────────────────────────────────────
 let _muType   = '';   // 'mainstream' | 'soundtrack' | 'niche'
+const _muProgressPanelTemplate = document.getElementById('mu-progress-panel') ? document.getElementById('mu-progress-panel').innerHTML : '';
 let _muStep   = 'mu-1';
 let _muSuggestTimer = null;
 let _muSuggestItems = [];
@@ -2428,8 +2455,8 @@ function muPickType(type) {
   document.getElementById('mu-err-2').textContent           = '';
   inp.value = '';
   if (type === 'khlink') {
+    muKhInitRows();
     muGoStep('mu-2-kh');
-    document.getElementById('mu-kh-url-input').value = '';
     document.getElementById('mu-kh-url-go').style.display = 'none';
     document.getElementById('mu-err-kh-url').textContent = '';
     return;
@@ -2489,45 +2516,97 @@ async function muSpotifyUrlSubmit() {
   }
 }
 
-function muKhUrlInput() {
-  const v = (document.getElementById('mu-kh-url-input').value || '').trim();
-  document.getElementById('mu-kh-url-go').style.display =
-    v.startsWith('https://downloads.khinsider.com/game-soundtracks/album/') ? 'flex' : 'none';
+function muKhInitRows() {
+  document.getElementById('mu-kh-url-rows').innerHTML = '';
+  muKhAddRow();
+}
+
+function muKhAddRow() {
+  const c = document.getElementById('mu-kh-url-rows');
+  const row = document.createElement('div');
+  row.className = 'kh-url-row';
+  row.style.cssText = 'display:flex;gap:6px;align-items:center';
+  row.innerHTML = '<input class="big-input kh-url-inp" placeholder="https://downloads.khinsider.com/game-soundtracks/album/..." autocomplete="off" style="flex:1;margin-bottom:0" oninput="muKhCheckValid()" onkeydown="if(event.key===\'Enter\')muKhUrlSubmit()"/>'
+    + '<button onclick="muKhRemoveRow(this)" style="flex-shrink:0;background:none;border:1px solid var(--border);border-radius:10px;padding:10px 13px;color:var(--muted);cursor:pointer;font-size:1.1rem;line-height:1;display:none">&times;</button>';
+  c.appendChild(row);
+  _muKhUpdateRemoveBtns();
+  setTimeout(() => row.querySelector('input').focus(), 60);
+}
+
+function muKhRemoveRow(btn) {
+  const c = document.getElementById('mu-kh-url-rows');
+  if (c.children.length <= 1) return;
+  btn.closest('.kh-url-row').remove();
+  _muKhUpdateRemoveBtns();
+  muKhCheckValid();
+}
+
+function _muKhUpdateRemoveBtns() {
+  const rows = document.querySelectorAll('#mu-kh-url-rows .kh-url-row');
+  rows.forEach(r => { r.querySelector('button').style.display = rows.length > 1 ? 'block' : 'none'; });
+}
+
+function muKhCheckValid() {
+  const inputs = document.querySelectorAll('#mu-kh-url-rows .kh-url-inp');
+  const hasValid = Array.from(inputs).some(i => i.value.trim().startsWith('https://downloads.khinsider.com/game-soundtracks/album/'));
+  document.getElementById('mu-kh-url-go').style.display = hasValid ? 'flex' : 'none';
 }
 
 async function muKhUrlSubmit() {
-  const url = (document.getElementById('mu-kh-url-input').value || '').trim();
+  const inputs = document.querySelectorAll('#mu-kh-url-rows .kh-url-inp');
+  const urls = Array.from(inputs).map(i => i.value.trim()).filter(v => v.startsWith('https://downloads.khinsider.com/game-soundtracks/album/'));
   const errEl = document.getElementById('mu-err-kh-url');
   errEl.textContent = '';
-  if (!url.startsWith('https://downloads.khinsider.com/game-soundtracks/album/')) {
+  if (!urls.length) {
     errEl.textContent = 'Must be a downloads.khinsider.com album URL';
     return;
   }
-  // Show track list first via mu-3-kh step
-  _muKhUrl = url;
-  const titleEl   = document.getElementById('mu-3-kh-title');
-  const spinnerEl = document.getElementById('mu-3-kh-spinner');
-  const bodyEl    = document.getElementById('mu-3-kh-body');
-  const countEl   = document.getElementById('mu-3-kh-count');
-  const tracksEl  = document.getElementById('mu-3-kh-tracks');
-  titleEl.textContent = url.split('/').pop();
-  spinnerEl.style.display = 'block';
-  bodyEl.style.display    = 'none';
-  document.getElementById('mu-err-kh').textContent = '';
-  muGoStep('mu-3-kh');
-  try {
-    const r = await api('GET', '/api/music-kh-tracks?url=' + encodeURIComponent(url));
-    const data = await r.json();
-    spinnerEl.style.display = 'none';
-    if (data.error) { document.getElementById('mu-err-kh').textContent = data.error; return; }
-    titleEl.textContent = data.album || url.split('/').pop();
-    const tracks = data.tracks || [];
-    countEl.textContent = tracks.length + ' tracks';
-    tracksEl.innerHTML  = tracks.map(t => _esc(t)).join('<br>');
-    bodyEl.style.display = 'block';
-  } catch(e) {
-    spinnerEl.style.display = 'none';
-    document.getElementById('mu-err-kh').textContent = 'Failed to load track list \u2014 check the URL';
+  if (urls.length === 1) {
+    // Single URL: show track preview first
+    _muKhUrl = urls[0];
+    const titleEl   = document.getElementById('mu-3-kh-title');
+    const spinnerEl = document.getElementById('mu-3-kh-spinner');
+    const bodyEl    = document.getElementById('mu-3-kh-body');
+    const countEl   = document.getElementById('mu-3-kh-count');
+    const tracksEl  = document.getElementById('mu-3-kh-tracks');
+    titleEl.textContent = urls[0].split('/').pop();
+    spinnerEl.style.display = 'block';
+    bodyEl.style.display    = 'none';
+    document.getElementById('mu-err-kh').textContent = '';
+    muGoStep('mu-3-kh');
+    try {
+      const r = await api('GET', '/api/music-kh-tracks?url=' + encodeURIComponent(urls[0]));
+      const data = await r.json();
+      spinnerEl.style.display = 'none';
+      if (data.error) { document.getElementById('mu-err-kh').textContent = data.error; return; }
+      titleEl.textContent = data.album || urls[0].split('/').pop();
+      const tracks = data.tracks || [];
+      countEl.textContent = tracks.length + ' tracks';
+      tracksEl.innerHTML  = tracks.map(t => _esc(t)).join('<br>');
+      bodyEl.style.display = 'block';
+    } catch(e) {
+      spinnerEl.style.display = 'none';
+      document.getElementById('mu-err-kh').textContent = 'Failed to load track list \u2014 check the URL';
+    }
+  } else {
+    // Multiple URLs: queue all, show per-album live progress
+    document.getElementById('mu-err-kh-url').textContent = '';
+    document.getElementById('mu-kh-url-go').disabled = true;
+    document.getElementById('mu-kh-url-go').textContent = 'Queuing\u2026';
+    const tokens = [];
+    for (const url of urls) {
+      try {
+        const r = await api('POST', '/api/music', {type: 'soundtrack', query: url.split('/').pop(), kh_url: url});
+        const d = await r.json();
+        if (d.token) tokens.push({token: d.token, url});
+      } catch(e) {}
+    }
+    document.getElementById('mu-kh-url-go').disabled = false;
+    document.getElementById('mu-kh-url-go').textContent = 'Download \u2192';
+    document.getElementById('mu-done-title').textContent = 'Downloading!';
+    document.getElementById('mu-done-sub').textContent   = tokens.length + ' albums queued';
+    muGoStep('mu-done');
+    _muStartMultiProgressPoll(tokens);
   }
 }
 
@@ -2713,7 +2792,7 @@ async function _muPickKhAlbum(i) {
 }
 
 async function muKhDownload() {
-  const q = (document.getElementById('mu-search-input').value || '').trim();
+  const q = _muKhUrl ? _muKhUrl.split('/').pop() : (document.getElementById('mu-search-input').value || '').trim();
   document.getElementById('mu-err-kh').textContent = '';
   try {
     const r = await api('POST', '/api/music', {type: 'soundtrack', query: q, kh_url: _muKhUrl});
@@ -2748,6 +2827,72 @@ async function _muPickTorrent(i) {
 
 // ── Music download live progress polling ─────────────────────────────────────
 let _muProgressTimer = null;
+let _muMultiTimer = null;
+
+function _muStartMultiProgressPoll(tokens) {
+  const panel = document.getElementById('mu-progress-panel');
+  panel.style.display = 'block';
+  panel.innerHTML = '<div id="mu-multi-cards" style="display:flex;flex-direction:column;gap:10px"></div>';
+  const container = document.getElementById('mu-multi-cards');
+  tokens.forEach(({token, url}) => {
+    const name = url.split('/').pop();
+    const card = document.createElement('div');
+    card.id = 'mu-mc-' + token;
+    card.style.cssText = 'background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 14px';
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span class="mu-mc-icon" style="font-size:1rem">&#9201;</span>
+        <span class="mu-mc-name" style="flex:1;font-size:.82rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_esc(name)}</span>
+        <span class="mu-mc-badge" style="font-size:.68rem;font-weight:800;padding:2px 7px;border-radius:99px;background:var(--teal);color:#000">Starting\u2026</span>
+      </div>
+      <div style="height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;margin-bottom:5px">
+        <div class="mu-mc-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--orange),var(--teal));border-radius:3px;transition:width .4s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted)">
+        <span class="mu-mc-counts"></span>
+        <span class="mu-mc-current" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%;text-align:right"></span>
+      </div>`;
+    container.appendChild(card);
+  });
+  _muMultiTimer && clearInterval(_muMultiTimer);
+  _muMultiTimer = setInterval(() => _muMultiTick(tokens), 2500);
+  _muMultiTick(tokens);
+}
+
+async function _muMultiTick(tokens) {
+  try {
+    const r = await api('GET', '/api/music-state');
+    const data = await r.json();
+    const downloads = data.downloads || [];
+    const statusColors = {starting:'#888',active:'var(--teal)',complete:'#4ade80',complete_partial:'#facc15',error:'#f87171',removed:'#888'};
+    const statusLabels = {starting:'Starting\u2026',active:'Downloading',complete:'Complete \u2713',complete_partial:'Done (partial \u26a0)',error:'Error \u2717',removed:'Removed'};
+    let allDone = true;
+    for (const {token} of tokens) {
+      const st = downloads.find(d => d.token === token);
+      const card = document.getElementById('mu-mc-' + token);
+      if (!st || !card) continue;
+      const status = st.status || 'active';
+      const total  = st.total  || 0;
+      const done   = st.done   || 0;
+      const failed = st.failed || 0;
+      const pct    = total > 0 ? Math.round(done / total * 100) : (status === 'complete' ? 100 : 0);
+      card.querySelector('.mu-mc-name').textContent       = st.album || st.name || token;
+      card.querySelector('.mu-mc-icon').textContent       = status === 'complete' ? '\u2705' : status === 'error' ? '\u274c' : status === 'complete_partial' ? '\u26a0\ufe0f' : '\u23f3';
+      card.querySelector('.mu-mc-badge').textContent      = statusLabels[status] || status;
+      card.querySelector('.mu-mc-badge').style.background = statusColors[status] || '#888';
+      card.querySelector('.mu-mc-bar').style.width        = pct + '%';
+      card.querySelector('.mu-mc-counts').textContent     = total > 0 ? `${done}/${total}${failed ? ' ('+failed+' failed)' : ''}` : '';
+      card.querySelector('.mu-mc-current').textContent    = st.current || '';
+      if (!['complete','complete_partial','error','removed'].includes(status)) allDone = false;
+    }
+    if (allDone) {
+      clearInterval(_muMultiTimer);
+      _muMultiTimer = null;
+      const n = tokens.length;
+      document.getElementById('mu-done-sub').textContent = n + ' album' + (n !== 1 ? 's' : '') + ' downloaded.';
+    }
+  } catch(e) {}
+}
 
 function _muStartProgressPoll(kind, token) {
   if (!token) return;
@@ -2832,7 +2977,11 @@ function _muRenderProgress(kind, st) {
 function muReset() {
   _muProgressTimer && clearInterval(_muProgressTimer);
   _muProgressTimer = null;
-  document.getElementById('mu-progress-panel').style.display = 'none';
+  _muMultiTimer && clearInterval(_muMultiTimer);
+  _muMultiTimer = null;
+  const panel = document.getElementById('mu-progress-panel');
+  panel.style.display = 'none';
+  panel.innerHTML = _muProgressPanelTemplate;
   _muType = ''; _muKhUrl = '';
   _muKhSearchResults = []; _muTpbResults = [];
   document.getElementById('mu-search-input').value         = '';

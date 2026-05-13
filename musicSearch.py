@@ -307,6 +307,7 @@ def download_khinsider_album(
     dest_dir: str,
     state: Dict,
     stop_event: threading.Event,
+    cached_tracks: Optional[tuple] = None,
 ) -> bool:
     """
     Download all tracks from a KHInsider album page into dest_dir.
@@ -315,20 +316,18 @@ def download_khinsider_album(
       state['current'], state['album'].
     Returns True if fully successful (no failures).
     """
-    album_name, tracks = fetch_khinsider_tracks(album_url)
+    import subprocess
+
+    if cached_tracks is not None:
+        album_name, tracks = cached_tracks
+    else:
+        album_name, tracks = fetch_khinsider_tracks(album_url)
 
     if not tracks:
         state['status'] = 'error'
         state['error']  = 'No tracks found on album page — the URL may be wrong.'
         return False
 
-    import subprocess
-    r = subprocess.run(['mkdir', '-p', dest_dir], capture_output=True, text=True)
-    log.info('KH mkdir [%s] rc=%s stderr=%r', dest_dir, r.returncode, r.stderr)
-    if r.returncode != 0:
-        state['status'] = 'error'
-        state['error']  = f'mkdir failed ({r.returncode}): {r.stderr.strip() or dest_dir}'
-        return False
     state.update({
         'total':   len(tracks),
         'done':    0,
@@ -346,7 +345,7 @@ def download_khinsider_album(
 
         direct_url = _resolve_kh_direct_url(track['detail_url'])
         if not direct_url:
-            log.warning('KH: could not resolve direct URL for %r', track['title'])
+            print(f'KH RESOLVE FAIL: {track["title"]} detail={track["detail_url"]}', file=sys.stderr, flush=True)
             state['failed'] += 1
             time.sleep(0.5)
             continue
@@ -358,29 +357,22 @@ def download_khinsider_album(
             safe_fname = re.sub(r'[^\w\s\-]', '_', track['title'])[:80] + '.mp3'
         out_path = os.path.join(dest_dir, safe_fname)
 
-        if subprocess.run(['test', '-f', out_path]).returncode == 0:
-            state['done'] += 1
-            continue
+        # curl handles --create-dirs (mkdir) and download in one shot,
+        # bypassing Python.app sandbox restrictions on external volumes
+        r = subprocess.run([
+            'curl', '-fsSL',
+            '--create-dirs',
+            '-o', out_path,
+            '--referer', album_url,
+            '-H', 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+            direct_url,
+        ], capture_output=True, text=True)
 
-        try:
-            from curl_cffi import requests as _cffi_req  # type: ignore
-            dl_resp = _cffi_req.get(
-                direct_url,
-                impersonate='chrome124',
-                headers={'Referer': album_url},
-                timeout=120,
-            )
-            dl_resp.raise_for_status()
-            # Write to /tmp first, then mv into place — avoids TCC issues on external volumes
-            import tempfile
-            with tempfile.NamedTemporaryFile(delete=False) as tmp:
-                tmp.write(dl_resp.content)
-                tmp_path = tmp.name
-            subprocess.run(['mv', tmp_path, out_path], check=True)
+        if r.returncode == 0:
             state['done'] += 1
-            log.info('KH downloaded: %s', safe_fname)
-        except Exception as e:
-            log.warning('KH track download failed for %r: %s', track['title'], e)
+            print(f'KH OK: {safe_fname}', file=sys.stderr, flush=True)
+        else:
+            print(f'KH CURL FAIL: {track["title"]} rc={r.returncode} err={r.stderr.strip()!r} url={direct_url}', file=sys.stderr, flush=True)
             state['failed'] += 1
 
         # Polite delay — KHInsider rate-limits aggressively

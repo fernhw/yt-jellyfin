@@ -118,6 +118,10 @@ def _tail_log(n: int = 120) -> str:
 # KHInsider downloads are HTTP-based (no aria2c).  Tracked separately.
 _kh_downloads: Dict[str, Dict] = {}
 _kh_lock = threading.Lock()
+# Short-lived cache: album_url → (album_name, tracks) populated by /api/music-kh-tracks
+# consumed by the download thread so we never fetch the same page twice.
+_kh_track_cache: Dict[str, tuple] = {}
+_kh_track_cache_lock = threading.Lock()
 
 # ── Spotify / spotdl download tracking ────────────────────────────────────────
 _spotdl_downloads: Dict[str, Dict] = {}
@@ -1134,6 +1138,9 @@ def music_kh_tracks():
     try:
         from musicSearch import fetch_khinsider_tracks
         album_name, tracks = fetch_khinsider_tracks(url)
+        # Cache for the imminent download request
+        with _kh_track_cache_lock:
+            _kh_track_cache[url] = (album_name, tracks)
         if not tracks:
             return jsonify({'error': 'No tracks found — the album page may have changed.', 'count': 0, 'tracks': []})
         return jsonify({
@@ -1210,7 +1217,10 @@ def request_music():
         def _run_kh():
             try:
                 from musicSearch import download_khinsider_album
-                download_khinsider_album(kh_url, dest, state, stop_ev)
+                # Use cached track list from preview fetch if available (avoids 403 re-fetch)
+                with _kh_track_cache_lock:
+                    cached = _kh_track_cache.pop(kh_url, None)
+                download_khinsider_album(kh_url, dest, state, stop_ev, cached_tracks=cached)
             except Exception as e:
                 state['status'] = 'error'
                 state['error']  = str(e)
