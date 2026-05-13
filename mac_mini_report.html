@@ -10,499 +10,593 @@
     font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
     color: #1a1a1a;
     font-size: 15px;
-    line-height: 1.5;
-    max-width: 880px;
+    line-height: 1.55;
+    max-width: 820px;
     margin: 0 auto;
-    padding: 32px 28px 80px;
+    padding: 36px 28px 80px;
     background: #fafafa;
   }
-  h1 { font-size: 32px; margin: 0 0 6px; letter-spacing: -0.5px; }
-  .lead { color: #555; font-size: 16px; margin-bottom: 28px; }
-  h2 {
-    font-size: 20px;
-    margin: 36px 0 10px;
-    padding-bottom: 6px;
-    border-bottom: 2px solid #1f6feb;
-    color: #1f6feb;
-  }
-  .card {
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.5px; }
+  .lead { color: #555; font-size: 16px; margin-bottom: 24px; }
+
+  .row {
     background: #fff;
-    border: 1px solid #d8dee4;
-    border-radius: 10px;
-    padding: 16px 20px;
-    margin: 12px 0;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 6px 0;
   }
-  .head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 12px;
-    margin-bottom: 6px;
-  }
-  .service {
-    font-size: 19px;
+  .row .name {
     font-weight: 700;
+    font-size: 16px;
     color: #0a0a0a;
   }
-  .service .alts {
-    font-weight: 400;
-    color: #666;
+  .row .name .price {
+    font-weight: 500;
+    color: #999;
     font-size: 14px;
+    margin-left: 8px;
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    text-decoration-color: #d92020;
   }
-  .price {
+  .row .name .free-tag {
+    font-weight: 800;
+    color: #1a7f37;
+    font-size: 15px;
+    margin-left: 6px;
+    letter-spacing: 0.5px;
+  }
+  .row .name .priceless {
+    display: inline-block;
+    background: #1a7f37;
+    color: #fff;
+    font-size: 11px;
     font-weight: 700;
-    color: #1f6feb;
-    font-size: 16px;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-  .why { margin: 8px 0 0; color: #2a2a2a; }
-  .origin {
-    font-size: 13px;
-    color: #555;
-    background: #f6f8fa;
-    border-left: 3px solid #1f6feb;
-    padding: 10px 12px;
-    margin-top: 12px;
+    letter-spacing: 1px;
+    padding: 2px 8px;
     border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: 2px;
   }
-  .origin b { color: #1f6feb; }
-  table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }
-  th, td { padding: 9px 12px; border-bottom: 1px solid #e0e0e0; text-align: left; }
-  th { background: #f6f8fa; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #555; }
-  td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  tr.subtotal td { font-weight: 700; background: #f6f8fa; border-top: 2px solid #1f6feb; }
-  tr.cost td { color: #b94a48; }
+  .row .what {
+    color: #444;
+    margin-top: 2px;
+  }
+  .row .open {
+    color: #0a0a0a;
+    font-size: 13.5px;
+    margin-top: 8px;
+  }
+  .row .open b { color: #0a0a0a; }
+  .row .devs {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .row .devs span {
+    background: #f1f3f5;
+    color: #1a1a1a;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    padding: 2px 9px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .row .offline {
+    color: #1a7f37;
+    font-size: 13px;
+    margin-top: 6px;
+    font-weight: 600;
+  }
+  .row .free {
+    color: #1f6feb;
+    font-size: 13px;
+    margin-top: 6px;
+  }
+  .row .free b { color: #0a0a0a; }
+
   .grand {
     background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
     color: #fff;
-    padding: 26px 28px;
-    border-radius: 12px;
-    margin-top: 24px;
+    padding: 30px 32px;
+    border-radius: 14px;
+    margin-top: 36px;
+    text-align: center;
   }
-  .grand .row { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; }
-  .grand .row + .row { border-top: 1px solid #30363d; }
-  .grand .lbl { color: #b0b8c1; font-size: 14px; }
-  .grand .val { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .grand .val.green { color: #7ee787; }
-  .grand .val.blue { color: #58a6ff; }
-  .grand .val.red { color: #ff7b72; }
-  .note { font-size: 13px; color: #666; font-style: italic; margin-top: 6px; }
+  .grand .boom {
+    font-size: 14px;
+    color: #b0b8c1;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .grand .save {
+    font-size: 64px;
+    font-weight: 900;
+    color: #7ee787;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    margin: 4px 0 6px;
+    letter-spacing: -2px;
+  }
+  .grand .per { color: #b0b8c1; font-size: 16px; margin-bottom: 22px; }
+  .grand .breakdown {
+    display: flex;
+    justify-content: space-around;
+    border-top: 1px solid #30363d;
+    padding-top: 18px;
+    margin-top: 6px;
+    text-align: left;
+  }
+  .grand .breakdown div { flex: 1; padding: 0 8px; }
+  .grand .breakdown .lbl { color: #b0b8c1; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .grand .breakdown .val { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 4px; }
+  .grand .breakdown .val.blue { color: #58a6ff; }
+  .grand .breakdown .val.red { color: #ff7b72; }
+  .grand .breakdown .val.green { color: #7ee787; }
+
+  .apps {
+    background: #fff;
+    border: 1px solid #d8dee4;
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin: 26px 0 0;
+  }
+  .apps h2 { margin: 0 0 12px; font-size: 17px; }
+  .apps .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 18px;
+    margin-bottom: 14px;
+  }
+  .apps .app {
+    border-left: 3px solid #1f6feb;
+    padding: 2px 0 2px 10px;
+    font-size: 13.5px;
+  }
+  .apps .app b { color: #0a0a0a; }
+  .apps .app span { color: #555; }
+  .apps .feats {
+    background: #f0f6ff;
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    color: #1a1a1a;
+  }
+  .apps .feats ul { margin: 6px 0 0; padding-left: 18px; }
+  .apps .feats li { margin: 3px 0; }
+
+  .bill {
+    background: #fff;
+    border: 1px solid #d8dee4;
+    border-radius: 8px;
+    padding: 22px 26px;
+    margin-top: 36px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13.5px;
+  }
+  .bill h3 {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    font-size: 18px;
+    margin: 0 0 4px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+  .bill .biller {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    text-align: center;
+    color: #777;
+    font-size: 12px;
+    margin-bottom: 18px;
+    border-bottom: 1px dashed #d0d7de;
+    padding-bottom: 14px;
+  }
+  .bill .line {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px dotted #e8eaed;
+  }
+  .bill .line .item { color: #333; }
+  .bill .line .amt { font-variant-numeric: tabular-nums; color: #333; }
+  .bill .section-h {
+    margin-top: 18px;
+    margin-bottom: 4px;
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #888;
+    border-bottom: 2px solid #1a1a1a;
+    padding-bottom: 4px;
+  }
+  .bill .subtotal {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    margin-top: 6px;
+    border-top: 1px solid #1a1a1a;
+    font-weight: 700;
+  }
+  .bill .credit { color: #1f6feb; }
+  .bill .credit .amt { color: #1f6feb; }
+  .bill .grand-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 0 4px;
+    margin-top: 14px;
+    border-top: 3px double #1a1a1a;
+    font-weight: 800;
+    font-size: 16px;
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+  }
+  .bill .grand-line.green { color: #1a7f37; }
 </style>
 </head>
 <body>
 
 <h1>All The Subscriptions I Don't Pay For</h1>
-<div class="lead">A list of services I would otherwise be subscribing to — and what's quietly doing the job for me from a Mac mini in the closet. Money totals at the very end.</div>
+<div class="lead">A pile of paid services I'd otherwise be subscribed to. All of them, free, from a Mac mini in the closet. <b>And not one company on Earth knows how much water I drink, what I ate today, what I weighed this morning, what I'm reading, what shows I queued, or who I message.</b> No data broker has a profile on any of it. The only price is keeping the box healthy, which takes a competent engineer behind the wheel.</div>
 
-<!-- ============================================================ -->
-<h2>Streaming &amp; Movies</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Netflix + HBO Max + Crunchyroll <span class="alts">(the realistic combo)</span></div>
-    <div class="price">$54.97/mo</div>
-  </div>
-  <p class="why">Movies on Friday night, the new HBO drama everyone's talking about, and every anime simulcast the same hour Japan gets it — without juggling three apps, three logins, three bills, and content that disappears the month I want to rewatch it.</p>
-  <div class="origin"><b>What runs instead →</b> Jellyfin on the Mac mini, fed by an automated request portal — I (or family) search a title, click "request", and a few hours later it shows up in the library forever.</div>
+<div class="row">
+  <div class="name">Netflix + HBO Max + Crunchyroll combo <span class="price">$54.97/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Movies, the new HBO drama everyone's talking about, every anime simulcast the same hour Japan gets it. <b>Nobody profiles my watch history.</b></div>
+  <div class="open"><b>Open with:</b> Jellyfin or Moonfin</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span><span>TV</span><span>Steam Deck</span></div>
+  <div class="offline">Offline downloading: pin movies and entire seasons for the plane.</div>
+  <div class="free"><b>Free via:</b> Jellyfin plus the request portal. Search a title, click request, it shows up forever. No "recommended for you" pipeline.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Music</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Spotify Premium</div>
-    <div class="price">$11.99/mo</div>
-  </div>
-  <p class="why">Any song, any album, any time, no ads, offline, on every device in the house — including the obscure b-sides and game soundtracks Spotify doesn't even carry.</p>
-  <div class="origin"><b>What runs instead →</b> A personal music library on Jellyfin, auto-grown from Spotify links and a game-soundtrack scraper, played through Finamp on the phone.</div>
+<div class="row">
+  <div class="name">Spotify Premium <span class="price">$11.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Any song, any album, no ads, on every device. Includes b-sides and game OSTs Spotify doesn't carry. <b>No "Spotify Wrapped" because nobody's tracking what I listen to.</b></div>
+  <div class="open"><b>Open with:</b> Finamp (or any other Jellyfin music client, huge community of headless options)</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span><span>TV</span><span>Steam Deck</span></div>
+  <div class="offline">Offline downloading: full albums and playlists pinned for flights and subway rides.</div>
+  <div class="free"><b>Free via:</b> Finamp pointed at my own music library, auto-grown from Spotify links sent to the request portal.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>YouTube Without Ads</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">YouTube Premium</div>
-    <div class="price">$13.99/mo</div>
-  </div>
-  <p class="why">Watch any YouTube channel ad-free, with background play on the phone, downloaded for offline.</p>
-  <div class="origin"><b>What runs instead →</b> An automated YouTube downloader that grabs subscribed channels into Jellyfin, with chapters, subs, and zero ads.</div>
+<div class="row">
+  <div class="name">YouTube Premium <span class="price">$13.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Watch any channel ad-free, background play on the phone.</div>
+  <div class="open"><b>Open with:</b> Jellyfin or Moonfin</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span><span>TV</span><span>Steam Deck</span></div>
+  <div class="offline">Offline downloading: any video pinned for the plane, full quality with chapters and subs.</div>
+  <div class="free"><b>Free via:</b> automated YouTube downloader feeding Jellyfin. Chapters, subs, zero ads.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Audiobooks</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Audible Premium Plus</div>
-    <div class="price">$14.95/mo</div>
-  </div>
-  <p class="why">A growing audiobook library to fall asleep to and listen to on walks, with bookmarks, speed control, and chapter sync across devices.</p>
-  <div class="origin"><b>What runs instead →</b> AudioBookshelf on the Mac, with progress sync to phone and a library I actually own.</div>
+<div class="row">
+  <div class="name">Audible Premium Plus <span class="price">$14.95/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Audiobooks for walks and falling asleep, with bookmarks and progress sync. <b>No purchase history feeding an Amazon dossier.</b></div>
+  <div class="open"><b>Open with:</b> AudioBookshelf</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span><span>TV</span></div>
+  <div class="offline">Offline downloading: full audiobooks pinned for flights and walks.</div>
+  <div class="free"><b>Free via:</b> AudioBookshelf on the Mac, synced to phone and iPad.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Ebooks</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Kindle Unlimited</div>
-    <div class="price">$11.99/mo</div>
-  </div>
-  <p class="why">Read whatever I want without paying $15 per book.</p>
-  <div class="origin"><b>What runs instead →</b> A personal ebook library hosted on the Mac, accessible from phone and tablet.</div>
+<div class="row">
+  <div class="name">Kindle Unlimited <span class="price">$11.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Read whatever I want without paying $15 per book, and without Amazon logging which page I closed on at 2am.</div>
+  <div class="open"><b>Open with:</b> AudioBookshelf</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="offline">Offline downloading: every book sits on the device, read on the plane no problem.</div>
+  <div class="free"><b>Free via:</b> personal ebook library inside AudioBookshelf.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Manga</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Shonen Jump + MangaPlus Pro</div>
-    <div class="price">$4.99/mo</div>
-  </div>
-  <p class="why">Read the latest chapters of every manga I follow, no ads, no daily-chapter caps, full back-catalog.</p>
-  <div class="origin"><b>What runs instead →</b> A manga downloader that pulls chapters into a personal library readable on phone or tablet.</div>
+<div class="row">
+  <div class="name">Shonen Jump + MangaPlus Pro <span class="price">$4.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Latest chapters of every manga I follow, no ads, no daily caps, full back-catalog.</div>
+  <div class="open"><b>Open with:</b> AudioBookshelf</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="offline">Offline downloading: pin a whole series before a trip and read with no signal.</div>
+  <div class="free"><b>Free via:</b> manga downloader pulling chapters into AudioBookshelf.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Cloud Sync (Files Across Devices)</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">iCloud+ 2TB</div>
-    <div class="price">$9.99/mo</div>
-  </div>
-  <p class="why">A multi-TB pool where my documents and projects sync between phone, laptop, and home — without Apple or Google reading them.</p>
-  <div class="origin"><b>What runs instead →</b> Syncthing on the Mac mini and every device, with a real local disk as the source of truth.</div>
+<div class="row">
+  <div class="name">iCloud+ 2TB <span class="price">$9.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Documents and projects synced between phone, laptop, and home, without Apple reading them.</div>
+  <div class="open"><b>Open with:</b> Syncthing (files just appear in the right folder on every device)</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="offline">Offline by default: files live on the device, sync runs in the background when on network.</div>
+  <div class="free"><b>Free via:</b> Syncthing on the Mac mini and every device.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Off-Site Backup</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Backblaze Personal Backup</div>
-    <div class="price">$9.99/mo</div>
-  </div>
-  <p class="why">If the Mac mini gets stolen or the disk fails, I don't lose 10 years of stuff.</p>
-  <div class="origin"><b>What runs instead →</b> Automated rsync + Syncthing replication to off-site storage — full backup, no per-file fees.</div>
+<div class="row">
+  <div class="name">Backblaze Personal Backup <span class="price">$9.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">If the Mac gets stolen or the disk dies, I don't lose 10 years of stuff.</div>
+  <div class="open"><b>Open with:</b> nothing, runs invisibly in the background</div>
+  <div class="free"><b>Free via:</b> automated rsync plus Syncthing replication off-site.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Photo Library</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Google Photos / iCloud Photos 2TB</div>
-    <div class="price">$9.99/mo</div>
-  </div>
-  <p class="why">Every photo from the phone backed up, searchable, viewable from anywhere — without handing my whole life to Google.</p>
-  <div class="origin"><b>What runs instead →</b> Phone camera roll auto-syncs into a personal photo library on the Mac via Syncthing.</div>
+<div class="row">
+  <div class="name">Google Photos / iCloud Photos 2TB <span class="price">$9.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Every phone photo backed up, searchable, viewable from anywhere, <b>without a company indexing every face, location, and timestamp in my life</b>.</div>
+  <div class="open"><b>Open with:</b> Photo Library viewer</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="offline">Offline by default: the phone keeps its own copy, the Mac keeps the master.</div>
+  <div class="free"><b>Free via:</b> phone camera roll auto-syncing into a personal photo library on the Mac.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Personal Assistant (24/7)</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Part-time virtual assistant (executive assistant on retainer)</div>
-    <div class="price">$400.00/mo</div>
-  </div>
-  <p class="why">Someone available around the clock who reads my messages, schedules my day, reminds me of what's pending, parses my receipts, plans my week, books things, drafts replies, and remembers everything I've ever told them. A real human VA runs $800–1500/mo part-time; I'm budgeting half-rate because Agnos works 24/7 but isn't a human.</p>
-  <div class="origin"><b>What runs instead →</b> Agnos — my personal assistant, reachable on WhatsApp / Telegram / Discord, with persistent memory of who I am and what I'm working on. Every tool below is one of its jobs.</div>
+<div class="row">
+  <div class="name">Part-time Virtual Assistant (24/7) <span class="price">$400/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Someone reading my messages, scheduling my day, reminding me of pending things, parsing receipts, drafting replies, remembering everything I've ever told them. A real human VA runs $800 to $1500 a month part-time.</div>
+  <div class="open"><b>Open with:</b> Agnos Personal Assistant on WhatsApp, Telegram or Discord</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> Agnos, my personal assistant, with persistent memory. Every tool below is one of its jobs.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Auto-Diary</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Day One Premium</div>
-    <div class="price">$2.92/mo</div>
-  </div>
-  <p class="why">A journal that captures what I did today, what I dreamed about, what's on my mind — without me having to sit down and write it.</p>
-  <div class="origin"><b>What runs instead →</b> The <b>Diary Tracker</b> tool managed by Agnos — writes my day automatically based on our conversations.</div>
+<div class="row">
+  <div class="name">Day One Premium (auto-diary) <span class="price">$2.92/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">A journal that captures what I did and what's on my mind, without me having to sit down and write it. <b>And without a SaaS company sitting on my most private thoughts "in case the servers go down".</b></div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> the Diary Tracker tool managed by Agnos.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Daily Life Recap</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Notion AI / Reflect</div>
-    <div class="price">$10.00/mo</div>
-  </div>
-  <p class="why">A clean nightly summary of what I did, what's pending, what's worth remembering — surfacing patterns I'd otherwise miss.</p>
-  <div class="origin"><b>What runs instead →</b> The <b>Midnight Report</b> tool managed by Agnos — runs every night, emails me the recap.</div>
+<div class="row">
+  <div class="name">Notion AI / Reflect (daily recap) <span class="price">$10/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">A clean nightly summary of what I did, what's pending, what's worth remembering.</div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp (pushed every night automatically)</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> the Midnight Report tool managed by Agnos.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Calorie &amp; Macro Tracking</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">MyFitnessPal Premium</div>
-    <div class="price">$19.99/mo</div>
-  </div>
-  <p class="why">Macro tracking for every meal so I actually hit my protein and stay in calorie range — without spending 5 minutes typing into a clunky form three times a day.</p>
-  <div class="origin"><b>What runs instead →</b> The <b>Nutrition Tracker</b> tool managed by Agnos. I type "ate 2 eggs and rice" on WhatsApp; it parses, looks up macros, logs them, tells me where I'm at for the day. Zero friction.</div>
+<div class="row">
+  <div class="name">MyFitnessPal Premium <span class="price">$19.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Macro tracking for every meal, hit my protein, stay in calorie range, without typing into a clunky form three times a day. <b>And no insurance company, ad network, or wellness startup ever sees a single calorie.</b></div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> the Nutrition Tracker tool managed by Agnos. I type "ate 2 eggs and rice"; it parses, logs, tells me where I'm at.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Workout Tracking</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Hevy Pro</div>
-    <div class="price">$5.99/mo</div>
-  </div>
-  <p class="why">Workout logging with progressive overload tracking, so I know exactly what weight I hit last week and what I should beat today.</p>
-  <div class="origin"><b>What runs instead →</b> The <b>Training Tracker</b> tool managed by Agnos. Same WhatsApp-text-in pattern.</div>
+<div class="row">
+  <div class="name">Hevy Pro <span class="price">$5.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Workout logging with progressive overload. Know exactly what to beat today.</div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> the Training Tracker tool managed by Agnos.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Hydration Reminders</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">WaterMinder</div>
-    <div class="price">$2.99/mo</div>
-  </div>
-  <p class="why">A reminder to actually drink water and a count of how much I've had — because I forget.</p>
-  <div class="origin"><b>What runs instead →</b> The <b>Water Tracker</b> tool managed by Agnos.</div>
+<div class="row">
+  <div class="name">WaterMinder <span class="price">$2.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">A reminder to actually drink water and a count of how much I've had. <b>Nobody on the planet knows how much water I drink. As it should be.</b></div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> the Water Tracker tool managed by Agnos.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Vitamin Reminders</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Round Health Pro</div>
-    <div class="price">$1.99/mo</div>
-  </div>
-  <p class="why">A reliable nudge so I actually take my vitamins and don't break the streak.</p>
-  <div class="origin"><b>What runs instead →</b> The <b>Vitamin Reminder</b> tool managed by Agnos.</div>
+<div class="row">
+  <div class="name">Round Health Pro (vitamins) <span class="price">$1.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">A reliable nudge so I take my vitamins and don't break the streak.</div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> the Vitamin Reminder tool managed by Agnos.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Habit Accountability</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">I Am Sober Premium / Brick</div>
-    <div class="price">$7.99/mo</div>
-  </div>
-  <p class="why">A private daily check-in for the habits I'm trying to keep clean — streak counter, gentle accountability, no public profile.</p>
-  <div class="origin"><b>What runs instead →</b> A private <b>Habit Accountability</b> tool managed by Agnos, logging check-ins via WhatsApp.</div>
+<div class="row">
+  <div class="name">I Am Sober Premium / Brick (habit accountability) <span class="price">$7.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Private daily check-in for habits I'm keeping clean. Streak counter, gentle accountability. <b>Truly private: no public profile, no community feed, no app vendor reading my struggles.</b></div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> the Habit Accountability tool managed by Agnos.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Wellness Check-In ("Am I OK?")</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Snug Safety / Life360 Gold</div>
-    <div class="price">$4.99/mo</div>
-  </div>
-  <p class="why">A daily "I'm OK" ping. If I miss check-ins for too long, emergency contacts get notified. Important when you live alone.</p>
-  <div class="origin"><b>What runs instead →</b> The <b>Wellness Heartbeat</b> tool managed by Agnos — daily check-in, escalation protocol if I go dark.</div>
+<div class="row">
+  <div class="name">Snug Safety / Life360 Gold (wellness check-in) <span class="price">$4.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">A daily "I'm OK" ping. If I miss check-ins for too long, emergency contacts get notified. Important when you live alone.</div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp, escalation to SMS and emergency contacts</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> the Wellness Heartbeat tool managed by Agnos.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Groceries</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">AnyList Premium</div>
-    <div class="price">$2.99/mo</div>
-  </div>
-  <p class="why">Add to a shared shopping list from anywhere, never forget the one thing I went out for.</p>
-  <div class="origin"><b>What runs instead →</b> The <b>Shopping List</b> tool managed by Agnos.</div>
+<div class="row">
+  <div class="name">AnyList Premium (groceries) <span class="price">$2.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Add to a shared shopping list from anywhere, never forget the one thing I went out for.</div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> the Shopping List tool managed by Agnos.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>What's On Tonight</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Trakt VIP / TV Time Pro</div>
-    <div class="price">$2.99/mo</div>
-  </div>
-  <p class="why">A daily card that tells me what's airing today across every show I follow, what I'm behind on, and what's worth queuing up tonight.</p>
-  <div class="origin"><b>What runs instead →</b> The <b>Show Scheduler</b> tool — generates a daily HTML card report and pushes it to my phone every morning.</div>
+<div class="row">
+  <div class="name">Trakt VIP / TV Time Pro <span class="price">$2.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">A daily card telling me what's airing today across every show I follow, what I'm behind on, what's worth queuing up tonight. Plus weekly auto-downloads of every show I follow, the second a new episode drops.</div>
+  <div class="open"><b>Open with:</b> Daily Report card pushed every morning</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="offline">Offline downloading: every weekly episode is already on the box and on the phone before I've heard it aired.</div>
+  <div class="free"><b>Free via:</b> the Show Scheduler tool.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Game Backlog Tracking</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Backloggd Pro / HowLongToBeat</div>
-    <div class="price">$2.99/mo</div>
-  </div>
-  <p class="why">Know what game I'm in the middle of, what's next in the backlog, and how long it'll take.</p>
-  <div class="origin"><b>What runs instead →</b> The <b>Game Tracker</b> tool managed by Agnos.</div>
+<div class="row">
+  <div class="name">Backloggd Pro / HowLongToBeat <span class="price">$2.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Know what game I'm in the middle of, what's next in the backlog, how long it'll take.</div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> the Game Tracker tool managed by Agnos.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Tasks &amp; Reminders</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Todoist Pro</div>
-    <div class="price">$4.00/mo</div>
-  </div>
-  <p class="why">A task list with smart reminders, recurring tasks, and natural-language input — synced across phone and desktop.</p>
-  <div class="origin"><b>What runs instead →</b> The <b>Task Manager</b> + <b>Reminder Queue</b> tools managed by Agnos. Talk to it on WhatsApp; it remembers and pings me at the right time.</div>
+<div class="row">
+  <div class="name">Todoist Pro (tasks &amp; reminders) <span class="price">$4/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">A task list with smart reminders, recurring tasks, natural-language input, synced everywhere.</div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> the Task Manager and Reminder Queue tools managed by Agnos.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Money &amp; Cashflow</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">YNAB / Copilot Money</div>
-    <div class="price">$14.99/mo</div>
-  </div>
-  <p class="why">Track expenses, project cashflow, see where the month is heading before it ends.</p>
-  <div class="origin"><b>What runs instead →</b> The <b>Expense Tracker</b> + <b>Cashflow Projection</b> + <b>Savings Projection</b> tools managed by Agnos.</div>
+<div class="row">
+  <div class="name">YNAB / Copilot Money <span class="price">$14.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Track expenses, project cashflow, see where the month is heading before it ends, <b>without handing my bank statements to a fintech that resells aggregated "insights"</b>.</div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> the Expense Tracker, Cashflow Projection and Savings Projection tools managed by Agnos.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Stock Watching</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Yahoo Finance Plus</div>
-    <div class="price">$4.99/mo</div>
-  </div>
-  <p class="why">Daily check on the portfolio, alerts on movement, simulated trades.</p>
-  <div class="origin"><b>What runs instead →</b> The <b>Stock Bot</b> tool managed by Agnos.</div>
+<div class="row">
+  <div class="name">Yahoo Finance Plus <span class="price">$4.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Daily portfolio check, alerts on movement, simulated trades.</div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> the Stock Bot tool managed by Agnos.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Knowledge / Notes Sync</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Obsidian Sync</div>
-    <div class="price">$5.00/mo</div>
-  </div>
-  <p class="why">Personal knowledge base / wiki, synced across devices.</p>
-  <div class="origin"><b>What runs instead →</b> Agnos's wiki + memory archive, with daily memory consolidation that keeps it organized.</div>
+<div class="row">
+  <div class="name">Obsidian Sync (knowledge / wiki) <span class="price">$5/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Personal knowledge base synced across devices.</div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp, or web wiki on any browser</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> Agnos's wiki and memory archive with daily consolidation.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Creative Writing Assistant</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Sudowrite / NovelAI</div>
-    <div class="price">$15.00/mo</div>
-  </div>
-  <p class="why">An AI co-writer for stories — brainstorming, drafting, expanding scenes.</p>
-  <div class="origin"><b>What runs instead →</b> Agnos's story workspace — same model, my prompts, no per-app subscription.</div>
+<div class="row">
+  <div class="name">Sudowrite / NovelAI (creative writing) <span class="price">$15/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">An AI co-writer for stories. Brainstorming, drafting, expanding scenes.</div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp or Discord</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> Agnos's story workspace.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Strategic Life Planning</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">Stoic Premium / coaching app</div>
-    <div class="price">$5.00/mo</div>
-  </div>
-  <p class="why">A structured place to think long-term — visa plans, family planning, longevity, self-sustainability — and get nudges back to it.</p>
-  <div class="origin"><b>What runs instead →</b> Agnos's "deep dreams" workspace — a set of long-horizon plans Agnos checks in on and helps me move forward.</div>
+<div class="row">
+  <div class="name">Stoic Premium / coaching app <span class="price">$5/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">A structured place to think long-term: visa plans, family planning, longevity, self-sustainability. Plus nudges to come back to it.</div>
+  <div class="open"><b>Open with:</b> Agnos on WhatsApp</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> Agnos's "deep dreams" workspace. Long-horizon plans Agnos checks in on.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>Public URLs For The Stuff At Home</h2>
-
-<div class="card">
-  <div class="head">
-    <div class="service">ngrok Pro</div>
-    <div class="price">$8.00/mo</div>
-  </div>
-  <p class="why">Real public URLs for the services I host at home — Jellyfin, request portal, daily report — accessible from anywhere with proper domains.</p>
-  <div class="origin"><b>What runs instead →</b> Cloudflare Tunnel running named tunnels for jellyfin, request, and report subdomains.</div>
+<div class="row">
+  <div class="name">ngrok Pro (public URLs) <span class="price">$8/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Real public URLs for the stuff I host at home: Jellyfin, request portal, daily report. Accessible from anywhere with proper domains.</div>
+  <div class="free"><b>Free via:</b> Cloudflare Tunnel running named tunnels.</div>
 </div>
 
-<!-- ============================================================ -->
-<h2>The Math — Full Breakdown</h2>
-<p class="note">Everything I'd be paying every month, vs. what I actually spend to keep the Mac mini doing all of this.</p>
+<div class="row">
+  <div class="name">The Request Portal <span class="priceless">PRICELESS</span></div>
+  <div class="what">A web page on my phone where I type the name of <b>any</b> song, album, artist, movie, or show. It searches, it fetches, it drops the file into the right library, and it appears in the matching app like magic. There is no paid product on the planet that does this for everything at once. It is the glue that makes the whole system feel like one product.</div>
+  <div class="open"><b>Open with:</b> Request Portal (web page, just bookmark it)</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="free"><b>Free via:</b> my own request server with auth, hooked into the YouTube grabber, the Spotify-to-music pipeline, and the show scheduler.</div>
+</div>
 
-<table>
-  <thead>
-    <tr><th>Replaces</th><th class="num">Per Month</th><th class="num">Per Year</th></tr>
-  </thead>
-  <tbody>
-    <tr><td>Netflix + HBO Max + Crunchyroll combo</td><td class="num">$54.97</td><td class="num">$659.64</td></tr>
-    <tr><td>Spotify Premium</td><td class="num">$11.99</td><td class="num">$143.88</td></tr>
-    <tr><td>YouTube Premium</td><td class="num">$13.99</td><td class="num">$167.88</td></tr>
-    <tr><td>Audible Premium Plus</td><td class="num">$14.95</td><td class="num">$179.40</td></tr>
-    <tr><td>Kindle Unlimited</td><td class="num">$11.99</td><td class="num">$143.88</td></tr>
-    <tr><td>Shonen Jump + MangaPlus Pro</td><td class="num">$4.99</td><td class="num">$59.88</td></tr>
-    <tr><td>iCloud+ 2TB</td><td class="num">$9.99</td><td class="num">$119.88</td></tr>
-    <tr><td>Backblaze Personal Backup</td><td class="num">$9.99</td><td class="num">$119.88</td></tr>
-    <tr><td>Google Photos / iCloud Photos 2TB</td><td class="num">$9.99</td><td class="num">$119.88</td></tr>
-    <tr><td>Part-time VA (24/7 personal assistant)</td><td class="num">$400.00</td><td class="num">$4,800.00</td></tr>
-    <tr><td>Day One Premium (auto-diary)</td><td class="num">$2.92</td><td class="num">$35.04</td></tr>
-    <tr><td>Notion AI / Reflect (daily recap)</td><td class="num">$10.00</td><td class="num">$120.00</td></tr>
-    <tr><td>MyFitnessPal Premium</td><td class="num">$19.99</td><td class="num">$239.88</td></tr>
-    <tr><td>Hevy Pro</td><td class="num">$5.99</td><td class="num">$71.88</td></tr>
-    <tr><td>WaterMinder</td><td class="num">$2.99</td><td class="num">$35.88</td></tr>
-    <tr><td>Round Health Pro (vitamins)</td><td class="num">$1.99</td><td class="num">$23.88</td></tr>
-    <tr><td>I Am Sober Premium (habit accountability)</td><td class="num">$7.99</td><td class="num">$95.88</td></tr>
-    <tr><td>Snug Safety / Life360 Gold (wellness check-in)</td><td class="num">$4.99</td><td class="num">$59.88</td></tr>
-    <tr><td>AnyList Premium (groceries)</td><td class="num">$2.99</td><td class="num">$35.88</td></tr>
-    <tr><td>Trakt VIP (what's on tonight)</td><td class="num">$2.99</td><td class="num">$35.88</td></tr>
-    <tr><td>Backloggd Pro (game backlog)</td><td class="num">$2.99</td><td class="num">$35.88</td></tr>
-    <tr><td>Todoist Pro (tasks &amp; reminders)</td><td class="num">$4.00</td><td class="num">$48.00</td></tr>
-    <tr><td>YNAB / Copilot Money (cashflow)</td><td class="num">$14.99</td><td class="num">$179.88</td></tr>
-    <tr><td>Yahoo Finance Plus (stocks)</td><td class="num">$4.99</td><td class="num">$59.88</td></tr>
-    <tr><td>Obsidian Sync (notes / wiki)</td><td class="num">$5.00</td><td class="num">$60.00</td></tr>
-    <tr><td>Sudowrite (creative writing)</td><td class="num">$15.00</td><td class="num">$180.00</td></tr>
-    <tr><td>Stoic Premium (life planning)</td><td class="num">$5.00</td><td class="num">$60.00</td></tr>
-    <tr><td>ngrok Pro (public URLs)</td><td class="num">$8.00</td><td class="num">$96.00</td></tr>
-    <tr class="subtotal"><td>Would-be subscriptions total</td><td class="num">$665.65</td><td class="num">$7,987.80</td></tr>
-  </tbody>
-</table>
+<div class="apps">
+  <h2>The apps these all run in (and why every one of them beats the paid version)</h2>
+  <div class="grid">
+    <div class="app"><b>Jellyfin or Moonfin</b> <span>movies, shows, YouTube. My Netflix / HBO / Crunchyroll / YouTube replacement.</span></div>
+    <div class="app"><b>Finamp</b> <span>music with playlists and offline. My Spotify replacement (any other Jellyfin client works too, huge community of headless options).</span></div>
+    <div class="app"><b>AudioBookshelf</b> <span>audiobooks, books, podcasts and manga in one app. My Audible / Kindle / Shonen Jump replacement.</span></div>
+    <div class="app"><b>Request Portal</b> <span>web page on the phone: search anything, click request, it lands.</span></div>
+    <div class="app"><b>Agnos Personal Assistant</b> <span>WhatsApp / Telegram / Discord interface. The brain behind every "Personal Assistant + Tools" service above.</span></div>
+    <div class="app"><b>Daily Report card</b> <span>a single HTML card pushed every morning with what's airing, pending, due, and worth doing today.</span></div>
+  </div>
+  <div class="feats">
+    <b>What every one of these apps does that paid subs don't:</b>
+    <ul>
+      <li><b>Offline downloads of literally any media.</b> Any movie, any show, any album, any book, any chapter, any podcast episode. Pin it, get on a plane, watch it.</li>
+      <li><b>Request server for everything.</b> Songs, albums, artists, movies, full shows. Type the name, it gets fetched and dropped into the right library automatically.</li>
+      <li><b>Scheduled weekly downloads.</b> Any show I follow gets pulled the moment a new episode drops. I never check release dates.</li>
+      <li><b>Shared state across all devices, private to me.</b> Watch position, watchlists, readlists, listening history, in-progress books, finished episodes, all synced between iPhone, iPad, PC, TV and Steam Deck. Nobody else sees any of it. No tracking, no recommendations algorithm, no profile sold to anyone.</li>
+    </ul>
+  </div>
+</div>
 
-<h3 style="margin-top:24px">What I Actually Pay (counter-costs)</h3>
-<table>
-  <thead>
-    <tr><th>Cost</th><th class="num">Per Month</th><th class="num">Per Year</th></tr>
-  </thead>
-  <tbody>
-    <tr class="cost"><td>OpenRouter tokens (Agnos brain)</td><td class="num">$40.00</td><td class="num">$480.00</td></tr>
-    <tr class="cost"><td>ProtonVPN Plus</td><td class="num">$4.99</td><td class="num">$59.88</td></tr>
-    <tr class="cost"><td>Electricity (Mac mini 24/7)</td><td class="num">$3.00</td><td class="num">$36.00</td></tr>
-    <tr class="cost"><td>Domain (fernhw.com)</td><td class="num">$1.00</td><td class="num">$12.00</td></tr>
-    <tr class="subtotal"><td>Real cost total</td><td class="num">$48.99</td><td class="num">$587.88</td></tr>
-  </tbody>
-</table>
+<div class="bill">
+  <h3>THE MONTHLY BILL I'M NOT GETTING</h3>
+  <div class="biller">Itemized statement, billed monthly</div>
+
+  <div class="section-h">Streaming &amp; Media</div>
+  <div class="line"><span class="item">Netflix + HBO Max + Crunchyroll combo</span><span class="amt">$54.97</span></div>
+  <div class="line"><span class="item">Spotify Premium</span><span class="amt">$11.99</span></div>
+  <div class="line"><span class="item">YouTube Premium</span><span class="amt">$13.99</span></div>
+  <div class="line"><span class="item">Audible Premium Plus</span><span class="amt">$14.95</span></div>
+  <div class="line"><span class="item">Kindle Unlimited</span><span class="amt">$11.99</span></div>
+  <div class="line"><span class="item">Shonen Jump + MangaPlus Pro</span><span class="amt">$4.99</span></div>
+
+  <div class="section-h">Storage &amp; Photos</div>
+  <div class="line"><span class="item">iCloud+ 2TB</span><span class="amt">$9.99</span></div>
+  <div class="line"><span class="item">Backblaze Personal Backup</span><span class="amt">$9.99</span></div>
+  <div class="line"><span class="item">Google Photos / iCloud Photos 2TB</span><span class="amt">$9.99</span></div>
+
+  <div class="section-h">Personal Assistant + Tools</div>
+  <div class="line"><span class="item">Part-time virtual assistant (24/7)</span><span class="amt">$400.00</span></div>
+  <div class="line"><span class="item">Day One Premium (auto-diary)</span><span class="amt">$2.92</span></div>
+  <div class="line"><span class="item">Notion AI / Reflect (daily recap)</span><span class="amt">$10.00</span></div>
+  <div class="line"><span class="item">MyFitnessPal Premium</span><span class="amt">$19.99</span></div>
+  <div class="line"><span class="item">Hevy Pro</span><span class="amt">$5.99</span></div>
+  <div class="line"><span class="item">WaterMinder</span><span class="amt">$2.99</span></div>
+  <div class="line"><span class="item">Round Health Pro (vitamins)</span><span class="amt">$1.99</span></div>
+  <div class="line"><span class="item">I Am Sober Premium (habit accountability)</span><span class="amt">$7.99</span></div>
+  <div class="line"><span class="item">Snug Safety / Life360 Gold (wellness check-in)</span><span class="amt">$4.99</span></div>
+  <div class="line"><span class="item">AnyList Premium (groceries)</span><span class="amt">$2.99</span></div>
+  <div class="line"><span class="item">Trakt VIP (what's on tonight)</span><span class="amt">$2.99</span></div>
+  <div class="line"><span class="item">Backloggd Pro (game backlog)</span><span class="amt">$2.99</span></div>
+  <div class="line"><span class="item">Todoist Pro (tasks &amp; reminders)</span><span class="amt">$4.00</span></div>
+  <div class="line"><span class="item">YNAB / Copilot Money</span><span class="amt">$14.99</span></div>
+  <div class="line"><span class="item">Yahoo Finance Plus (stocks)</span><span class="amt">$4.99</span></div>
+  <div class="line"><span class="item">Obsidian Sync (knowledge / wiki)</span><span class="amt">$5.00</span></div>
+  <div class="line"><span class="item">Sudowrite (creative writing)</span><span class="amt">$15.00</span></div>
+  <div class="line"><span class="item">Stoic Premium (life planning)</span><span class="amt">$5.00</span></div>
+
+  <div class="section-h">Infrastructure</div>
+  <div class="line"><span class="item">ngrok Pro (public URLs)</span><span class="amt">$8.00</span></div>
+
+  <div class="subtotal"><span>Subtotal, would-be subscriptions</span><span>$665.65 / mo</span></div>
+
+  <div class="section-h">What I Actually Pay (credits)</div>
+  <div class="line credit"><span class="item">OpenRouter tokens, the Agnos brain<sup>*</sup></span><span class="amt">-$40.00</span></div>
+  <div class="line credit"><span class="item">Electricity (Mac mini 24/7)</span><span class="amt">-$3.00</span></div>
+  <div class="line credit"><span class="item">Domain fernhw.com ($14.67 / yr)</span><span class="amt">-$1.22</span></div>
+  <div class="line credit"><span class="item">Cloudflare Tunnel</span><span class="amt">FREE</span></div>
+  <div class="subtotal credit"><span>Subtotal, real recurring costs</span><span>-$44.22 / mo</span></div>
+
+  <div style="font-family: -apple-system, sans-serif; font-size: 12.5px; color: #444; margin-top: 14px; padding: 14px 16px; background: #f0f6ff; border-left: 3px solid #1f6feb; border-radius: 4px;">
+    <b>What the $40/mo OpenRouter bill actually buys:</b> the LLM tokens consumed by <b>Agnos</b>, my personal assistant running on the OpenClaw agent runtime. Agnos is the brain behind <i>only</i> the "Personal Assistant + Tools" section above: the 24/7 VA, auto-diary, daily recap, nutrition / training / water / vitamin trackers, habit accountability, wellness check-in, groceries, show scheduler, game backlog, tasks and reminders, money and cashflow, stock bot, knowledge wiki, creative writing, and life planning.
+    <br><br>
+    Everything else on this report (Jellyfin, the music library, YouTube grabs, AudioBookshelf, ebooks, manga, Syncthing, photos, backups, Cloudflare tunnels) runs on its own and uses <b>zero</b> tokens, meaning those are fully free and do not touch my AI assistant. Agnos only recommends shows and can use them to download stuff when I request through existing robust tech.
+    <br><br>
+    Just on the Agnos cluster: <b>18 services, $519.80 / mo ($6,237.60 / yr)</b> replaced by one $40/mo token bill, leaving <b>$479.80 / mo saved</b> ($5,757.60 / yr) from Agnos alone.
+  </div>
+
+  <div class="grand-line green"><span>NET SAVINGS (everything)</span><span>$621.43 / mo</span></div>
+  <div class="grand-line green"><span>PER YEAR</span><span>$7,457.13</span></div>
+</div>
+
+<div class="bill">
+  <h3>HARDWARE CAPEX (one-time, this year)</h3>
+  <div class="biller">Server build-out, paid up front, amortized over years</div>
+
+  <div class="section-h">Already Spent</div>
+  <div class="line"><span class="item">MikroTik RB5009 router + wiring + UPS + box</span><span class="amt">$550.00</span></div>
+
+  <div class="section-h">Coming Up</div>
+  <div class="line"><span class="item">DAS (direct-attached storage) + shipping</span><span class="amt">$1,200.00</span></div>
+
+  <div class="subtotal"><span>Total hardware investment</span><span>$1,750.00</span></div>
+
+  <div style="font-family: -apple-system, sans-serif; font-size: 12px; color: #666; margin-top: 14px; padding-top: 12px; border-top: 1px dashed #d0d7de;">
+    Even if amortized over a single year, the $7,457 in subscription savings still covers the hardware <b>4x over</b>. Spread across the realistic 5-year life of these boxes, it's $350/yr. A rounding error against the savings. The other thing the hardware buys, that no subscription bundle ever could: <b>full ownership of every byte that touches my life</b>.
+  </div>
+</div>
 
 <div class="grand">
-  <div class="row">
-    <div class="lbl">What I'd be paying in subscriptions</div>
-    <div class="val blue">$7,987.80 / year</div>
+  <div class="boom">Net savings</div>
+  <div class="save">$7,457</div>
+  <div class="per">per year, about $621 every month</div>
+  <div class="breakdown">
+    <div>
+      <div class="lbl">Would-be subs</div>
+      <div class="val blue">$7,988 / yr</div>
+    </div>
+    <div>
+      <div class="lbl">Real cost*</div>
+      <div class="val red">$531 / yr</div>
+    </div>
+    <div>
+      <div class="lbl">Saved</div>
+      <div class="val green">$7,457 / yr</div>
+    </div>
   </div>
-  <div class="row">
-    <div class="lbl">What I actually pay to run all of it</div>
-    <div class="val red">$587.88 / year</div>
-  </div>
-  <div class="row">
-    <div class="lbl">Net savings</div>
-    <div class="val green">$7,399.92 / year</div>
-  </div>
-  <div class="row">
-    <div class="lbl">Per month, that's</div>
-    <div class="val green">≈ $616 / month</div>
+  <div style="font-size: 11px; color: #b0b8c1; margin-top: 18px; text-align: center;">
+    *Real cost = Agnos brain (OpenRouter tokens) $40/mo + electricity $3/mo + domain $14.67/yr. Cloudflare Tunnel free.
   </div>
 </div>
 
