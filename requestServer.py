@@ -1277,7 +1277,7 @@ def spotify_download():
 
     def _run():
         try:
-            cmd = [binary, 'download', url, '--output', music_dir]
+            cmd = [binary, 'download', url, '--output', music_dir, '--audio', 'piped']
             proc = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
