@@ -1084,10 +1084,34 @@ def music_kh_search():
         return jsonify({'results': []})
 
 
+@app.route('/api/show-search-preview')
+@_require_auth
+def show_search_preview():
+    """Quick Nyaa search to preview what a short search name returns. Used by the add-show wizard."""
+    q = (request.args.get('q') or '').strip()
+    if not q or len(q) > 20:
+        return jsonify({'error': 'invalid query'}), 400
+    try:
+        from showSchedulerSearch import search_nyaa_bare_ep, _parse_nyaa_html, _fetch
+        import urllib.parse
+        url = (
+            f"https://nyaa.si/?f=0&c=1_2"
+            f"&q={urllib.parse.quote(q)}&s=seeders&o=desc"
+        )
+        body = _fetch(url)
+        results = _parse_nyaa_html(body) if body else []
+        return jsonify({'results': [
+            {'title': r['title'], 'seeds': r['seeds']}
+            for r in results[:10]
+        ]})
+    except Exception as e:
+        log.exception('show-search-preview error')
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/music-kh-tracks')
 @_require_auth
-def music_kh_tracks():
-    """Fetch track list from a KHInsider album URL."""
+def music_kh_tracks():    """Fetch track list from a KHInsider album URL."""
     url = (request.args.get('url') or '').strip()
     if not url or not url.startswith('https://downloads.khinsider.com/'):
         return jsonify({'error': 'invalid url'}), 400

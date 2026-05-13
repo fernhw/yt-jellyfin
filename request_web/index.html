@@ -517,10 +517,11 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       </div>
       <label class="field-label" style="margin-top:12px">Search term <button class="tip-btn" onclick="tipToggle('tip-search')">?</button></label>
       <div class="tip-box hidden" id="tip-search">
-        What we search for &mdash; auto-filled from the show name. Change it only if wrong episodes appear.<br><br>
-        Example: <b>Re:Zero</b> &rarr; search term <b>re zero</b>
+        Short name used to search Nyaa/TPB &mdash; <strong>keep it under 20 characters</strong>.<br><br>
+        Example: <b>Re Zero Starting Life in a New World</b> &rarr; <b>re zero</b><br>
+        Example: <b>Atelier of Witch Hat</b> &rarr; <b>witch hat atelier</b>
       </div>
-      <input id="f-search-name" class="big-input" placeholder="e.g. naruto" maxlength="80"
+      <input id="f-search-name" class="big-input" placeholder="e.g. re zero" maxlength="40"
              oninput="markSearchEdited()"/>
 
       <!-- Ongoing: single season entry -->
@@ -550,6 +551,25 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:-apple
       <button class="big-btn btn-purple" style="margin-top:10px" onclick="_validateManual()">Next &rarr;</button>
       <button class="ghost-btn" onclick="_goShowStep('ss-2')">&larr; Back</button>
       <div class="err" id="serr-3m"></div>
+    </div>
+
+    <!-- Step 3short: Short search name (only when auto name > 20 chars) -->
+    <div class="form-step" id="ss-3short">
+      <div class="step-q">What should we search for?</div>
+      <div class="step-hint" style="margin-bottom:14px">&ldquo;<span id="ss-3short-fullname" style="color:var(--purple)"></span>&rdquo; is too long to find on Nyaa.<br>Type a short version &mdash; 2&ndash;3 key words.<br><br>Example: <em id="ss-3short-example"></em></div>
+      <input id="f-search-short" class="big-input" placeholder="e.g. re zero" maxlength="20"
+             oninput="_shortNameInput()"/>
+      <div style="font-size:.72rem;color:var(--muted);margin-top:4px;text-align:right"><span id="ss-3short-len">0</span>/20</div>
+      <div id="ss-3short-preview" style="display:none;margin-top:10px;border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="padding:8px 13px;background:var(--card);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px">
+          <span>Nyaa results</span>
+          <span id="ss-3short-badge" style="font-size:.7rem;padding:2px 8px;border-radius:99px"></span>
+        </div>
+        <div id="ss-3short-list" style="padding:8px 13px;font-size:.8rem;color:var(--muted);max-height:140px;overflow-y:auto"></div>
+      </div>
+      <button class="big-btn btn-purple" onclick="_confirmShortName()" style="margin-top:14px">Use this name &rarr;</button>
+      <button class="big-btn btn-muted" onclick="_goShowStep('ss-3m')" style="margin-top:6px">&larr; Back</button>
+      <div class="err" id="serr-3short"></div>
     </div>
 
     <!-- Step 4: Release day (ongoing only) -->
@@ -1292,6 +1312,20 @@ function _validateManual() {
   if (!search) { errEl.textContent = 'Search term is required'; return; }
   errEl.textContent = '';
 
+  // If search name is too long, go to the dedicated short-name step
+  if (search.length > 20) {
+    const fullEl = document.getElementById('ss-3short-fullname');
+    const exEl   = document.getElementById('ss-3short-example');
+    if (fullEl) fullEl.textContent = name;
+    if (exEl)   exEl.textContent   = name.split(' ').slice(0, 2).join(' ').toLowerCase();
+    document.getElementById('f-search-short').value = '';
+    document.getElementById('ss-3short-len').textContent = '0';
+    document.getElementById('ss-3short-preview').style.display = 'none';
+    document.getElementById('serr-3short').textContent = '';
+    _goShowStep('ss-3short');
+    return;
+  }
+
   if (_showMode === 'older') {
     const seasons = _getManualSeasons();
     if (!seasons.length) { errEl.textContent = 'Add at least one season'; return; }
@@ -1313,10 +1347,83 @@ function _validateManual() {
 function autoFillSearch() {
   if (!_searchEdited) {
     const v = document.getElementById('f-show-name').value;
-    document.getElementById('f-search-name').value = v.toLowerCase().replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim();
+    const auto = v.toLowerCase().replace(/[^\w\s]/g,'').replace(/\s+/g,' ').trim();
+    document.getElementById('f-search-name').value = auto;
+    _searchNameCheck();
   }
 }
 function markSearchEdited() { _searchEdited = true; }
+
+// ── Short-name step logic ─────────────────────────────────────────────────────
+let _shortNameTimer = null;
+function _shortNameInput() {
+  const val = (document.getElementById('f-search-short').value || '').trim();
+  document.getElementById('ss-3short-len').textContent = val.length;
+  document.getElementById('serr-3short').textContent = '';
+  clearTimeout(_shortNameTimer);
+  if (val.length >= 3) {
+    _shortNameTimer = setTimeout(() => _shortNamePreview(val), 600);
+  } else {
+    document.getElementById('ss-3short-preview').style.display = 'none';
+  }
+}
+
+async function _shortNamePreview(term) {
+  const previewEl = document.getElementById('ss-3short-preview');
+  const badgeEl   = document.getElementById('ss-3short-badge');
+  const listEl    = document.getElementById('ss-3short-list');
+  previewEl.style.display = 'block';
+  badgeEl.textContent = 'searching\u2026';
+  badgeEl.style.background = '#888'; badgeEl.style.color = '#fff';
+  listEl.innerHTML = '<span style="color:var(--muted)">Checking Nyaa\u2026</span>';
+  try {
+    const r    = await api('GET', '/api/show-search-preview?q=' + encodeURIComponent(term));
+    const data = await r.json();
+    const results = data.results || [];
+    if (!results.length) {
+      badgeEl.textContent = '0 results';
+      badgeEl.style.background = '#f87171'; badgeEl.style.color = '#fff';
+      listEl.innerHTML = '<span style="color:#f87171">Nothing found on Nyaa &mdash; try different words</span>';
+    } else {
+      badgeEl.textContent = results.length + '+ results';
+      badgeEl.style.background = '#4ade80'; badgeEl.style.color = '#000';
+      listEl.innerHTML = results.slice(0, 5).map(r =>
+        '<div style="padding:3px 0;border-bottom:1px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+        + _esc(r.title) + ' <span style="color:var(--muted)">(' + r.seeds + ')</span></div>'
+      ).join('');
+    }
+  } catch(e) {
+    badgeEl.textContent = 'error'; badgeEl.style.background = '#888';
+    listEl.innerHTML = '<span style="color:var(--muted)">Preview unavailable</span>';
+  }
+}
+
+function _confirmShortName() {
+  const val    = (document.getElementById('f-search-short').value || '').trim();
+  const errEl  = document.getElementById('serr-3short');
+  if (!val)       { errEl.textContent = 'Type a short search name first'; return; }
+  if (val.length > 20) { errEl.textContent = 'Must be 20 characters or less'; return; }
+  // Write back into the hidden f-search-name field and proceed
+  document.getElementById('f-search-name').value = val;
+  errEl.textContent = '';
+  // Continue with the normal flow from ss-3m validation
+  if (_showMode === 'older') {
+    const seasons = _getManualSeasons();
+    if (!seasons.length) { errEl.textContent = 'Add at least one season'; return; }
+    _selectedSeasons = seasons;
+    _ss5BackStep = 'ss-3short';
+    _goToTypeStep();
+  } else {
+    if (!_gv('f-season'))  { _goShowStep('ss-3m'); return; }
+    if (!_gv('f-next-ep')) { _goShowStep('ss-3m'); return; }
+    const dontKnow = document.getElementById('f-dont-know').checked;
+    if (dontKnow) document.getElementById('f-total-ep').value = '99';
+    _selectedSeasons = [{n: +_gv('f-season'), episodes: +_gv('f-total-ep') || 99}];
+    _ss4BackStep = 'ss-3short';
+    _goShowStep('ss-4');
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 function toggleDontKnow(cb) {
   document.getElementById('ss-3-total-wrap').classList.toggle('hidden', cb.checked);
@@ -2448,13 +2555,14 @@ async function _muFetchSuggest(q) {
     _muSuggestItems = items;
     if (!items.length) { list.style.display = 'none'; return; }
     list.innerHTML = items.map((m, i) => {
-      const sub = [m.type, m.disambiguation].filter(Boolean).join(' \u00b7 ');
+      const primary = m.artist || m.name || '';
+      const sub = m.album || [m.type, m.disambiguation].filter(Boolean).join(' \u00b7 ');
       return `<div class="mv-suggest-item"
            onmousedown="event.preventDefault();_muPickSuggest(${i})"
            ontouchstart="_mvTouchStart(event)"
            ontouchend="_muTouchEnd(event,${i})">
         <span style="display:flex;flex-direction:column;gap:2px">
-          <span>${_esc(m.name)}</span>
+          <span>${_esc(primary)}</span>
           ${sub ? `<span style="font-size:.72rem;color:var(--muted)">${_esc(sub)}</span>` : ''}
         </span>
       </div>`;
@@ -2473,7 +2581,7 @@ function _muTouchEnd(e, i) {
 function _muPickSuggest(i) {
   const m = _muSuggestItems[i];
   if (!m) return;
-  document.getElementById('mu-search-input').value = m.name;
+  document.getElementById('mu-search-input').value = m.artist || m.name || '';
   document.getElementById('mu-suggest-list').style.display = 'none';
   muSearchSubmit();
 }
