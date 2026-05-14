@@ -1,11 +1,11 @@
-last_scan=1778777225609
+last_scan=1778788951999
 total_videos=2397
-updated=2026-05-14 11:47:06
+updated=2026-05-14 15:02:32
 report_date=2026-05-14
 downloaded_today=9
 deleted_today=5
 skipped_today=1
-channels_scanned=91
+channels_scanned=54
 channels_total=91
 errors_last_run=0
 errors_list=
