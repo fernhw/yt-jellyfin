@@ -18,6 +18,7 @@ MANGA_DEST="/Volumes/Darrel4tb/rsync/manga"
 PASSWORDS_SRC="/Users/alexander-highground/vaultwarden-data"
 PASSWORDS_DEST_1="/Volumes/Darrel4tb/rsync/passwords"
 PASSWORDS_DEST_2="/Volumes/Jellyfin/rsync/passwords"
+PASSWORDS_DEST_3="/Users/alexander-highground/Documents/rsync/passwords"
 
 LOG_FILE="/Volumes/Darrel4tb/rsync/sync.log"
 
@@ -78,5 +79,6 @@ sync_library "manga"    "$MANGA_SRC"    "$MANGA_DEST"
 # Both db.sqlite3 and rsa_key.pem are needed together to restore a working instance.
 sync_library "passwords→darrel4tb" "$PASSWORDS_SRC" "$PASSWORDS_DEST_1"
 sync_library "passwords→jellyfin"  "$PASSWORDS_SRC" "$PASSWORDS_DEST_2"
+sync_library "passwords→documents" "$PASSWORDS_SRC" "$PASSWORDS_DEST_3"
 
 log "=== Sync complete ==="
