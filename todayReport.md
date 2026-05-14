@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-13
 
-> *Good evening! Here's what landed on Wednesday, May 13, 2026 at 08:24 PM.*
-> **YT Mirror:** 759.21 GB used · 1.15 TB free
+> *Good evening! Here's what landed on Wednesday, May 13, 2026 at 09:12 PM.*
+> **YT Mirror:** 759.62 GB used · 1.16 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,8 @@
 
 ## Non-Priority Videos
 
+- **WTF is this, Google?** — *TechLinked* · downloaded 09:09 PM · podcastable
+- **This is genuinely evil..** — *Asmongold TV* · downloaded 09:07 PM · not podcastable
 - **Virtual Boy – Nintendo Classics – May 2026 Game Updates** — *Nintendo of America* · downloaded 08:18 PM · not podcastable
 - **A Billion Dollar Tragedy** — *Asmongold TV* · downloaded 08:17 PM · not podcastable
 - **The Life and Times of the Mii** — *Scott's Stash* · downloaded 07:06 PM · not podcastable
