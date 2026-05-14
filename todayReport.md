@@ -1,16 +1,18 @@
 # What to Watch — 2026-05-13
 
-> *Good evening! Here's what landed on Wednesday, May 13, 2026 at 07:08 PM.*
-> **YT Mirror:** 758.71 GB used · 1.12 TB free
+> *Good evening! Here's what landed on Wednesday, May 13, 2026 at 08:24 PM.*
+> **YT Mirror:** 759.21 GB used · 1.15 TB free
 
 ## Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **Stronger than REINHARD? | Re:ZERO Season 4 Episode 6 Reaction/Analysis** — *Echidnut* · downloaded 08:15 PM · not podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **Virtual Boy – Nintendo Classics – May 2026 Game Updates** — *Nintendo of America* · downloaded 08:18 PM · not podcastable
+- **A Billion Dollar Tragedy** — *Asmongold TV* · downloaded 08:17 PM · not podcastable
 - **The Life and Times of the Mii** — *Scott's Stash* · downloaded 07:06 PM · not podcastable
 - **Physical Games Are About To Be A Problem** — *Spawn Wave* · downloaded 07:04 PM · not podcastable
 - **“The Biggest Android Update Ever”** — *Marques Brownlee* · downloaded 05:06 PM · not podcastable
