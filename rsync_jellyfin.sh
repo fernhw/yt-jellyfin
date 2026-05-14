@@ -15,6 +15,10 @@ BOOKS_DEST="/Volumes/Darrel4tb/rsync/books"
 PODCASTS_DEST="/Volumes/Darrel4tb/rsync/podcasts"
 MANGA_DEST="/Volumes/Darrel4tb/rsync/manga"
 
+PASSWORDS_SRC="/Users/alexander-highground/vaultwarden-data"
+PASSWORDS_DEST_1="/Volumes/Darrel4tb/rsync/passwords"
+PASSWORDS_DEST_2="/Volumes/Jellyfin/rsync/passwords"
+
 LOG_FILE="/Volumes/Darrel4tb/rsync/sync.log"
 
 log() {
@@ -34,10 +38,17 @@ sync_library() {
   if [ ! -d "$dest" ]; then
     dest_parent=$(dirname "$dest")
     if [ ! -d "$dest_parent" ]; then
-      log "SKIP $label — destination parent missing: $dest_parent"
-      return
+      # Try creating the full path if the volume root is mounted
+      local volume_root
+      volume_root=$(echo "$dest" | cut -d'/' -f1-3)
+      if [ ! -d "$volume_root" ]; then
+        log "SKIP $label — volume not mounted: $volume_root"
+        return
+      fi
+      mkdir -p "$dest"
+    else
+      mkdir -p "$dest"
     fi
-    mkdir -p "$dest"
     if [ $? -ne 0 ]; then
       log "SKIP $label — failed to create destination: $dest"
       return
@@ -61,5 +72,11 @@ sync_library "music"    "$MUSIC_SRC"    "$MUSIC_DEST"
 sync_library "books"    "$BOOKS_SRC"    "$BOOKS_DEST"
 sync_library "podcasts" "$PODCASTS_SRC" "$PODCASTS_DEST"
 sync_library "manga"    "$MANGA_SRC"    "$MANGA_DEST"
+
+# ---- VAULTWARDEN BACKUP (encrypted vault — db + RSA key both required to restore) ----
+# Note: passwords are client-side encrypted; server never sees plaintext.
+# Both db.sqlite3 and rsa_key.pem are needed together to restore a working instance.
+sync_library "passwords→darrel4tb" "$PASSWORDS_SRC" "$PASSWORDS_DEST_1"
+sync_library "passwords→jellyfin"  "$PASSWORDS_SRC" "$PASSWORDS_DEST_2"
 
 log "=== Sync complete ==="
