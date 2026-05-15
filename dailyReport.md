@@ -2,17 +2,25 @@
 
 ## What to Watch — 2026-05-15
 
-> *Good morning! Here's what landed on Friday, May 15, 2026 at 11:40 AM.*
-> **YT Mirror:** 778.23 GB used · 1.14 TB free
+> *Good afternoon! Here's what landed on Friday, May 15, 2026 at 03:26 PM.*
+> **YT Mirror:** 776.23 GB used · 1.13 TB free
 
 ### Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **I can’t believe this trial is real...** — *Fireship* · downloaded 03:04 PM · podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **Hantavirus Has Become A Meme** — *Lessons in Meme Culture* · downloaded 03:21 PM · not podcastable
+- **Apple Reacts to Google’s New Android** — *SAMTIME* · downloaded 03:21 PM · not podcastable
+- **HW News - F You, Bambu Lab, Chrome Eats 4GB for AI, More Steam Machines, Router Ban Update** — *Gamers Nexus* · downloaded 03:20 PM · not podcastable
+- **GTA VI Is the Excuse Bank of America Needed** — *Bellular News* · downloaded 03:18 PM · podcastable
+- **The Splatoon 3 North American League Show 2026 – Episode 7** — *Nintendo of America* · downloaded 03:15 PM · not podcastable
+- **Fortnite x Overwatch – Gameplay Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:13 PM · not podcastable
+- **This might be the best game of 2026..** — *Asmongold TV* · downloaded 03:13 PM · not podcastable
+- **This actually made me mad..** — *Asmongold TV* · downloaded 03:06 PM · not podcastable
 - **Gaming Discourse Has Gotten Insufferably Dumb | Unpacked** — *Second Wind* · downloaded 11:37 AM · podcastable
 - **Yoshi and the Mysterious Book – An Appetite for Discovery – Nintendo Switch 2** — *Nintendo of America* · downloaded 11:36 AM · not podcastable
 - **I'm SO done with this sh*t..** — *Asmongold TV* · downloaded 11:36 AM · not podcastable
