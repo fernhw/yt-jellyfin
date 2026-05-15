@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-14
 
-> *Good evening! Here's what landed on Thursday, May 14, 2026 at 09:07 PM.*
-> **YT Mirror:** 775.41 GB used · 1.14 TB free
+> *Good evening! Here's what landed on Thursday, May 14, 2026 at 10:05 PM.*
+> **YT Mirror:** 775.61 GB used · 1.14 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@
 
 ### Non-Priority Videos
 
+- **Gerrymandering is Back** — *Big A* · downloaded 10:04 PM · not podcastable
 - **Hold On To Your Butts** — *GameLinked* · downloaded 09:05 PM · podcastable
 - **Order of the Sinking Star – Overview Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 09:04 PM · not podcastable
 - **PlayStation Finally Realized Bungie Played Them** — *Bellular News* · downloaded 05:11 PM · podcastable
