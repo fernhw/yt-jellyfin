@@ -2,11 +2,12 @@
 
 ## What to Watch — 2026-05-15
 
-> *Good evening! Here's what landed on Friday, May 15, 2026 at 05:10 PM.*
-> **YT Mirror:** 777.46 GB used · 1.14 TB free
+> *Good evening! Here's what landed on Friday, May 15, 2026 at 06:08 PM.*
+> **YT Mirror:** 778.47 GB used · 1.13 TB free
 
 ### Priority Videos
 
+- **GAMEOVERSE: PILOT** — *GLITCH* · downloaded 06:05 PM · not podcastable
 - **We Got Drunk Answering Your Strangest Questions | Trash Taste #308** — *Trash Taste* · downloaded 05:07 PM · podcastable
 - **I can’t believe this trial is real...** — *Fireship* · downloaded 03:04 PM · podcastable
 
@@ -14,6 +15,7 @@
 
 ### Non-Priority Videos
 
+- **He knows it’s over..** — *Asmongold TV* · downloaded 06:06 PM · not podcastable
 - **Hantavirus Has Become A Meme** — *Lessons in Meme Culture* · downloaded 03:21 PM · not podcastable
 - **Apple Reacts to Google’s New Android** — *SAMTIME* · downloaded 03:21 PM · not podcastable
 - **HW News - F You, Bambu Lab, Chrome Eats 4GB for AI, More Steam Machines, Router Ban Update** — *Gamers Nexus* · downloaded 03:20 PM · not podcastable
