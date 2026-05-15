@@ -2,11 +2,12 @@
 
 ## What to Watch — 2026-05-15
 
-> *Good afternoon! Here's what landed on Friday, May 15, 2026 at 03:26 PM.*
-> **YT Mirror:** 776.23 GB used · 1.13 TB free
+> *Good evening! Here's what landed on Friday, May 15, 2026 at 05:10 PM.*
+> **YT Mirror:** 777.46 GB used · 1.14 TB free
 
 ### Priority Videos
 
+- **We Got Drunk Answering Your Strangest Questions | Trash Taste #308** — *Trash Taste* · downloaded 05:07 PM · podcastable
 - **I can’t believe this trial is real...** — *Fireship* · downloaded 03:04 PM · podcastable
 
 ---
