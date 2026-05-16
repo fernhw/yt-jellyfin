@@ -65,6 +65,19 @@
       "days_until": 4,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-re-zero-kara-hajimeru-isekai-seikatsu.jpg"
+    },
+    {
+      "show": "Agents of the Four Seasons: Dance of Spring",
+      "season": 1,
+      "downloaded": 1,
+      "next_ep": 2,
+      "total": 14,
+      "week": "?",
+      "status": "pending",
+      "release_days": "sat",
+      "days_until": 0,
+      "is_complete": false,
+      "thumb": ""
     }
   ]
 }
