@@ -69,15 +69,15 @@
     {
       "show": "Agents of the Four Seasons: Dance of Spring",
       "season": 1,
-      "downloaded": 1,
-      "next_ep": 2,
+      "downloaded": 2,
+      "next_ep": 3,
       "total": 14,
       "week": "?",
       "status": "pending",
       "release_days": "sat",
       "days_until": 0,
       "is_complete": false,
-      "thumb": ""
+      "thumb": "media-thumbs/show-sched-agents-of-the-four-seasons-dance-of-spring.jpg"
     }
   ]
 }
