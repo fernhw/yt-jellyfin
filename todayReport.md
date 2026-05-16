@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-15
 
-> *Good evening! Here's what landed on Friday, May 15, 2026 at 06:08 PM.*
-> **YT Mirror:** 778.47 GB used · 1.13 TB free
+> *Good evening! Here's what landed on Friday, May 15, 2026 at 07:07 PM.*
+> **YT Mirror:** 777.89 GB used · 1.13 TB free
 
 ## Priority Videos
 
@@ -13,6 +13,7 @@
 
 ## Non-Priority Videos
 
+- **Balls of Fury (Wii) - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
 - **He knows it’s over..** — *Asmongold TV* · downloaded 06:06 PM · not podcastable
 - **Hantavirus Has Become A Meme** — *Lessons in Meme Culture* · downloaded 03:21 PM · not podcastable
 - **Apple Reacts to Google’s New Android** — *SAMTIME* · downloaded 03:21 PM · not podcastable
