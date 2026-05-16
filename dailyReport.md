@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-15
 
-> *Good evening! Here's what landed on Friday, May 15, 2026 at 08:08 PM.*
-> **YT Mirror:** 778.11 GB used · 1.14 TB free
+> *Good evening! Here's what landed on Friday, May 15, 2026 at 09:06 PM.*
+> **YT Mirror:** 778.66 GB used · 1.14 TB free
 
 ### Priority Videos
 
@@ -15,6 +15,7 @@
 
 ### Non-Priority Videos
 
+- **The Windows Update We All Wanted** — *TechLinked* · downloaded 09:05 PM · podcastable
 - **Nintendo Is Going For The PS2** — *Spawn Wave* · downloaded 08:06 PM · not podcastable
 - **FBI Director Kash Patel Likes Watersports?! - Weekly Weird News** — *Internet Today* · downloaded 08:05 PM · not podcastable
 - **Balls of Fury (Wii) - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
