@@ -40,6 +40,7 @@ FLEEKAZOID
 AsmonTV = 20
 CDawgVA = 20
 GarntM = 20
+Yessenia = 15
 ConnorDawg = 20
 GameLinked = 20
 techlinked = 20
