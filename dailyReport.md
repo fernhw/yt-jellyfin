@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-17
 
-> *Good afternoon! Here's what landed on Sunday, May 17, 2026 at 03:08 PM.*
-> **YT Mirror:** 535.35 GB used · 1.37 TB free
+> *Good evening! Here's what landed on Sunday, May 17, 2026 at 05:06 PM.*
+> **YT Mirror:** 535.42 GB used · 1.37 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@
 
 ### Non-Priority Videos
 
+- **What the f*ck is happening in Russia??** — *Asmongold TV* · downloaded 05:04 PM · not podcastable
 - **I Almost Made Ironmouse Quit Her Stream** — *ConnorDawg* · downloaded 03:06 PM · not podcastable
 - **Wax Heads, Motorsclice, Froggy Hates Snow and Everything Is Crab | Yahtzee Tries** — *Second Wind* · downloaded 11:35 AM · podcastable
 - **I MINIATURIZED The Greatest Practical Effect of All Time!** — *Corridor Crew* · downloaded 11:34 AM · not podcastable
