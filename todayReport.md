@@ -1,16 +1,17 @@
 # What to Watch — 2026-05-17
 
-> *Good morning! Here's what landed on Sunday, May 17, 2026 at 11:37 AM.*
-> **YT Mirror:** 533.89 GB used · 1.37 TB free
+> *Good afternoon! Here's what landed on Sunday, May 17, 2026 at 03:08 PM.*
+> **YT Mirror:** 535.35 GB used · 1.37 TB free
 
 ## Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **Subnautica 2** — *videogamedunkey* · downloaded 03:04 PM · not podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **I Almost Made Ironmouse Quit Her Stream** — *ConnorDawg* · downloaded 03:06 PM · not podcastable
 - **Wax Heads, Motorsclice, Froggy Hates Snow and Everything Is Crab | Yahtzee Tries** — *Second Wind* · downloaded 11:35 AM · podcastable
 - **I MINIATURIZED The Greatest Practical Effect of All Time!** — *Corridor Crew* · downloaded 11:34 AM · not podcastable
 - **DF Retro Super Show #014: Konami's Brilliant Sunset Riders - Arcade + Ports Revisited!** — *Digital Foundry* · downloaded 09:41 AM · not podcastable
