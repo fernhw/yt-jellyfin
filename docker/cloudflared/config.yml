@@ -1,14 +1,30 @@
-tunnel: <YOUR_TUNNEL_ID>
-credentials-file: /Users/alexander-highground/.cloudflared/<YOUR_TUNNEL_ID>.json
+tunnel: jellyfin-tunnel
+credentials-file: /Users/alexander-highground/.cloudflared/7c61e981-605e-4aa0-bfac-5a5f91237519.json
 
 ingress:
-  # ── Photos ──────────────────────────────────────────────
-  - hostname: photos.fernhw.com
-    service: http://localhost:2283
+  - hostname: jellyfin.fernhw.com
+    service: http://127.0.0.1:8096
 
-  # ── Add your other services below ───────────────────────
-  # - hostname: jellyfin.fernhw.com
-  #   service: http://localhost:8096
+  - hostname: abs.fernhw.com
+    service: http://127.0.0.1:13378
+
+  - hostname: report.fernhw.com
+    service: http://127.0.0.1:8765
+
+  - hostname: request.fernhw.com
+    service: http://127.0.0.1:8770
+
+  - hostname: drive.fernhw.com
+    service: http://127.0.0.1:7990
+
+  - hostname: office.fernhw.com
+    service: http://127.0.0.1:7991
+
+  - hostname: vault.fernhw.com
+    service: http://127.0.0.1:7992
+
+  - hostname: photos.fernhw.com
+    service: http://127.0.0.1:2283
 
   # Catch-all (required)
   - service: http_status:404

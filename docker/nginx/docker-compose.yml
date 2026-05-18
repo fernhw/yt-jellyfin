@@ -1,0 +1,14 @@
+name: nginx-local
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-local
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    extra_hosts:
+      # Allows the container to reach services on the Mac Mini host
+      - "host.docker.internal:host-gateway"
