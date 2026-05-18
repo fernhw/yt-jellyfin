@@ -142,6 +142,58 @@
 
   .footnote { font-size: 10px; color: #aaa; margin-top: 12px; text-align: center; line-height: 1.7; }
 
+  /* ── Legend ──────────────────────────────────────────────────────────────── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 24px;
+    padding: 8px 20px 12px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9.5px;
+    color: #555;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .legend-item img {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    border-radius: 3px;
+    display: block;
+  }
+  .legend-item .lem {
+    font-size: 12px;
+    line-height: 14px;
+    width: 14px;
+    text-align: center;
+    display: inline-block;
+  }
+  .legend-sep {
+    color: #ddd;
+    font-size: 11px;
+    line-height: 14px;
+    align-self: center;
+  }
+  .legend-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    align-self: center;
+    margin-right: 4px;
+  }
+
   @media (max-width: 1100px) { .grid { grid-template-columns: repeat(6, 1fr); } }
   @media (max-width: 700px)  { .grid { grid-template-columns: repeat(4, 1fr); } }
   @media (max-width: 480px)  { .grid { grid-template-columns: repeat(3, 1fr); } }
@@ -154,44 +206,67 @@
   <p><b>38 services. One Mac mini.</b> No ads &middot; No tracking &middot; No lock-in &middot; No one governs this.</p>
 </div>
 
+<div class="legend">
+  <span class="legend-label">Self hosted in server:</span>
+  <div class="legend-item"><img src="https://cdn.simpleicons.org/jellyfin" alt="" onerror="this.outerHTML='<span class=lem>🎬</span>'"> Jellyfin</div>
+  <span class="legend-sep">|</span>
+  <div class="legend-item"><img src="https://cdn.simpleicons.org/nextcloud" alt="" onerror="this.outerHTML='<span class=lem>☁️</span>'"> Nextcloud</div>
+  <span class="legend-sep">|</span>
+  <div class="legend-item"><img src="https://cdn.simpleicons.org/vaultwarden" alt="" onerror="this.outerHTML='<span class=lem>🔐</span>'"> Vaultwarden</div>
+  <span class="legend-sep">|</span>
+  <div class="legend-item"><img src="https://cdn.simpleicons.org/syncthing" alt="" onerror="this.outerHTML='<span class=lem>🔄</span>'"> Syncthing</div>
+  <span class="legend-sep">|</span>
+  <div class="legend-item"><img src="https://cdn.simpleicons.org/cloudflare" alt="" onerror="this.outerHTML='<span class=lem>🌐</span>'"> Cloudflare</div>
+  <span class="legend-sep">|</span>
+  <div class="legend-item"><img src="https://www.google.com/s2/favicons?sz=32&domain=onlyoffice.com" alt="" onerror="this.outerHTML='<span class=lem>📄</span>'"> OnlyOffice</div>
+  <span class="legend-sep">|</span>
+  <div class="legend-item"><img src="https://www.google.com/s2/favicons?sz=32&domain=audiobookshelf.org" alt="" onerror="this.outerHTML='<span class=lem>📚</span>'"> Audiobookshelf</div>
+  <span class="legend-sep">|</span>
+  <div class="legend-item"><img src="https://www.google.com/s2/favicons?sz=32&domain=finer.app" alt="" onerror="this.outerHTML='<span class=lem>🎵</span>'"> Finer</div>
+  <span class="legend-sep">|</span>
+  <div class="legend-item"><img src="https://www.google.com/s2/favicons?sz=32&domain=audiobooth.app" alt="" onerror="this.outerHTML='<span class=lem>🎙️</span>'"> Audiobooth</div>
+  <span class="legend-sep">|</span>
+  <div class="legend-item"><img src="https://www.google.com/s2/favicons?sz=32&domain=still.app" alt="" onerror="this.outerHTML='<span class=lem>📖</span>'"> Still</div>
+</div>
+
 <div class="grid">
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/netflix/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/netflix/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"><img class="sh-pin" src="https://cdn.simpleicons.org/jellyfin" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>🎬</span>')"></div>
     <div class="name">Netflix</div>
     <div class="price">$22.99/mo</div>
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/hbo/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/hbo/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"><img class="sh-pin" src="https://cdn.simpleicons.org/jellyfin" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>🎬</span>')"></div>
     <div class="name">Max</div>
     <div class="price">$15.99/mo</div>
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/crunchyroll/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/crunchyroll/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"><img class="sh-pin" src="https://cdn.simpleicons.org/jellyfin" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>🎬</span>')"></div>
     <div class="name">Crunchyroll</div>
     <div class="price">$7.99/mo</div>
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/spotify/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/spotify/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"><img class="sh-pin" src="https://cdn.simpleicons.org/jellyfin" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>🎬</span>')"><span class="sh-sep">+</span><img class="sh-pin" src="https://www.google.com/s2/favicons?sz=32&domain=finer.app" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>🎵</span>')"></div>
     <div class="name">Spotify</div>
     <div class="price">$11.99/mo</div>
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/youtube/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/youtube/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"><img class="sh-pin" src="https://cdn.simpleicons.org/jellyfin" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>🎬</span>')"></div>
     <div class="name">YouTube Premium</div>
     <div class="price">$13.99/mo</div>
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/audible/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/audible/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"><img class="sh-pin" src="https://www.google.com/s2/favicons?sz=32&domain=audiobookshelf.org" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>📚</span>')"><span class="sh-sep">+</span><img class="sh-pin" src="https://www.google.com/s2/favicons?sz=32&domain=audiobooth.app" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>🎙️</span>')"></div>
     <div class="name">Audible</div>
     <div class="price">$14.95/mo</div>
@@ -219,14 +294,14 @@
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/icloud/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/icloud/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"><img class="sh-pin" src="https://cdn.simpleicons.org/nextcloud" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>☁️</span>')"></div>
     <div class="name">iCloud+</div>
     <div class="price">$9.99/mo</div>
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/googledrive/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/googledrive/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"><img class="sh-pin" src="https://cdn.simpleicons.org/nextcloud" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>☁️</span>')"></div>
     <div class="name">Google Drive</div>
     <div class="price">$9.99/mo</div>
@@ -240,28 +315,28 @@
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/googlephotos/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/googlephotos/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"><img class="sh-pin" src="https://cdn.simpleicons.org/nextcloud" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>☁️</span>')"></div>
     <div class="name">Google Photos</div>
     <div class="price">$9.99/mo</div>
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/backblaze/3b82f6" alt="" onerror="this.outerHTML='<div class=em>☁️</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/backblaze/1e40af" alt="" onerror="this.outerHTML='<div class=em>☁️</div>'"></div>
     <div class="badge-strip"><img class="sh-pin" src="https://cdn.simpleicons.org/nextcloud" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>☁️</span>')"></div>
     <div class="name">Backblaze</div>
     <div class="price">$9.99/mo</div>
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/1password/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/1password/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"><img class="sh-pin" src="https://cdn.simpleicons.org/vaultwarden" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>🔐</span>')"></div>
     <div class="name">1Password</div>
     <div class="price">$4.99/mo</div>
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/ngrok/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/ngrok/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"><img class="sh-pin" src="https://cdn.simpleicons.org/cloudflare" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>🌐</span>')"></div>
     <div class="name">ngrok Pro</div>
     <div class="price">$8/mo</div>
@@ -275,21 +350,21 @@
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/notion/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/notion/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"></div>
     <div class="name">Notion AI</div>
     <div class="price">$10/mo</div>
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/obsidian/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/obsidian/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"><img class="sh-pin" src="https://cdn.simpleicons.org/syncthing" alt="" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=sh-pin-em>🔄</span>')"></div>
     <div class="name">Obsidian Sync</div>
     <div class="price">$5/mo</div>
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/todoist/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/todoist/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"></div>
     <div class="name">Todoist Pro</div>
     <div class="price">$4/mo</div>
@@ -324,7 +399,7 @@
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/hevy/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/hevy/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"></div>
     <div class="name">Hevy Pro</div>
     <div class="price">$5.99/mo</div>
@@ -373,7 +448,7 @@
     <div class="badge free">FREE</div>
   </div>
   <div class="card">
-    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/trakt/3b82f6" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
+    <div class="icon-wrap"><img src="https://cdn.simpleicons.org/trakt/1e40af" alt="" onerror="this.outerHTML='<div class=em>●</div>'"></div>
     <div class="badge-strip"></div>
     <div class="name">Trakt VIP</div>
     <div class="price">$2.99/mo</div>
@@ -425,9 +500,9 @@
 
 <div class="total-bar">
   <div class="main">
-    <div class="lbl">Saved every month</div>
-    <div class="num">$621</div>
-    <div class="per">$7,457 per year</div>
+    <div class="lbl">Saved every year</div>
+    <div class="num">$7,457</div>
+    <div class="per">$621 per month</div>
   </div>
   <div class="breakdown">
     <div class="bitem">
