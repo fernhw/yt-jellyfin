@@ -295,12 +295,20 @@
 </div>
 
 <div class="row">
-  <div class="name">iCloud+ 2TB <span class="price">$9.99/mo</span> <span class="free-tag">FREE</span></div>
-  <div class="what">Documents and projects synced between phone, laptop, and home, without Apple reading them.</div>
-  <div class="open"><b>Open with:</b> Syncthing (files just appear in the right folder on every device)</div>
-  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="name">iCloud+ 2TB + Google Drive 2TB + Dropbox combo <span class="price">$29.97/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Documents, projects, and any file synced between phone, laptop, and home — with proper shared drives for family and collaborators, version history, and native PC &amp; Mac desktop clients. <b>No Apple, Google, or Dropbox reading them.</b></div>
+  <div class="open"><b>Open with:</b> Nextcloud (web + desktop sync client for PC &amp; Mac — files appear in a folder on the computer exactly like Dropbox)</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span><span>Mac</span></div>
   <div class="offline">Offline by default: files live on the device, sync runs in the background when on network.</div>
-  <div class="free"><b>Free via:</b> Syncthing on the Mac mini and every device.</div>
+  <div class="free"><b>Free via:</b> Nextcloud on the Mac mini. Shared drives with anyone, versioned history, external sharing links, full collaboration — the desktop client makes it invisible.</div>
+</div>
+
+<div class="row">
+  <div class="name">Microsoft 365 Personal / Google Workspace <span class="price">$9.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Full Word, Excel, PowerPoint — real-time co-editing, comments, track changes, every feature. <b>OnlyOffice is Office 365 in every single detail but the name.</b> Native desktop apps for PC and Mac included. It even opens and saves .docx/.xlsx/.pptx with zero conversion.</div>
+  <div class="open"><b>Open with:</b> OnlyOffice — embedded directly inside Nextcloud, click any Office file in the drive and it opens live in the browser or desktop app</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span><span>Mac</span></div>
+  <div class="free"><b>Free via:</b> OnlyOffice Docs running alongside Nextcloud. No round-trip export, no format loss. The desktop apps install on any machine and talk to the same server.</div>
 </div>
 
 <div class="row">
@@ -312,11 +320,19 @@
 
 <div class="row">
   <div class="name">Google Photos / iCloud Photos 2TB <span class="price">$9.99/mo</span> <span class="free-tag">FREE</span></div>
-  <div class="what">Every phone photo backed up, searchable, viewable from anywhere, <b>without a company indexing every face, location, and timestamp in my life</b>.</div>
-  <div class="open"><b>Open with:</b> Photo Library viewer</div>
-  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span></div>
+  <div class="what">Every phone photo backed up, organized in albums, shared with family and friends, viewable from anywhere — <b>without a company indexing every face, location, and timestamp in my life</b>.</div>
+  <div class="open"><b>Open with:</b> Nextcloud Photos — built into Nextcloud, real albums, shared family albums, timeline view, auto-upload from phone</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span><span>Mac</span></div>
   <div class="offline">Offline by default: the phone keeps its own copy, the Mac keeps the master.</div>
-  <div class="free"><b>Free via:</b> phone camera roll auto-syncing into a personal photo library on the Mac.</div>
+  <div class="free"><b>Free via:</b> Nextcloud's built-in photo library. Auto-upload from phone, shared albums for friends and family, zero cloud ML processing or face profiling.</div>
+</div>
+
+<div class="row">
+  <div class="name">1Password Families / Keeper Business <span class="price">$4.99/mo</span> <span class="free-tag">FREE</span></div>
+  <div class="what">Every password, credit card, secure note, and 2FA code synced across all devices. Shared vaults for family. Browser extensions with autofill. <b>No company has a copy of a single credential — the vault never leaves my server.</b></div>
+  <div class="open"><b>Open with:</b> VaultWarden — uses the official Bitwarden app on every platform (identical UX to 1Password)</div>
+  <div class="devs"><span>iPhone</span><span>iPad</span><span>PC</span><span>Mac</span></div>
+  <div class="free"><b>Free via:</b> VaultWarden self-hosted on the Mac mini. Full Bitwarden clients on every device, browser extensions, autofill. Indistinguishable from 1Password or Keeper in daily use.</div>
 </div>
 
 <div class="row">
@@ -484,6 +500,8 @@
     <div class="app"><b>Jellyfin or Moonfin</b> <span>movies, shows, YouTube. My Netflix / HBO / Crunchyroll / YouTube replacement.</span></div>
     <div class="app"><b>Finamp</b> <span>music with playlists and offline. My Spotify replacement (any other Jellyfin client works too, huge community of headless options).</span></div>
     <div class="app"><b>AudioBookshelf</b> <span>audiobooks, books, podcasts and manga in one app. My Audible / Kindle / Shonen Jump replacement.</span></div>
+    <div class="app"><b>Nextcloud + OnlyOffice</b> <span>drive, photos, shared folders, real-time Office editing. My Google Drive + Microsoft 365 + Google Photos replacement.</span></div>
+    <div class="app"><b>VaultWarden (Bitwarden)</b> <span>passwords, 2FA, secure notes, browser autofill on every device. My 1Password / Keeper replacement.</span></div>
     <div class="app"><b>Request Portal</b> <span>web page on the phone: search anything, click request, it lands.</span></div>
     <div class="app"><b>Agnos Personal Assistant</b> <span>WhatsApp / Telegram / Discord interface. The brain behind every "Personal Assistant + Tools" service above.</span></div>
     <div class="app"><b>Daily Report card</b> <span>a single HTML card pushed every morning with what's airing, pending, due, and worth doing today.</span></div>
@@ -511,10 +529,13 @@
   <div class="line"><span class="item">Kindle Unlimited</span><span class="amt">$11.99</span></div>
   <div class="line"><span class="item">Shonen Jump + MangaPlus Pro</span><span class="amt">$4.99</span></div>
 
-  <div class="section-h">Storage &amp; Photos</div>
-  <div class="line"><span class="item">iCloud+ 2TB</span><span class="amt">$9.99</span></div>
+  <div class="section-h">Storage, Photos &amp; Productivity</div>
+  <div class="line"><span class="item">Nextcloud Drive — replaces iCloud+ 2TB</span><span class="amt">$9.99</span></div>
+  <div class="line"><span class="item">Nextcloud Drive — replaces Google Drive 2TB</span><span class="amt">$9.99</span></div>
+  <div class="line"><span class="item">Nextcloud Photos — replaces Google Photos / iCloud Photos</span><span class="amt">$9.99</span></div>
   <div class="line"><span class="item">Backblaze Personal Backup</span><span class="amt">$9.99</span></div>
-  <div class="line"><span class="item">Google Photos / iCloud Photos 2TB</span><span class="amt">$9.99</span></div>
+  <div class="line"><span class="item">VaultWarden — replaces 1Password Families / Keeper</span><span class="amt">$4.99</span></div>
+  <div class="line"><span class="item">OnlyOffice — replaces Microsoft 365 Personal</span><span class="amt">$9.99</span></div>
 
   <div class="section-h">Personal Assistant + Tools</div>
   <div class="line"><span class="item">Part-time virtual assistant (24/7)</span><span class="amt">$400.00</span></div>
@@ -539,14 +560,15 @@
   <div class="section-h">Infrastructure</div>
   <div class="line"><span class="item">ngrok Pro (public URLs)</span><span class="amt">$8.00</span></div>
 
-  <div class="subtotal"><span>Subtotal, would-be subscriptions</span><span>$665.65 / mo</span></div>
+  <div class="subtotal"><span>Subtotal, would-be subscriptions</span><span>$690.62 / mo</span></div>
 
   <div class="section-h">What I Actually Pay (credits)</div>
   <div class="line credit"><span class="item">OpenRouter tokens, the Agnos brain<sup>*</sup></span><span class="amt">-$40.00</span></div>
   <div class="line credit"><span class="item">Electricity (Mac mini 24/7)</span><span class="amt">-$3.00</span></div>
   <div class="line credit"><span class="item">Domain fernhw.com ($14.67 / yr)</span><span class="amt">-$1.22</span></div>
   <div class="line credit"><span class="item">Cloudflare Tunnel</span><span class="amt">FREE</span></div>
-  <div class="subtotal credit"><span>Subtotal, real recurring costs</span><span>-$44.22 / mo</span></div>
+  <div class="line credit"><span class="item">Xtrim / Tvcable — second fiber, load balance + failover via RB5009</span><span class="amt">-$24.99</span></div>
+  <div class="subtotal credit"><span>Subtotal, real recurring costs</span><span>-$69.21 / mo</span></div>
 
   <div style="font-family: -apple-system, sans-serif; font-size: 12.5px; color: #444; margin-top: 14px; padding: 14px 16px; background: #f0f6ff; border-left: 3px solid #1f6feb; border-radius: 4px;">
     <b>What the $40/mo OpenRouter bill actually buys:</b> the LLM tokens consumed by <b>Agnos</b>, my personal assistant running on the OpenClaw agent runtime. Agnos is the brain behind <i>only</i> the "Personal Assistant + Tools" section above: the 24/7 VA, auto-diary, daily recap, nutrition / training / water / vitamin trackers, habit accountability, wellness check-in, groceries, show scheduler, game backlog, tasks and reminders, money and cashflow, stock bot, knowledge wiki, creative writing, and life planning.
@@ -556,8 +578,8 @@
     Just on the Agnos cluster: <b>18 services, $519.80 / mo ($6,237.60 / yr)</b> replaced by one $40/mo token bill, leaving <b>$479.80 / mo saved</b> ($5,757.60 / yr) from Agnos alone.
   </div>
 
-  <div class="grand-line green"><span>NET SAVINGS (everything)</span><span>$621.43 / mo</span></div>
-  <div class="grand-line green"><span>PER YEAR</span><span>$7,457.13</span></div>
+  <div class="grand-line green"><span>NET SAVINGS (everything)</span><span>$621.41 / mo</span></div>
+  <div class="grand-line green"><span>PER YEAR</span><span>$7,456.92</span></div>
 </div>
 
 <div class="bill">
@@ -566,14 +588,15 @@
 
   <div class="section-h">Already Spent</div>
   <div class="line"><span class="item">MikroTik RB5009 router + wiring + UPS + box</span><span class="amt">$550.00</span></div>
+  <div class="line"><span class="item">EcoFlow River 3 — battery PSU, 4–5 hr server runtime on power outage</span><span class="amt">$299.00</span></div>
 
   <div class="section-h">Coming Up</div>
   <div class="line"><span class="item">DAS (direct-attached storage) + shipping</span><span class="amt">$1,200.00</span></div>
 
-  <div class="subtotal"><span>Total hardware investment</span><span>$1,750.00</span></div>
+  <div class="subtotal"><span>Total hardware investment</span><span>$2,049.00</span></div>
 
   <div style="font-family: -apple-system, sans-serif; font-size: 12px; color: #666; margin-top: 14px; padding-top: 12px; border-top: 1px dashed #d0d7de;">
-    Even if amortized over a single year, the $7,457 in subscription savings still covers the hardware <b>4x over</b>. Spread across the realistic 5-year life of these boxes, it's $350/yr. A rounding error against the savings. The other thing the hardware buys, that no subscription bundle ever could: <b>full ownership of every byte that touches my life</b>.
+    Even if amortized over a single year, the $7,457 in subscription savings still covers the hardware <b>3.6x over</b>. Spread across the realistic 5-year life of these boxes, it's $410/yr. A rounding error against the savings. The EcoFlow River 3 alone means a power outage no longer means downtime — the server stays online for 4–5 hours on battery. The other thing the hardware buys, that no subscription bundle ever could: <b>full ownership of every byte that touches my life</b>.
   </div>
 </div>
 
@@ -584,11 +607,11 @@
   <div class="breakdown">
     <div>
       <div class="lbl">Would-be subs</div>
-      <div class="val blue">$7,988 / yr</div>
+      <div class="val blue">$8,287 / yr</div>
     </div>
     <div>
       <div class="lbl">Real cost*</div>
-      <div class="val red">$531 / yr</div>
+      <div class="val red">$831 / yr</div>
     </div>
     <div>
       <div class="lbl">Saved</div>
@@ -596,7 +619,7 @@
     </div>
   </div>
   <div style="font-size: 11px; color: #b0b8c1; margin-top: 18px; text-align: center;">
-    *Real cost = Agnos brain (OpenRouter tokens) $40/mo + electricity $3/mo + domain $14.67/yr. Cloudflare Tunnel free.
+    *Real cost = Agnos brain (OpenRouter tokens) $40/mo + electricity $3/mo + domain $14.67/yr + Xtrim fiber redundancy $24.99/mo. Cloudflare Tunnel free. Netlife primary fiber is pre-existing infrastructure.
   </div>
 </div>
 
