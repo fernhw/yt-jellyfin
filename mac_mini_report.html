@@ -233,6 +233,73 @@
     font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
   }
   .bill .grand-line.green { color: #1a7f37; }
+
+  .freedom {
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 14px;
+    padding: 40px 38px;
+    margin-top: 36px;
+    color: #e6edf3;
+  }
+  .freedom .f-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    color: #58a6ff;
+    font-weight: 700;
+    margin-bottom: 18px;
+  }
+  .freedom .f-title {
+    font-size: 26px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.25;
+    letter-spacing: -0.5px;
+    margin-bottom: 22px;
+  }
+  .freedom .f-points {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .freedom .f-points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14.5px;
+    color: #c9d1d9;
+    line-height: 1.5;
+  }
+  .freedom .f-points li .icon {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    margin-top: 1px;
+  }
+  .freedom .f-points li b { color: #fff; }
+  .freedom .f-divider {
+    border: none;
+    border-top: 1px solid #21262d;
+    margin: 24px 0;
+  }
+  .freedom .f-closing {
+    font-size: 15px;
+    color: #8b949e;
+    line-height: 1.7;
+    font-style: italic;
+  }
+  .freedom .f-closing b { color: #e6edf3; font-style: normal; }
 </style>
 </head>
 <body>
@@ -620,6 +687,28 @@
   </div>
   <div style="font-size: 11px; color: #b0b8c1; margin-top: 18px; text-align: center;">
     *Real cost = Agnos brain (OpenRouter tokens) $40/mo + electricity $3/mo + domain $14.67/yr + Xtrim fiber redundancy $24.99/mo. Cloudflare Tunnel free. Netlife primary fiber is pre-existing infrastructure.
+  </div>
+</div>
+
+<div class="freedom">
+  <div class="f-label">Beyond the savings</div>
+  <div class="f-title">There is no price tag on not being governed.</div>
+
+  <ul class="f-points">
+    <li><div class="icon">&#x2715;</div><div><b>No ads. Ever.</b> Not blocked — absent. The server never made a deal with an advertiser. There is no mechanism for one to exist.</div></li>
+    <li><div class="icon">&#x1F441;</div><div><b>No tracking.</b> No pixel, no fingerprint, no session ID follows me between services. No profile is being built. No one knows what I watched, read, listened to, ate, weighed, or said today.</div></li>
+    <li><div class="icon">&#x1F6AB;</div><div><b>No one can ban me.</b> There is no Terms of Service that touches my media library, my passwords, my files, or my journals. No account strike, no platform policy update, no payment dispute takes any of it away.</div></li>
+    <li><div class="icon">&#x1F511;</div><div><b>No website knows my passwords.</b> VaultWarden runs on my machine. The vault is encrypted, local, and never handed to a third party. A breach at some SaaS company exposes nothing here.</div></li>
+    <li><div class="icon">&#x26A0;</div><div><b>A compromised Google account doesn’t cascade.</b> If Google, Apple, or any single provider goes down, gets hacked, or locks me out — I lose nothing. Every service on this list is independent. There is no single point of failure.</div></li>
+    <li><div class="icon">&#x1F512;</div><div><b>No lock-in. No hostage situation.</b> I don’t pay or lose my data. I don’t renew or lose access. Nothing here belongs to a subscription that can be revoked. The files are files. The database is mine. The domain is mine.</div></li>
+    <li><div class="icon">&#x1F310;</div><div><b>I didn’t leave the grid. I built over it.</b> Full connectivity, every service, every device, everywhere — just without a corporation in the middle deciding what I’m allowed to have, see, or keep.</div></li>
+  </ul>
+
+  <hr class="f-divider">
+
+  <div class="f-closing">
+    Every service on this page is one piece of the same thing: <b>true digital sovereignty</b>. Not paranoia, not inconvenience, not a compromise on features — the same experience, the same quality, often better, with the only difference being that the machine that runs it is in my home and the data in it belongs to no one but me.<br><br>
+    There is a world of services built on the assumption that you will pay forever, or hand over your data, or both. This is the proof that you don’t have to. <b>The only thing it costs is the knowledge to run it.</b>
   </div>
 </div>
 
