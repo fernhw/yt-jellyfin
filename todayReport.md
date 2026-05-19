@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-19
 
-> *Good afternoon! Here's what landed on Tuesday, May 19, 2026 at 03:20 PM.*
-> **YT Mirror:** 533.28 GB used · 1.38 TB free
+> *Good evening! Here's what landed on Tuesday, May 19, 2026 at 05:07 PM.*
+> **YT Mirror:** 534.22 GB used · 1.39 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **They’re Dumping The Problem On You** — *Bellular News* · downloaded 05:05 PM · podcastable
 - **Committing a FELONY for $150 is wild** — *Asmongold TV* · downloaded 03:18 PM · not podcastable
 - **AMAZING SET UP FOR WHAT'S TO COME! 2.8 MAIN STORY PLAYTHROUGH | Zenless Zone Zero VOD** — *Yessenia* · downloaded 03:17 PM · not podcastable
 - **Adaptations Don't Need to be Overly Faithful, They Just Need to be Good | The Backdrop** — *Second Wind* · downloaded 11:35 AM · podcastable
