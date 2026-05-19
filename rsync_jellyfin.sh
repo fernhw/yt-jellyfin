@@ -73,7 +73,9 @@ sync_library "music"    "$MUSIC_SRC"    "$MUSIC_DEST"
 sync_library "books"    "$BOOKS_SRC"    "$BOOKS_DEST"
 sync_library "podcasts" "$PODCASTS_SRC" "$PODCASTS_DEST"
 sync_library "manga"    "$MANGA_SRC"    "$MANGA_DEST"
-
+brew services restart cloudflared
+# or if running as a launchd service:
+launchctl stop com.cloudflare.cloudflared && launchctl start com.cloudflare.cloudflared
 # ---- VAULTWARDEN BACKUP (encrypted vault — db + RSA key both required to restore) ----
 # Note: passwords are client-side encrypted; server never sees plaintext.
 # Both db.sqlite3 and rsa_key.pem are needed together to restore a working instance.
