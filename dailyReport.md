@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-18
 
-> *Good evening! Here's what landed on Monday, May 18, 2026 at 10:16 PM.*
-> **YT Mirror:** 529.82 GB used · 1.39 TB free
+> *Good evening! Here's what landed on Monday, May 18, 2026 at 11:51 PM.*
+> **YT Mirror:** 529.90 GB used · 1.39 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **Holy f***ing sh*t..** — *Asmongold TV* · downloaded 11:48 PM · not podcastable
 - **The PlayStation Vita Slim** — *Scott's Stash* · downloaded 07:15 PM · not podcastable
 - **Yes, This All Seems Very Legitimate** — *Gamers Nexus* · downloaded 07:13 PM · not podcastable
 - **PlayStation Just Raised Prices Again** — *Spawn Wave* · downloaded 05:04 PM · not podcastable
