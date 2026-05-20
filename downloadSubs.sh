@@ -834,6 +834,18 @@ if [ -x "$PODCAST_TRANSFER" ]; then
   "$PODCAST_TRANSFER"
 fi
 
+# Check diskprices.com for drive deals (at most once every 6 hours)
+DISK_CHECK="$SCRIPT_DIR/diskPriceCheck.py"
+DISK_STAMP="$SCRIPT_DIR/.diskcheck_last"
+_now=$(date +%s)
+_last=0
+[ -f "$DISK_STAMP" ] && _last=$(cat "$DISK_STAMP" 2>/dev/null || echo 0)
+if [ $(( _now - _last )) -ge 21600 ]; then
+  echo "=== diskPriceCheck ==="
+  /usr/bin/python3 "$DISK_CHECK" >> "$SCRIPT_DIR/diskPriceCheck.log" 2>&1
+  echo "$_now" > "$DISK_STAMP"
+fi
+
 # Sync repo
 cd "$SCRIPT_DIR"
 git add .
