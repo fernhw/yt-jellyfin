@@ -1,0 +1,27 @@
+# Gyra — secrets and generated files (NEVER commit)
+.admin_key
+.fernet_key
+.secret_key
+
+# Database
+gyra.db
+gyra.db-wal
+gyra.db-shm
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+
+# Avatars (keep directory, not files)
+static/avatars/*
+!static/avatars/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — Board — Gyra{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <span class="project-key-badge">{{ project.key }}</span>
+    <h2>Sprint {{ current_sprint }}</h2>
+    <!-- Sprint navigation -->
+    {% if all_sprints|length > 1 %}
+    {% set idx = all_sprints.index(current_sprint) if current_sprint in all_sprints else -1 %}
+    <div class="sprint-nav">
+      {% if idx > 0 %}
+      <a href="{{ url_for('board', project_id=project.id, sprint=all_sprints[idx-1]) }}"
+         class="sprint-nav-btn" title="Sprint {{ all_sprints[idx-1] }}">‹</a>
+      {% else %}
+      <span class="sprint-nav-btn sprint-nav-disabled">‹</span>
+      {% endif %}
+      <span class="sprint-nav-label">{{ idx + 1 }} / {{ all_sprints|length }}</span>
+      {% if idx < all_sprints|length - 1 %}
+      <a href="{{ url_for('board', project_id=project.id, sprint=all_sprints[idx+1]) }}"
+         class="sprint-nav-btn" title="Sprint {{ all_sprints[idx+1] }}">›</a>
+      {% else %}
+      <span class="sprint-nav-btn sprint-nav-disabled">›</span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  <div class="page-header-right" style="display:flex;gap:8px;align-items:center">
+    <!-- Sticker toolbar -->
+    <button class="sticker-btn" data-type="exclamation" title="Add ! sticker">!</button>
+    <button class="sticker-btn sticker-btn-arrow" data-type="arrow" title="Add arrow sticker">→</button>
+    <a class="btn btn-primary btn-sm"
+       href="{{ url_for('story_new', project_id=project.id, sprint=current_sprint) }}">
+      + Story
+    </a>
+  </div>
+</div>
+
+<div class="board-wrap">
+  <div class="board" id="board" data-sprint="{{ current_sprint }}"
+       data-project="{{ project.id }}">
+    {% for status in statuses %}
+    <div class="board-column"
+         data-status-id="{{ status.id }}"
+         data-sprint="{{ current_sprint }}"
+         style="--col-color:{{ status.color }}">
+
+      <div class="board-col-header">
+        <span class="col-dot" style="background:{{ status.color }}"></span>
+        <span class="col-name">{{ status.name }}</span>
+        <span class="col-count">{{ board_map.get(status.id, []) | list | length }}</span>
+      </div>
+
+      <div class="board-cards" id="col-{{ status.id }}">
+        {% for story in board_map.get(status.id, []) %}
+        {# Deterministic rotation: -2 to +2 deg #}
+        {% set rot = (story.id * 7 % 5) - 2 %}
+        {# Card background: story type colour or warm yellow default #}
+        {% set card_bg = story.story_type_color if story.story_type_color else '#FFF9C4' %}
+        <div class="board-card"
+             draggable="true"
+             data-story-id="{{ story.id }}"
+             data-order-index="{{ story.order_index }}"
+             style="--rot:{{ rot }}deg; --card-bg:{{ card_bg }}"
+             onclick="window.location='{{ url_for('story_view', story_id=story.id) }}'">
+
+          <div class="card-top">
+            <span class="card-id">{{ project.key }}-{{ story.id }}</span>
+            {% if story.story_type_name %}
+            <span class="card-type-badge"
+                  style="background:{{ card_bg }};border-color:{{ story.story_type_color }};color:{{ story.story_type_color }}">
+              {{ story.story_type_name }}
+            </span>
+            {% endif %}
+          </div>
+          <div class="card-title">{{ story.title }}</div>
+
+          {% if story.thumbnail %}
+          {% set trot = (story.id * 3 % 7) - 3 %}
+          <div class="card-thumb-wrap" style="--trot:{{ trot }}deg">
+            <img src="{{ url_for('story_image', filename=story.thumbnail) }}" alt="">
+          </div>
+          {% endif %}
+
+          <div class="card-footer">
+            {% if story.story_points %}
+            <span class="card-points">{{ story.story_points }}pt</span>
+            {% endif %}
+            {% if story.assignees %}
+            <div class="card-assignees">
+              {% for a in story.assignees %}
+                {% if a.avatar %}
+                  <img src="{{ url_for('avatar', filename=a.avatar) }}"
+                       class="avatar-xs" title="{{ a.display_name }}" alt="">
+                {% else %}
+                  <span class="avatar-initial-xs" title="{{ a.display_name }}">
+                    {{ a.display_name[0]|upper }}
+                  </span>
+                {% endif %}
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- Sticker overlay layer — lives inside .board so it scrolls with it -->
+    <div id="sticker-layer" class="sticker-layer">
+      {% for sk in stickers %}
+      <div class="board-sticker sticker-{{ sk.type }}"
+           data-id="{{ sk.id }}"
+           style="left:{{ sk.x }}%;top:{{ sk.y }}%">
+        {% if sk.type == 'exclamation' %}!{% else %}→{% endif %}
+        <button class="sticker-del" data-id="{{ sk.id }}" title="Remove">✕</button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/board.js') }}"></script>
+<script src="{{ url_for('static', filename='js/stickers.js') }}"></script>
+{% endblock %}
+

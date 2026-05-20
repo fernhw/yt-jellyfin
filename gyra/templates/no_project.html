@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Gyra{% endblock %}
+{% block content %}
+<div class="empty-state">
+  <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+    <polygon points="24 4 44 16 44 32 24 44 4 32 4 16"/>
+    <line x1="24" y1="4"  x2="24" y2="44"/>
+    <line x1="4"  y1="16" x2="44" y2="16"/>
+    <line x1="4"  y1="32" x2="44" y2="32"/>
+  </svg>
+  <h2>Welcome to Gyra</h2>
+  <p>No projects yet. Create one to get started.</p>
+  {% if session.role == 'admin' %}
+  <a class="btn btn-primary" href="{{ url_for('admin_projects') }}">Create project</a>
+  {% else %}
+  <p class="form-hint">Ask your admin to create a project.</p>
+  {% endif %}
+</div>
+{% endblock %}

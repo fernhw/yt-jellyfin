@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — Backlog — Gyra{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <span class="project-key-badge">{{ project.key }}</span>
+    <h2>Backlog</h2>
+  </div>
+  <div class="page-header-right">
+    <a class="btn btn-primary btn-sm"
+       href="{{ url_for('story_new', project_id=project.id) }}">
+      + Create Story
+    </a>
+  </div>
+</div>
+
+{% if stories %}
+<div class="backlog-list">
+  {% for story in stories %}
+  <div class="backlog-row" data-story-id="{{ story.id }}">
+    <span class="bl-id">{{ project.key }}-{{ story.id }}</span>
+    <a class="bl-title" href="{{ url_for('story_view', story_id=story.id) }}">
+      {{ story.title }}
+    </a>
+    {% if story.story_points %}
+    <span class="card-points">{{ story.story_points }}pt</span>
+    {% endif %}
+    <div class="bl-assignees">
+      {% for a in story.assignees %}
+        {% if a.avatar %}
+          <img src="{{ url_for('avatar', filename=a.avatar) }}"
+               class="avatar-xs" title="{{ a.display_name }}" alt="">
+        {% else %}
+          <span class="avatar-initial-xs" title="{{ a.display_name }}">
+            {{ a.display_name[0]|upper }}
+          </span>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <button class="btn btn-sm btn-secondary move-to-sprint"
+            data-story-id="{{ story.id }}"
+            data-sprint="{{ current_sprint }}">
+      → Sprint {{ current_sprint }}
+    </button>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5">
+    <rect x="8" y="8" width="32" height="32" rx="4"/>
+    <line x1="16" y1="18" x2="32" y2="18"/>
+    <line x1="16" y1="24" x2="28" y2="24"/>
+    <line x1="16" y1="30" x2="22" y2="30"/>
+  </svg>
+  <p>The backlog is empty.</p>
+  <a class="btn btn-primary"
+     href="{{ url_for('story_new', project_id=project.id) }}">
+    Create first story
+  </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CSRF = document.querySelector('meta[name="csrf-token"]').content;
+document.querySelectorAll('.move-to-sprint').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const storyId = btn.dataset.storyId;
+    const sprint  = parseInt(btn.dataset.sprint, 10);
+    const res = await fetch(`/api/story/${storyId}/sprint`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRF-Token': CSRF},
+      body: JSON.stringify({ sprint }),
+    });
+    if (res.ok) btn.closest('.backlog-row').remove();
+  });
+});
+</script>
+{% endblock %}

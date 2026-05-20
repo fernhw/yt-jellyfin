@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Set up TOTP — Gyra{% endblock %}
+
+{% block auth_content %}
+<div class="auth-wrap">
+  <div class="auth-card auth-card-wide">
+    <div class="auth-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/>
+        <line x1="12" y1="2"  x2="12" y2="22"/>
+        <line x1="2"  y1="8.5"  x2="22" y2="8.5"/>
+        <line x1="2"  y1="15.5" x2="22" y2="15.5"/>
+      </svg>
+      <h1>Set up two-factor auth</h1>
+    </div>
+
+    <p class="auth-sub">
+      Welcome, <strong>{{ user.display_name }}</strong>.
+      Scan the QR code with your authenticator app (Google Authenticator, Authy, 1Password…),
+      then enter the 6-digit code to confirm.
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }} mb-4">{{ msg|safe }}</div>
+      {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="totp-setup-grid">
+      <div class="totp-qr">
+        <img src="{{ qr }}" alt="TOTP QR code" width="200" height="200">
+      </div>
+
+      <div class="totp-manual">
+        <p class="form-hint">Can't scan? Enter this key manually:</p>
+        <code class="totp-secret-display">{{ secret }}</code>
+
+        <form method="post" autocomplete="off">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+          <div class="form-group mt-4">
+            <label for="totp_code">Confirm your code</label>
+            <input id="totp_code" name="totp_code" type="text" inputmode="numeric"
+                   pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"
+                   required class="form-input totp-input" placeholder="000000" autofocus>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">Activate &amp; log in</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+{% if mode == 'new' %}
+  {% set page_title = 'New Story — Gyra' %}
+{% else %}
+  {% set page_title = story.project_key ~ '-' ~ story.id ~ ' — Gyra' %}
+{% endif %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="story-layout">
+
+  <!-- ── Main form ── -->
+  <div class="story-main">
+    {% if mode == 'view' %}
+    <div class="story-breadcrumb">
+      <a href="{{ url_for('board', project_id=story.project_id) }}">{{ story.project_name }}</a>
+      <span>/</span>
+      <span class="story-key">{{ story.project_key }}-{{ story.id }}</span>
+    </div>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }} mb-3">{{ msg|safe }}</div>
+      {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="post"
+          action="{{ url_for('story_view', story_id=story.id) if mode == 'view' else url_for('story_new') }}"
+          id="story-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="{{ 'update' if mode == 'view' else 'create' }}">
+      {% if mode == 'new' %}
+      <input type="hidden" name="project_id" value="{{ project_id }}">
+      {% endif %}
+
+      <!-- ── User-story builder ─────────────────────── -->
+      <div class="story-builder-card">
+        <div class="story-builder-label">User Story</div>
+        <div class="story-builder-row">
+
+          <select name="story_actor" class="sb-select" id="sb-actor">
+            {% for opt in ['User', 'Developer', 'Admin', 'Guest', 'Manager'] %}
+            <option value="{{ opt }}"
+              {{ 'selected' if story and story.story_actor == opt
+                 else ('selected' if not story and opt == 'User' else '') }}>
+              {{ opt }}
+            </option>
+            {% endfor %}
+          </select>
+
+          <div class="sb-field-wrap">
+            <input name="story_verb" type="text" class="sb-input sb-verb-input" id="sb-verb"
+                   placeholder="needs / wants / must…"
+                   list="verb-connector-suggestions"
+                   value="{{ story.story_verb if story and story.story_verb else 'needs' }}"
+                   required autocomplete="off">
+            <datalist id="verb-connector-suggestions">
+              {% for v in ['needs','wants','requires','must have','should be able to',
+                           'has to','would like to','expects to','can','wishes to',
+                           'needs to be able to','should','must be able to'] %}
+              <option value="{{ v }}">
+              {% endfor %}
+            </datalist>
+            <span class="sb-hint" id="sb-verb-hint"> </span>
+          </div>
+
+          <div class="sb-field-wrap">
+            <input name="story_z" type="text" class="sb-input sb-verb-input" id="sb-z"
+                   placeholder="Verb (e.g. Walking)"
+                   list="verb-suggestions"
+                   value="{{ story.story_z if story and story.story_z else '' }}"
+                   required autocomplete="off">
+            <datalist id="verb-suggestions">
+              {% for v in ['Accessing','Adding','Allowing','Browsing','Building','Checking',
+                           'Choosing','Clicking','Completing','Configuring','Connecting',
+                           'Creating','Deleting','Deploying','Downloading','Editing',
+                           'Exporting','Filtering','Finding','Generating','Implementing',
+                           'Importing','Integrating','Launching','Loading','Logging',
+                           'Managing','Monitoring','Navigating','Ordering','Processing',
+                           'Reading','Running','Saving','Searching','Selecting','Setting',
+                           'Sharing','Submitting','Switching','Testing','Tracking',
+                           'Uploading','Using','Validating','Verifying','Viewing',
+                           'Walking','Writing'] %}
+              <option value="{{ v }}">
+              {% endfor %}
+            </datalist>
+            <span class="sb-hint">gerund verb</span>
+          </div>
+
+          <input name="story_x" type="text" class="sb-input sb-x-input" id="sb-x"
+                 placeholder="…what / the feature"
+                 value="{{ story.story_x if story and story.story_x else '' }}"
+                 required>
+
+          <select name="story_for" class="sb-select" id="sb-for">
+            {% for opt in ['to', 'because', 'so they'] %}
+            <option value="{{ opt }}"
+              {{ 'selected' if story and story.story_for == opt
+                 else ('selected' if not story and opt == 'to' else '') }}>
+              {{ opt }}
+            </option>
+            {% endfor %}
+          </select>
+
+          <input name="story_y" type="text" class="sb-input sb-y-input" id="sb-y"
+                 placeholder="…the goal or outcome"
+                 value="{{ story.story_y if story and story.story_y else '' }}"
+                 required>
+        </div>
+
+        <div class="story-preview-bar">
+          <span class="story-preview-text" id="story-preview">
+            {{ story.title if story else 'Preview will appear here…' }}
+          </span>
+          <span class="story-wc" id="story-wc">0 / 19</span>
+        </div>
+      </div>
+
+      <div class="form-group mt-4">
+        <label>Description</label>
+        <textarea name="description" rows="4" class="form-input"
+                  placeholder="More context…">{{ story.description if story else '' }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Acceptance Criteria</label>
+        <textarea name="acceptance_criteria" rows="3" class="form-input"
+                  placeholder="Given / When / Then…">{{ story.acceptance_criteria if story else '' }}</textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Story Points</label>
+          <select name="story_points" class="form-input form-select">
+            {% for pt in [0,1,2,3,5,8,13,21] %}
+            <option value="{{ pt }}"
+              {{ 'selected' if story and story.story_points == pt else '' }}>
+              {{ pt if pt else '—' }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select name="story_type" class="form-input form-select" id="sb-type-sel">
+            <option value="">— None —</option>
+            {% for t in story_types %}
+            <option value="{{ t.id }}"
+                    data-color="{{ t.color }}"
+                    {{ 'selected' if story and story.story_type == t.id else '' }}>
+              {{ t.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select name="status_id" class="form-input form-select">
+            <option value="">— Backlog —</option>
+            {% for st in statuses %}
+            <option value="{{ st.id }}"
+              {{ 'selected' if story and story.status_id == st.id else '' }}>
+              {{ st.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Sprint</label>
+          <input name="sprint" type="number" min="1" class="form-input"
+                 placeholder="— Backlog —"
+                 value="{{ story.sprint if story and story.sprint else '' }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Assignees <span class="form-hint-inline">(hold ⌘/Ctrl for multiple)</span></label>
+        <select name="assignee_ids" multiple class="form-input form-multi-select">
+          {% for u in all_users %}
+          <option value="{{ u.id }}"
+            {{ 'selected' if u.id in assignee_ids else '' }}>
+            {{ u.display_name }} (@{{ u.username }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="story-actions">
+        <button type="submit" class="btn btn-primary">
+          {{ 'Save changes' if mode == 'view' else 'Create story' }}
+        </button>
+        {% if mode == 'view' %}
+        <button type="submit" form="delete-form" class="btn btn-danger"
+                onclick="return confirm('Delete this story permanently?')">Delete</button>
+        {% endif %}
+      </div>
+    </form>
+
+    <!-- ── Images ──────────────────────────────────────── -->
+    {% if mode == 'view' %}
+    <div class="story-images-section mt-4">
+      <h3>Images</h3>
+      {% if images %}
+      <div class="story-images-grid">
+        {% for img in images %}
+        <div class="story-image-item">
+          <img src="{{ url_for('story_image', filename=img.filename) }}" alt="">
+          <form method="post" action="{{ url_for('story_view', story_id=story.id) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="delete_image">
+            <input type="hidden" name="image_id" value="{{ img.id }}">
+            <button type="submit" class="btn-img-delete" title="Remove">✕</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <form method="post" enctype="multipart/form-data"
+            action="{{ url_for('story_view', story_id=story.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="upload_image">
+        <label class="img-upload-label">
+          <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp"
+                 style="display:none" onchange="this.form.submit()">
+          + Attach image
+        </label>
+      </form>
+    </div>
+
+    <form id="delete-form" method="post"
+          action="{{ url_for('story_view', story_id=story.id) }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="delete">
+    </form>
+
+    <!-- Comments -->
+    <section class="comments-section">
+      <h3>Activity</h3>
+      {% for c in comments %}
+      <div class="comment">
+        <div class="comment-meta">
+          {% if c.avatar %}
+            <img src="{{ url_for('avatar', filename=c.avatar) }}" class="avatar-xs" alt="">
+          {% else %}
+            <span class="avatar-initial-xs">{{ c.display_name[0]|upper }}</span>
+          {% endif %}
+          <strong>{{ c.display_name }}</strong>
+          <time>{{ c.created_at | datetimeformat }}</time>
+        </div>
+        <p class="comment-body">{{ c.content }}</p>
+      </div>
+      {% else %}
+      <p class="form-hint">No comments yet.</p>
+      {% endfor %}
+      <form method="post" action="{{ url_for('story_view', story_id=story.id) }}"
+            class="comment-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="comment">
+        <textarea name="content" rows="3" class="form-input"
+                  placeholder="Add a comment…" required></textarea>
+        <button type="submit" class="btn btn-secondary mt-2">Post comment</button>
+      </form>
+    </section>
+    {% endif %}
+  </div>
+
+  <!-- ── Sidebar meta ── -->
+  {% if mode == 'view' and story %}
+  <aside class="story-meta card">
+    <div class="card-body">
+      <div class="meta-block">
+        <span class="meta-label">Status</span>
+        <span class="status-pill"
+              style="background:{{ (story.status_color or '#6B7280') }}22;
+                     color:{{ story.status_color or '#6B7280' }}">
+          {{ story.status_name or 'Backlog' }}
+        </span>
+      </div>
+      <div class="meta-block">
+        <span class="meta-label">Sprint</span>
+        <span class="meta-value">{{ story.sprint or '— Backlog —' }}</span>
+      </div>
+      <div class="meta-block">
+        <span class="meta-label">Points</span>
+        <span class="meta-value">{{ story.story_points or '—' }}</span>
+      </div>
+      <div class="meta-block">
+        <span class="meta-label">Assignees</span>
+        <div class="meta-assignees">
+          {% for a in assignees %}
+          <div class="meta-user">
+            {% if a.avatar %}
+              <img src="{{ url_for('avatar', filename=a.avatar) }}" class="avatar-xs" alt="">
+            {% else %}
+              <span class="avatar-initial-xs">{{ a.display_name[0]|upper }}</span>
+            {% endif %}
+            <span>{{ a.display_name }}</span>
+          </div>
+          {% else %}
+          <span class="form-hint">Unassigned</span>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="meta-block">
+        <span class="meta-label">Reporter</span>
+        <span class="meta-value">{{ story.creator_name or '—' }}</span>
+      </div>
+      <div class="meta-block">
+        <span class="meta-label">Created</span>
+        <span class="meta-value">{{ story.created_at | datetimeformat }}</span>
+      </div>
+      {% if story.updated_at %}
+      <div class="meta-block">
+        <span class="meta-label">Updated</span>
+        <span class="meta-value">{{ story.updated_at | datetimeformat }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </aside>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  const actor    = document.getElementById('sb-actor');
+  const verb     = document.getElementById('sb-verb');
+  const verbHint = document.getElementById('sb-verb-hint');
+  const z        = document.getElementById('sb-z');
+  const x        = document.getElementById('sb-x');
+  const fc       = document.getElementById('sb-for');
+  const y        = document.getElementById('sb-y');
+  const prev     = document.getElementById('story-preview');
+  const wc       = document.getElementById('story-wc');
+  if (!actor) return;
+
+  // Gerund verbs for the Z (action) field
+  const ACTION_VERBS = new Set([
+    'accessing','adding','allowing','browsing','building','checking',
+    'choosing','clicking','completing','configuring','connecting',
+    'creating','deleting','deploying','downloading','editing',
+    'exporting','filtering','finding','generating','implementing',
+    'importing','integrating','launching','loading','logging',
+    'managing','monitoring','navigating','ordering','processing',
+    'reading','running','saving','searching','selecting','setting',
+    'sharing','submitting','switching','testing','tracking',
+    'uploading','using','validating','verifying','viewing',
+    'walking','writing'
+  ]);
+
+  // Simple English verb-like detection for the connector (story_verb) field:
+  // valid if it contains at least one recognised root or ends in a verb pattern
+  const CONNECTOR_ROOTS = new Set([
+    'need','needs','want','wants','require','requires','must','should',
+    'can','expect','expects','wish','wishes','would','like','has','have',
+    'to','be','able'
+  ]);
+
+  function looksLikeVerbPhrase(s) {
+    if (!s.trim()) return false;
+    const words = s.trim().toLowerCase().split(/\s+/);
+    // Accept if the first word is a known connector root
+    return CONNECTOR_ROOTS.has(words[0]);
+  }
+
+  function wordCount(s) { return s.trim() ? s.trim().split(/\s+/).length : 0; }
+
+  function update() {
+    // Connector (story_verb) free-text validation
+    if (verb.value.trim()) {
+      if (looksLikeVerbPhrase(verb.value)) {
+        verb.style.borderColor = '';
+        if (verbHint) { verbHint.textContent = ''; verbHint.style.color = ''; }
+      } else {
+        verb.style.borderColor = '#F59E0B';
+        if (verbHint) { verbHint.textContent = 'should be a verb phrase'; verbHint.style.color = '#B45309'; }
+      }
+    } else {
+      verb.style.borderColor = '';
+      if (verbHint) verbHint.textContent = '';
+    }
+
+    // Z action-verb validation
+    const firstWord = z.value.trim().split(/\s+/)[0].toLowerCase();
+    z.style.borderColor = (z.value && !ACTION_VERBS.has(firstWord)) ? '#DC2626' : '';
+
+    // Live preview
+    const parts = [actor.value, verb.value.trim(), z.value.trim(),
+                   x.value.trim(), fc.value, y.value.trim()];
+    if (prev) prev.textContent = parts.filter(Boolean).join(' ') || 'Preview will appear here…';
+
+    const total = parts.reduce((n, p) => n + wordCount(p), 0);
+    if (wc) {
+      wc.textContent = total + ' / 19';
+      wc.style.color = total > 19 ? '#DC2626' : '#6B7280';
+    }
+  }
+
+  [actor, verb, z, x, fc, y].forEach(el => el && el.addEventListener('input', update));
+  update();
+
+  document.getElementById('story-form').addEventListener('submit', function(e) {
+    // Connector verb check (warn, don't block)
+    if (verb.value.trim() && !looksLikeVerbPhrase(verb.value)) {
+      if (!confirm("'" + verb.value.trim() + "' doesn't look like a verb phrase (e.g. needs, wants, must have).\nSave anyway?")) {
+        verb.focus(); e.preventDefault(); return false;
+      }
+    }
+    // Action verb (Z) — strict block
+    const fw = z.value.trim().split(/\s+/)[0].toLowerCase();
+    if (z.value.trim() && !ACTION_VERBS.has(fw)) {
+      e.preventDefault();
+      alert("'" + z.value.trim().split(' ')[0] + "' is not a recognised action verb.\nStart with a gerund like Walking, Testing, Building…");
+      z.focus(); return false;
+    }
+    // Word count
+    const parts = [actor.value, verb.value, z.value, x.value, fc.value, y.value];
+    const total = parts.reduce((n, p) => n + wordCount(p), 0);
+    if (total > 19) {
+      e.preventDefault();
+      alert('Story is ' + total + ' words — max is 19. Please shorten it.');
+      return false;
+    }
+  });
+})();
+</script>
+{% endblock %}

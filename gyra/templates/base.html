@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}Gyra{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+{% if session.user_id %}
+<div class="layout">
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <a class="sidebar-brand" href="{{ url_for('index') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/>
+        <line x1="12" y1="2"  x2="12" y2="22"/>
+        <line x1="2"  y1="8.5"  x2="22" y2="8.5"/>
+        <line x1="2"  y1="15.5" x2="22" y2="15.5"/>
+      </svg>
+      <span>Gyra</span>
+    </a>
+
+    <nav class="sidebar-nav">
+      {% for p in projects %}
+      <div class="sidebar-section">
+        <span class="sidebar-proj-key">{{ p.key }}</span>
+        <span class="sidebar-proj-name">{{ p.name }}</span>
+        <a class="sidebar-link{% if request.endpoint == 'board' and project is defined and project and project.id == p.id %} active{% endif %}"
+           href="{{ url_for('board', project_id=p.id) }}">
+          <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="3" width="4" height="14" rx="1"/><rect x="8" y="3" width="4" height="10" rx="1"/><rect x="14" y="3" width="4" height="6" rx="1"/></svg>
+          Board
+        </a>
+        <a class="sidebar-link{% if request.endpoint == 'backlog' and project is defined and project and project.id == p.id %} active{% endif %}"
+           href="{{ url_for('backlog', project_id=p.id) }}">
+          <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="4" width="16" height="2" rx="1"/><rect x="2" y="9" width="16" height="2" rx="1"/><rect x="2" y="14" width="10" height="2" rx="1"/></svg>
+          Backlog
+        </a>
+      </div>
+      {% endfor %}
+    </nav>
+
+    <div class="sidebar-footer">
+      {% if session.role == 'admin' %}
+      <a class="sidebar-link admin-link" href="{{ url_for('admin_users') }}">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+        Users
+      </a>
+      <a class="sidebar-link admin-link" href="{{ url_for('admin_projects') }}">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm6 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm6 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2z"/></svg>
+        Projects
+      </a>
+      {% endif %}
+
+      <a class="sidebar-link user-link" href="{{ url_for('profile') }}">
+        {% if session.avatar %}
+          <img src="{{ url_for('avatar', filename=session.avatar) }}" class="avatar-xs" alt="">
+        {% else %}
+          <span class="avatar-initial-xs">{{ session.display_name[0]|upper }}</span>
+        {% endif %}
+        <span>{{ session.display_name }}</span>
+      </a>
+
+      <a class="sidebar-link" href="{{ url_for('logout') }}">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V5h10v10H4a1 1 0 100 2h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm9.293 4.293a1 1 0 011.414 1.414L12.414 10l1.293 1.293a1 1 0 01-1.414 1.414l-2-2a1 1 0 010-1.414l2-2z" clip-rule="evenodd"/></svg>
+        Sign out
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-stack">
+      {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }}">{{ msg|safe }}
+        <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+{% else %}
+  {% block auth_content %}{% endblock %}
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/gyra.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

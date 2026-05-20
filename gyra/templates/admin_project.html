@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Projects — Admin — Gyra{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Projects</h2>
+</div>
+
+<div class="card mb-6">
+  <div class="card-header"><h3>New project</h3></div>
+  <form method="post" action="{{ url_for('admin_create_project') }}"
+        class="card-body form-inline-grid">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="form-group">
+      <label>Project name</label>
+      <input name="name" type="text" class="form-input" required placeholder="My Product">
+    </div>
+    <div class="form-group">
+      <label>Key <span class="form-hint-inline">(e.g. PROD, GYRA)</span></label>
+      <input name="key" type="text" class="form-input" required
+             placeholder="PROD" maxlength="8" style="text-transform:uppercase">
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <input name="description" type="text" class="form-input" placeholder="Optional">
+    </div>
+    <div class="form-group form-group-action">
+      <button type="submit" class="btn btn-primary">Create project</button>
+    </div>
+  </form>
+</div>
+
+{% for p in all_projects %}
+<div class="card mb-4">
+  <div class="card-header project-card-header">
+    <div>
+      <span class="project-key-badge">{{ p.key }}</span>
+      <strong>{{ p.name }}</strong>
+      {% if p.description %}<span class="form-hint ml-2">{{ p.description }}</span>{% endif %}
+    </div>
+    <div class="action-group">
+      <a href="{{ url_for('board',   project_id=p.id) }}" class="btn btn-xs btn-secondary">Board</a>
+      <a href="{{ url_for('backlog', project_id=p.id) }}" class="btn btn-xs btn-secondary">Backlog</a>
+    </div>
+  </div>
+  <div class="card-body">
+    <p class="form-hint mb-2">Kanban columns</p>
+    <div class="status-chips">
+      {% for st in p.statuses %}
+      <span class="status-chip" style="border-color:{{ st.color }};color:{{ st.color }}">
+        {{ st.name }}{% if st.is_done %} ✓{% endif %}
+      </span>
+      {% endfor %}
+    </div>
+    <form method="post" action="{{ url_for('admin_add_status', project_id=p.id) }}"
+          class="form-inline mt-3">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input name="name"  type="text"  class="form-input form-input-sm"
+             placeholder="Column name" required>
+      <input name="color" type="color" value="#6B7280" class="color-picker">
+      <label class="checkbox-label">
+        <input name="is_done" type="checkbox" value="1"> Done column
+      </label>
+      <button type="submit" class="btn btn-xs btn-secondary">+ Add column</button>
+    </form>
+  </div>
+</div>
+{% else %}
+<div class="empty-state"><p>No projects yet. Create one above.</p></div>
+{% endfor %}
+{% endblock %}
