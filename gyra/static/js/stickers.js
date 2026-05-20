@@ -1,4 +1,4 @@
-/* stickers.js — board overlay stickers (arrows + exclamation) */
+/* stickers.js — board overlay stickers */
 (function () {
   'use strict';
 
@@ -14,27 +14,58 @@
   const projectId = board.dataset.project;
   const sprint    = board.dataset.sprint;
 
-  // ── Drag-move sticker ────────────────────────────────────────────────────
-  let dragging   = null;
-  let dragOffset = { x: 0, y: 0 };
+  // Map type → display html
+  const STICKER_HTML = {
+    exclamation: '!',
+    arrow:       '→',
+    question:    '?',
+    star:        '★',
+    fire:        '🔥',
+    eyes:        '👀',
+    check:       '✓',
+    blocked:     '✕',
+    up:          '↑',
+    note:        '#',
+  };
 
-  function pct(px, dim) { return (px / dim) * 100; }
+  // ── Zoom-aware drag ──────────────────────────────────────────────────────
+  // board.dataset.zoom is kept in sync by the zoom-control script in board.html.
+  // sticker left/top percentages are relative to the NATURAL (pre-zoom) board
+  // dimensions, but mouse coords are in viewport pixels.
+  // Conversion: natural_offset = viewport_offset / zoom
+
+  function getZoom() {
+    return parseFloat(board.dataset.zoom || '1');
+  }
+
+  let dragging   = null;
+  let dragOffset = { x: 0, y: 0 }; // viewport pixels from sticker visual top-left
 
   function startStickerDrag(sticker, e) {
     e.stopPropagation();
     dragging = sticker;
-    const rect = sticker.getBoundingClientRect();
+    const rect = sticker.getBoundingClientRect(); // always viewport coords
     dragOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     sticker.classList.add('sticker-dragging');
   }
 
   document.addEventListener('mousemove', e => {
     if (!dragging) return;
-    const wr = board.getBoundingClientRect(); // use board, not wrap
-    const x  = pct(e.clientX - wr.left - dragOffset.x, wr.width);
-    const y  = pct(e.clientY - wr.top  - dragOffset.y, wr.height);
-    dragging.style.left = Math.max(0, Math.min(95, x)) + '%';
-    dragging.style.top  = Math.max(0, Math.min(95, y)) + '%';
+    const z  = getZoom();
+    const wr = board.getBoundingClientRect(); // wr.left/top are always viewport coords
+
+    // Convert viewport offset to natural (pre-zoom) board coordinate space
+    const nw = board.offsetWidth;   // natural width, unaffected by CSS zoom
+    const nh = board.offsetHeight;  // natural height
+
+    const bx = (e.clientX - wr.left - dragOffset.x) / z;
+    const by = (e.clientY - wr.top  - dragOffset.y) / z;
+
+    const x = (bx / nw) * 100;
+    const y = (by / nh) * 100;
+
+    dragging.style.left = Math.max(0, Math.min(94, x)) + '%';
+    dragging.style.top  = Math.max(0, Math.min(94, y)) + '%';
   });
 
   document.addEventListener('mouseup', () => {
@@ -70,12 +101,25 @@
 
   document.querySelectorAll('.board-sticker').forEach(wireSticker);
 
-  // ── Add new sticker from toolbar ─────────────────────────────────────────
-  document.querySelectorAll('.sticker-btn').forEach(btn => {
+  // ── Dropdown toggle ──────────────────────────────────────────────────────
+  const menuToggle = document.getElementById('sticker-menu-toggle');
+  const menu       = document.getElementById('sticker-menu');
+  if (menuToggle && menu) {
+    menuToggle.addEventListener('click', e => {
+      e.stopPropagation();
+      menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    });
+    document.addEventListener('click', () => { if (menu) menu.style.display = 'none'; });
+    menu.addEventListener('click', e => e.stopPropagation());
+  }
+
+  // ── Add new sticker from dropdown ────────────────────────────────────────
+  document.querySelectorAll('.sticker-btn[data-type]').forEach(btn => {
     btn.addEventListener('click', () => {
+      if (menu) menu.style.display = 'none';
       const type = btn.dataset.type;
       const x    = 10 + Math.random() * 40;
-      const y    = 10 + Math.random() * 40;
+      const y    = 5  + Math.random() * 35;
 
       fetch('/api/stickers', {
         method: 'POST',
@@ -89,12 +133,12 @@
       .then(r => r.json())
       .then(data => {
         if (!data.id) return;
-        const el        = document.createElement('div');
-        el.className    = `board-sticker sticker-${type}`;
-        el.dataset.id   = data.id;
-        el.style.left   = x + '%';
-        el.style.top    = y + '%';
-        el.innerHTML    = (type === 'exclamation' ? '!' : '→') +
+        const el      = document.createElement('div');
+        el.className  = `board-sticker sticker-${type}`;
+        el.dataset.id = data.id;
+        el.style.left = x + '%';
+        el.style.top  = y + '%';
+        el.innerHTML  = (STICKER_HTML[type] || type) +
           `<button class="sticker-del" data-id="${data.id}" title="Remove">✕</button>`;
         layer.appendChild(el);
         wireSticker(el);

@@ -2,17 +2,21 @@
 
 ## What to Watch — 2026-05-20
 
-> *Good morning! Here's what landed on Wednesday, May 20, 2026 at 11:39 AM.*
-> **YT Mirror:** 535.35 GB used · 1.18 TB free
+> *Good afternoon! Here's what landed on Wednesday, May 20, 2026 at 03:13 PM.*
+> **YT Mirror:** 536.18 GB used · 1.18 TB free
 
 ### Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **Forza Horizon 6 vs Samson** — *videogamedunkey* · downloaded 03:05 PM · not podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **Google I/O 2026 Made Me Want to Cry** — *SAMTIME* · downloaded 03:09 PM · not podcastable
+- **This video f***ed me up..** — *Asmongold TV* · downloaded 03:08 PM · not podcastable
+- **The Insane World of NASCAR...** — *Papa Meat* · downloaded 03:07 PM · not podcastable
+- **Mind Over Magnet is in Humble Bundle's puzzle pack** — *Game Maker's Toolkit* · downloaded 03:06 PM · not podcastable
 - **Inside 007 First Light - A Deep Dive Into The Evolved Glacier Engine [Sponsored]** — *Digital Foundry* · downloaded 11:37 AM · not podcastable
 - **Movies to Watch in Film School (That Your Professors Won’t Show You)** — *Karsten Runquist* · downloaded 11:35 AM · not podcastable
 - **Directive 8020 | Fully Ramblomatic** — *Second Wind* · downloaded 11:34 AM · podcastable

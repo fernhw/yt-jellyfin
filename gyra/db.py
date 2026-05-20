@@ -116,6 +116,48 @@ CREATE TABLE IF NOT EXISTS stickers (
     created_by INTEGER REFERENCES users(id),
     created_at INTEGER NOT NULL
 );
+
+-- Epics: theme groups that span multiple stories
+CREATE TABLE IF NOT EXISTS epics (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    title       TEXT    NOT NULL,
+    color       TEXT    NOT NULL DEFAULT '#6B7280',
+    description TEXT    DEFAULT '',
+    created_at  INTEGER NOT NULL,
+    created_by  INTEGER REFERENCES users(id)
+);
+
+-- Story sub-tasks / checklist ("mini waterfall")
+CREATE TABLE IF NOT EXISTS story_addons (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    story_id         INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+    content          TEXT    NOT NULL,
+    assigned_user_id INTEGER REFERENCES users(id),
+    order_index      INTEGER DEFAULT 0,
+    created_at       INTEGER NOT NULL,
+    created_by       INTEGER REFERENCES users(id)
+);
+
+-- Per-user completion state for each addon item
+CREATE TABLE IF NOT EXISTS addon_statuses (
+    addon_id   INTEGER NOT NULL REFERENCES story_addons(id) ON DELETE CASCADE,
+    user_id    INTEGER NOT NULL REFERENCES users(id),
+    is_done    INTEGER DEFAULT 0,
+    updated_at INTEGER,
+    PRIMARY KEY (addon_id, user_id)
+);
+
+-- Story change history log
+CREATE TABLE IF NOT EXISTS story_history (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    story_id   INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+    user_id    INTEGER NOT NULL REFERENCES users(id),
+    field_name TEXT    NOT NULL,
+    old_value  TEXT    DEFAULT NULL,
+    new_value  TEXT    DEFAULT NULL,
+    created_at INTEGER NOT NULL
+);
 """
 
 
@@ -146,6 +188,8 @@ def _migrate_db() -> None:
         ("stories", "story_for",   "TEXT DEFAULT NULL"),
         ("stories", "story_y",     "TEXT DEFAULT NULL"),
         ("stories", "story_type",  "INTEGER DEFAULT NULL"),
+        ("stories", "priority",    "TEXT DEFAULT NULL"),
+        ("stories", "epic_id",     "INTEGER DEFAULT NULL"),
     ]
     conn = get_db()
     for table, col, col_def in new_cols:
@@ -289,7 +333,7 @@ def get_story_users(story_id: int):
     return rows
 
 
-def get_board_stories(project_id: int, sprint: int):
+def get_board_stories(project_id: int):
     conn = get_db()
     rows = conn.execute(
         """SELECT s.*, st.name AS status_name, st.color AS status_color,
@@ -297,9 +341,9 @@ def get_board_stories(project_id: int, sprint: int):
            FROM stories s
            LEFT JOIN statuses st   ON s.status_id = st.id
            LEFT JOIN story_types sty ON s.story_type = sty.id
-           WHERE s.project_id = ? AND s.sprint = ?
+           WHERE s.project_id = ? AND s.sprint IS NOT NULL
            ORDER BY s.order_index""",
-        (project_id, sprint),
+        (project_id,),
     ).fetchall()
     conn.close()
     return rows
@@ -374,17 +418,173 @@ def get_story_thumbnails(story_ids: list) -> dict:
 
 # ── Stickers ──────────────────────────────────────────────────────────────────
 
-def get_stickers(project_id: int, sprint):
+def get_stickers(project_id: int):
     conn = get_db()
-    if sprint is None:
-        rows = conn.execute(
-            "SELECT * FROM stickers WHERE project_id=? AND sprint IS NULL",
-            (project_id,),
-        ).fetchall()
-    else:
-        rows = conn.execute(
-            "SELECT * FROM stickers WHERE project_id=? AND sprint=?",
-            (project_id, sprint),
-        ).fetchall()
+    rows = conn.execute(
+        "SELECT * FROM stickers WHERE project_id=?",
+        (project_id,),
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+# ── Epics ─────────────────────────────────────────────────────────────────────
+
+def get_epics(project_id: int):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM epics WHERE project_id=? ORDER BY title",
+        (project_id,),
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def create_epic(project_id: int, title: str, color: str, description: str, user_id: int):
+    conn = get_db()
+    cur = conn.execute(
+        "INSERT INTO epics (project_id,title,color,description,created_at,created_by) VALUES (?,?,?,?,?,?)",
+        (project_id, title, color, description or '', int(time.time()), user_id),
+    )
+    conn.commit()
+    epic_id = cur.lastrowid
+    conn.close()
+    return epic_id
+
+
+def delete_epic(epic_id: int) -> None:
+    conn = get_db()
+    conn.execute("DELETE FROM epics WHERE id=?", (epic_id,))
+    conn.commit()
+    conn.close()
+
+
+# ── Story addons (tasks/checklist) ────────────────────────────────────────────
+
+def get_stories_tasks_batch(story_ids: list) -> dict:
+    """Return {story_id: [task_dicts]} for all given story ids."""
+    if not story_ids:
+        return {}
+    conn = get_db()
+    ph   = ','.join('?' * len(story_ids))
+    rows = conn.execute(
+        f"""SELECT sa.id, sa.story_id, sa.content, sa.assigned_user_id,
+                   u.display_name AS assigned_name
+            FROM story_addons sa
+            LEFT JOIN users u ON sa.assigned_user_id = u.id
+            WHERE sa.story_id IN ({ph})
+            ORDER BY sa.story_id, sa.order_index""",
+        story_ids,
+    ).fetchall()
+    conn.close()
+    result = {}
+    for r in rows:
+        sid = r['story_id']
+        if sid not in result:
+            result[sid] = []
+        result[sid].append(dict(r))
+    return result
+
+
+def get_story_addons(story_id: int, current_user_id: int = None):
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT sa.*, u.display_name AS assigned_name, u.avatar AS assigned_avatar
+           FROM story_addons sa
+           LEFT JOIN users u ON sa.assigned_user_id = u.id
+           WHERE sa.story_id = ? ORDER BY sa.order_index""",
+        (story_id,),
+    ).fetchall()
+    statuses = {}
+    if current_user_id:
+        for r in conn.execute(
+            "SELECT addon_id, is_done FROM addon_statuses WHERE user_id=?",
+            (current_user_id,),
+        ).fetchall():
+            statuses[r["addon_id"]] = r["is_done"]
+    conn.close()
+    result = []
+    for r in rows:
+        d = dict(r)
+        d["is_done_by_me"] = statuses.get(r["id"], 0)
+        result.append(d)
+    return result
+
+
+def create_addon(story_id: int, content: str, assigned_user_id, user_id: int) -> int:
+    conn = get_db()
+    row = conn.execute(
+        "SELECT COALESCE(MAX(order_index),0)+1 AS nxt FROM story_addons WHERE story_id=?",
+        (story_id,),
+    ).fetchone()
+    cur = conn.execute(
+        "INSERT INTO story_addons (story_id,content,assigned_user_id,order_index,created_at,created_by) VALUES (?,?,?,?,?,?)",
+        (story_id, content, assigned_user_id, row["nxt"], int(time.time()), user_id),
+    )
+    conn.commit()
+    addon_id = cur.lastrowid
+    conn.close()
+    return addon_id
+
+
+def update_addon_content(addon_id: int, content: str = None, assigned_user_id=None, order_index=None) -> None:
+    conn = get_db()
+    if content is not None:
+        conn.execute("UPDATE story_addons SET content=? WHERE id=?", (content, addon_id))
+    if assigned_user_id is not None:
+        conn.execute("UPDATE story_addons SET assigned_user_id=? WHERE id=?", (assigned_user_id, addon_id))
+    if order_index is not None:
+        conn.execute("UPDATE story_addons SET order_index=? WHERE id=?", (order_index, addon_id))
+    conn.commit()
+    conn.close()
+
+
+def delete_addon(addon_id: int) -> None:
+    conn = get_db()
+    conn.execute("DELETE FROM story_addons WHERE id=?", (addon_id,))
+    conn.commit()
+    conn.close()
+
+
+def toggle_addon(addon_id: int, user_id: int, is_done: int) -> None:
+    conn = get_db()
+    conn.execute(
+        """INSERT INTO addon_statuses (addon_id,user_id,is_done,updated_at)
+           VALUES (?,?,?,?)
+           ON CONFLICT(addon_id,user_id) DO UPDATE
+             SET is_done=excluded.is_done, updated_at=excluded.updated_at""",
+        (addon_id, user_id, is_done, int(time.time())),
+    )
+    conn.commit()
+    conn.close()
+
+
+# ── Story history ─────────────────────────────────────────────────────────────
+
+def log_story_change(story_id: int, user_id: int, field_name: str, old_value, new_value) -> None:
+    """Log a field change; no-op if old == new."""
+    if str(old_value or '') == str(new_value or ''):
+        return
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO story_history (story_id,user_id,field_name,old_value,new_value,created_at) VALUES (?,?,?,?,?,?)",
+        (story_id, user_id, field_name,
+         str(old_value) if old_value is not None else None,
+         str(new_value) if new_value is not None else None,
+         int(time.time())),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_story_history(story_id: int):
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT sh.*, u.display_name, u.avatar
+           FROM story_history sh
+           JOIN users u ON sh.user_id = u.id
+           WHERE sh.story_id = ? ORDER BY sh.created_at DESC""",
+        (story_id,),
+    ).fetchall()
     conn.close()
     return rows

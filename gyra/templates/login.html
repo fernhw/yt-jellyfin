@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Sign in — Gyra{% endblock %}
+{% block title %}Sign in — GYRA{% endblock %}
 
 {% block auth_content %}
 <div class="auth-wrap">
@@ -11,7 +11,7 @@
         <line x1="2"  y1="8.5"  x2="22" y2="8.5"/>
         <line x1="2"  y1="15.5" x2="22" y2="15.5"/>
       </svg>
-      <h1>Gyra</h1>
+      <h1 style="font-weight:900;letter-spacing:6px;font-size:28px;">GYRA</h1>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -22,7 +22,7 @@
     {% endif %}
     {% endwith %}
 
-    <form method="post" action="{{ url_for('login') }}" autocomplete="off">
+    <form method="post" action="{{ url_for('login') }}" autocomplete="off" id="login-form">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
       <div class="form-group">
@@ -36,11 +36,31 @@
         <input id="totp_code" name="totp_code" type="text" inputmode="numeric"
                pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"
                required class="form-input totp-input" placeholder="000000">
-        <p class="form-hint">6-digit code from your authenticator app</p>
+        <p class="form-hint">6-digit code — auto-submits when complete</p>
       </div>
 
       <button type="submit" class="btn btn-primary btn-full">Sign in</button>
     </form>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var input = document.getElementById('totp_code');
+  var form  = document.getElementById('login-form');
+  if (!input || !form) return;
+  var submitted = false;
+  input.addEventListener('input', function () {
+    var v = this.value.replace(/\D/g, '');
+    this.value = v;
+    if (v.length === 6 && !submitted) {
+      submitted = true;
+      form.submit();
+      this.readOnly = true;   /* readOnly fields ARE submitted unlike disabled */
+    }
+  });
+}());
+</script>
 {% endblock %}

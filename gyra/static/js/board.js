@@ -122,4 +122,104 @@
   // Init on load
   document.querySelectorAll('.board-card').forEach(initCard);
   document.querySelectorAll('.board-column').forEach(initColumn);
+
+  // ── Shift multi-select ───────────────────────────────────────────────────
+  let lastSelected = null;
+  const selected   = new Set();
+
+  function getCardIndex(card, col) {
+    return Array.from(col.querySelectorAll('.board-card')).indexOf(card);
+  }
+
+  function selectCard(card) {
+    selected.add(card);
+    card.classList.add('card-selected');
+  }
+  function deselectCard(card) {
+    selected.delete(card);
+    card.classList.remove('card-selected');
+  }
+  function clearSelection() {
+    selected.forEach(function (c) { c.classList.remove('card-selected'); });
+    selected.clear();
+    lastSelected = null;
+    updateBulkBar();
+  }
+
+  function updateBulkBar() {
+    var bar = document.getElementById('bulk-action-bar');
+    if (!bar) return;
+    if (selected.size > 0) {
+      bar.style.display = 'flex';
+      var lbl = bar.querySelector('.bulk-count');
+      if (lbl) lbl.textContent = selected.size + ' selected';
+    } else {
+      bar.style.display = 'none';
+    }
+  }
+
+  // Inject bulk bar (once)
+  (function () {
+    var bar = document.createElement('div');
+    bar.id = 'bulk-action-bar';
+    bar.style.cssText = 'display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);' +
+      'background:#1A1208;color:#fff;padding:10px 20px;border-radius:3px;' +
+      'gap:12px;align-items:center;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.4);' +
+      'font-size:13px;font-weight:600;';
+    bar.innerHTML = '<span class="bulk-count"></span>' +
+      '<button onclick="window._clearBulk()" style="background:none;border:1px solid rgba(255,255,255,.3);color:#fff;padding:4px 10px;cursor:pointer;border-radius:2px;font-size:12px;">Clear</button>';
+    document.body.appendChild(bar);
+  }());
+
+  window._clearBulk = clearSelection;
+
+  // Handle click-to-select on cards (with Shift support)
+  document.getElementById('board').addEventListener('click', function (e) {
+    var card = e.target.closest('.board-card');
+    if (!card) {
+      // Click on empty board area clears selection
+      if (!e.target.closest('#bulk-action-bar')) clearSelection();
+      return;
+    }
+
+    // Only intercept when Shift is held OR at least one card is already selected
+    if (!e.shiftKey && selected.size === 0) {
+      lastSelected = card;
+      return; // normal click navigates to story
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.shiftKey && lastSelected) {
+      // Range-select within same column
+      var col = card.closest('.board-column');
+      var lastCol = lastSelected.closest('.board-column');
+      if (col === lastCol) {
+        var cards = Array.from(col.querySelectorAll('.board-card'));
+        var a = cards.indexOf(lastSelected);
+        var b = cards.indexOf(card);
+        var lo = Math.min(a, b);
+        var hi = Math.max(a, b);
+        for (var i = lo; i <= hi; i++) selectCard(cards[i]);
+      } else {
+        selectCard(card);
+      }
+    } else if (selected.has(card)) {
+      deselectCard(card);
+      if (card === lastSelected) lastSelected = null;
+    } else {
+      selectCard(card);
+    }
+
+    lastSelected = card;
+    updateBulkBar();
+  }, true);
+
+  // Add CSS for selected cards inline
+  (function () {
+    var s = document.createElement('style');
+    s.textContent = '.board-card.card-selected{outline:3px solid #7C4A1E !important;outline-offset:2px;}';
+    document.head.appendChild(s);
+  }());
 })();

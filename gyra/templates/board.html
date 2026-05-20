@@ -5,45 +5,45 @@
 <div class="page-header">
   <div class="page-header-left">
     <span class="project-key-badge">{{ project.key }}</span>
-    <h2>Sprint {{ current_sprint }}</h2>
-    <!-- Sprint navigation -->
-    {% if all_sprints|length > 1 %}
-    {% set idx = all_sprints.index(current_sprint) if current_sprint in all_sprints else -1 %}
-    <div class="sprint-nav">
-      {% if idx > 0 %}
-      <a href="{{ url_for('board', project_id=project.id, sprint=all_sprints[idx-1]) }}"
-         class="sprint-nav-btn" title="Sprint {{ all_sprints[idx-1] }}">‹</a>
-      {% else %}
-      <span class="sprint-nav-btn sprint-nav-disabled">‹</span>
-      {% endif %}
-      <span class="sprint-nav-label">{{ idx + 1 }} / {{ all_sprints|length }}</span>
-      {% if idx < all_sprints|length - 1 %}
-      <a href="{{ url_for('board', project_id=project.id, sprint=all_sprints[idx+1]) }}"
-         class="sprint-nav-btn" title="Sprint {{ all_sprints[idx+1] }}">›</a>
-      {% else %}
-      <span class="sprint-nav-btn sprint-nav-disabled">›</span>
-      {% endif %}
-    </div>
-    {% endif %}
+    <h2>Active Sprint</h2>
   </div>
   <div class="page-header-right" style="display:flex;gap:8px;align-items:center">
-    <!-- Sticker toolbar -->
-    <button class="sticker-btn" data-type="exclamation" title="Add ! sticker">!</button>
-    <button class="sticker-btn sticker-btn-arrow" data-type="arrow" title="Add arrow sticker">→</button>
+    <!-- Zoom controls -->
+    <div class="board-zoom-ctrl">
+      <button class="zoom-btn" id="zoom-out" title="Zoom out">−</button>
+      <span class="zoom-label" id="zoom-label">100%</span>
+      <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
+    </div>
+    <!-- Sticker dropdown -->
+    <div class="sticker-dropdown" style="position:relative">
+      <button class="sticker-menu-btn" id="sticker-menu-toggle" title="Add sticker">🏷 Sticker ▾</button>
+      <div id="sticker-menu" class="sticker-menu" style="display:none">
+        <button class="sticker-btn" data-type="exclamation"><span class="sm-icon" style="background:#FF3B30">!</span> Alert</button>
+        <button class="sticker-btn" data-type="arrow"><span class="sm-icon" style="background:#FF9F0A">→</span> Arrow</button>
+        <button class="sticker-btn" data-type="question"><span class="sm-icon" style="background:#007AFF">?</span> Question</button>
+        <button class="sticker-btn" data-type="star"><span class="sm-icon" style="background:#FFD60A;color:#000">★</span> Star</button>
+        <button class="sticker-btn" data-type="fire"><span class="sm-icon" style="background:#FF9500">🔥</span> Fire</button>
+        <button class="sticker-btn" data-type="eyes"><span class="sm-icon" style="background:#636366">👀</span> Review</button>
+        <button class="sticker-btn" data-type="check"><span class="sm-icon" style="background:#34C759">✓</span> Done</button>
+        <button class="sticker-btn" data-type="blocked"><span class="sm-icon" style="background:#FF2D55">✕</span> Blocked</button>
+        <button class="sticker-btn" data-type="up"><span class="sm-icon" style="background:#BF5AF2">↑</span> Escalate</button>
+        <button class="sticker-btn" data-type="note"><span class="sm-icon" style="background:#5AC8FA"><b>#</b></span> Note</button>
+      </div>
+    </div>
     <a class="btn btn-primary btn-sm"
-       href="{{ url_for('story_new', project_id=project.id, sprint=current_sprint) }}">
+       href="{{ url_for('story_new', project_id=project.id, sprint=1) }}">
       + Story
     </a>
   </div>
 </div>
 
 <div class="board-wrap">
-  <div class="board" id="board" data-sprint="{{ current_sprint }}"
+  <div class="board" id="board" data-sprint="1"
        data-project="{{ project.id }}">
     {% for status in statuses %}
     <div class="board-column"
          data-status-id="{{ status.id }}"
-         data-sprint="{{ current_sprint }}"
+         data-sprint="1"
          style="--col-color:{{ status.color }}">
 
       <div class="board-col-header">
@@ -56,25 +56,33 @@
         {% for story in board_map.get(status.id, []) %}
         {# Deterministic rotation: -2 to +2 deg #}
         {% set rot = (story.id * 7 % 5) - 2 %}
-        {# Card background: story type colour or warm yellow default #}
-        {% set card_bg = story.story_type_color if story.story_type_color else '#FFF9C4' %}
+        {# card-accent = vivid type colour; card-bg = pastel via color-mix #}
+        {% set card_accent = story.story_type_color if story.story_type_color else '#B45309' %}
+        {% if story.story_type_color %}
+          {% set card_bg = 'color-mix(in srgb, ' ~ story.story_type_color ~ ' 22%, white)' %}
+        {% else %}
+          {% set card_bg = '#FFF9C4' %}
+        {% endif %}
         <div class="board-card"
              draggable="true"
              data-story-id="{{ story.id }}"
              data-order-index="{{ story.order_index }}"
-             style="--rot:{{ rot }}deg; --card-bg:{{ card_bg }}"
+             style="--rot:{{ rot }}deg; --card-bg:{{ card_bg }}; --card-accent:{{ card_accent }}"
              onclick="window.location='{{ url_for('story_view', story_id=story.id) }}'">
 
           <div class="card-top">
             <span class="card-id">{{ project.key }}-{{ story.id }}</span>
             {% if story.story_type_name %}
-            <span class="card-type-badge"
-                  style="background:{{ card_bg }};border-color:{{ story.story_type_color }};color:{{ story.story_type_color }}">
-              {{ story.story_type_name }}
-            </span>
+            <span class="card-type-badge">{{ story.story_type_name }}</span>
             {% endif %}
           </div>
-          <div class="card-title">{{ story.title }}</div>
+          {% if story.priority %}
+          <div class="card-tape card-tape-{{ story.priority | lower }}">{{ story.priority }}</div>
+          {% endif %}
+          {% if story.epic_id %}
+          {# Epic label could be added here if epics are eager-loaded on board stories #}
+          {% endif %}
+          <div class="card-title">{{ story.html_title }}</div>
 
           {% if story.thumbnail %}
           {% set trot = (story.id * 3 % 7) - 3 %}
@@ -86,6 +94,9 @@
           <div class="card-footer">
             {% if story.story_points %}
             <span class="card-points">{{ story.story_points }}pt</span>
+            {% endif %}
+            {% if story.tasks %}
+            <span class="card-task-prog">☐ {{ story.tasks | length }}</span>
             {% endif %}
             {% if story.assignees %}
             <div class="card-assignees">
@@ -102,6 +113,8 @@
             </div>
             {% endif %}
           </div>
+          {# ── embedded data for hover tooltip ── #}
+          <script type="application/json" class="card-data">{"key":"{{ project.key }}-{{ story.id }}","title":{{ story.title | tojson }},"priority":{{ (story.priority or '') | tojson }},"points":{{ story.story_points or 0 }},"type":{{ (story.story_type_name or '') | tojson }},"assignees":[{% for a in story.assignees %}{{ a.display_name | tojson }}{% if not loop.last %},{% endif %}{% endfor %}],"tasks":[{% for t in story.tasks %}{"c":{{ t.content | tojson }},"a":{{ (t.assigned_name or '') | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]}</script>
         </div>
         {% endfor %}
       </div>
@@ -110,21 +123,125 @@
 
     <!-- Sticker overlay layer — lives inside .board so it scrolls with it -->
     <div id="sticker-layer" class="sticker-layer">
+      {% set _sicon = {'exclamation':'!','arrow':'→','question':'?','star':'★','fire':'🔥','eyes':'👀','check':'✓','blocked':'✕','up':'↑','note':'#'} %}
       {% for sk in stickers %}
       <div class="board-sticker sticker-{{ sk.type }}"
            data-id="{{ sk.id }}"
            style="left:{{ sk.x }}%;top:{{ sk.y }}%">
-        {% if sk.type == 'exclamation' %}!{% else %}→{% endif %}
+        {{ _sicon.get(sk.type, sk.type) }}
         <button class="sticker-del" data-id="{{ sk.id }}" title="Remove">✕</button>
       </div>
       {% endfor %}
     </div>
   </div>
 </div>
+
+{# Global card tooltip popup — outside board-wrap so it escapes zoom/overflow #}
+<div id="card-popup" class="card-popup" style="display:none"></div>
+
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/board.js') }}"></script>
 <script src="{{ url_for('static', filename='js/stickers.js') }}"></script>
-{% endblock %}
+<script>
+(function () {
+  const STEPS  = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0];
+  const STORE  = 'gyra-board-zoom';
+  const wrap   = document.querySelector('.board-wrap');
+  const label  = document.getElementById('zoom-label');
+  let idx = STEPS.indexOf(parseFloat(localStorage.getItem(STORE) || '1.0'));
+  if (idx < 0) idx = STEPS.indexOf(1.0);
+
+  function applyZoom() {
+    const z = STEPS[idx];
+    wrap.style.zoom = z;
+    label.textContent = Math.round(z * 100) + '%';
+    localStorage.setItem(STORE, z);
+    document.getElementById('zoom-out').disabled = idx === 0;
+    document.getElementById('zoom-in').disabled  = idx === STEPS.length - 1;
+    const b = document.getElementById('board');
+    if (b) {
+      b.dataset.zoom = z;
+      b.classList.remove('bz-sm','bz-xs','bz-xxs','bz-min');
+      if      (z < 0.6) b.classList.add('bz-min');
+      else if (z < 0.7) b.classList.add('bz-xxs');
+      else if (z < 0.8) b.classList.add('bz-xs');
+      else if (z < 0.9) b.classList.add('bz-sm');
+    }
+  }
+
+  document.getElementById('zoom-in') .addEventListener('click', () => { if (idx < STEPS.length - 1) { idx++; applyZoom(); } });
+  document.getElementById('zoom-out').addEventListener('click', () => { if (idx > 0) { idx--; applyZoom(); } });
+  applyZoom();
+})();
+</script>
+
+<script>
+// ── Card hover tooltip ───────────────────────────────────────────────────────
+(function () {
+  var popup     = document.getElementById('card-popup');
+  var hideTimer = null;
+  if (!popup) return;
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function positionPopup(card) {
+    var rect = card.getBoundingClientRect();
+    var z    = parseFloat((document.getElementById('board') || {}).dataset.zoom || '1');
+    var pw   = 260;
+    var left = rect.right + 10;
+    var top  = rect.top;
+    if (left + pw > window.innerWidth - 16) { left = rect.left - pw - 10; }
+    if (left < 8) { left = rect.left; top = rect.bottom + 8; }
+    top = Math.max(8, Math.min(top, window.innerHeight - 360));
+    popup.style.left = left + 'px';
+    popup.style.top  = top + 'px';
+  }
+
+  document.querySelectorAll('.board-card').forEach(function (card) {
+    card.addEventListener('mouseenter', function () {
+      clearTimeout(hideTimer);
+      var dataEl = card.querySelector('.card-data');
+      if (!dataEl) return;
+      var d;
+      try { d = JSON.parse(dataEl.textContent); } catch (ex) { return; }
+
+      var html = '<div class="cp-key">' + esc(d.key) + '</div>';
+      html += '<div class="cp-title">' + esc(d.title) + '</div>';
+
+      var meta = [];
+      if (d.priority) meta.push('<span class="cp-pri cp-pri-' + d.priority.toLowerCase() + '">' + esc(d.priority) + '</span>');
+      if (d.points)   meta.push(d.points + 'pt');
+      if (d.type)     meta.push(esc(d.type));
+      if (meta.length) html += '<div class="cp-meta">' + meta.join(' &middot; ') + '</div>';
+
+      if (d.assignees && d.assignees.length) {
+        html += '<div class="cp-section"><b>Assigned:</b> ' + d.assignees.map(esc).join(', ') + '</div>';
+      }
+
+      if (d.tasks && d.tasks.length) {
+        html += '<div class="cp-tasks-head">Tasks (' + d.tasks.length + ')</div>';
+        html += '<div class="cp-tasks">';
+        d.tasks.forEach(function (t) {
+          html += '<div class="cp-task"><span class="cp-check">□</span> ' + esc(t.c);
+          if (t.a) html += ' <span class="cp-task-who">' + esc(t.a) + '</span>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      popup.innerHTML = html;
+      positionPopup(card);
+      popup.style.display = 'block';
+    });
+
+    card.addEventListener('mouseleave', function () {
+      hideTimer = setTimeout(function () { popup.style.display = 'none'; }, 100);
+    });
+  });
+}());
+</script>
 

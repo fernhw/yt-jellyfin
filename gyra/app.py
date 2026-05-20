@@ -12,6 +12,7 @@ import uuid
 import qrcode
 from flask import (Flask, abort, flash, jsonify, redirect, render_template,
                    request, send_from_directory, session, url_for)
+from markupsafe import Markup, escape
 from PIL import Image
 from werkzeug.utils import secure_filename
 
@@ -20,11 +21,16 @@ from auth import (admin_required, decrypt_totp_secret, encrypt_totp_secret,
                   get_csrf_token, get_totp_uri, login_required, sha256_hex,
                   verify_setup_token, verify_totp)
 from config import Config
-from db import (ensure_story_types, get_all_active_users, get_all_sprints,
-                get_backlog_stories, get_board_stories, get_current_sprint,
-                get_db, get_project, get_projects, get_statuses, get_stickers,
-                get_story, get_story_images, get_story_thumbnails, get_story_types,
-                get_story_users, get_user_by_id, get_user_by_username, init_db)
+from db import (create_addon, create_epic, delete_addon, delete_epic,
+                ensure_story_types, get_all_active_users,
+                get_backlog_stories, get_board_stories,
+                get_db, get_epics, get_project, get_projects, get_statuses,
+                get_stickers, get_story, get_story_addons, get_story_history,
+                get_story_images, get_story_thumbnails, get_story_types,
+                get_story_users, get_stories_tasks_batch,
+                get_user_by_id, get_user_by_username,
+                init_db, log_story_change, toggle_addon,
+                update_addon_content)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -35,19 +41,7 @@ os.makedirs(Config.STORY_IMAGES_FOLDER, exist_ok=True)
 ALLOWED_AVATAR_EXT  = {"png", "jpg", "jpeg", "gif", "webp"}
 ALLOWED_IMAGE_EXT   = {"png", "jpg", "jpeg", "webp"}
 
-# Allowed gerund/present-form verbs for Z field (server-side enforcement)
-ALLOWED_VERBS = {
-    "accessing", "adding", "allowing", "browsing", "building", "checking",
-    "choosing", "clicking", "completing", "configuring", "connecting",
-    "creating", "deleting", "deploying", "downloading", "editing",
-    "exporting", "filtering", "finding", "generating", "implementing",
-    "importing", "integrating", "launching", "loading", "logging",
-    "managing", "monitoring", "navigating", "ordering", "processing",
-    "reading", "running", "saving", "searching", "selecting", "setting",
-    "sharing", "submitting", "switching", "testing", "tracking",
-    "uploading", "using", "validating", "verifying", "viewing",
-    "walking", "writing",
-}
+
 
 
 # ── Template filters ──────────────────────────────────────────────────────────
@@ -92,6 +86,22 @@ def _count_words(*parts) -> int:
 
 def _build_story_title(actor, verb, z, x, for_conn, y) -> str:
     return " ".join(p for p in [actor, verb, z, x, for_conn, y] if p)
+
+
+def _bold_verb_in_title(title: str, verb: str) -> Markup:
+    """Return HTML-safe Markup with the action word wrapped in <strong>."""
+    if not verb or not title:
+        return Markup(escape(title or ""))
+    idx = title.find(verb)
+    if idx < 0:
+        return Markup(escape(title))
+    return Markup(
+        escape(title[:idx]) +
+        Markup("<strong>") +
+        escape(verb) +
+        Markup("</strong>") +
+        escape(title[idx + len(verb):])
+    )
 
 
 def _make_qr_png(uri: str) -> str:
@@ -219,30 +229,27 @@ def board(project_id):
     if not project:
         abort(404)
 
-    statuses       = get_statuses(project_id)
-    max_sprint     = get_current_sprint(project_id)
-    all_sprints    = get_all_sprints(project_id)
-
-    # Allow ?sprint=N to view a specific sprint; default to newest
-    sprint_param   = request.args.get("sprint", type=int)
-    current_sprint = sprint_param if sprint_param in all_sprints else max_sprint
+    statuses = get_statuses(project_id)
 
     # Ensure this project has story types seeded
     with get_db() as _conn:
         ensure_story_types(project_id, _conn)
 
-    raw_stories    = get_board_stories(project_id, current_sprint)
+    raw_stories = get_board_stories(project_id)
 
     stories = []
     for s in raw_stories:
         d = dict(s)
-        d["assignees"] = get_story_users(s["id"])
+        d["assignees"]  = get_story_users(s["id"])
+        d["html_title"] = _bold_verb_in_title(s["title"], s["story_z"] or "")
         stories.append(d)
 
     story_ids  = [s["id"] for s in stories]
     thumbnails = get_story_thumbnails(story_ids)
+    tasks_map  = get_stories_tasks_batch(story_ids)
     for s in stories:
         s["thumbnail"] = thumbnails.get(s["id"])
+        s["tasks"]     = tasks_map.get(s["id"], [])
 
     board_map: dict = {st["id"]: [] for st in statuses}
     for s in stories:
@@ -250,16 +257,13 @@ def board(project_id):
         if col in board_map:
             board_map[col].append(s)
 
-    stickers = [dict(sk) for sk in get_stickers(project_id, current_sprint)]
+    stickers = [dict(sk) for sk in get_stickers(project_id)]
 
     return render_template(
         "board.html",
         project=project,
         statuses=statuses,
         board_map=board_map,
-        current_sprint=current_sprint,
-        all_sprints=all_sprints,
-        max_sprint=max_sprint,
         stickers=stickers,
     )
 
@@ -271,22 +275,20 @@ def backlog(project_id):
     if not project:
         abort(404)
 
-    raw_stories    = get_backlog_stories(project_id)
-    stories        = []
+    raw_stories = get_backlog_stories(project_id)
+    stories     = []
     for s in raw_stories:
         d = dict(s)
         d["assignees"] = get_story_users(s["id"])
         stories.append(d)
 
-    statuses       = get_statuses(project_id)
-    current_sprint = get_current_sprint(project_id)
+    statuses = get_statuses(project_id)
 
     return render_template(
         "backlog.html",
         project=project,
         stories=stories,
         statuses=statuses,
-        current_sprint=current_sprint,
     )
 
 
@@ -316,14 +318,15 @@ def story_new():
         assignees   = request.form.getlist("assignee_ids", type=int)
         sprint      = request.form.get("sprint", type=int) or None
         story_type  = request.form.get("story_type", type=int) or None
+        priority    = request.form.get("priority", "").strip() or None
+        epic_id     = request.form.get("epic_id", type=int) or None
 
         if not z or not x or not y or not project_id:
             flash("All story parts are required.", "error")
             return redirect(request.url)
 
-        first_word = z.split()[0].lower() if z else ""
-        if first_word not in ALLOWED_VERBS:
-            flash(f"'{z.split()[0]}' is not a recognised verb. Use a gerund (e.g. Walking, Testing, Building).", "error")
+        if " " in z.strip():
+            flash("The action word must be a single word (e.g. Walking, Killing, Building).", "error")
             return redirect(request.url)
 
         word_count = _count_words(actor, verb, z, x, for_conn, y)
@@ -343,11 +346,12 @@ def story_new():
             """INSERT INTO stories
                (project_id,title,description,acceptance_criteria,story_points,
                 status_id,sprint,order_index,created_at,created_by,updated_at,
-                story_actor,story_verb,story_z,story_x,story_for,story_y,story_type)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                story_actor,story_verb,story_z,story_x,story_for,story_y,story_type,
+                priority,epic_id)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (project_id, title, description, ac, points,
              status_id, sprint, order, now, session["user_id"], now,
-             actor, verb, z, x, for_conn, y, story_type),
+             actor, verb, z, x, for_conn, y, story_type, priority, epic_id),
         )
         story_id = cur.lastrowid
         for uid in assignees:
@@ -359,15 +363,20 @@ def story_new():
         conn.close()
 
         flash("Story created.", "success")
-        return redirect(url_for("story_view", story_id=story_id))
+        if sprint:
+            return redirect(url_for("board", project_id=project_id))
+        else:
+            return redirect(url_for("backlog", project_id=project_id))
 
     project     = get_project(project_id) if project_id else None
     statuses    = get_statuses(project_id) if project_id else []
     all_users   = get_all_active_users()
+    default_sprint = request.args.get("sprint", type=int)
     if project_id:
         with get_db() as _c:
             ensure_story_types(project_id, _c)
     story_types = get_story_types(project_id) if project_id else []
+    epics       = get_epics(project_id) if project_id else []
     return render_template(
         "story.html",
         mode="new",
@@ -381,6 +390,10 @@ def story_new():
         assignee_ids=[],
         comments=[],
         images=[],
+        default_sprint=default_sprint,
+        epics=epics,
+        history=[],
+        addons=[],
     )
 
 
@@ -404,9 +417,8 @@ def story_view(story_id):
             y        = request.form.get("story_y", "").strip()
             title    = _build_story_title(actor, verb, z, x, for_conn, y)
 
-            first_word = z.split()[0].lower() if z else ""
-            if z and first_word not in ALLOWED_VERBS:
-                flash(f"'{z.split()[0]}' is not a recognised verb.", "error")
+            if z and " " in z.strip():
+                flash("The action word must be a single word (e.g. Walking, Killing, Building).", "error")
                 return redirect(url_for("story_view", story_id=story_id))
 
             word_count = _count_words(actor, verb, z, x, for_conn, y)
@@ -421,16 +433,21 @@ def story_view(story_id):
             sprint     = request.form.get("sprint", type=int) or None
             assignees  = request.form.getlist("assignee_ids", type=int)
             story_type = request.form.get("story_type", type=int) or None
+            priority   = request.form.get("priority", "").strip() or None
+            epic_id    = request.form.get("epic_id", type=int) or None
+
+            # Capture before-state for history logging
+            old = dict(s)
 
             conn = get_db()
             conn.execute(
                 """UPDATE stories SET title=?,description=?,acceptance_criteria=?,
                    story_points=?,status_id=?,sprint=?,updated_at=?,
                    story_actor=?,story_verb=?,story_z=?,story_x=?,story_for=?,story_y=?,
-                   story_type=?
+                   story_type=?,priority=?,epic_id=?
                    WHERE id=?""",
                 (title, desc, ac, points, status_id, sprint, int(time.time()),
-                 actor, verb, z, x, for_conn, y, story_type, story_id),
+                 actor, verb, z, x, for_conn, y, story_type, priority, epic_id, story_id),
             )
             conn.execute("DELETE FROM story_users WHERE story_id=?", (story_id,))
             for uid in assignees:
@@ -440,8 +457,23 @@ def story_view(story_id):
                 )
             conn.commit()
             conn.close()
+
+            # Log field changes to story_history
+            uid = session["user_id"]
+            log_story_change(story_id, uid, "Status",   old.get("status_id"),   status_id)
+            log_story_change(story_id, uid, "Sprint",   old.get("sprint"),       sprint)
+            log_story_change(story_id, uid, "Priority", old.get("priority"),     priority)
+            log_story_change(story_id, uid, "Points",   old.get("story_points"), points)
+            log_story_change(story_id, uid, "Epic",     old.get("epic_id"),      epic_id)
+            if old.get("title") != title:
+                log_story_change(story_id, uid, "Title", old.get("title"), title)
+
             flash("Story updated.", "success")
-            return redirect(url_for("story_view", story_id=story_id))
+            pid = s["project_id"]
+            if sprint:
+                return redirect(url_for("board", project_id=pid))
+            else:
+                return redirect(url_for("backlog", project_id=pid))
 
         if action == "comment":
             content = request.form.get("content", "").strip()
@@ -516,6 +548,9 @@ def story_view(story_id):
     all_users    = get_all_active_users()
     images       = get_story_images(story_id)
     story_types  = get_story_types(s["project_id"])
+    epics        = get_epics(s["project_id"])
+    history      = get_story_history(story_id)
+    addons       = get_story_addons(story_id, session.get("user_id"))
 
     return render_template(
         "story.html",
@@ -530,6 +565,10 @@ def story_view(story_id):
         assignee_ids=assignee_ids,
         comments=comments,
         images=images,
+        default_sprint=None,
+        epics=epics,
+        history=history,
+        addons=addons,
     )
 
 
@@ -803,11 +842,11 @@ def story_image(filename):
 
 # ── Sticker API ───────────────────────────────────────────────────────────────
 
+@app.route("/api/stickers/<int:project_id>")
 @app.route("/api/stickers/<int:project_id>/<sprint>")
 @login_required
-def api_get_stickers(project_id, sprint):
-    sp = None if sprint == "backlog" else int(sprint)
-    return jsonify([dict(s) for s in get_stickers(project_id, sp)])
+def api_get_stickers(project_id, sprint=None):
+    return jsonify([dict(s) for s in get_stickers(project_id)])
 
 
 @app.route("/api/stickers", methods=["POST"])
@@ -875,6 +914,98 @@ def api_delete_sticker(sticker_id):
     conn.commit()
     conn.close()
     return jsonify(ok=True)
+
+
+# ── Story addons (tasks / mini-waterfall) ─────────────────────────────────────
+
+@app.route("/api/story/<int:story_id>/addons", methods=["GET"])
+@login_required
+def api_get_addons(story_id):
+    addons = get_story_addons(story_id, session["user_id"])
+    return jsonify([dict(a) for a in addons])
+
+
+@app.route("/api/story/<int:story_id>/addons", methods=["POST"])
+@login_required
+def api_create_addon(story_id):
+    enforce_csrf()
+    data = request.get_json(silent=True) or {}
+    content = (data.get("content") or "").strip()
+    if not content:
+        return jsonify(error="content required"), 400
+    assigned = data.get("assigned_user_id") or None
+    addon_id = create_addon(story_id, content, assigned, session["user_id"])
+    return jsonify(id=addon_id, ok=True)
+
+
+@app.route("/api/addon/<int:addon_id>", methods=["PATCH"])
+@login_required
+def api_update_addon(addon_id):
+    enforce_csrf()
+    data = request.get_json(silent=True) or {}
+    if "is_done" in data:
+        toggle_addon(addon_id, session["user_id"], int(bool(data["is_done"])))
+        return jsonify(ok=True)
+    update_addon_content(
+        addon_id,
+        content=data.get("content"),
+        assigned_user_id=data.get("assigned_user_id"),
+        order_index=data.get("order_index"),
+    )
+    return jsonify(ok=True)
+
+
+@app.route("/api/addon/<int:addon_id>", methods=["DELETE"])
+@login_required
+def api_delete_addon(addon_id):
+    enforce_csrf()
+    delete_addon(addon_id)
+    return jsonify(ok=True)
+
+
+# ── Epics ─────────────────────────────────────────────────────────────────────
+
+@app.route("/api/project/<int:project_id>/epics", methods=["GET"])
+@login_required
+def api_get_epics(project_id):
+    return jsonify([dict(e) for e in get_epics(project_id)])
+
+
+@app.route("/api/project/<int:project_id>/epics", methods=["POST"])
+@login_required
+def api_create_epic(project_id):
+    enforce_csrf()
+    data = request.get_json(silent=True) or {}
+    title = (data.get("title") or "").strip()
+    if not title:
+        return jsonify(error="title required"), 400
+    color = data.get("color") or "#6B7280"
+    desc  = (data.get("description") or "").strip()
+    epic_id = create_epic(project_id, title, color, desc, session["user_id"])
+    return jsonify(id=epic_id, ok=True)
+
+
+@app.route("/api/epic/<int:epic_id>", methods=["DELETE"])
+@admin_required
+def api_delete_epic(epic_id):
+    enforce_csrf()
+    delete_epic(epic_id)
+    return jsonify(ok=True)
+
+
+# ── Admin: database backup ────────────────────────────────────────────────────
+
+@app.route("/admin/backup")
+@admin_required
+def admin_backup():
+    import shutil
+    db_path = Config.DATABASE
+    stamp   = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    bak_name = f"gyra-backup-{stamp}.db"
+    bak_path = os.path.join("/tmp", bak_name)
+    shutil.copy2(db_path, bak_path)
+    return send_from_directory("/tmp", bak_name, as_attachment=True,
+                               download_name=bak_name)
 
 
 # ── Entry-point ───────────────────────────────────────────────────────────────

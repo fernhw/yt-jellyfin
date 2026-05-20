@@ -170,9 +170,28 @@
         </div>
         <div class="form-group">
           <label>Sprint</label>
-          <input name="sprint" type="number" min="1" class="form-input"
-                 placeholder="— Backlog —"
-                 value="{{ story.sprint if story and story.sprint else '' }}">
+          <select name="sprint" class="form-input form-select">
+            <option value="">— Backlog —</option>
+            <option value="1" {{ 'selected' if (story and story.sprint) or (not story and default_sprint) else '' }}>In Sprint</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select name="priority" class="form-input form-select priority-select">
+            <option value="">— None —</option>
+            {% for pri in ['VH','H','M','L','VL'] %}
+            <option value="{{ pri }}" {{ 'selected' if story and story.priority == pri else '' }}>{{ pri }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Epic</label>
+          <select name="epic_id" class="form-input form-select">
+            <option value="">— None —</option>
+            {% for e in epics %}
+            <option value="{{ e.id }}" {{ 'selected' if story and story.epic_id == e.id else '' }}>{{ e.title }}</option>
+            {% endfor %}
+          </select>
         </div>
       </div>
 
@@ -235,34 +254,147 @@
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
       <input type="hidden" name="action" value="delete">
     </form>
-
-    <!-- Comments -->
-    <section class="comments-section">
-      <h3>Activity</h3>
-      {% for c in comments %}
-      <div class="comment">
-        <div class="comment-meta">
-          {% if c.avatar %}
-            <img src="{{ url_for('avatar', filename=c.avatar) }}" class="avatar-xs" alt="">
-          {% else %}
-            <span class="avatar-initial-xs">{{ c.display_name[0]|upper }}</span>
-          {% endif %}
-          <strong>{{ c.display_name }}</strong>
-          <time>{{ c.created_at | datetimeformat }}</time>
-        </div>
-        <p class="comment-body">{{ c.content }}</p>
+    {% endif %}
+    {% if mode == 'view' %}
+    <div class="story-tasks-section mt-4">
+      <div class="tasks-header">
+        <h3>Tasks</h3>
+        <span class="tasks-progress" id="tasks-progress"></span>
       </div>
-      {% else %}
-      <p class="form-hint">No comments yet.</p>
-      {% endfor %}
-      <form method="post" action="{{ url_for('story_view', story_id=story.id) }}"
-            class="comment-form">
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-        <input type="hidden" name="action" value="comment">
-        <textarea name="content" rows="3" class="form-input"
-                  placeholder="Add a comment…" required></textarea>
-        <button type="submit" class="btn btn-secondary mt-2">Post comment</button>
-      </form>
+      <div id="tasks-list" class="tasks-list">
+        {% for addon in addons %}
+        <div class="task-item{% if addon.is_done_by_me %} done{% endif %}" data-id="{{ addon.id }}" data-assigned="{{ addon.assigned_user_id or '' }}">
+          <span class="task-drag-handle">⠿</span>
+          <input type="checkbox" class="task-check" data-id="{{ addon.id }}"
+                 {{ 'checked' if addon.is_done_by_me else '' }}>
+          <span class="task-content" title="Click to edit">{{ addon.content }}</span>
+          <select class="task-assign-sel" data-id="{{ addon.id }}" title="Assign">
+            <option value="">— assign —</option>
+            {% for u in all_users %}
+            <option value="{{ u.id }}" {% if u.id == addon.assigned_user_id %}selected{% endif %}>{{ u.display_name }}</option>
+            {% endfor %}
+          </select>
+          <button class="task-del" data-id="{{ addon.id }}" title="Delete task">✕</button>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="task-add-row">
+        <input type="text" id="task-new-input" class="form-input"
+               placeholder="Add a task…" style="flex:1;font-size:12px;">
+        <select id="task-new-assign" class="task-assign-sel" style="width:120px;">
+          <option value="">— assign —</option>
+          {% for u in all_users %}
+          <option value="{{ u.id }}">{{ u.display_name }}</option>
+          {% endfor %}
+        </select>
+        <button id="task-add-btn" class="btn btn-secondary btn-sm">Add</button>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Activity (Comments | History | All) ── -->
+    {% if mode == 'view' %}
+    <section class="comments-section">
+      <div class="activity-tabs">
+        <button class="tab-btn active" data-tab="tab-comments">Comments</button>
+        <button class="tab-btn" data-tab="tab-history">History</button>
+        <button class="tab-btn" data-tab="tab-all">All</button>
+      </div>
+
+      <!-- Comments pane -->
+      <div id="tab-comments" class="tab-pane active">
+        {% for c in comments %}
+        <div class="comment">
+          <div class="comment-meta">
+            {% if c.avatar %}
+              <img src="{{ url_for('avatar', filename=c.avatar) }}" class="avatar-xs" alt="">
+            {% else %}
+              <span class="avatar-initial-xs">{{ c.display_name[0]|upper }}</span>
+            {% endif %}
+            <strong>{{ c.display_name }}</strong>
+            <time>{{ c.created_at | datetimeformat }}</time>
+          </div>
+          <p class="comment-body">{{ c.content }}</p>
+        </div>
+        {% else %}
+        <p class="form-hint">No comments yet.</p>
+        {% endfor %}
+        <form method="post" action="{{ url_for('story_view', story_id=story.id) }}"
+              class="comment-form">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="comment">
+          <textarea name="content" rows="3" class="form-input"
+                    placeholder="Add a comment…" required></textarea>
+          <button type="submit" class="btn btn-secondary mt-2">Post comment</button>
+        </form>
+      </div>
+
+      <!-- History pane -->
+      <div id="tab-history" class="tab-pane">
+        {% for h in history %}
+        <div class="history-entry">
+          {% if h.avatar %}
+            <img src="{{ url_for('avatar', filename=h.avatar) }}" class="avatar-xs" alt="">
+          {% else %}
+            <span class="avatar-initial-xs">{{ h.display_name[0]|upper }}</span>
+          {% endif %}
+          <strong style="font-size:11px;min-width:80px;">{{ h.display_name }}</strong>
+          <span class="history-field">{{ h.field_name }}</span>
+          <span class="history-val">{{ h.old_value or '—' }}</span>
+          <span class="history-arrow">→</span>
+          <span class="history-val">{{ h.new_value or '—' }}</span>
+          <time class="history-time">{{ h.created_at | datetimeformat }}</time>
+        </div>
+        {% else %}
+        <p class="form-hint">No changes recorded yet.</p>
+        {% endfor %}
+      </div>
+
+      <!-- All pane (comments + history merged) -->
+      <div id="tab-all" class="tab-pane">
+        {% set all_items = [] %}
+        {% for c in comments %}
+          {% set _ = all_items.append({'ts': c.created_at, 'type': 'comment', 'item': c}) %}
+        {% endfor %}
+        {% for h in history %}
+          {% set _ = all_items.append({'ts': h.created_at, 'type': 'history', 'item': h}) %}
+        {% endfor %}
+        {% for entry in all_items | sort(attribute='ts') %}
+          {% if entry.type == 'comment' %}
+          {% set c = entry.item %}
+          <div class="comment">
+            <div class="comment-meta">
+              {% if c.avatar %}
+                <img src="{{ url_for('avatar', filename=c.avatar) }}" class="avatar-xs" alt="">
+              {% else %}
+                <span class="avatar-initial-xs">{{ c.display_name[0]|upper }}</span>
+              {% endif %}
+              <strong>{{ c.display_name }}</strong>
+              <time>{{ c.created_at | datetimeformat }}</time>
+              <span class="form-hint-inline" style="font-size:9px;opacity:.6">comment</span>
+            </div>
+            <p class="comment-body">{{ c.content }}</p>
+          </div>
+          {% else %}
+          {% set h = entry.item %}
+          <div class="history-entry">
+            {% if h.avatar %}
+              <img src="{{ url_for('avatar', filename=h.avatar) }}" class="avatar-xs" alt="">
+            {% else %}
+              <span class="avatar-initial-xs">{{ h.display_name[0]|upper }}</span>
+            {% endif %}
+            <strong style="font-size:11px;min-width:80px;">{{ h.display_name }}</strong>
+            <span class="history-field">{{ h.field_name }}</span>
+            <span class="history-val">{{ h.old_value or '—' }}</span>
+            <span class="history-arrow">→</span>
+            <span class="history-val">{{ h.new_value or '—' }}</span>
+            <time class="history-time">{{ h.created_at | datetimeformat }}</time>
+          </div>
+          {% endif %}
+        {% else %}
+        <p class="form-hint">Nothing yet.</p>
+        {% endfor %}
+      </div>
     </section>
     {% endif %}
   </div>
@@ -281,8 +413,27 @@
       </div>
       <div class="meta-block">
         <span class="meta-label">Sprint</span>
-        <span class="meta-value">{{ story.sprint or '— Backlog —' }}</span>
+        <span class="meta-value">{{ 'In Sprint' if story.sprint else '— Backlog —' }}</span>
       </div>
+      <div class="meta-block">
+        <span class="meta-label">Priority</span>
+        {% if story.priority %}
+        <span class="card-tape card-tape-{{ story.priority | lower }}" style="position:static;transform:none;display:inline-block;border-radius:2px;">{{ story.priority }}</span>
+        {% else %}
+        <span class="meta-value">—</span>
+        {% endif %}
+      </div>
+      {% if epics %}
+      <div class="meta-block">
+        <span class="meta-label">Epic</span>
+        {% set cur_epic = epics | selectattr('id', 'equalto', story.epic_id) | first if story.epic_id else None %}
+        {% if cur_epic %}
+        <span class="meta-value" style="color:{{ cur_epic.color }}">{{ cur_epic.title }}</span>
+        {% else %}
+        <span class="meta-value">—</span>
+        {% endif %}
+      </div>
+      {% endif %}
       <div class="meta-block">
         <span class="meta-label">Points</span>
         <span class="meta-value">{{ story.story_points or '—' }}</span>
@@ -328,6 +479,7 @@
 {% block scripts %}
 <script>
 (function() {
+  // ── Story builder preview ──────────────────────────────────────────────────
   const actor    = document.getElementById('sb-actor');
   const verb     = document.getElementById('sb-verb');
   const verbHint = document.getElementById('sb-verb-hint');
@@ -339,62 +491,25 @@
   const wc       = document.getElementById('story-wc');
   if (!actor) return;
 
-  // Gerund verbs for the Z (action) field
-  const ACTION_VERBS = new Set([
-    'accessing','adding','allowing','browsing','building','checking',
-    'choosing','clicking','completing','configuring','connecting',
-    'creating','deleting','deploying','downloading','editing',
-    'exporting','filtering','finding','generating','implementing',
-    'importing','integrating','launching','loading','logging',
-    'managing','monitoring','navigating','ordering','processing',
-    'reading','running','saving','searching','selecting','setting',
-    'sharing','submitting','switching','testing','tracking',
-    'uploading','using','validating','verifying','viewing',
-    'walking','writing'
-  ]);
-
-  // Simple English verb-like detection for the connector (story_verb) field:
-  // valid if it contains at least one recognised root or ends in a verb pattern
-  const CONNECTOR_ROOTS = new Set([
-    'need','needs','want','wants','require','requires','must','should',
-    'can','expect','expects','wish','wishes','would','like','has','have',
-    'to','be','able'
-  ]);
-
-  function looksLikeVerbPhrase(s) {
-    if (!s.trim()) return false;
-    const words = s.trim().toLowerCase().split(/\s+/);
-    // Accept if the first word is a known connector root
-    return CONNECTOR_ROOTS.has(words[0]);
+  function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
-
   function wordCount(s) { return s.trim() ? s.trim().split(/\s+/).length : 0; }
 
   function update() {
-    // Connector (story_verb) free-text validation
-    if (verb.value.trim()) {
-      if (looksLikeVerbPhrase(verb.value)) {
-        verb.style.borderColor = '';
-        if (verbHint) { verbHint.textContent = ''; verbHint.style.color = ''; }
-      } else {
-        verb.style.borderColor = '#F59E0B';
-        if (verbHint) { verbHint.textContent = 'should be a verb phrase'; verbHint.style.color = '#B45309'; }
-      }
-    } else {
-      verb.style.borderColor = '';
-      if (verbHint) verbHint.textContent = '';
-    }
-
-    // Z action-verb validation
-    const firstWord = z.value.trim().split(/\s+/)[0].toLowerCase();
-    z.style.borderColor = (z.value && !ACTION_VERBS.has(firstWord)) ? '#DC2626' : '';
-
-    // Live preview
-    const parts = [actor.value, verb.value.trim(), z.value.trim(),
-                   x.value.trim(), fc.value, y.value.trim()];
-    if (prev) prev.textContent = parts.filter(Boolean).join(' ') || 'Preview will appear here…';
-
-    const total = parts.reduce((n, p) => n + wordCount(p), 0);
+    const zVal = z.value.trim();
+    z.style.borderColor = (zVal && zVal.includes(' ')) ? '#DC2626' : '';
+    const htmlParts = [
+      actor.value     ? escapeHtml(actor.value)           : '',
+      verb.value.trim() ? escapeHtml(verb.value.trim())   : '',
+      zVal            ? '<strong>' + escapeHtml(zVal) + '</strong>' : '',
+      x.value.trim()  ? escapeHtml(x.value.trim())        : '',
+      fc.value        ? escapeHtml(fc.value)              : '',
+      y.value.trim()  ? escapeHtml(y.value.trim())        : '',
+    ].filter(Boolean);
+    if (prev) prev.innerHTML = htmlParts.join(' ') || 'Preview will appear here…';
+    const rawParts = [actor.value, verb.value, z.value, x.value, fc.value, y.value];
+    const total = rawParts.reduce((n, p) => n + wordCount(p), 0);
     if (wc) {
       wc.textContent = total + ' / 19';
       wc.style.color = total > 19 ? '#DC2626' : '#6B7280';
@@ -405,20 +520,11 @@
   update();
 
   document.getElementById('story-form').addEventListener('submit', function(e) {
-    // Connector verb check (warn, don't block)
-    if (verb.value.trim() && !looksLikeVerbPhrase(verb.value)) {
-      if (!confirm("'" + verb.value.trim() + "' doesn't look like a verb phrase (e.g. needs, wants, must have).\nSave anyway?")) {
-        verb.focus(); e.preventDefault(); return false;
-      }
-    }
-    // Action verb (Z) — strict block
-    const fw = z.value.trim().split(/\s+/)[0].toLowerCase();
-    if (z.value.trim() && !ACTION_VERBS.has(fw)) {
+    if (z.value.trim().includes(' ')) {
       e.preventDefault();
-      alert("'" + z.value.trim().split(' ')[0] + "' is not a recognised action verb.\nStart with a gerund like Walking, Testing, Building…");
+      alert('The action word must be a single word (e.g. Walking, Killing, Building).');
       z.focus(); return false;
     }
-    // Word count
     const parts = [actor.value, verb.value, z.value, x.value, fc.value, y.value];
     const total = parts.reduce((n, p) => n + wordCount(p), 0);
     if (total > 19) {
@@ -428,5 +534,163 @@
     }
   });
 })();
+
+// ── Activity tabs ──────────────────────────────────────────────────────────
+(function () {
+  var btns  = document.querySelectorAll('.tab-btn');
+  var panes = document.querySelectorAll('.tab-pane');
+  btns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var target = this.dataset.tab;
+      btns.forEach(function (b) { b.classList.remove('active'); });
+      panes.forEach(function (p) { p.classList.remove('active'); });
+      this.classList.add('active');
+      var pane = document.getElementById(target);
+      if (pane) pane.classList.add('active');
+    });
+  });
+}());
+
+// ── Tasks / checklist ─────────────────────────────────────────────────────
+(function () {
+  var list      = document.getElementById('tasks-list');
+  var addInput  = document.getElementById('task-new-input');
+  var addAssign = document.getElementById('task-new-assign');
+  var addBtn    = document.getElementById('task-add-btn');
+  var progress  = document.getElementById('tasks-progress');
+  if (!list) return;
+
+  var storyId  = {{ story.id if story else 'null' }};
+  var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+  var CSRF     = csrfMeta ? csrfMeta.content : '';
+
+  // Serialize all_users for building new task selects
+  var ALL_USERS = [{% for u in all_users %}{id:{{ u.id }},name:{{ u.display_name | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
+
+  function updateProgress() {
+    var items = list.querySelectorAll('.task-item');
+    var done  = list.querySelectorAll('.task-item.done').length;
+    if (progress) progress.textContent = items.length ? done + ' / ' + items.length + ' done' : '';
+  }
+  updateProgress();
+
+  function apiCall(method, url, body) {
+    return fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (r) { return r.json(); });
+  }
+
+  function buildAssignSelect(id, selectedId) {
+    var sel = document.createElement('select');
+    sel.className = 'task-assign-sel';
+    sel.dataset.id = id;
+    sel.title = 'Assign';
+    var blank = document.createElement('option');
+    blank.value = ''; blank.textContent = '— assign —';
+    sel.appendChild(blank);
+    ALL_USERS.forEach(function (u) {
+      var opt = document.createElement('option');
+      opt.value = u.id;
+      opt.textContent = u.name;
+      if (u.id == selectedId) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    return sel;
+  }
+
+  // Toggle checkbox
+  list.addEventListener('change', function (e) {
+    var cb = e.target.closest('.task-check');
+    if (cb) {
+      var id   = cb.dataset.id;
+      var item = cb.closest('.task-item');
+      var done = cb.checked ? 1 : 0;
+      if (done) item.classList.add('done'); else item.classList.remove('done');
+      apiCall('PATCH', '/api/addon/' + id, { is_done: done }).then(updateProgress);
+      return;
+    }
+    // Assignee select
+    var sel = e.target.closest('.task-assign-sel');
+    if (sel && sel.dataset.id) {
+      var uid = sel.value ? parseInt(sel.value) : null;
+      apiCall('PATCH', '/api/addon/' + sel.dataset.id, { assigned_user_id: uid });
+    }
+  });
+
+  // Delete task
+  list.addEventListener('click', function (e) {
+    var btn = e.target.closest('.task-del');
+    if (!btn) return;
+    var id   = btn.dataset.id;
+    var item = btn.closest('.task-item');
+    apiCall('DELETE', '/api/addon/' + id, null).then(function () {
+      item.remove();
+      updateProgress();
+    });
+  });
+
+  // Inline edit: click on task-content to edit
+  list.addEventListener('click', function (e) {
+    var span = e.target.closest('.task-content');
+    if (!span) return;
+    var item = span.closest('.task-item');
+    var id   = item.dataset.id;
+    var orig = span.textContent.trim();
+    var inp  = document.createElement('input');
+    inp.type = 'text';
+    inp.value = orig;
+    inp.className = 'form-input task-edit-input';
+    inp.style.cssText = 'flex:1;font-size:12px;padding:2px 4px;';
+    span.replaceWith(inp);
+    inp.focus();
+    inp.select();
+    function commit() {
+      var val = inp.value.trim();
+      if (!val) val = orig;
+      var newSpan = document.createElement('span');
+      newSpan.className = 'task-content';
+      newSpan.title = 'Click to edit';
+      newSpan.textContent = val;
+      inp.replaceWith(newSpan);
+      if (val !== orig) apiCall('PATCH', '/api/addon/' + id, { content: val });
+    }
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+      if (e.key === 'Escape') { inp.value = orig; inp.blur(); }
+    });
+  });
+
+  // Add task
+  function addTask() {
+    var text = addInput.value.trim();
+    if (!text || !storyId) return;
+    var uid = addAssign && addAssign.value ? parseInt(addAssign.value) : null;
+    apiCall('POST', '/api/story/' + storyId + '/addons', { content: text, assigned_user_id: uid }).then(function (res) {
+      if (!res.id) return;
+      var div = document.createElement('div');
+      div.className = 'task-item';
+      div.dataset.id = res.id;
+      var sel = buildAssignSelect(res.id, uid);
+      div.innerHTML =
+        '<span class="task-drag-handle">⠿</span>' +
+        '<input type="checkbox" class="task-check" data-id="' + res.id + '">' +
+        '<span class="task-content" title="Click to edit">' + text.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</span>' +
+        '<button class="task-del" data-id="' + res.id + '" title="Delete">✕</button>';
+      div.insertBefore(sel, div.querySelector('.task-del'));
+      list.appendChild(div);
+      addInput.value = '';
+      if (addAssign) addAssign.value = '';
+      updateProgress();
+    });
+  }
+
+  if (addBtn) addBtn.addEventListener('click', addTask);
+  if (addInput) addInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); addTask(); }
+  });
+}());
 </script>
 {% endblock %}
