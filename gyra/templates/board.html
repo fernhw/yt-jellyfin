@@ -14,6 +14,8 @@
       <span class="zoom-label" id="zoom-label">100%</span>
       <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
     </div>
+    <!-- Fullscreen -->
+    <button class="zoom-btn" id="board-fullscreen-btn" title="Full screen" style="width:32px">⛶</button>
     <!-- Sticker dropdown -->
     <div class="sticker-dropdown" style="position:relative">
       <button class="sticker-menu-btn" id="sticker-menu-toggle" title="Add sticker">🏷 Sticker ▾</button>
@@ -192,6 +194,35 @@
   <button class="bulk-btn bulk-clear-btn" id="bulk-clear-btn">✕ Clear</button>
 </div>
 
+{# ── Fullscreen overlay pills (visible only in fullscreen, position:fixed) ── #}
+<!-- Bottom-left: sticker menu -->
+<div id="fs-sticker-pill" class="fs-pill">
+  <div style="position:relative">
+    <button class="sticker-menu-btn" id="fs-sticker-toggle" title="Add sticker">🏷 ▾</button>
+    <div id="fs-sticker-menu" class="sticker-menu" style="display:none;bottom:100%;top:auto;margin-bottom:4px">
+      <button class="sticker-btn" data-type="exclamation"><span class="sm-icon" style="background:#FF3B30">!</span> Alert</button>
+      <button class="sticker-btn" data-type="arrow"><span class="sm-icon" style="background:#FF9F0A">→</span> Arrow</button>
+      <button class="sticker-btn" data-type="question"><span class="sm-icon" style="background:#007AFF">?</span> Question</button>
+      <button class="sticker-btn" data-type="star"><span class="sm-icon" style="background:#FFD60A;color:#000">★</span> Star</button>
+      <button class="sticker-btn" data-type="fire"><span class="sm-icon" style="background:#FF9500">🔥</span> Fire</button>
+      <button class="sticker-btn" data-type="eyes"><span class="sm-icon" style="background:#636366">👀</span> Review</button>
+      <button class="sticker-btn" data-type="check"><span class="sm-icon" style="background:#34C759">✓</span> Done</button>
+      <button class="sticker-btn" data-type="blocked"><span class="sm-icon" style="background:#FF2D55">✕</span> Blocked</button>
+      <button class="sticker-btn" data-type="up"><span class="sm-icon" style="background:#BF5AF2">↑</span> Escalate</button>
+      <button class="sticker-btn" data-type="note"><span class="sm-icon" style="background:#5AC8FA"><b>#</b></span> Note</button>
+    </div>
+  </div>
+</div>
+<!-- Bottom-right: zoom + exit fullscreen -->
+<div id="fs-controls-pill" class="fs-pill">
+  <div class="board-zoom-ctrl">
+    <button class="zoom-btn" id="fs-zoom-out" title="Zoom out">−</button>
+    <span class="zoom-label" id="fs-zoom-label">100%</span>
+    <button class="zoom-btn" id="fs-zoom-in" title="Zoom in">+</button>
+  </div>
+  <button class="zoom-btn" id="fs-exit-btn" title="Exit full screen" style="width:30px;margin-left:4px">⛶</button>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -228,6 +259,69 @@
   document.getElementById('zoom-out').addEventListener('click', () => { if (idx > 0) { idx--; applyZoom(); } });
   applyZoom();
 })();
+</script>
+
+<script>
+// ── Fullscreen ────────────────────────────────────────────────────────────────
+(function () {
+  var btn = document.getElementById('board-fullscreen-btn');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(function () {});
+    } else {
+      document.exitFullscreen();
+    }
+  });
+  document.addEventListener('fullscreenchange', function () {
+    btn.title = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+  });
+}());
+
+// ── Fullscreen overlay: sync zoom label + wire exit ──────────────────────────
+(function () {
+  function syncFsLabel() {
+    var src = document.getElementById('zoom-label');
+    var dst = document.getElementById('fs-zoom-label');
+    if (src && dst) dst.textContent = src.textContent;
+    var srcOut = document.getElementById('zoom-out');
+    var srcIn  = document.getElementById('zoom-in');
+    var dstOut = document.getElementById('fs-zoom-out');
+    var dstIn  = document.getElementById('fs-zoom-in');
+    if (dstOut && srcOut) dstOut.disabled = srcOut.disabled;
+    if (dstIn  && srcIn ) dstIn.disabled  = srcIn.disabled;
+  }
+
+  var fsOut = document.getElementById('fs-zoom-out');
+  var fsIn  = document.getElementById('fs-zoom-in');
+  if (fsOut) fsOut.addEventListener('click', function () { document.getElementById('zoom-out').click(); setTimeout(syncFsLabel, 0); });
+  if (fsIn)  fsIn.addEventListener('click',  function () { document.getElementById('zoom-in').click();  setTimeout(syncFsLabel, 0); });
+
+  // Keep fs label in sync whenever header zoom changes too
+  ['zoom-out', 'zoom-in'].forEach(function (id) {
+    var b = document.getElementById(id);
+    if (b) b.addEventListener('click', function () { setTimeout(syncFsLabel, 0); });
+  });
+
+  var fsExit = document.getElementById('fs-exit-btn');
+  if (fsExit) fsExit.addEventListener('click', function () { if (document.fullscreenElement) document.exitFullscreen(); });
+
+  document.addEventListener('fullscreenchange', function () { if (document.fullscreenElement) syncFsLabel(); });
+  syncFsLabel();
+}());
+
+// ── Fullscreen sticker pill toggle ───────────────────────────────────────────
+(function () {
+  var toggle = document.getElementById('fs-sticker-toggle');
+  var menu   = document.getElementById('fs-sticker-menu');
+  if (!toggle || !menu) return;
+  toggle.addEventListener('click', function (e) {
+    e.stopPropagation();
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+  });
+  document.addEventListener('click', function () { if (menu) menu.style.display = 'none'; });
+  menu.addEventListener('click', function (e) { e.stopPropagation(); });
+}());
 </script>
 
 <script>
@@ -299,7 +393,14 @@
         return;
       }
       var href = card.dataset.href;
-      if (href) window.location = href;
+      if (href) {
+        // In fullscreen, open in new tab so fullscreen isn't exited
+        if (document.fullscreenElement) {
+          window.open(href, '_blank');
+        } else {
+          window.location = href;
+        }
+      }
     });
     var cb = card.querySelector('.card-sel-cb');
     if (cb) {
@@ -332,7 +433,9 @@
         var c = document.querySelector('.board-card[data-story-id="' + id + '"]');
         if (!c || !zone) return;
         var oldCol = c.closest('.board-column');
-        zone.appendChild(c);
+        // Append to first subcol if it exists, else directly to zone
+        var targetSub = zone.querySelector('.board-subcol') || zone;
+        targetSub.appendChild(c);
         if (oldCol) {
           var b = oldCol.querySelector('.col-count');
           if (b) b.textContent = oldCol.querySelectorAll('.board-card').length;
@@ -340,6 +443,7 @@
       });
       var newCol = zone ? zone.closest('.board-column') : null;
       if (newCol) { var b = newCol.querySelector('.col-count'); if (b) b.textContent = newCol.querySelectorAll('.board-card').length; }
+      if (window._refreshColWidths) window._refreshColWidths();
       clearAll();
     });
   });
@@ -375,6 +479,7 @@
         c.remove();
         if (col) { var b = col.querySelector('.col-count'); if (b) b.textContent = col.querySelectorAll('.board-card').length; }
       });
+      if (window._refreshColWidths) window._refreshColWidths();
       clearAll();
     });
   });

@@ -4,6 +4,8 @@ credentials-file: /Users/alexander-highground/.cloudflared/7c61e981-605e-4aa0-bf
 ingress:
   - hostname: gyra.fernhw.com
     service: http://127.0.0.1:5000
+    originRequest:
+      httpHostHeader: gyra.fernhw.com
 
   - hostname: jellyfin.fernhw.com
     service: http://127.0.0.1:8096

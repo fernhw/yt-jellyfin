@@ -21,7 +21,6 @@
       dragCard = card;
       sourceCol = card.closest('.board-column');
       card.classList.add('dragging');
-      // Amplify rotation and scale on drag
       const baseRot = parseFloat(getComputedStyle(card).getPropertyValue('--rot') || '0');
       card.style.transform = `rotate(${baseRot * 2}deg) scale(1.08)`;
       e.dataTransfer.effectAllowed = 'move';
@@ -35,24 +34,25 @@
     });
   }
 
-  function initColumn(col) {
-    const zone = col.querySelector('.board-cards');
-    if (!zone) return;
-
-    zone.addEventListener('dragover', e => {
+  // Each visual sub-column is its own drop zone
+  function initSubcol(subcol, col) {
+    subcol.addEventListener('dragover', e => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       col.classList.add('drag-over');
+      subcol.classList.add('subcol-drag-over');
     });
 
-    zone.addEventListener('dragleave', e => {
+    subcol.addEventListener('dragleave', e => {
+      subcol.classList.remove('subcol-drag-over');
       if (!col.contains(e.relatedTarget)) {
         col.classList.remove('drag-over');
       }
     });
 
-    zone.addEventListener('drop', e => {
+    subcol.addEventListener('drop', e => {
       e.preventDefault();
+      subcol.classList.remove('subcol-drag-over');
       col.classList.remove('drag-over');
       if (!dragCard) return;
 
@@ -60,41 +60,41 @@
       const statusId = col.dataset.statusId;
       const sprint   = col.dataset.sprint || null;
 
-      // Compute optimistic new order_index
-      const cards     = Array.from(zone.querySelectorAll('.board-card'));
-      const afterCard = getCardAfterDrop(zone, e.clientY);
+      const afterCard   = getCardAfterDrop(subcol, e.clientY);
+      const allInCol    = Array.from(col.querySelectorAll('.board-card'));
       let newIndex;
       if (afterCard) {
         newIndex = parseInt(afterCard.dataset.orderIndex || '0', 10) - 1;
       } else {
-        const lastCard = cards[cards.length - 1];
-        newIndex = lastCard ? parseInt(lastCard.dataset.orderIndex || '0', 10) + 1 : 0;
+        const last = allInCol[allInCol.length - 1];
+        newIndex = last ? parseInt(last.dataset.orderIndex || '0', 10) + 1 : 0;
       }
 
-      // Optimistic DOM update
       const prevSibling = dragCard.nextSibling;
       const prevParent  = dragCard.parentNode;
       if (afterCard) {
-        zone.insertBefore(dragCard, afterCard);
+        subcol.insertBefore(dragCard, afterCard);
       } else {
-        zone.appendChild(dragCard);
+        subcol.appendChild(dragCard);
       }
-      if (sourceCol) updateCount(sourceCol);
+
+      refreshColWidths();
+      if (sourceCol && sourceCol !== col) updateCount(sourceCol);
       updateCount(col);
 
-      // If dragged card is part of a multi-selection, move ALL selected cards
+      // Multi-select: move all selected cards into this same subcol
       const selectedCards = Array.from(document.querySelectorAll('.board-card.card-selected'));
       const isMulti = selectedCards.length > 1 && selectedCards.includes(dragCard);
 
       if (isMulti) {
-        // Move every selected card (other than the one already moved) to the same zone
         const otherSelected = selectedCards.filter(c => c !== dragCard);
         const affectedCols  = new Set();
         otherSelected.forEach(c => {
           const oc = c.closest('.board-column');
           if (oc) affectedCols.add(oc);
-          zone.appendChild(c);
+          subcol.appendChild(c);
         });
+        refreshColWidths();
         affectedCols.forEach(c => updateCount(c));
         updateCount(col);
 
@@ -110,11 +110,11 @@
         })
         .then(r => { if (!r.ok) throw new Error('API error ' + r.status); })
         .catch(() => {
-          // On failure revert the primary card only (minor UX trade-off)
           if (prevParent) {
             if (prevSibling) prevParent.insertBefore(dragCard, prevSibling);
             else prevParent.appendChild(dragCard);
           }
+          refreshColWidths();
           if (sourceCol) updateCount(sourceCol);
           updateCount(col);
         });
@@ -124,25 +124,20 @@
       // Single-card move
       fetch(`/api/story/${storyId}/move`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken,
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
         body: JSON.stringify({
           status_id:   parseInt(statusId, 10),
           sprint:      sprint ? parseInt(sprint, 10) : null,
           order_index: newIndex,
         }),
       })
-      .then(r => {
-        if (!r.ok) throw new Error('API error ' + r.status);
-      })
+      .then(r => { if (!r.ok) throw new Error('API error ' + r.status); })
       .catch(() => {
-        // Revert DOM on failure
         if (prevParent) {
           if (prevSibling) prevParent.insertBefore(dragCard, prevSibling);
           else prevParent.appendChild(dragCard);
         }
+        refreshColWidths();
         if (sourceCol) updateCount(sourceCol);
         updateCount(col);
       });
@@ -158,9 +153,51 @@
     return null;
   }
 
+  // ── Split each status column into real sub-column drop zones ─────────────
+  function refreshColWidths() {
+    document.querySelectorAll('.board-column').forEach(function (col) {
+      var outer = col.querySelector('.board-cards');
+      if (!outer) return;
+
+      var n = col.querySelectorAll('.board-card').length;
+      var inner = n >= 8 ? 3 : n >= 4 ? 2 : 1;
+      col.style.setProperty('--inner-cols', inner);
+
+      // Only restructure when the sub-column count needs to change
+      var currentInner = parseInt(outer.dataset.innerCols || '0', 10);
+      if (currentInner === inner) return;
+      outer.dataset.innerCols = inner;
+
+      // Snapshot all cards before touching the DOM
+      var allCards = Array.from(col.querySelectorAll('.board-card'));
+
+      // Remove old subcols (cards inside are removed with them but refs still valid)
+      Array.from(outer.querySelectorAll(':scope > .board-subcol')).forEach(function (s) {
+        s.remove();
+      });
+
+      // Build new subcols and attach drop logic
+      var newSubs = [];
+      for (var i = 0; i < inner; i++) {
+        var sub = document.createElement('div');
+        sub.className = 'board-subcol';
+        outer.appendChild(sub);
+        newSubs.push(sub);
+        initSubcol(sub, col);
+      }
+
+      // Distribute cards column-major (interleaved: card 0→sub0, 1→sub1, 2→sub2, 3→sub0…)
+      allCards.forEach(function (card, i) {
+        newSubs[i % inner].appendChild(card);
+      });
+    });
+  }
+
   // Init on load
   document.querySelectorAll('.board-card').forEach(initCard);
-  document.querySelectorAll('.board-column').forEach(initColumn);
+  refreshColWidths();
+  // Expose so bulk-action scripts can trigger redistribution
+  window._refreshColWidths = refreshColWidths;
 
   // ── Shift multi-select ───────────────────────────────────────────────────
   let lastSelected = null;

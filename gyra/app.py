@@ -32,7 +32,10 @@ from db import (create_addon, create_epic, delete_addon, delete_epic,
                 get_user_by_id, get_user_by_username,
                 get_all_active_users, get_all_sprints,
                 init_db, log_story_change, toggle_addon,
-                update_addon_content)
+                update_addon_content,
+                get_user_projects, get_project_members, user_in_project,
+                create_notification, get_notifications,
+                get_unread_count, mark_notifications_read)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -61,10 +64,13 @@ def datetimeformat(ts):
 
 @app.context_processor
 def inject_globals():
-    return dict(
-        projects=get_projects() if "user_id" in session else [],
-        csrf_token=get_csrf_token,
-    )
+    if "user_id" not in session:
+        return dict(projects=[], csrf_token=get_csrf_token, notif_count=0)
+    uid  = session["user_id"]
+    role = session.get("role")
+    projects = get_projects() if role == "admin" else get_user_projects(uid)
+    notif_count = get_unread_count(uid)
+    return dict(projects=projects, csrf_token=get_csrf_token, notif_count=notif_count)
 
 
 # ── DB initialisation ─────────────────────────────────────────────────────────
@@ -72,6 +78,32 @@ def inject_globals():
 @app.before_request
 def bootstrap():
     init_db()
+
+
+@app.after_request
+def set_no_cache(response):
+    """Prevent Cloudflare / any proxy from caching HTML pages that contain CSRF tokens."""
+    if response.content_type and response.content_type.startswith("text/html"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+    return response
+
+
+# ── Temporary: header debug (admin only) ──────────────────────────────────────
+@app.route("/debug/headers")
+@login_required
+@admin_required
+def debug_headers():
+    import json as _json
+    data = {
+        "remote_addr":    request.remote_addr,
+        "host":           request.host,
+        "url_scheme":     request.scheme,
+        "headers":        dict(request.headers),
+        "session_keys":   list(session.keys()),
+        "has_csrf":       "_csrf" in session,
+    }
+    return _json.dumps(data, indent=2), 200, {"Content-Type": "application/json"}
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -256,8 +288,11 @@ def board(project_id):
         s["tasks"]     = tasks_map.get(s["id"], [])
 
     board_map: dict = {st["id"]: [] for st in statuses}
+    first_status_id = statuses[0]["id"] if statuses else None
     for s in stories:
         col = s["status_id"]
+        if col not in board_map and first_status_id is not None:
+            col = first_status_id  # safety net: no-status stories go to first column
         if col in board_map:
             board_map[col].append(s)
 
@@ -454,6 +489,7 @@ def story_view(story_id):
 
             # Capture before-state for history logging
             old = dict(s)
+            old_assignee_ids = {a["id"] for a in get_story_users(story_id)}
 
             conn = get_db()
             conn.execute(
@@ -484,6 +520,18 @@ def story_view(story_id):
             if old.get("title") != title:
                 log_story_change(story_id, uid, "Title", old.get("title"), title)
 
+            # Notify newly assigned users
+            new_assignee_ids = set(assignees)
+            for newly_assigned_id in (new_assignee_ids - old_assignee_ids):
+                if newly_assigned_id != uid:
+                    create_notification(
+                        user_id=newly_assigned_id,
+                        type_="assignment",
+                        message=f"{session['display_name']} assigned you to '{s['title'][:50]}'",
+                        story_id=story_id,
+                        from_user=uid,
+                    )
+
             flash("Story updated.", "success")
             pid = s["project_id"]
             if sprint:
@@ -501,6 +549,31 @@ def story_view(story_id):
                 )
                 conn.commit()
                 conn.close()
+                # Notify assignees about the new comment
+                commenter     = session["user_id"]
+                commenter_name = session["display_name"]
+                story_title   = s["title"][:50]
+                for assignee in get_story_users(story_id):
+                    if assignee["id"] != commenter:
+                        create_notification(
+                            user_id=assignee["id"],
+                            type_="comment",
+                            message=f"{commenter_name} commented on '{story_title}'",
+                            story_id=story_id,
+                            from_user=commenter,
+                        )
+                # Notify @mentioned users
+                import re as _re
+                for username in _re.findall(r'@(\w+)', content):
+                    mentioned = get_user_by_username(username)
+                    if mentioned and mentioned["id"] != commenter:
+                        create_notification(
+                            user_id=mentioned["id"],
+                            type_="mention",
+                            message=f"{commenter_name} mentioned you in '{story_title}'",
+                            story_id=story_id,
+                            from_user=commenter,
+                        )
             return redirect(url_for("story_view", story_id=story_id))
 
         if action == "delete":
@@ -778,8 +851,10 @@ def admin_projects():
     for p in raw_projects:
         d = dict(p)
         d["statuses"] = get_statuses(p["id"])
+        d["members"]  = get_project_members(p["id"])
         all_projects.append(d)
-    return render_template("admin_project.html", all_projects=all_projects)
+    all_users = get_all_active_users()
+    return render_template("admin_project.html", all_projects=all_projects, all_users=all_users)
 
 
 @app.route("/admin/projects/create", methods=["POST"])
@@ -835,6 +910,38 @@ def admin_delete_project(project_id):
     conn.close()
     flash(f"Project '{project['name']}' deleted.", "success")
     return redirect(url_for("admin_projects"))
+
+
+@app.route("/admin/projects/<int:project_id>/members/add", methods=["POST"])
+@admin_required
+def admin_add_project_member(project_id):
+    enforce_csrf()
+    uid = request.form.get("user_id", type=int)
+    if uid:
+        conn = get_db()
+        conn.execute(
+            "INSERT OR IGNORE INTO project_members (project_id, user_id, added_by, added_at) VALUES (?,?,?,?)",
+            (project_id, uid, session["user_id"], int(time.time())),
+        )
+        conn.commit()
+        conn.close()
+    return redirect(url_for("admin_projects") + f"#{project_id}")
+
+
+@app.route("/admin/projects/<int:project_id>/members/remove", methods=["POST"])
+@admin_required
+def admin_remove_project_member(project_id):
+    enforce_csrf()
+    uid = request.form.get("user_id", type=int)
+    if uid:
+        conn = get_db()
+        conn.execute(
+            "DELETE FROM project_members WHERE project_id=? AND user_id=?",
+            (project_id, uid),
+        )
+        conn.commit()
+        conn.close()
+    return redirect(url_for("admin_projects") + f"#{project_id}")
 
 
 @app.route("/admin/projects/<int:project_id>/status/add", methods=["POST"])
@@ -943,6 +1050,34 @@ def avatar(filename):
     return send_from_directory(Config.UPLOAD_FOLDER, secure_filename(filename))
 
 
+# ── Notifications API ─────────────────────────────────────────────────────────
+
+@app.route("/api/notifications")
+@login_required
+def api_notifications():
+    notes = get_notifications(session["user_id"])
+    result = []
+    for n in notes:
+        result.append({
+            "id":         n["id"],
+            "type":       n["type"],
+            "message":    n["message"],
+            "story_id":   n["story_id"],
+            "from_name":  n["from_name"],
+            "is_read":    bool(n["is_read"]),
+            "created_at": n["created_at"],
+        })
+    return jsonify(notifications=result, unread=get_unread_count(session["user_id"]))
+
+
+@app.route("/api/notifications/mark-read", methods=["POST"])
+@login_required
+def api_notifications_mark_read():
+    enforce_csrf()
+    mark_notifications_read(session["user_id"])
+    return jsonify(ok=True)
+
+
 # ── JSON API (board drag-drop) ────────────────────────────────────────────────
 
 @app.route("/api/story/<int:story_id>/move", methods=["POST"])
@@ -955,10 +1090,31 @@ def api_move_story(story_id):
     order     = data.get("order_index", 0)
 
     conn = get_db()
+    old = conn.execute("SELECT status_id, sprint FROM stories WHERE id=?", (story_id,)).fetchone()
     conn.execute(
         "UPDATE stories SET status_id=?,sprint=?,order_index=?,updated_at=? WHERE id=?",
         (status_id, sprint, order, int(time.time()), story_id),
     )
+    # Log status change to story_history
+    if old and old["status_id"] != status_id:
+        old_st = conn.execute("SELECT name FROM statuses WHERE id=?", (old["status_id"],)).fetchone()
+        new_st = conn.execute("SELECT name FROM statuses WHERE id=?", (status_id,)).fetchone()
+        conn.execute(
+            "INSERT INTO story_history (story_id,user_id,field_name,old_value,new_value,created_at) VALUES (?,?,?,?,?,?)",
+            (story_id, session["user_id"], "Status",
+             old_st["name"] if old_st else str(old["status_id"]),
+             new_st["name"] if new_st else str(status_id),
+             int(time.time())),
+        )
+        # Notify all assignees of the status change
+        st_name = new_st["name"] if new_st else str(status_id)
+        for a in get_story_users(story_id):
+            if a["id"] != session["user_id"]:
+                conn.execute(
+                    "INSERT INTO notifications (user_id,type,message,story_id,from_user,created_at) VALUES (?,?,?,?,?,?)",
+                    (a["id"], "status", f"{session['display_name']} moved a story to {st_name}",
+                     story_id, session["user_id"], int(time.time())),
+                )
     conn.commit()
     conn.close()
     return jsonify(ok=True)
@@ -972,6 +1128,23 @@ def api_move_to_sprint(story_id):
     sprint = data.get("sprint")
 
     conn = get_db()
+    # If moving to a sprint and this story has no status, assign the first status
+    # so it doesn't silently disappear from the board.
+    if sprint is not None:
+        story = conn.execute("SELECT project_id, status_id FROM stories WHERE id=?", (story_id,)).fetchone()
+        if story and not story["status_id"]:
+            first_status = conn.execute(
+                "SELECT id FROM statuses WHERE project_id=? ORDER BY order_index LIMIT 1",
+                (story["project_id"],),
+            ).fetchone()
+            if first_status:
+                conn.execute(
+                    "UPDATE stories SET sprint=?,status_id=?,updated_at=? WHERE id=?",
+                    (sprint, first_status["id"], int(time.time()), story_id),
+                )
+                conn.commit()
+                conn.close()
+                return jsonify(ok=True)
     conn.execute(
         "UPDATE stories SET sprint=?,updated_at=? WHERE id=?",
         (sprint, int(time.time()), story_id),
@@ -1088,6 +1261,17 @@ def api_bulk_sprint():
         return jsonify(ok=False, error="invalid ids"), 400
     ph   = ','.join('?' * len(story_ids))
     conn = get_db()
+    # If moving to a sprint, fix any stories that have no status_id
+    if sprint is not None:
+        for sid in story_ids:
+            row = conn.execute("SELECT project_id, status_id FROM stories WHERE id=?", (sid,)).fetchone()
+            if row and not row["status_id"]:
+                first = conn.execute(
+                    "SELECT id FROM statuses WHERE project_id=? ORDER BY order_index LIMIT 1",
+                    (row["project_id"],),
+                ).fetchone()
+                if first:
+                    conn.execute("UPDATE stories SET status_id=? WHERE id=?", (first["id"], sid))
     conn.execute(
         f"UPDATE stories SET sprint=?,updated_at=? WHERE id IN ({ph})",
         [sprint, int(time.time())] + story_ids,

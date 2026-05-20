@@ -41,17 +41,34 @@
     <div class="action-group">
       <a href="{{ url_for('board',   project_id=p.id) }}" class="btn btn-xs btn-secondary">Board</a>
       <a href="{{ url_for('backlog', project_id=p.id) }}" class="btn btn-xs btn-secondary">Backlog</a>
+      <form method="post" action="{{ url_for('admin_delete_project', project_id=p.id) }}"
+            style="display:inline"
+            onsubmit="return confirm('Delete project «{{ p.name }}» and ALL its stories, columns and data? This cannot be undone.')">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-xs btn-danger">🗑 Delete project</button>
+      </form>
     </div>
   </div>
   <div class="card-body">
-    <p class="form-hint mb-2">Kanban columns</p>
-    <div class="status-chips">
+    <p class="form-hint mb-2">Scrum columns — drag to reorder, × to remove</p>
+
+    <ul class="status-sort-list" id="status-list-{{ p.id }}" data-project="{{ p.id }}">
       {% for st in p.statuses %}
-      <span class="status-chip" style="border-color:{{ st.color }};color:{{ st.color }}">
-        {{ st.name }}{% if st.is_done %} ✓{% endif %}
-      </span>
+      <li class="status-sort-item" draggable="true" data-id="{{ st.id }}">
+        <span class="status-sort-handle">⠿</span>
+        <span class="status-color-dot" style="background:{{ st.color }}"></span>
+        <span class="status-sort-name">{{ st.name }}{% if st.is_done %} ✓{% endif %}</span>
+        <form method="post"
+              action="{{ url_for('admin_delete_status', project_id=p.id, status_id=st.id) }}"
+              style="margin:0"
+              onsubmit="return confirm('Delete column «{{ st.name }}»?')">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button type="submit" class="status-del-btn" title="Delete column">×</button>
+        </form>
+      </li>
       {% endfor %}
-    </div>
+    </ul>
+
     <form method="post" action="{{ url_for('admin_add_status', project_id=p.id) }}"
           class="form-inline mt-3">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
@@ -69,3 +86,84 @@
 <div class="empty-state"><p>No projects yet. Create one above.</p></div>
 {% endfor %}
 {% endblock %}
+
+{% block scripts %}
+<style>
+.status-sort-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.status-sort-item {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--c-purple-900);
+  border: 1.5px solid var(--c-purple-700);
+  padding: 4px 8px 4px 6px;
+  cursor: default; user-select: none;
+  font-size: 12px; font-weight: 600; color: var(--c-purple-100);
+  transition: border-color .15s, opacity .15s;
+}
+.status-sort-item.drag-over { border-color: var(--c-purple-400); background: var(--c-purple-800); }
+.status-sort-item.dragging  { opacity: .35; }
+.status-sort-handle { cursor: grab; font-size: 15px; color: var(--c-purple-500); line-height: 1; }
+.status-sort-handle:active  { cursor: grabbing; }
+.status-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.status-sort-name { flex: 1; }
+.status-del-btn {
+  background: none; border: none; color: var(--c-purple-500);
+  cursor: pointer; font-size: 15px; font-weight: 900; line-height: 1; padding: 0 2px;
+}
+.status-del-btn:hover { color: #f87171; }
+.btn-danger { background: #8B1A1A !important; color: #FFCACA !important; border: none !important; }
+.btn-danger:hover { background: #B91C1C !important; color: #fff !important; }
+</style>
+<script>
+(function () {
+  var csrf = (document.querySelector('meta[name="csrf-token"]') || {content:''}).content || '';
+
+  document.querySelectorAll('.status-sort-list').forEach(function (list) {
+    var projectId = list.dataset.project;
+    var dragging  = null;
+
+    function saveOrder() {
+      var ids = Array.from(list.querySelectorAll('.status-sort-item')).map(function (i) {
+        return parseInt(i.dataset.id, 10);
+      });
+      fetch('/api/project/' + projectId + '/statuses/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+        body: JSON.stringify({ ids: ids }),
+      });
+    }
+
+    list.querySelectorAll('.status-sort-item').forEach(function (item) {
+      item.addEventListener('dragstart', function (e) {
+        dragging = item;
+        setTimeout(function () { item.classList.add('dragging'); }, 0);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      item.addEventListener('dragend', function () {
+        item.classList.remove('dragging');
+        list.querySelectorAll('.status-sort-item').forEach(function (i) {
+          i.classList.remove('drag-over');
+        });
+        dragging = null;
+        saveOrder();
+      });
+      item.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        if (!dragging || dragging === item) return;
+        var rect   = item.getBoundingClientRect();
+        var before = e.clientX < rect.left + rect.width / 2;
+        list.querySelectorAll('.status-sort-item').forEach(function (i) { i.classList.remove('drag-over'); });
+        item.classList.add('drag-over');
+        if (before) list.insertBefore(dragging, item);
+        else         list.insertBefore(dragging, item.nextSibling);
+      });
+      item.addEventListener('dragleave', function () { item.classList.remove('drag-over'); });
+      item.addEventListener('drop',      function () { item.classList.remove('drag-over'); });
+    });
+  });
+}());
+</script>
+{% endblock %}
+

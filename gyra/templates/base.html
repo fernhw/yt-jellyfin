@@ -14,8 +14,6 @@
 <div class="layout">
   <!-- ── Sidebar ── -->
   <aside class="sidebar">
-    <button class="sidebar-toggle" id="sidebar-toggle" title="Hide/show sidebar">&#9664;</button>
-    <div class="sidebar-inner">
     <a class="sidebar-brand" href="{{ url_for('index') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/>
@@ -75,8 +73,8 @@
         Sign out
       </a>
     </div>
-    </div>{# /sidebar-inner #}
   </aside>
+  <button class="sidebar-toggle" id="sidebar-toggle" title="Hide/show sidebar">&#9664;</button>
 
   <!-- ── Main ── -->
   <main class="main-content">

@@ -158,6 +158,27 @@ CREATE TABLE IF NOT EXISTS story_history (
     new_value  TEXT    DEFAULT NULL,
     created_at INTEGER NOT NULL
 );
+
+-- User notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type        TEXT    NOT NULL,
+    message     TEXT    NOT NULL,
+    story_id    INTEGER REFERENCES stories(id) ON DELETE CASCADE,
+    from_user   INTEGER REFERENCES users(id),
+    is_read     INTEGER DEFAULT 0,
+    created_at  INTEGER NOT NULL
+);
+
+-- Project membership
+CREATE TABLE IF NOT EXISTS project_members (
+    project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    added_by    INTEGER REFERENCES users(id),
+    added_at    INTEGER NOT NULL,
+    PRIMARY KEY (project_id, user_id)
+);
 """
 
 
@@ -229,6 +250,16 @@ def _migrate_db() -> None:
         conn.execute("ALTER TABLE stickers_v2 RENAME TO stickers")
         conn.execute("PRAGMA foreign_keys = ON")
 
+    # Seed project_members: add all active users to all projects (backward compat)
+    cnt = conn.execute("SELECT COUNT(*) FROM project_members").fetchone()[0]
+    if cnt == 0:
+        now = int(time.time())
+        conn.execute(
+            "INSERT OR IGNORE INTO project_members (project_id, user_id, added_at) "
+            "SELECT p.id, u.id, ? FROM projects p, users u WHERE u.is_active = 1",
+            (now,),
+        )
+
     conn.commit()
     conn.close()
 
@@ -268,6 +299,41 @@ def get_projects():
     rows = conn.execute("SELECT * FROM projects ORDER BY created_at DESC").fetchall()
     conn.close()
     return rows
+
+
+def get_user_projects(user_id: int):
+    """Return only projects the user is a member of."""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT p.* FROM projects p "
+        "JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ? "
+        "ORDER BY p.created_at DESC",
+        (user_id,),
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def get_project_members(project_id: int):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT u.id, u.username, u.display_name, u.avatar, u.role, pm.added_at "
+        "FROM project_members pm JOIN users u ON u.id = pm.user_id "
+        "WHERE pm.project_id = ? ORDER BY u.display_name",
+        (project_id,),
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def user_in_project(user_id: int, project_id: int) -> bool:
+    conn = get_db()
+    row = conn.execute(
+        "SELECT 1 FROM project_members WHERE project_id=? AND user_id=?",
+        (project_id, user_id),
+    ).fetchone()
+    conn.close()
+    return row is not None
 
 
 def get_project(project_id: int):
@@ -620,3 +686,49 @@ def get_story_history(story_id: int):
     ).fetchall()
     conn.close()
     return rows
+
+
+# ── Notifications ─────────────────────────────────────────────────────────────
+
+def create_notification(user_id: int, type_: str, message: str,
+                        story_id=None, from_user=None) -> None:
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO notifications (user_id,type,message,story_id,from_user,created_at) VALUES (?,?,?,?,?,?)",
+        (user_id, type_, message, story_id, from_user, int(time.time())),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_notifications(user_id: int, limit: int = 30):
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT n.*, u.display_name as from_name, u.avatar as from_avatar,
+                  s.title as story_title
+           FROM notifications n
+           LEFT JOIN users u ON u.id = n.from_user
+           LEFT JOIN stories s ON s.id = n.story_id
+           WHERE n.user_id = ?
+           ORDER BY n.created_at DESC LIMIT ?""",
+        (user_id, limit),
+    ).fetchall()
+    conn.close()
+    return rows
+
+
+def get_unread_count(user_id: int) -> int:
+    conn = get_db()
+    row = conn.execute(
+        "SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0",
+        (user_id,),
+    ).fetchone()
+    conn.close()
+    return row[0] if row else 0
+
+
+def mark_notifications_read(user_id: int) -> None:
+    conn = get_db()
+    conn.execute("UPDATE notifications SET is_read=1 WHERE user_id=?", (user_id,))
+    conn.commit()
+    conn.close()
