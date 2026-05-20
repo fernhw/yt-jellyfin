@@ -2,17 +2,26 @@
 (function () {
   'use strict';
 
+  console.log('[stickers] IIFE start');
+
   const csrf = () => {
     const m = document.querySelector('meta[name="csrf-token"]');
     return m ? m.getAttribute('content') : '';
   };
 
+  const appRoot = (() => {
+    const m = document.querySelector('meta[name="app-root"]');
+    return m ? m.getAttribute('content') : '';
+  })();
+
   const board = document.getElementById('board');
   const layer = document.getElementById('sticker-layer');
-  if (!board || !layer) return;
+  console.log('[stickers] board:', board, 'layer:', layer);
+  if (!board || !layer) { console.warn('[stickers] early exit — board or layer missing'); return; }
 
   const projectId = board.dataset.project;
   const sprint    = board.dataset.sprint;
+  console.log('[stickers] projectId:', projectId, 'sprint:', sprint);
 
   const STICKER_HTML = {
     exclamation: '!',
@@ -114,7 +123,7 @@
       targetCard.appendChild(sticker);
 
       if (id) {
-        fetch('/api/stickers/' + id, {
+        fetch(appRoot + '/api/stickers/' + id, {
           method:  'PATCH',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf() },
           body:    JSON.stringify({
@@ -129,7 +138,7 @@
       var x = parseFloat(sticker.style.left);
       var y = parseFloat(sticker.style.top);
       if (id) {
-        fetch('/api/stickers/' + id, {
+        fetch(appRoot + '/api/stickers/' + id, {
           method:  'PATCH',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf() },
           body:    JSON.stringify({ card_story_id: null, x: x, y: y, rotation: 0 }),
@@ -138,15 +147,51 @@
     }
   });
 
+  // ── Single shared tooltip for all stickers ───────────────────────────────
+  var _tip = document.createElement('div');
+  _tip.className = 'sticker-tooltip';
+  _tip.style.display = 'none';
+  document.body.appendChild(_tip);
+
+  function _showTip(text, mx, my) {
+    _tip.textContent = text;
+    _tip.style.display = 'block';
+    _positionTip(mx, my);
+  }
+  function _positionTip(mx, my) {
+    var tw = _tip.offsetWidth  || 140;
+    var th = _tip.offsetHeight || 24;
+    var x  = mx + 14;
+    var y  = my - th - 8;
+    if (x + tw + 4 > window.innerWidth)  x = mx - tw - 10;
+    if (y < 4) y = my + 16;
+    _tip.style.left = Math.max(4, x) + 'px';
+    _tip.style.top  = Math.max(4, y) + 'px';
+  }
+  function _hideTip() { _tip.style.display = 'none'; }
+
   // ── Wire a sticker ───────────────────────────────────────────────────────────
   function wireSticker(el) {
-    el.addEventListener('mousedown', function (e) { startStickerDrag(el, e); });
+    el.addEventListener('mousedown', function (e) { _hideTip(); startStickerDrag(el, e); });
+
+    // ── Hover tooltip: who placed it ──────────────────────────────────────────
+    el.addEventListener('mouseenter', function (e) {
+      var creator = el.dataset.creator;
+      if (!creator) return;
+      _showTip('📌 Placed by ' + creator, e.clientX, e.clientY);
+    });
+    el.addEventListener('mousemove', function (e) {
+      if (_tip.style.display === 'none') return;
+      _positionTip(e.clientX, e.clientY);
+    });
+    el.addEventListener('mouseleave', _hideTip);
+
     var del = el.querySelector('.sticker-del');
     if (del) {
       del.addEventListener('click', function (e) {
         e.stopPropagation();
         var sid = del.dataset.id;
-        fetch('/api/stickers/' + sid, {
+        fetch(appRoot + '/api/stickers/' + sid, {
           method:  'DELETE',
           headers: { 'X-CSRF-Token': csrf() },
         }).then(function (r) { if (r.ok) el.remove(); });
@@ -155,6 +200,9 @@
   }
 
   document.querySelectorAll('.board-sticker').forEach(wireSticker);
+  // Hide tooltip on any scroll or window blur
+  document.addEventListener('scroll', _hideTip, true);
+  window.addEventListener('blur', _hideTip);
 
   // ── Dropdown toggle ──────────────────────────────────────────────────────────
   var menuToggle = document.getElementById('sticker-menu-toggle');
@@ -168,15 +216,31 @@
     menu.addEventListener('click', function (e) { e.stopPropagation(); });
   }
 
+  // ── Fullscreen sticker dropdown toggle ───────────────────────────────────────
+  var fsTog  = document.getElementById('fs-sticker-toggle');
+  var fsMenu = document.getElementById('fs-sticker-menu');
+  if (fsTog && fsMenu) {
+    fsTog.addEventListener('click', function (e) {
+      e.stopPropagation();
+      fsMenu.style.display = fsMenu.style.display === 'none' ? 'block' : 'none';
+    });
+    document.addEventListener('click', function () { if (fsMenu) fsMenu.style.display = 'none'; });
+    fsMenu.addEventListener('click', function (e) { e.stopPropagation(); });
+  }
+
   // ── Create new sticker ───────────────────────────────────────────────────────
-  document.querySelectorAll('.sticker-btn[data-type]').forEach(function (btn) {
+  const stickerBtns = document.querySelectorAll('.sticker-btn[data-type]');
+  console.log('[stickers] sticker buttons found:', stickerBtns.length);
+  stickerBtns.forEach(function (btn) {
     btn.addEventListener('click', function () {
-      if (menu) menu.style.display = 'none';
+      console.log('[stickers] btn click fired, type:', btn.dataset.type);
+      if (menu)   menu.style.display   = 'none';
+      if (fsMenu) fsMenu.style.display = 'none';
       var type = btn.dataset.type;
       var x    = 8  + Math.random() * 40;
       var y    = 4  + Math.random() * 35;
 
-      fetch('/api/stickers', {
+      fetch(appRoot + '/api/stickers', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf() },
         body:    JSON.stringify({
@@ -189,9 +253,10 @@
       .then(function (data) {
         if (!data.id) return;
         var el      = document.createElement('div');
-        el.className  = 'board-sticker sticker-' + type;
-        el.dataset.id = data.id;
-        el.style.left = x + '%';
+        el.className    = 'board-sticker sticker-' + type;
+        el.dataset.id      = data.id;
+        el.dataset.creator = data.creator_name || '';
+        el.style.left   = x + '%';
         el.style.top  = y + '%';
         el.innerHTML  = (STICKER_HTML[type] || type) +
           '<button class="sticker-del" data-id="' + data.id + '" title="Remove">\u2715</button>';

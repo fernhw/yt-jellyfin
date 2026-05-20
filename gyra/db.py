@@ -519,7 +519,10 @@ def get_story_thumbnails(story_ids: list) -> dict:
 def get_stickers(project_id: int):
     conn = get_db()
     rows = conn.execute(
-        "SELECT * FROM stickers WHERE project_id=?",
+        """SELECT s.*, u.display_name AS creator_name
+           FROM stickers s
+           LEFT JOIN users u ON u.id = s.created_by
+           WHERE s.project_id=?""",
         (project_id,),
     ).fetchall()
     conn.close()

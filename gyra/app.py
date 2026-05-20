@@ -304,8 +304,9 @@ def board(project_id):
         if cid:
             card_stickers_map.setdefault(cid, []).append(s)
 
-    all_users   = get_all_active_users()
-    all_sprints = get_all_sprints(project_id)
+    all_users    = get_all_active_users()
+    all_sprints  = get_all_sprints(project_id)
+    story_types  = get_story_types(project_id)
 
     return render_template(
         "board.html",
@@ -316,6 +317,7 @@ def board(project_id):
         card_stickers_map=card_stickers_map,
         all_users=all_users,
         all_sprints=all_sprints,
+        story_types=story_types,
     )
 
 
@@ -1080,6 +1082,104 @@ def api_notifications_mark_read():
 
 # ── JSON API (board drag-drop) ────────────────────────────────────────────────
 
+@app.route("/api/story/<int:story_id>/detail")
+@login_required
+def api_story_detail(story_id):
+    conn = get_db()
+    row  = conn.execute("SELECT * FROM stories WHERE id=?", (story_id,)).fetchone()
+    conn.close()
+    if not row:
+        abort(404)
+    return jsonify(
+        id=row["id"],
+        title=row["title"],
+        description=row["description"] or "",
+        story_points=row["story_points"] or 0,
+        priority=row["priority"] or "",
+        status_id=row["status_id"],
+        sprint=row["sprint"],
+        project_id=row["project_id"],
+        story_type=row["story_type"],
+        story_actor=row["story_actor"] or "",
+        story_verb=row["story_verb"] or "",
+        story_z=row["story_z"] or "",
+        story_x=row["story_x"] or "",
+        story_for=row["story_for"] or "",
+        story_y=row["story_y"] or "",
+        epic_id=row["epic_id"],
+    )
+
+
+@app.route("/api/story/<int:story_id>/split", methods=["POST"])
+@login_required
+def api_split_story(story_id):
+    enforce_csrf()
+    data = request.get_json(silent=True) or {}
+
+    conn = get_db()
+    orig = conn.execute("SELECT * FROM stories WHERE id=?", (story_id,)).fetchone()
+    if not orig:
+        conn.close()
+        abort(404)
+
+    # Update Story A (the original) with new points/priority/description
+    a_desc     = data.get("a_description", orig["description"] or "")
+    a_points   = data.get("a_points", orig["story_points"] or 0)
+    a_priority = data.get("a_priority", orig["priority"] or None) or None
+    conn.execute(
+        "UPDATE stories SET description=?,story_points=?,priority=?,updated_at=? WHERE id=?",
+        (a_desc, int(a_points), a_priority, int(time.time()), story_id),
+    )
+
+    # Create Story B — inherits everything from A, override with B-specific values
+    b_title    = (data.get("b_title") or "").strip() or orig["title"]
+    b_desc     = data.get("b_description", orig["description"] or "")
+    b_points   = data.get("b_points", orig["story_points"] or 0)
+    b_priority = data.get("b_priority", orig["priority"] or None) or None
+
+    order_row = conn.execute(
+        "SELECT COALESCE(MAX(order_index),0)+1 AS nxt FROM stories WHERE project_id=?",
+        (orig["project_id"],),
+    ).fetchone()
+    now = int(time.time())
+    cur = conn.execute(
+        """INSERT INTO stories
+           (project_id,title,description,acceptance_criteria,story_points,
+            status_id,sprint,order_index,created_at,created_by,updated_at,
+            story_actor,story_verb,story_z,story_x,story_for,story_y,
+            story_type,priority,epic_id)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (orig["project_id"], b_title, b_desc,
+         orig["acceptance_criteria"] or "",
+         int(b_points), orig["status_id"], orig["sprint"],
+         order_row["nxt"], now, session["user_id"], now,
+         orig["story_actor"], orig["story_verb"], orig["story_z"],
+         orig["story_x"], orig["story_for"], orig["story_y"],
+         orig["story_type"], b_priority, orig["epic_id"]),
+    )
+    new_id = cur.lastrowid
+
+    # Copy assignees
+    assignees = conn.execute(
+        "SELECT user_id FROM story_users WHERE story_id=?", (story_id,)
+    ).fetchall()
+    for a in assignees:
+        conn.execute(
+            "INSERT OR IGNORE INTO story_users (story_id,user_id) VALUES (?,?)",
+            (new_id, a["user_id"]),
+        )
+
+    # Log split in history
+    conn.execute(
+        "INSERT INTO story_history (story_id,user_id,field_name,old_value,new_value,created_at) VALUES (?,?,?,?,?,?)",
+        (story_id, session["user_id"], "Split", "", f"Created #{new_id}", now),
+    )
+
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True, id=new_id)
+
+
 @app.route("/api/story/<int:story_id>/move", methods=["POST"])
 @login_required
 def api_move_story(story_id):
@@ -1281,6 +1381,35 @@ def api_bulk_sprint():
     return jsonify(ok=True)
 
 
+@app.route("/api/stories/bulk-type", methods=["POST"])
+@login_required
+def api_bulk_type():
+    enforce_csrf()
+    data = request.get_json(silent=True) or {}
+    raw_ids  = data.get("story_ids", [])
+    type_id  = data.get("story_type")  # None = clear type
+    if not raw_ids:
+        return jsonify(ok=False, error="missing ids"), 400
+    try:
+        story_ids = [int(i) for i in raw_ids]
+    except (ValueError, TypeError):
+        return jsonify(ok=False, error="invalid ids"), 400
+    if type_id is not None:
+        try:
+            type_id = int(type_id)
+        except (ValueError, TypeError):
+            return jsonify(ok=False, error="invalid type_id"), 400
+    ph   = ','.join('?' * len(story_ids))
+    conn = get_db()
+    conn.execute(
+        f"UPDATE stories SET story_type=?,updated_at=? WHERE id IN ({ph})",
+        [type_id, int(time.time())] + story_ids,
+    )
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True)
+
+
 @app.route("/story-images/<filename>")
 @login_required
 def story_image(filename):
@@ -1323,7 +1452,7 @@ def api_create_sticker():
     sticker_id = cur.lastrowid
     conn.commit()
     conn.close()
-    return jsonify(id=sticker_id, ok=True)
+    return jsonify(id=sticker_id, ok=True, creator_name=session.get("display_name", ""))
 
 
 @app.route("/api/stickers/<int:sticker_id>", methods=["PATCH"])

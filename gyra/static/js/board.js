@@ -4,6 +4,8 @@
 
   const csrfMeta = document.querySelector('meta[name="csrf-token"]');
   const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+  const rootMeta = document.querySelector('meta[name="app-root"]');
+  const appRoot = rootMeta ? rootMeta.getAttribute('content') : '';
 
   let dragCard = null;
   let sourceCol = null;
@@ -99,7 +101,7 @@
         updateCount(col);
 
         const allIds = selectedCards.map(c => parseInt(c.dataset.storyId, 10));
-        fetch('/api/stories/bulk-move', {
+        fetch(appRoot + '/api/stories/bulk-move', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
           body: JSON.stringify({
@@ -122,7 +124,7 @@
       }
 
       // Single-card move
-      fetch(`/api/story/${storyId}/move`, {
+      fetch(appRoot + `/api/story/${storyId}/move`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
         body: JSON.stringify({
@@ -160,7 +162,7 @@
       if (!outer) return;
 
       var n = col.querySelectorAll('.board-card').length;
-      var inner = n >= 8 ? 3 : n >= 4 ? 2 : 1;
+      var inner = n > 12 ? 3 : n > 6 ? 2 : 1;
       col.style.setProperty('--inner-cols', inner);
 
       // Only restructure when the sub-column count needs to change

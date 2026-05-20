@@ -563,6 +563,7 @@
   var storyId  = {{ story.id if story else 'null' }};
   var csrfMeta = document.querySelector('meta[name="csrf-token"]');
   var CSRF     = csrfMeta ? csrfMeta.content : '';
+  var APP_ROOT = (document.querySelector('meta[name="app-root"]') || {getAttribute: function(){return '';}}).getAttribute('content') || '';
 
   // Serialize all_users for building new task selects
   var ALL_USERS = [{% for u in all_users %}{id:{{ u.id }},name:{{ u.display_name | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}];
@@ -575,7 +576,7 @@
   updateProgress();
 
   function apiCall(method, url, body) {
-    return fetch(url, {
+    return fetch(APP_ROOT + url, {
       method: method,
       headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
       body: body ? JSON.stringify(body) : undefined
@@ -681,6 +682,7 @@
         '<button class="task-del" data-id="' + res.id + '" title="Delete">✕</button>';
       div.insertBefore(sel, div.querySelector('.task-del'));
       list.appendChild(div);
+      if (window._taskEnableDrag) window._taskEnableDrag(div);
       addInput.value = '';
       if (addAssign) addAssign.value = '';
       updateProgress();
@@ -691,6 +693,54 @@
   if (addInput) addInput.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') { e.preventDefault(); addTask(); }
   });
+
+  // ── Drag-to-reorder ──────────────────────────────────────────────────────
+  var dragSrc = null;
+
+  function onDragStart(e) {
+    dragSrc = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', this.dataset.id);
+  }
+  function onDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    var target = e.target.closest('.task-item');
+    if (!target || target === dragSrc) return;
+    var items = Array.from(list.querySelectorAll('.task-item'));
+    var srcIdx = items.indexOf(dragSrc);
+    var tgtIdx = items.indexOf(target);
+    if (srcIdx < tgtIdx) {
+      list.insertBefore(dragSrc, target.nextSibling);
+    } else {
+      list.insertBefore(dragSrc, target);
+    }
+  }
+  function onDragEnd() {
+    if (dragSrc) dragSrc.classList.remove('dragging');
+    dragSrc = null;
+    // Persist new order
+    Array.from(list.querySelectorAll('.task-item')).forEach(function (item, idx) {
+      var id = item.dataset.id;
+      if (id) apiCall('PATCH', '/api/addon/' + id, { order_index: idx });
+    });
+  }
+
+  function enableDrag(item) {
+    var handle = item.querySelector('.task-drag-handle');
+    if (!handle) return;
+    handle.addEventListener('mousedown', function () { item.setAttribute('draggable', 'true'); });
+    handle.addEventListener('mouseup',   function () { item.setAttribute('draggable', 'false'); });
+    item.addEventListener('dragstart', onDragStart);
+    item.addEventListener('dragover',  onDragOver);
+    item.addEventListener('dragend',   onDragEnd);
+  }
+
+  list.querySelectorAll('.task-item').forEach(enableDrag);
+
+  // Expose so dynamically added tasks also get drag
+  window._taskEnableDrag = enableDrag;
 }());
 </script>
 {% endblock %}

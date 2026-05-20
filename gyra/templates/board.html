@@ -128,6 +128,7 @@
           {% for sk in card_stickers_map.get(story.id, []) %}
           <div class="board-sticker sticker-{{ sk.type }} sticker-on-card"
                data-id="{{ sk.id }}"
+               data-creator="{{ sk.creator_name or '' }}"
                style="left:{{ sk.card_x or 50 }}%;top:{{ sk.card_y or 10 }}%">
             {{ _sicon.get(sk.type, sk.type) }}
             <button class="sticker-del" data-id="{{ sk.id }}" title="Remove">✕</button>
@@ -144,6 +145,7 @@
       {% for sk in stickers %}
       <div class="board-sticker sticker-{{ sk.type }}"
            data-id="{{ sk.id }}"
+           data-creator="{{ sk.creator_name or '' }}"
            style="left:{{ sk.x }}%;top:{{ sk.y }}%">
         {{ _sicon.get(sk.type, sk.type) }}
         <button class="sticker-del" data-id="{{ sk.id }}" title="Remove">✕</button>
@@ -190,6 +192,17 @@
 
   <span class="bulk-sep"></span>
 
+  <label class="bulk-label">Type</label>
+  <select id="bulk-type-sel" class="bulk-sel">
+    <option value="">— clear —</option>
+    {% for t in story_types %}
+    <option value="{{ t.id }}">{{ t.name }}</option>
+    {% endfor %}
+  </select>
+  <button class="bulk-btn bulk-type-btn" id="bulk-type-btn">Set Type</button>
+
+  <span class="bulk-sep"></span>
+
   <button class="bulk-btn bulk-del-btn" id="bulk-del-btn">🗑 Delete</button>
   <button class="bulk-btn bulk-clear-btn" id="bulk-clear-btn">✕ Clear</button>
 </div>
@@ -221,6 +234,87 @@
     <button class="zoom-btn" id="fs-zoom-in" title="Zoom in">+</button>
   </div>
   <button class="zoom-btn" id="fs-exit-btn" title="Exit full screen" style="width:30px;margin-left:4px">⛶</button>
+</div>
+
+{# ── Right-click context menu ─────────────────────────────────────────────── #}
+<div id="card-ctx-menu" class="card-ctx-menu" style="display:none">
+  <button class="ctx-item" data-action="split">✂ Split Story</button>
+  <button class="ctx-item" data-action="open">↗ Open in new tab</button>
+</div>
+
+{# ── Split Story modal ────────────────────────────────────────────────────── #}
+<div id="split-modal-bg" class="split-modal-bg" style="display:none" role="dialog" aria-modal="true" aria-labelledby="split-modal-title">
+  <div class="split-modal">
+    <div class="split-modal-header">
+      <span id="split-modal-title">✂ Split Story &mdash; <span id="split-story-key"></span></span>
+      <button class="split-modal-close" id="split-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="split-modal-body">
+
+      {# Panel A — original #}
+      <div class="split-panel split-panel-a">
+        <div class="split-panel-label">STORY A <span class="split-badge split-badge-keep">original</span></div>
+        <div class="split-section-label">Title</div>
+        <div id="split-a-title-display" class="split-title-readonly"></div>
+        <div class="split-section-label">Description</div>
+        <textarea id="split-a-desc" class="split-textarea" rows="5" placeholder="Description (optional)"></textarea>
+        <div class="split-fields-row">
+          <div class="split-field">
+            <label class="split-section-label">Points</label>
+            <select id="split-a-points" class="split-select">
+              {% for pt in [0,1,2,3,5,8,13,21] %}
+              <option value="{{ pt }}">{{ pt if pt else '—' }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="split-field">
+            <label class="split-section-label">Priority</label>
+            <select id="split-a-pri" class="split-select">
+              <option value="">— None —</option>
+              {% for pri in ['VH','H','M','L','VL'] %}
+              <option value="{{ pri }}">{{ pri }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="split-divider" aria-hidden="true">✂</div>
+
+      {# Panel B — new story #}
+      <div class="split-panel split-panel-b">
+        <div class="split-panel-label">STORY B <span class="split-badge split-badge-new">new</span></div>
+        <div class="split-section-label">Title</div>
+        <input id="split-b-title" class="split-title-input" type="text" placeholder="New story title">
+        <div class="split-section-label">Description</div>
+        <textarea id="split-b-desc" class="split-textarea" rows="5" placeholder="Description (optional)"></textarea>
+        <div class="split-fields-row">
+          <div class="split-field">
+            <label class="split-section-label">Points</label>
+            <select id="split-b-points" class="split-select">
+              {% for pt in [0,1,2,3,5,8,13,21] %}
+              <option value="{{ pt }}">{{ pt if pt else '—' }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="split-field">
+            <label class="split-section-label">Priority</label>
+            <select id="split-b-pri" class="split-select">
+              <option value="">— None —</option>
+              {% for pri in ['VH','H','M','L','VL'] %}
+              <option value="{{ pri }}">{{ pri }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="split-modal-footer">
+      <button class="btn-secondary" id="split-cancel">Cancel</button>
+      <button class="btn-primary" id="split-submit">✂ Split Story &rarr;</button>
+    </div>
+  </div>
 </div>
 
 {% endblock %}
@@ -327,7 +421,8 @@
 <script>
 // ── Multi-select + bulk actions ───────────────────────────────────────────────
 (function () {
-  var csrf = (document.querySelector('meta[name="csrf-token"]') || {content:''}).content || '';
+  var csrf = (document.querySelector('meta[name="csrf-token"]') || {}).getAttribute ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+  var appRoot = (document.querySelector('meta[name="app-root"]') || {getAttribute: function(){return '';}}).getAttribute('content') || '';
   var selected = new Set(); // Set of story id strings
 
   var bulkBar    = document.getElementById('bulk-bar');
@@ -335,10 +430,12 @@
   var statusSel  = document.getElementById('bulk-status-sel');
   var userSel    = document.getElementById('bulk-user-sel');
   var sprintSel  = document.getElementById('bulk-sprint-sel');
+  var typeSel    = document.getElementById('bulk-type-sel');
   var moveBtn    = document.getElementById('bulk-move-btn');
   var assignBtn  = document.getElementById('bulk-assign-btn');
   var unassignBtn= document.getElementById('bulk-unassign-btn');
   var sprintBtn  = document.getElementById('bulk-sprint-btn');
+  var typeBtn    = document.getElementById('bulk-type-btn');
   var delBtn     = document.getElementById('bulk-del-btn');
   var clearBtn   = document.getElementById('bulk-clear-btn');
 
@@ -427,7 +524,7 @@
     var statusId = parseInt(statusSel.value, 10);
     if (!statusId) return;
     var ids = Array.from(selected).map(Number);
-    bulkFetch('/api/stories/bulk-move', { story_ids: ids, status_id: statusId }, function () {
+    bulkFetch(appRoot + '/api/stories/bulk-move', { story_ids: ids, status_id: statusId }, function () {
       var zone = document.getElementById('col-' + statusId);
       ids.forEach(function (id) {
         var c = document.querySelector('.board-card[data-story-id="' + id + '"]');
@@ -451,18 +548,41 @@
   // ── Assign
   assignBtn.addEventListener('click', function () {
     if (selected.size === 0 || !userSel.value) return;
-    bulkFetch('/api/stories/bulk-assign', { story_ids: Array.from(selected).map(Number), user_id: parseInt(userSel.value), action: 'add' }, clearAll);
+    bulkFetch(appRoot + '/api/stories/bulk-assign', { story_ids: Array.from(selected).map(Number), user_id: parseInt(userSel.value), action: 'add' }, clearAll);
   });
   unassignBtn.addEventListener('click', function () {
     if (selected.size === 0 || !userSel.value) return;
-    bulkFetch('/api/stories/bulk-assign', { story_ids: Array.from(selected).map(Number), user_id: parseInt(userSel.value), action: 'remove' }, clearAll);
+    bulkFetch(appRoot + '/api/stories/bulk-assign', { story_ids: Array.from(selected).map(Number), user_id: parseInt(userSel.value), action: 'remove' }, clearAll);
   });
 
   // ── Sprint
   sprintBtn.addEventListener('click', function () {
     if (selected.size === 0) return;
     var sprintVal = sprintSel.value ? parseInt(sprintSel.value, 10) : null;
-    bulkFetch('/api/stories/bulk-sprint', { story_ids: Array.from(selected).map(Number), sprint: sprintVal }, clearAll);
+    bulkFetch(appRoot + '/api/stories/bulk-sprint', { story_ids: Array.from(selected).map(Number), sprint: sprintVal }, clearAll);
+  });
+
+  // ── Type
+  typeBtn.addEventListener('click', function () {
+    if (selected.size === 0) return;
+    var typeVal = typeSel.value ? parseInt(typeSel.value, 10) : null;
+    bulkFetch(appRoot + '/api/stories/bulk-type', { story_ids: Array.from(selected).map(Number), story_type: typeVal }, function () {
+      // Update the type badge on each selected card
+      var typeLabel = typeSel.options[typeSel.selectedIndex].textContent;
+      var typeColor = null;
+      var selOpt    = typeSel.options[typeSel.selectedIndex];
+      if (selOpt && selOpt.dataset.color) typeColor = selOpt.dataset.color;
+      Array.from(selected).forEach(function (id) {
+        var c = document.querySelector('.board-card[data-story-id="' + id + '"]');
+        if (!c) return;
+        var badge = c.querySelector('.card-type-badge');
+        if (badge) {
+          if (typeVal) { badge.textContent = typeLabel; badge.style.display = ''; }
+          else { badge.textContent = ''; badge.style.display = 'none'; }
+        }
+      });
+      clearAll();
+    });
   });
 
   // ── Delete
@@ -471,7 +591,7 @@
     var n = selected.size;
     if (!confirm('Delete ' + n + ' ' + (n === 1 ? 'story' : 'stories') + '?')) return;
     var ids = Array.from(selected).map(Number);
-    bulkFetch('/api/stories/bulk-delete', { story_ids: ids }, function (d) {
+    bulkFetch(appRoot + '/api/stories/bulk-delete', { story_ids: ids }, function (d) {
       (d.deleted || ids).forEach(function (id) {
         var c = document.querySelector('.board-card[data-story-id="' + id + '"]');
         if (!c) return;
@@ -486,6 +606,158 @@
 
   clearBtn.addEventListener('click', clearAll);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && selected.size > 0) clearAll(); });
+}());
+</script>
+
+<script>
+// ── Split Story — right-click context menu + modal ───────────────────────────
+(function () {
+  var csrf    = (document.querySelector('meta[name="csrf-token"]') || {}).getAttribute('content') || '';
+  var appRoot = (document.querySelector('meta[name="app-root"]')   || {}).getAttribute('content') || '';
+
+  var ctxMenu   = document.getElementById('card-ctx-menu');
+  var modalBg   = document.getElementById('split-modal-bg');
+  var splitKey  = document.getElementById('split-story-key');
+  var aTitleEl  = document.getElementById('split-a-title-display');
+  var aDescEl   = document.getElementById('split-a-desc');
+  var aPtsEl    = document.getElementById('split-a-points');
+  var aPriEl    = document.getElementById('split-a-pri');
+  var bTitleEl  = document.getElementById('split-b-title');
+  var bDescEl   = document.getElementById('split-b-desc');
+  var bPtsEl    = document.getElementById('split-b-points');
+  var bPriEl    = document.getElementById('split-b-pri');
+  var submitBtn = document.getElementById('split-submit');
+  var activeStoryId = null;
+
+  // ── Context menu — open on right-click ──────────────────────────────────
+  document.querySelectorAll('.board-card').forEach(function (card) {
+    card.addEventListener('contextmenu', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      // Dismiss hover tooltip if visible
+      var popup = document.getElementById('card-popup');
+      if (popup) popup.style.display = 'none';
+      ctxMenu.dataset.storyId = card.dataset.storyId;
+      ctxMenu.dataset.href    = card.dataset.href || '';
+      var x = e.clientX, y = e.clientY;
+      // Keep inside viewport
+      ctxMenu.style.display = 'block';
+      if (x + ctxMenu.offsetWidth  + 4 > window.innerWidth)  x = x - ctxMenu.offsetWidth;
+      if (y + ctxMenu.offsetHeight + 4 > window.innerHeight) y = y - ctxMenu.offsetHeight;
+      ctxMenu.style.left = Math.max(4, x) + 'px';
+      ctxMenu.style.top  = Math.max(4, y) + 'px';
+    });
+  });
+
+  document.addEventListener('click', function () { ctxMenu.style.display = 'none'; });
+  document.addEventListener('contextmenu', function (e) {
+    if (!e.target.closest('.board-card')) ctxMenu.style.display = 'none';
+  });
+
+  // ── Context menu actions ─────────────────────────────────────────────────
+  ctxMenu.addEventListener('click', function (e) {
+    var btn = e.target.closest('.ctx-item');
+    if (!btn) return;
+    var action  = btn.dataset.action;
+    var storyId = ctxMenu.dataset.storyId;
+    ctxMenu.style.display = 'none';
+
+    if (action === 'open' && ctxMenu.dataset.href) {
+      window.open(ctxMenu.dataset.href, '_blank');
+    } else if (action === 'split') {
+      openSplitModal(storyId);
+    }
+  });
+
+  // ── Open split modal — fetch story detail ────────────────────────────────
+  function setSelectVal(sel, val) {
+    var v = String(val == null ? '' : val);
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === v) { sel.selectedIndex = i; return; }
+    }
+    sel.selectedIndex = 0;
+  }
+
+  function openSplitModal(storyId) {
+    activeStoryId = storyId;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Loading…';
+    fetch(appRoot + '/api/story/' + storyId + '/detail', {
+      headers: { 'X-CSRF-Token': csrf }
+    })
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function (d) {
+      var keyParts = [];
+      if (d.project_id) keyParts.push('#' + d.project_id);
+      keyParts.push(storyId);
+      splitKey.textContent = keyParts.join('-');
+
+      aTitleEl.textContent = d.title;
+      aDescEl.value        = d.description || '';
+      setSelectVal(aPtsEl, d.story_points);
+      setSelectVal(aPriEl, d.priority || '');
+
+      bTitleEl.value = d.title;
+      bDescEl.value  = d.description || '';
+      setSelectVal(bPtsEl, d.story_points);
+      setSelectVal(bPriEl, d.priority || '');
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = '✂ Split Story →';
+      modalBg.style.display = 'flex';
+      bTitleEl.focus();
+      bTitleEl.select();
+    })
+    .catch(function (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '✂ Split Story →';
+      alert('Could not load story details. Please try again.');
+    });
+  }
+
+  // ── Modal close ──────────────────────────────────────────────────────────
+  function closeModal() { modalBg.style.display = 'none'; }
+  document.getElementById('split-close') .addEventListener('click', closeModal);
+  document.getElementById('split-cancel').addEventListener('click', closeModal);
+  modalBg.addEventListener('click', function (e) { if (e.target === modalBg) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && modalBg.style.display !== 'none') closeModal(); });
+
+  // ── Submit ───────────────────────────────────────────────────────────────
+  submitBtn.addEventListener('click', function () {
+    if (!activeStoryId) return;
+    var bTitle = bTitleEl.value.trim();
+    if (!bTitle) { bTitleEl.focus(); bTitleEl.style.borderColor = '#ef4444'; return; }
+    bTitleEl.style.borderColor = '';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Splitting…';
+    fetch(appRoot + '/api/story/' + activeStoryId + '/split', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+      body:    JSON.stringify({
+        a_description: aDescEl.value,
+        a_points:      parseInt(aPtsEl.value, 10),
+        a_priority:    aPriEl.value,
+        b_title:       bTitle,
+        b_description: bDescEl.value,
+        b_points:      parseInt(bPtsEl.value, 10),
+        b_priority:    bPriEl.value
+      })
+    })
+    .then(function (r) { return r.ok ? r.json() : r.json().then(function(d){ return Promise.reject(d); }); })
+    .then(function (d) {
+      if (d.ok) {
+        closeModal();
+        window.location.reload();
+      } else {
+        throw new Error(d.error || 'Split failed');
+      }
+    })
+    .catch(function (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '✂ Split Story →';
+      alert('Split failed: ' + (err.message || err));
+    });
+  });
 }());
 </script>
 
