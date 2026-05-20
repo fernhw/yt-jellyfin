@@ -2,6 +2,9 @@ tunnel: jellyfin-tunnel
 credentials-file: /Users/alexander-highground/.cloudflared/7c61e981-605e-4aa0-bfac-5a5f91237519.json
 
 ingress:
+  - hostname: gyra.fernhw.com
+    service: http://127.0.0.1:5000
+
   - hostname: jellyfin.fernhw.com
     service: http://127.0.0.1:8096
 

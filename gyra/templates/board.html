@@ -38,6 +38,8 @@
 </div>
 
 <div class="board-wrap">
+  {# Sticker icon map — available inside cards AND the free layer #}
+  {% set _sicon = {'exclamation':'!','arrow':'→','question':'?','star':'★','fire':'🔥','eyes':'👀','check':'✓','blocked':'✕','up':'↑','note':'#'} %}
   <div class="board" id="board" data-sprint="1"
        data-project="{{ project.id }}">
     {% for status in statuses %}
@@ -67,21 +69,26 @@
              draggable="true"
              data-story-id="{{ story.id }}"
              data-order-index="{{ story.order_index }}"
-             style="--rot:{{ rot }}deg; --card-bg:{{ card_bg }}; --card-accent:{{ card_accent }}"
-             onclick="window.location='{{ url_for('story_view', story_id=story.id) }}'">
+             data-href="{{ url_for('story_view', story_id=story.id) }}"
+             style="--rot:{{ rot }}deg; --card-bg:{{ card_bg }}; --card-accent:{{ card_accent }}">
 
-          <div class="card-top">
-            <span class="card-id">{{ project.key }}-{{ story.id }}</span>
-            {% if story.story_type_name %}
-            <span class="card-type-badge">{{ story.story_type_name }}</span>
-            {% endif %}
-          </div>
+          {# select hit area — intercepts clicks so card nav doesn't fire #}
+          <label class="card-sel" onclick="event.stopPropagation()" title="Select">
+            <input type="checkbox" class="card-sel-cb">
+            <span class="card-sel-mark"></span>
+          </label>
+
+          {# Priority tape — hangs from top-LEFT #}
           {% if story.priority %}
           <div class="card-tape card-tape-{{ story.priority | lower }}">{{ story.priority }}</div>
           {% endif %}
-          {% if story.epic_id %}
-          {# Epic label could be added here if epics are eager-loaded on board stories #}
+          {# Type badge — hangs from center-TOP #}
+          {% if story.story_type_name %}
+          <span class="card-type-badge">{{ story.story_type_name }}</span>
           {% endif %}
+          {# Card ID — top-right #}
+          <span class="card-id">{{ project.key }}-{{ story.id }}</span>
+
           <div class="card-title">{{ story.html_title }}</div>
 
           {% if story.thumbnail %}
@@ -115,15 +122,23 @@
           </div>
           {# ── embedded data for hover tooltip ── #}
           <script type="application/json" class="card-data">{"key":"{{ project.key }}-{{ story.id }}","title":{{ story.title | tojson }},"priority":{{ (story.priority or '') | tojson }},"points":{{ story.story_points or 0 }},"type":{{ (story.story_type_name or '') | tojson }},"assignees":[{% for a in story.assignees %}{{ a.display_name | tojson }}{% if not loop.last %},{% endif %}{% endfor %}],"tasks":[{% for t in story.tasks %}{"c":{{ t.content | tojson }},"a":{{ (t.assigned_name or '') | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]}</script>
+          {# ── stickers pinned to this card (move with it) ── #}
+          {% for sk in card_stickers_map.get(story.id, []) %}
+          <div class="board-sticker sticker-{{ sk.type }} sticker-on-card"
+               data-id="{{ sk.id }}"
+               style="left:{{ sk.card_x or 50 }}%;top:{{ sk.card_y or 10 }}%">
+            {{ _sicon.get(sk.type, sk.type) }}
+            <button class="sticker-del" data-id="{{ sk.id }}" title="Remove">✕</button>
+          </div>
+          {% endfor %}
         </div>
         {% endfor %}
       </div>
     </div>
     {% endfor %}
 
-    <!-- Sticker overlay layer — lives inside .board so it scrolls with it -->
+    <!-- Free sticker overlay layer (card-attached ones live inside their card) -->
     <div id="sticker-layer" class="sticker-layer">
-      {% set _sicon = {'exclamation':'!','arrow':'→','question':'?','star':'★','fire':'🔥','eyes':'👀','check':'✓','blocked':'✕','up':'↑','note':'#'} %}
       {% for sk in stickers %}
       <div class="board-sticker sticker-{{ sk.type }}"
            data-id="{{ sk.id }}"
@@ -138,6 +153,44 @@
 
 {# Global card tooltip popup — outside board-wrap so it escapes zoom/overflow #}
 <div id="card-popup" class="card-popup" style="display:none"></div>
+
+{# Bulk action bar — fixed, outside zoom container #}
+<div id="bulk-bar" class="bulk-bar" style="display:none">
+  <span id="bulk-count" class="bulk-count">0 selected</span>
+
+  <span class="bulk-sep"></span>
+
+  <label class="bulk-label">Move →</label>
+  <select id="bulk-status-sel" class="bulk-sel"></select>
+  <button class="bulk-btn bulk-move-btn" id="bulk-move-btn">Move</button>
+
+  <span class="bulk-sep"></span>
+
+  <label class="bulk-label">Assign</label>
+  <select id="bulk-user-sel" class="bulk-sel">
+    {% for u in all_users %}
+    <option value="{{ u.id }}">{{ u.display_name or u.username }}</option>
+    {% endfor %}
+  </select>
+  <button class="bulk-btn bulk-assign-btn" id="bulk-assign-btn">+ Add</button>
+  <button class="bulk-btn bulk-unassign-btn" id="bulk-unassign-btn">− Remove</button>
+
+  <span class="bulk-sep"></span>
+
+  <label class="bulk-label">Sprint</label>
+  <select id="bulk-sprint-sel" class="bulk-sel">
+    <option value="">— none —</option>
+    {% for sp in all_sprints %}
+    <option value="{{ sp.sprint }}">Sprint {{ sp.sprint }}</option>
+    {% endfor %}
+  </select>
+  <button class="bulk-btn bulk-sprint-btn" id="bulk-sprint-btn">Set Sprint</button>
+
+  <span class="bulk-sep"></span>
+
+  <button class="bulk-btn bulk-del-btn" id="bulk-del-btn">🗑 Delete</button>
+  <button class="bulk-btn bulk-clear-btn" id="bulk-clear-btn">✕ Clear</button>
+</div>
 
 {% endblock %}
 
@@ -178,7 +231,161 @@
 </script>
 
 <script>
-// ── Card hover tooltip ───────────────────────────────────────────────────────
+// ── Multi-select + bulk actions ───────────────────────────────────────────────
+(function () {
+  var csrf = (document.querySelector('meta[name="csrf-token"]') || {content:''}).content || '';
+  var selected = new Set(); // Set of story id strings
+
+  var bulkBar    = document.getElementById('bulk-bar');
+  var cntEl      = document.getElementById('bulk-count');
+  var statusSel  = document.getElementById('bulk-status-sel');
+  var userSel    = document.getElementById('bulk-user-sel');
+  var sprintSel  = document.getElementById('bulk-sprint-sel');
+  var moveBtn    = document.getElementById('bulk-move-btn');
+  var assignBtn  = document.getElementById('bulk-assign-btn');
+  var unassignBtn= document.getElementById('bulk-unassign-btn');
+  var sprintBtn  = document.getElementById('bulk-sprint-btn');
+  var delBtn     = document.getElementById('bulk-del-btn');
+  var clearBtn   = document.getElementById('bulk-clear-btn');
+
+  // Populate status dropdown from columns already in the DOM
+  document.querySelectorAll('.board-column').forEach(function (col) {
+    var opt = document.createElement('option');
+    opt.value = col.dataset.statusId;
+    opt.textContent = col.querySelector('.col-name').textContent.trim();
+    statusSel.appendChild(opt);
+  });
+
+  function syncBar() {
+    if (selected.size > 0) {
+      bulkBar.style.display = 'flex';
+      cntEl.textContent = selected.size + ' ' + (selected.size === 1 ? 'story' : 'stories') + ' selected';
+    } else {
+      bulkBar.style.display = 'none';
+    }
+  }
+
+  function setCard(card, on) {
+    var id = card.dataset.storyId;
+    var cb = card.querySelector('.card-sel-cb');
+    if (on) {
+      selected.add(id);
+      card.classList.add('card-selected');
+      if (cb) cb.checked = true;
+    } else {
+      selected.delete(id);
+      card.classList.remove('card-selected');
+      if (cb) cb.checked = false;
+    }
+    syncBar();
+  }
+
+  function clearAll() {
+    document.querySelectorAll('.board-card.card-selected').forEach(function (c) {
+      c.classList.remove('card-selected');
+      var cb = c.querySelector('.card-sel-cb');
+      if (cb) cb.checked = false;
+    });
+    selected.clear();
+    syncBar();
+  }
+
+  function wireCard(card) {
+    card.addEventListener('click', function (e) {
+      if (e.target.closest('.card-sel')) return;
+      if (e.ctrlKey || e.metaKey || selected.size > 0) {
+        e.preventDefault();
+        setCard(card, !selected.has(card.dataset.storyId));
+        return;
+      }
+      var href = card.dataset.href;
+      if (href) window.location = href;
+    });
+    var cb = card.querySelector('.card-sel-cb');
+    if (cb) {
+      cb.addEventListener('change', function () { setCard(card, cb.checked); });
+    }
+  }
+
+  document.querySelectorAll('.board-card').forEach(wireCard);
+
+  function bulkFetch(url, body, onOk) {
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+      body: JSON.stringify(body),
+    }).then(function (r) {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    }).then(onOk).catch(function (err) { alert('Action failed: ' + err); });
+  }
+
+  // ── Move
+  moveBtn.addEventListener('click', function () {
+    if (selected.size === 0) return;
+    var statusId = parseInt(statusSel.value, 10);
+    if (!statusId) return;
+    var ids = Array.from(selected).map(Number);
+    bulkFetch('/api/stories/bulk-move', { story_ids: ids, status_id: statusId }, function () {
+      var zone = document.getElementById('col-' + statusId);
+      ids.forEach(function (id) {
+        var c = document.querySelector('.board-card[data-story-id="' + id + '"]');
+        if (!c || !zone) return;
+        var oldCol = c.closest('.board-column');
+        zone.appendChild(c);
+        if (oldCol) {
+          var b = oldCol.querySelector('.col-count');
+          if (b) b.textContent = oldCol.querySelectorAll('.board-card').length;
+        }
+      });
+      var newCol = zone ? zone.closest('.board-column') : null;
+      if (newCol) { var b = newCol.querySelector('.col-count'); if (b) b.textContent = newCol.querySelectorAll('.board-card').length; }
+      clearAll();
+    });
+  });
+
+  // ── Assign
+  assignBtn.addEventListener('click', function () {
+    if (selected.size === 0 || !userSel.value) return;
+    bulkFetch('/api/stories/bulk-assign', { story_ids: Array.from(selected).map(Number), user_id: parseInt(userSel.value), action: 'add' }, clearAll);
+  });
+  unassignBtn.addEventListener('click', function () {
+    if (selected.size === 0 || !userSel.value) return;
+    bulkFetch('/api/stories/bulk-assign', { story_ids: Array.from(selected).map(Number), user_id: parseInt(userSel.value), action: 'remove' }, clearAll);
+  });
+
+  // ── Sprint
+  sprintBtn.addEventListener('click', function () {
+    if (selected.size === 0) return;
+    var sprintVal = sprintSel.value ? parseInt(sprintSel.value, 10) : null;
+    bulkFetch('/api/stories/bulk-sprint', { story_ids: Array.from(selected).map(Number), sprint: sprintVal }, clearAll);
+  });
+
+  // ── Delete
+  delBtn.addEventListener('click', function () {
+    if (selected.size === 0) return;
+    var n = selected.size;
+    if (!confirm('Delete ' + n + ' ' + (n === 1 ? 'story' : 'stories') + '?')) return;
+    var ids = Array.from(selected).map(Number);
+    bulkFetch('/api/stories/bulk-delete', { story_ids: ids }, function (d) {
+      (d.deleted || ids).forEach(function (id) {
+        var c = document.querySelector('.board-card[data-story-id="' + id + '"]');
+        if (!c) return;
+        var col = c.closest('.board-column');
+        c.remove();
+        if (col) { var b = col.querySelector('.col-count'); if (b) b.textContent = col.querySelectorAll('.board-card').length; }
+      });
+      clearAll();
+    });
+  });
+
+  clearBtn.addEventListener('click', clearAll);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && selected.size > 0) clearAll(); });
+}());
+</script>
+
+<script>
+// ── Card hover tooltip — follows cursor ─────────────────────────────────────
 (function () {
   var popup     = document.getElementById('card-popup');
   var hideTimer = null;
@@ -188,21 +395,22 @@
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  function positionPopup(card) {
-    var rect = card.getBoundingClientRect();
-    var z    = parseFloat((document.getElementById('board') || {}).dataset.zoom || '1');
-    var pw   = 260;
-    var left = rect.right + 10;
-    var top  = rect.top;
-    if (left + pw > window.innerWidth - 16) { left = rect.left - pw - 10; }
-    if (left < 8) { left = rect.left; top = rect.bottom + 8; }
-    top = Math.max(8, Math.min(top, window.innerHeight - 360));
+  function positionAt(mx, my) {
+    var pw = popup.offsetWidth  || 260;
+    var ph = popup.offsetHeight || 200;
+    var ox = 16, oy = 16;
+    var left = mx + ox;
+    var top  = my + oy;
+    if (left + pw > window.innerWidth  - 8) left = mx - pw - ox;
+    if (top  + ph > window.innerHeight - 8) top  = my - ph - oy;
+    if (left < 8) left = 8;
+    if (top  < 8) top  = 8;
     popup.style.left = left + 'px';
-    popup.style.top  = top + 'px';
+    popup.style.top  = top  + 'px';
   }
 
   document.querySelectorAll('.board-card').forEach(function (card) {
-    card.addEventListener('mouseenter', function () {
+    card.addEventListener('mouseenter', function (e) {
       clearTimeout(hideTimer);
       var dataEl = card.querySelector('.card-data');
       if (!dataEl) return;
@@ -234,14 +442,21 @@
       }
 
       popup.innerHTML = html;
-      positionPopup(card);
       popup.style.display = 'block';
+      positionAt(e.clientX, e.clientY);
+    });
+
+    card.addEventListener('mousemove', function (e) {
+      if (popup.style.display === 'none') return;
+      positionAt(e.clientX, e.clientY);
     });
 
     card.addEventListener('mouseleave', function () {
-      hideTimer = setTimeout(function () { popup.style.display = 'none'; }, 100);
+      hideTimer = setTimeout(function () { popup.style.display = 'none'; }, 80);
     });
   });
 }());
 </script>
+
+{% endblock %}
 

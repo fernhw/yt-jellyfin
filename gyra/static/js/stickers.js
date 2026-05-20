@@ -1,4 +1,4 @@
-/* stickers.js — board overlay stickers */
+/* stickers.js — board overlay stickers with card-attach support */
 (function () {
   'use strict';
 
@@ -14,7 +14,6 @@
   const projectId = board.dataset.project;
   const sprint    = board.dataset.sprint;
 
-  // Map type → display html
   const STICKER_HTML = {
     exclamation: '!',
     arrow:       '→',
@@ -28,121 +27,177 @@
     note:        '#',
   };
 
-  // ── Zoom-aware drag ──────────────────────────────────────────────────────
-  // board.dataset.zoom is kept in sync by the zoom-control script in board.html.
-  // sticker left/top percentages are relative to the NATURAL (pre-zoom) board
-  // dimensions, but mouse coords are in viewport pixels.
-  // Conversion: natural_offset = viewport_offset / zoom
-
+  // ── Zoom helper ──────────────────────────────────────────────────────────────
+  // Use getBoundingClientRect / zoom — avoids offsetWidth ambiguity inside
+  // CSS-zoomed parents.
   function getZoom() {
     return parseFloat(board.dataset.zoom || '1');
   }
 
-  let dragging   = null;
-  let dragOffset = { x: 0, y: 0 }; // viewport pixels from sticker visual top-left
+  // ── Drag state ───────────────────────────────────────────────────────────────
+  var dragging   = null;
+  var dragOffset = { x: 0, y: 0 }; // viewport px: mouse minus sticker top-left
 
   function startStickerDrag(sticker, e) {
     e.stopPropagation();
+    e.preventDefault();
+
+    // If sticker is currently inside a card, lift it to the free layer first
+    var parentCard = sticker.parentElement &&
+                     sticker.parentElement.closest
+                       ? sticker.parentElement.closest('.board-card')
+                       : null;
+    if (parentCard || sticker.classList.contains('sticker-on-card')) {
+      var sRect = sticker.getBoundingClientRect();
+      var bRect = board.getBoundingClientRect();
+      var z     = getZoom();
+      var nw    = bRect.width  / z;
+      var nh    = bRect.height / z;
+      var natX  = (sRect.left - bRect.left) / z;
+      var natY  = (sRect.top  - bRect.top)  / z;
+
+      sticker.classList.remove('sticker-on-card');
+      sticker.style.left = Math.max(0, natX / nw * 100) + '%';
+      sticker.style.top  = Math.max(0, natY / nh * 100) + '%';
+      layer.appendChild(sticker);
+    }
+
     dragging = sticker;
-    const rect = sticker.getBoundingClientRect(); // always viewport coords
+    var rect   = sticker.getBoundingClientRect();
     dragOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     sticker.classList.add('sticker-dragging');
   }
 
-  document.addEventListener('mousemove', e => {
+  document.addEventListener('mousemove', function (e) {
     if (!dragging) return;
-    const z  = getZoom();
-    const wr = board.getBoundingClientRect(); // wr.left/top are always viewport coords
+    var z     = getZoom();
+    var bRect = board.getBoundingClientRect();
+    var nw    = bRect.width  / z;
+    var nh    = bRect.height / z;
+    var bx    = (e.clientX - bRect.left - dragOffset.x) / z;
+    var by    = (e.clientY - bRect.top  - dragOffset.y) / z;
 
-    // Convert viewport offset to natural (pre-zoom) board coordinate space
-    const nw = board.offsetWidth;   // natural width, unaffected by CSS zoom
-    const nh = board.offsetHeight;  // natural height
-
-    const bx = (e.clientX - wr.left - dragOffset.x) / z;
-    const by = (e.clientY - wr.top  - dragOffset.y) / z;
-
-    const x = (bx / nw) * 100;
-    const y = (by / nh) * 100;
-
-    dragging.style.left = Math.max(0, Math.min(94, x)) + '%';
-    dragging.style.top  = Math.max(0, Math.min(94, y)) + '%';
+    dragging.style.left = Math.max(0, Math.min(95, bx / nw * 100)) + '%';
+    dragging.style.top  = Math.max(0, Math.min(95, by / nh * 100)) + '%';
   });
 
-  document.addEventListener('mouseup', () => {
+  document.addEventListener('mouseup', function (e) {
     if (!dragging) return;
-    const id = dragging.dataset.id;
-    const x  = parseFloat(dragging.style.left);
-    const y  = parseFloat(dragging.style.top);
-    dragging.classList.remove('sticker-dragging');
-    dragging = null;
-    if (!id) return;
-    fetch(`/api/stickers/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf() },
-      body: JSON.stringify({ x, y, rotation: 0 }),
-    });
+    var sticker = dragging;
+    dragging    = null;
+    sticker.classList.remove('sticker-dragging');
+
+    var id = sticker.dataset.id;
+
+    // Find what's under the sticker's centre (hide temporarily for hit-test)
+    var sRect = sticker.getBoundingClientRect();
+    var cx    = sRect.left + sRect.width  / 2;
+    var cy    = sRect.top  + sRect.height / 2;
+    sticker.style.display = 'none';
+    var hit  = document.elementFromPoint(cx, cy);
+    sticker.style.display = '';
+
+    var targetCard = hit ? hit.closest('.board-card') : null;
+
+    if (targetCard) {
+      // ── Attach to card ───────────────────────────────────────────────────
+      var z      = getZoom();
+      var cr     = targetCard.getBoundingClientRect();
+      var cardNW = cr.width  / z;
+      var cardNH = cr.height / z;
+      var cardX  = Math.round(((sRect.left - cr.left) / z) / cardNW * 100);
+      var cardY  = Math.round(((sRect.top  - cr.top)  / z) / cardNH * 100);
+
+      sticker.style.left = cardX + '%';
+      sticker.style.top  = cardY + '%';
+      sticker.classList.add('sticker-on-card');
+      targetCard.appendChild(sticker);
+
+      if (id) {
+        fetch('/api/stickers/' + id, {
+          method:  'PATCH',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf() },
+          body:    JSON.stringify({
+            card_story_id: parseInt(targetCard.dataset.storyId, 10),
+            card_x: cardX,
+            card_y: cardY,
+          }),
+        });
+      }
+    } else {
+      // ── Free on board ────────────────────────────────────────────────────
+      var x = parseFloat(sticker.style.left);
+      var y = parseFloat(sticker.style.top);
+      if (id) {
+        fetch('/api/stickers/' + id, {
+          method:  'PATCH',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf() },
+          body:    JSON.stringify({ card_story_id: null, x: x, y: y, rotation: 0 }),
+        });
+      }
+    }
   });
 
-  // ── Wire existing stickers ───────────────────────────────────────────────
+  // ── Wire a sticker ───────────────────────────────────────────────────────────
   function wireSticker(el) {
-    el.addEventListener('mousedown', e => startStickerDrag(el, e));
-    const del = el.querySelector('.sticker-del');
+    el.addEventListener('mousedown', function (e) { startStickerDrag(el, e); });
+    var del = el.querySelector('.sticker-del');
     if (del) {
-      del.addEventListener('click', e => {
+      del.addEventListener('click', function (e) {
         e.stopPropagation();
-        const id = del.dataset.id;
-        fetch(`/api/stickers/${id}`, {
-          method: 'DELETE',
+        var sid = del.dataset.id;
+        fetch('/api/stickers/' + sid, {
+          method:  'DELETE',
           headers: { 'X-CSRF-Token': csrf() },
-        }).then(r => { if (r.ok) el.remove(); });
+        }).then(function (r) { if (r.ok) el.remove(); });
       });
     }
   }
 
   document.querySelectorAll('.board-sticker').forEach(wireSticker);
 
-  // ── Dropdown toggle ──────────────────────────────────────────────────────
-  const menuToggle = document.getElementById('sticker-menu-toggle');
-  const menu       = document.getElementById('sticker-menu');
+  // ── Dropdown toggle ──────────────────────────────────────────────────────────
+  var menuToggle = document.getElementById('sticker-menu-toggle');
+  var menu       = document.getElementById('sticker-menu');
   if (menuToggle && menu) {
-    menuToggle.addEventListener('click', e => {
+    menuToggle.addEventListener('click', function (e) {
       e.stopPropagation();
       menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
     });
-    document.addEventListener('click', () => { if (menu) menu.style.display = 'none'; });
-    menu.addEventListener('click', e => e.stopPropagation());
+    document.addEventListener('click', function () { if (menu) menu.style.display = 'none'; });
+    menu.addEventListener('click', function (e) { e.stopPropagation(); });
   }
 
-  // ── Add new sticker from dropdown ────────────────────────────────────────
-  document.querySelectorAll('.sticker-btn[data-type]').forEach(btn => {
-    btn.addEventListener('click', () => {
+  // ── Create new sticker ───────────────────────────────────────────────────────
+  document.querySelectorAll('.sticker-btn[data-type]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
       if (menu) menu.style.display = 'none';
-      const type = btn.dataset.type;
-      const x    = 10 + Math.random() * 40;
-      const y    = 5  + Math.random() * 35;
+      var type = btn.dataset.type;
+      var x    = 8  + Math.random() * 40;
+      var y    = 4  + Math.random() * 35;
 
       fetch('/api/stickers', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf() },
-        body: JSON.stringify({
-          project_id: parseInt(projectId),
-          sprint: parseInt(sprint),
-          type, x, y, rotation: 0,
+        body:    JSON.stringify({
+          project_id: parseInt(projectId, 10),
+          sprint:     parseInt(sprint, 10),
+          type: type, x: x, y: y, rotation: 0,
         }),
       })
-      .then(r => r.json())
-      .then(data => {
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
         if (!data.id) return;
-        const el      = document.createElement('div');
-        el.className  = `board-sticker sticker-${type}`;
+        var el      = document.createElement('div');
+        el.className  = 'board-sticker sticker-' + type;
         el.dataset.id = data.id;
         el.style.left = x + '%';
         el.style.top  = y + '%';
         el.innerHTML  = (STICKER_HTML[type] || type) +
-          `<button class="sticker-del" data-id="${data.id}" title="Remove">✕</button>`;
+          '<button class="sticker-del" data-id="' + data.id + '" title="Remove">\u2715</button>';
         layer.appendChild(el);
         wireSticker(el);
       });
     });
   });
-})();
+}());

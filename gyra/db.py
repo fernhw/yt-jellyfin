@@ -197,6 +197,38 @@ def _migrate_db() -> None:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_def}")
         except Exception:
             pass  # Column already exists
+
+    # Migrate stickers: drop obsolete CHECK constraint, add card-attachment columns.
+    # Idempotent: only runs if card_story_id column is missing.
+    sticker_cols = [r[1] for r in conn.execute("PRAGMA table_info(stickers)").fetchall()]
+    if 'card_story_id' not in sticker_cols:
+        conn.execute("PRAGMA foreign_keys = OFF")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS stickers_v2 (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id    INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                sprint        INTEGER DEFAULT NULL,
+                type          TEXT    NOT NULL,
+                x             REAL    DEFAULT 0,
+                y             REAL    DEFAULT 0,
+                rotation      REAL    DEFAULT 0,
+                label         TEXT    DEFAULT NULL,
+                created_by    INTEGER REFERENCES users(id),
+                created_at    INTEGER NOT NULL,
+                card_story_id INTEGER DEFAULT NULL REFERENCES stories(id) ON DELETE SET NULL,
+                card_x        REAL    DEFAULT NULL,
+                card_y        REAL    DEFAULT NULL
+            )
+        """)
+        conn.execute(
+            "INSERT INTO stickers_v2 "
+            "SELECT id,project_id,sprint,type,x,y,rotation,label,created_by,created_at,"
+            "NULL,NULL,NULL FROM stickers"
+        )
+        conn.execute("DROP TABLE stickers")
+        conn.execute("ALTER TABLE stickers_v2 RENAME TO stickers")
+        conn.execute("PRAGMA foreign_keys = ON")
+
     conn.commit()
     conn.close()
 

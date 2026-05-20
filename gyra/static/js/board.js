@@ -82,7 +82,46 @@
       if (sourceCol) updateCount(sourceCol);
       updateCount(col);
 
-      // Persist via API
+      // If dragged card is part of a multi-selection, move ALL selected cards
+      const selectedCards = Array.from(document.querySelectorAll('.board-card.card-selected'));
+      const isMulti = selectedCards.length > 1 && selectedCards.includes(dragCard);
+
+      if (isMulti) {
+        // Move every selected card (other than the one already moved) to the same zone
+        const otherSelected = selectedCards.filter(c => c !== dragCard);
+        const affectedCols  = new Set();
+        otherSelected.forEach(c => {
+          const oc = c.closest('.board-column');
+          if (oc) affectedCols.add(oc);
+          zone.appendChild(c);
+        });
+        affectedCols.forEach(c => updateCount(c));
+        updateCount(col);
+
+        const allIds = selectedCards.map(c => parseInt(c.dataset.storyId, 10));
+        fetch('/api/stories/bulk-move', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+          body: JSON.stringify({
+            story_ids: allIds,
+            status_id: parseInt(statusId, 10),
+            sprint:    sprint ? parseInt(sprint, 10) : null,
+          }),
+        })
+        .then(r => { if (!r.ok) throw new Error('API error ' + r.status); })
+        .catch(() => {
+          // On failure revert the primary card only (minor UX trade-off)
+          if (prevParent) {
+            if (prevSibling) prevParent.insertBefore(dragCard, prevSibling);
+            else prevParent.appendChild(dragCard);
+          }
+          if (sourceCol) updateCount(sourceCol);
+          updateCount(col);
+        });
+        return;
+      }
+
+      // Single-card move
       fetch(`/api/story/${storyId}/move`, {
         method: 'POST',
         headers: {

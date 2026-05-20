@@ -14,6 +14,7 @@ from flask import (Flask, abort, flash, jsonify, redirect, render_template,
                    request, send_from_directory, session, url_for)
 from markupsafe import Markup, escape
 from PIL import Image
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
 from auth import (admin_required, decrypt_totp_secret, encrypt_totp_secret,
@@ -29,11 +30,14 @@ from db import (create_addon, create_epic, delete_addon, delete_epic,
                 get_story_images, get_story_thumbnails, get_story_types,
                 get_story_users, get_stories_tasks_batch,
                 get_user_by_id, get_user_by_username,
+                get_all_active_users, get_all_sprints,
                 init_db, log_story_change, toggle_addon,
                 update_addon_content)
 
 app = Flask(__name__)
 app.config.from_object(Config)
+# Trust X-Forwarded-Prefix from nginx so url_for() works behind /gyra sub-path
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(Config.STORY_IMAGES_FOLDER, exist_ok=True)
@@ -257,14 +261,26 @@ def board(project_id):
         if col in board_map:
             board_map[col].append(s)
 
-    stickers = [dict(sk) for sk in get_stickers(project_id)]
+    all_stickers      = [dict(sk) for sk in get_stickers(project_id)]
+    free_stickers     = [s for s in all_stickers if not s.get('card_story_id')]
+    card_stickers_map = {}
+    for s in all_stickers:
+        cid = s.get('card_story_id')
+        if cid:
+            card_stickers_map.setdefault(cid, []).append(s)
+
+    all_users   = get_all_active_users()
+    all_sprints = get_all_sprints(project_id)
 
     return render_template(
         "board.html",
         project=project,
         statuses=statuses,
         board_map=board_map,
-        stickers=stickers,
+        stickers=free_stickers,
+        card_stickers_map=card_stickers_map,
+        all_users=all_users,
+        all_sprints=all_sprints,
     )
 
 
@@ -664,6 +680,92 @@ def admin_reset_totp(user_id):
     return redirect(url_for("admin_users"))
 
 
+@app.route("/admin/users/<int:user_id>/edit", methods=["POST"])
+@admin_required
+def admin_edit_user(user_id):
+    enforce_csrf()
+    conn = get_db()
+    target = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+    if not target:
+        flash("User not found.", "error")
+        conn.close()
+        return redirect(url_for("admin_users"))
+
+    username     = request.form.get("username", "").strip()
+    email        = request.form.get("email", "").strip()
+    display_name = request.form.get("display_name", "").strip()
+    role         = request.form.get("role", "user")
+    is_active    = 1 if request.form.get("is_active") else 0
+
+    if not all([username, email, display_name]):
+        flash("Username, email and display name are required.", "error")
+        conn.close()
+        return redirect(url_for("admin_users"))
+    if role not in ("admin", "user"):
+        role = "user"
+    # Prevent removing admin role from self
+    if user_id == session["user_id"] and role != "admin":
+        flash("You cannot remove your own admin role.", "error")
+        conn.close()
+        return redirect(url_for("admin_users"))
+    # Ensure at least one admin remains
+    if role != "admin":
+        admin_count = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE role='admin' AND is_active=1 AND id!=?",
+            (user_id,)
+        ).fetchone()[0]
+        if admin_count == 0:
+            flash("Cannot demote the only active admin.", "error")
+            conn.close()
+            return redirect(url_for("admin_users"))
+
+    try:
+        conn.execute(
+            """UPDATE users SET username=?, email=?, display_name=?, role=?, is_active=?
+               WHERE id=?""",
+            (username, email, display_name, role, is_active, user_id),
+        )
+        conn.commit()
+        flash(f"User <strong>{username}</strong> updated.", "success")
+    except Exception as exc:
+        flash(f"Error: {exc}", "error")
+    finally:
+        conn.close()
+    return redirect(url_for("admin_users"))
+
+
+@app.route("/admin/users/<int:user_id>/delete", methods=["POST"])
+@admin_required
+def admin_delete_user(user_id):
+    enforce_csrf()
+    if user_id == session["user_id"]:
+        flash("You cannot delete your own account.", "error")
+        return redirect(url_for("admin_users"))
+
+    conn = get_db()
+    target = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+    if not target:
+        flash("User not found.", "error")
+        conn.close()
+        return redirect(url_for("admin_users"))
+
+    # Prevent deleting the last admin
+    if target["role"] == "admin":
+        admin_count = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE role='admin' AND id!=?", (user_id,)
+        ).fetchone()[0]
+        if admin_count == 0:
+            flash("Cannot delete the only admin account.", "error")
+            conn.close()
+            return redirect(url_for("admin_users"))
+
+    conn.execute("DELETE FROM users WHERE id=?", (user_id,))
+    conn.commit()
+    conn.close()
+    flash(f"User <strong>{target['username']}</strong> deleted.", "success")
+    return redirect(url_for("admin_users"))
+
+
 # ── Admin — projects ──────────────────────────────────────────────────────────
 
 @app.route("/admin/projects")
@@ -718,6 +820,23 @@ def admin_create_project():
     return redirect(url_for("admin_projects"))
 
 
+@app.route("/admin/projects/<int:project_id>/delete", methods=["POST"])
+@admin_required
+def admin_delete_project(project_id):
+    enforce_csrf()
+    conn    = get_db()
+    project = conn.execute("SELECT * FROM projects WHERE id=?", (project_id,)).fetchone()
+    if not project:
+        conn.close()
+        flash("Project not found.", "error")
+        return redirect(url_for("admin_projects"))
+    conn.execute("DELETE FROM projects WHERE id=?", (project_id,))
+    conn.commit()
+    conn.close()
+    flash(f"Project '{project['name']}' deleted.", "success")
+    return redirect(url_for("admin_projects"))
+
+
 @app.route("/admin/projects/<int:project_id>/status/add", methods=["POST"])
 @admin_required
 def admin_add_status(project_id):
@@ -739,6 +858,40 @@ def admin_add_status(project_id):
         conn.commit()
         conn.close()
     return redirect(url_for("admin_projects"))
+
+
+@app.route("/admin/projects/<int:project_id>/status/<int:status_id>/delete", methods=["POST"])
+@admin_required
+def admin_delete_status(project_id, status_id):
+    enforce_csrf()
+    conn = get_db()
+    conn.execute("DELETE FROM statuses WHERE id=? AND project_id=?", (status_id, project_id))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("admin_projects"))
+
+
+@app.route("/api/project/<int:project_id>/statuses/reorder", methods=["POST"])
+@admin_required
+def api_reorder_statuses(project_id):
+    enforce_csrf()
+    data       = request.get_json(silent=True) or {}
+    ordered_ids = data.get("ids", [])
+    if not ordered_ids:
+        return jsonify(ok=False, error="missing ids"), 400
+    try:
+        ordered_ids = [int(i) for i in ordered_ids]
+    except (ValueError, TypeError):
+        return jsonify(ok=False, error="invalid ids"), 400
+    conn = get_db()
+    for idx, sid in enumerate(ordered_ids):
+        conn.execute(
+            "UPDATE statuses SET order_index=? WHERE id=? AND project_id=?",
+            (idx, sid, project_id),
+        )
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True)
 
 
 # ── Profile & avatars ─────────────────────────────────────────────────────────
@@ -834,6 +987,116 @@ def api_statuses(project_id):
     return jsonify([dict(s) for s in get_statuses(project_id)])
 
 
+@app.route("/api/stories/bulk-move", methods=["POST"])
+@login_required
+def api_bulk_move():
+    enforce_csrf()
+    data = request.get_json(silent=True) or {}
+    raw_ids   = data.get("story_ids", [])
+    status_id = data.get("status_id")
+    sprint    = data.get("sprint")
+    if not raw_ids or not status_id:
+        return jsonify(ok=False, error="missing params"), 400
+    try:
+        story_ids = [int(i) for i in raw_ids]
+    except (ValueError, TypeError):
+        return jsonify(ok=False, error="invalid ids"), 400
+    ph   = ','.join('?' * len(story_ids))
+    conn = get_db()
+    conn.execute(
+        f"UPDATE stories SET status_id=?,sprint=?,updated_at=? WHERE id IN ({ph})",
+        [int(status_id), sprint, int(time.time())] + story_ids,
+    )
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True)
+
+
+@app.route("/api/stories/bulk-delete", methods=["POST"])
+@login_required
+def api_bulk_delete():
+    enforce_csrf()
+    data    = request.get_json(silent=True) or {}
+    raw_ids = data.get("story_ids", [])
+    if not raw_ids:
+        return jsonify(ok=False, error="missing ids"), 400
+    try:
+        story_ids = [int(i) for i in raw_ids]
+    except (ValueError, TypeError):
+        return jsonify(ok=False, error="invalid ids"), 400
+    current_uid = session["user_id"]
+    is_admin    = session.get("role") == "admin"
+    ph   = ','.join('?' * len(story_ids))
+    conn = get_db()
+    rows = conn.execute(
+        f"SELECT id, created_by FROM stories WHERE id IN ({ph})", story_ids
+    ).fetchall()
+    allowed = [r["id"] for r in rows if is_admin or r["created_by"] == current_uid]
+    if allowed:
+        ph2 = ','.join('?' * len(allowed))
+        conn.execute(f"DELETE FROM stories WHERE id IN ({ph2})", allowed)
+        conn.commit()
+    conn.close()
+    return jsonify(ok=True, deleted=allowed)
+
+
+@app.route("/api/stories/bulk-assign", methods=["POST"])
+@login_required
+def api_bulk_assign():
+    enforce_csrf()
+    data = request.get_json(silent=True) or {}
+    raw_ids = data.get("story_ids", [])
+    user_id = data.get("user_id")
+    action  = data.get("action", "add")   # "add" or "remove"
+    if not raw_ids or not user_id:
+        return jsonify(ok=False, error="missing params"), 400
+    try:
+        story_ids = [int(i) for i in raw_ids]
+        user_id   = int(user_id)
+    except (ValueError, TypeError):
+        return jsonify(ok=False, error="invalid params"), 400
+    conn = get_db()
+    if action == "remove":
+        ph = ','.join('?' * len(story_ids))
+        conn.execute(
+            f"DELETE FROM story_users WHERE user_id=? AND story_id IN ({ph})",
+            [user_id] + story_ids,
+        )
+    else:
+        for sid in story_ids:
+            conn.execute(
+                "INSERT OR IGNORE INTO story_users (story_id,user_id) VALUES (?,?)",
+                (sid, user_id),
+            )
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True)
+
+
+@app.route("/api/stories/bulk-sprint", methods=["POST"])
+@login_required
+def api_bulk_sprint():
+    enforce_csrf()
+    data = request.get_json(silent=True) or {}
+    raw_ids = data.get("story_ids", [])
+    sprint  = data.get("sprint")   # None = remove from sprint
+    if not raw_ids:
+        return jsonify(ok=False, error="missing ids"), 400
+    try:
+        story_ids = [int(i) for i in raw_ids]
+    except (ValueError, TypeError):
+        return jsonify(ok=False, error="invalid ids"), 400
+    ph   = ','.join('?' * len(story_ids))
+    conn = get_db()
+    conn.execute(
+        f"UPDATE stories SET sprint=?,updated_at=? WHERE id IN ({ph})",
+        [sprint, int(time.time())] + story_ids,
+    )
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True)
+
+
 @app.route("/story-images/<filename>")
 @login_required
 def story_image(filename):
@@ -856,13 +1119,13 @@ def api_create_sticker():
     data       = request.get_json(silent=True) or {}
     project_id = data.get("project_id")
     sprint     = data.get("sprint")
-    stype      = data.get("type")
+    stype      = data.get("type", "").strip()
     x          = float(data.get("x", 0))
     y          = float(data.get("y", 0))
     rotation   = float(data.get("rotation", 0))
     label      = data.get("label", "")
 
-    if not project_id or stype not in ("arrow", "exclamation"):
+    if not project_id or not stype:
         abort(400)
 
     conn = get_db()
@@ -883,21 +1146,25 @@ def api_create_sticker():
 @login_required
 def api_update_sticker(sticker_id):
     enforce_csrf()
-    data     = request.get_json(silent=True) or {}
-    x        = float(data.get("x", 0))
-    y        = float(data.get("y", 0))
-    rotation = float(data.get("rotation", 0))
-    label    = data.get("label")
+    data          = request.get_json(silent=True) or {}
+    card_story_id = data.get("card_story_id")   # None = free on board
 
     conn = get_db()
-    if label is not None:
+    if card_story_id is not None:
+        # Attaching to a card — use card-relative coords
+        card_x = float(data.get("card_x", 0))
+        card_y = float(data.get("card_y", 0))
         conn.execute(
-            "UPDATE stickers SET x=?,y=?,rotation=?,label=? WHERE id=?",
-            (x, y, rotation, label, sticker_id),
+            "UPDATE stickers SET card_story_id=?,card_x=?,card_y=? WHERE id=?",
+            (int(card_story_id), card_x, card_y, sticker_id),
         )
     else:
+        # Free on board — clear attachment, save board coords
+        x        = float(data.get("x", 0))
+        y        = float(data.get("y", 0))
+        rotation = float(data.get("rotation", 0))
         conn.execute(
-            "UPDATE stickers SET x=?,y=?,rotation=? WHERE id=?",
+            "UPDATE stickers SET x=?,y=?,rotation=?,card_story_id=NULL,card_x=NULL,card_y=NULL WHERE id=?",
             (x, y, rotation, sticker_id),
         )
     conn.commit()
