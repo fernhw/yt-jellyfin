@@ -1273,8 +1273,8 @@ def api_reorder():
     for item in items:
         try:
             conn.execute(
-                "UPDATE stories SET order_index=?,updated_at=? WHERE id=?",
-                (int(item["order_index"]), now, int(item["id"])),
+                "UPDATE stories SET order_index=?,subcol_index=?,updated_at=? WHERE id=?",
+                (int(item["order_index"]), int(item.get("subcol_index", 0)), now, int(item["id"])),
             )
         except (KeyError, ValueError, TypeError):
             pass
@@ -1292,14 +1292,14 @@ def api_board_full_state(project_id):
     """
     conn = get_db()
     stories = conn.execute(
-        """SELECT id, status_id, order_index
+        """SELECT id, status_id, order_index, subcol_index
            FROM stories
            WHERE project_id=? AND sprint IS NOT NULL
            ORDER BY order_index""",
         (project_id,),
     ).fetchall()
     stickers = conn.execute(
-        """SELECT s.id, s.type, s.x, s.y,
+        """SELECT s.id, s.type, s.x, s.y, s.label,
                   s.card_story_id, s.card_x, s.card_y,
                   u.display_name AS creator_name
            FROM stickers s
@@ -1523,6 +1523,20 @@ def api_create_sticker():
     conn.commit()
     conn.close()
     return jsonify(id=sticker_id, ok=True, creator_name=session.get("display_name", ""))
+
+
+@app.route("/api/stickers/<int:sticker_id>/label", methods=["PATCH"])
+@login_required
+def api_update_sticker_label(sticker_id):
+    """Update only the text label of a sticker."""
+    enforce_csrf()
+    data  = request.get_json(silent=True) or {}
+    label = data.get("label", "") or ""
+    conn  = get_db()
+    conn.execute("UPDATE stickers SET label=? WHERE id=?", (label, sticker_id))
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True)
 
 
 @app.route("/api/stickers/<int:sticker_id>", methods=["PATCH"])

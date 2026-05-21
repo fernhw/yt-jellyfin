@@ -163,11 +163,30 @@
   // Persist the DOM order of all cards in a column to the server
   function saveColOrder(col) {
     if (!col) return;
-    const cards = Array.from(col.querySelectorAll('.board-card'));
-    cards.forEach((c, i) => { c.dataset.orderIndex = String(i); });
-    const items = cards.map((c, i) => ({ id: parseInt(c.dataset.storyId, 10), order_index: i }));
+    // Traverse per-subcol so we can record which subcol each card lives in.
+    var allCards = [];
+    var subcols = Array.from(col.querySelectorAll(':scope .board-cards > .board-subcol'));
+    if (subcols.length) {
+      subcols.forEach(function (sub, si) {
+        Array.from(sub.querySelectorAll('.board-card')).forEach(function (c) {
+          c.dataset.subcolIndex = String(si);
+          allCards.push(c);
+        });
+      });
+    } else {
+      allCards = Array.from(col.querySelectorAll('.board-card'));
+      allCards.forEach(function (c) { c.dataset.subcolIndex = '0'; });
+    }
+    allCards.forEach(function (c, i) { c.dataset.orderIndex = String(i); });
+    const items = allCards.map(function (c, i) {
+      return {
+        id:           parseInt(c.dataset.storyId, 10),
+        order_index:  i,
+        subcol_index: parseInt(c.dataset.subcolIndex || '0', 10),
+      };
+    });
     if (!items.length) return;
-    if (window._markBoardMoves) window._markBoardMoves(items.map(it => String(it.id)));
+    if (window._markBoardMoves) window._markBoardMoves(items.map(function (it) { return String(it.id); }));
     fetch(appRoot + '/api/stories/reorder', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
@@ -217,9 +236,11 @@
         initSubcol(sub, col);
       }
 
-      // Distribute cards column-major (interleaved: card 0→sub0, 1→sub1, 2→sub2, 3→sub0…)
-      allCards.forEach(function (card, i) {
-        newSubs[i % inner].appendChild(card);
+      // Distribute by stored subcol_index — user controls which subcol each card
+      // lives in. Clamp to the actual number of subcols (in case inner shrank).
+      allCards.forEach(function (card) {
+        var si = Math.min(parseInt(card.dataset.subcolIndex || '0', 10), inner - 1);
+        newSubs[si].appendChild(card);
       });
     });
   }

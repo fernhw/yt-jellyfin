@@ -24,16 +24,16 @@
   console.log('[stickers] projectId:', projectId, 'sprint:', sprint);
 
   const STICKER_HTML = {
-    exclamation: '!',
-    arrow:       '→',
-    question:    '?',
-    star:        '★',
-    fire:        '🔥',
-    eyes:        '👀',
-    check:       '✓',
-    blocked:     '✕',
-    up:          '↑',
-    note:        '#',
+    exclamation: '<span class="sticker-icon">!</span>',
+    arrow:       '<span class="sticker-icon">→</span>',
+    question:    '<span class="sticker-icon">?</span>',
+    star:        '<span class="sticker-icon">★</span>',
+    fire:        '<span class="sticker-icon">🔥</span>',
+    eyes:        '<span class="sticker-icon">👀</span>',
+    check:       '<span class="sticker-icon">✓</span>',
+    blocked:     '<span class="sticker-icon">✕</span>',
+    up:          '<span class="sticker-icon">↑</span>',
+    note:        '<span class="sticker-icon">#</span>',
   };
 
   // ── Zoom helper ──────────────────────────────────────────────────────────────
@@ -182,11 +182,26 @@
   function wireSticker(el) {
     el.addEventListener('mousedown', function (e) { _hideTip(); startStickerDrag(el, e); });
 
-    // ── Hover tooltip: who placed it ──────────────────────────────────────────
+    // Stop click from bubbling to the card (would trigger navigation)
+    el.addEventListener('click', function (e) { e.stopPropagation(); });
+
+    // Double-click → open edit modal
+    el.addEventListener('dblclick', function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      openStickerEdit(el);
+    });
+
+    // ── Hover tooltip: who placed it (+ label for non-note stickers) ─────────────────
     el.addEventListener('mouseenter', function (e) {
       var creator = el.dataset.creator;
-      if (!creator) return;
-      _showTip('📌 Placed by ' + creator, e.clientX, e.clientY);
+      var label   = el.dataset.label || '';
+      var isNote  = el.classList.contains('sticker-note');
+      var parts   = [];
+      if (creator) parts.push('📌 Placed by ' + creator);
+      if (label && !isNote) parts.push('"' + label + '"');
+      if (!parts.length) return;
+      _showTip(parts.join('  ·  '), e.clientX, e.clientY);
     });
     el.addEventListener('mousemove', function (e) {
       if (_tip.style.display === 'none') return;
@@ -260,6 +275,7 @@
       .then(function (r) { return r.json(); })
       .then(function (data) {
         if (!data.id) return;
+        var label = '';
         var el      = document.createElement('div');
         el.className       = 'board-sticker sticker-' + type;
         el.dataset.id      = data.id;
@@ -268,9 +284,11 @@
         el.dataset.sy      = Math.round(y * 10) / 10;
         el.dataset.cardstory = '';
         el.dataset.creator = data.creator_name || '';
+        el.dataset.label   = label;
         el.style.left      = x + '%';
         el.style.top       = y + '%';
-        el.innerHTML       = (STICKER_HTML[type] || type) +
+        el.innerHTML       = (STICKER_HTML[type] || ('<span class="sticker-icon">' + type + '</span>')) +
+          '<span class="sticker-label"></span>' +
           '<button class="sticker-del" data-id="' + data.id + '" title="Remove">✕</button>';
         layer.appendChild(el);
         wireSticker(el);
@@ -281,4 +299,76 @@
 
   // Export wireSticker so the live-sync poller can wire newly arrived stickers
   window._wireStickerEl = wireSticker;
+
+  // ── Sticker edit modal ───────────────────────────────────────────────────────
+  // openStickerEdit: called on double-click; opens the modal positioned in DOM
+  // so it works inside fullscreen too (position:fixed child of <html>).
+  function openStickerEdit(el) {
+    var modal    = document.getElementById('sticker-edit-bg');
+    var textarea = document.getElementById('sticker-edit-ta');
+    var title    = document.getElementById('sticker-edit-title');
+    if (!modal || !textarea) return;
+    var typeLabels = {
+      exclamation:'Alert', arrow:'Arrow', question:'Question', star:'Star',
+      fire:'Fire', eyes:'Review', check:'Done', blocked:'Blocked', up:'Escalate', note:'Note'
+    };
+    var t = typeLabels[el.dataset.type] || el.dataset.type || 'Sticker';
+    if (title) title.textContent = '✏ Edit ' + t;
+    textarea.value   = el.dataset.label || '';
+    modal._targetEl  = el;
+    modal.style.display = 'flex';
+    setTimeout(function () { textarea.focus(); textarea.select(); }, 30);
+  }
+
+  function closeStickerEdit() {
+    var modal = document.getElementById('sticker-edit-bg');
+    if (modal) { modal.style.display = 'none'; modal._targetEl = null; }
+  }
+
+  function saveStickerEdit() {
+    var modal    = document.getElementById('sticker-edit-bg');
+    var textarea = document.getElementById('sticker-edit-ta');
+    var el = modal && modal._targetEl;
+    if (!el || !textarea) { closeStickerEdit(); return; }
+    var label = textarea.value.trim();
+    // Update DOM immediately
+    el.dataset.label = label;
+    var span = el.querySelector('.sticker-label');
+    if (span) span.textContent = label;
+    if (el.classList.contains('sticker-note')) {
+      if (label) el.classList.add('has-label'); else el.classList.remove('has-label');
+    }
+    // Suppress reconciler echo for 8 s
+    if (window._markStickerMove) window._markStickerMove(el.dataset.id);
+    // Persist
+    fetch(appRoot + '/api/stickers/' + el.dataset.id + '/label', {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf() },
+      body:    JSON.stringify({ label: label }),
+    });
+    closeStickerEdit();
+  }
+
+  // Wire modal buttons (safe to call if elements don't exist yet)
+  var _saveBtn   = document.getElementById('sticker-edit-save');
+  var _cancelBtn = document.getElementById('sticker-edit-cancel');
+  var _closeBtn  = document.getElementById('sticker-edit-close');
+  var _modalBg   = document.getElementById('sticker-edit-bg');
+  var _ta        = document.getElementById('sticker-edit-ta');
+  if (_saveBtn)   _saveBtn.addEventListener('click', saveStickerEdit);
+  if (_cancelBtn) _cancelBtn.addEventListener('click', closeStickerEdit);
+  if (_closeBtn)  _closeBtn.addEventListener('click', closeStickerEdit);
+  if (_modalBg)   _modalBg.addEventListener('click', function (e) { if (e.target === _modalBg) closeStickerEdit(); });
+  if (_ta) {
+    _ta.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.stopPropagation(); closeStickerEdit(); }
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveStickerEdit(); }
+    });
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      var modal = document.getElementById('sticker-edit-bg');
+      if (modal && modal.style.display !== 'none') { e.stopPropagation(); closeStickerEdit(); }
+    }
+  });
 }());

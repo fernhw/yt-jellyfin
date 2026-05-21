@@ -73,6 +73,7 @@
              draggable="true"
              data-story-id="{{ story.id }}"
              data-order-index="{{ story.order_index }}"
+             data-subcol-index="{{ story.subcol_index or 0 }}"
              data-href="{{ url_for('story_view', story_id=story.id) }}"
              style="--rot:{{ rot }}deg; --card-bg:{{ card_bg }}; --card-accent:{{ card_accent }}">
 
@@ -128,15 +129,17 @@
           <script type="application/json" class="card-data">{"key":"{{ project.key }}-{{ story.id }}","title":{{ story.title | tojson }},"priority":{{ (story.priority or '') | tojson }},"points":{{ story.story_points or 0 }},"type":{{ (story.story_type_name or '') | tojson }},"assignees":[{% for a in story.assignees %}{{ a.display_name | tojson }}{% if not loop.last %},{% endif %}{% endfor %}],"tasks":[{% for t in story.tasks %}{"c":{{ t.content | tojson }},"a":{{ (t.assigned_name or '') | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]}</script>
           {# ── stickers pinned to this card (move with it) ── #}
           {% for sk in card_stickers_map.get(story.id, []) %}
-          <div class="board-sticker sticker-{{ sk.type }} sticker-on-card"
+          <div class="board-sticker sticker-{{ sk.type }} sticker-on-card{% if sk.label %} has-label{% endif %}"
                data-id="{{ sk.id }}"
                data-type="{{ sk.type }}"
                data-sx="{{ (sk.card_x or 50) | round(1) }}"
                data-sy="{{ (sk.card_y or 10) | round(1) }}"
                data-cardstory="{{ story.id }}"
                data-creator="{{ sk.creator_name or '' }}"
+               data-label="{{ sk.label or '' }}"
                style="left:{{ sk.card_x or 50 }}%;top:{{ sk.card_y or 10 }}%">
-            {{ _sicon.get(sk.type, sk.type) }}
+            <span class="sticker-icon">{{ _sicon.get(sk.type, sk.type) }}</span>
+            <span class="sticker-label">{{ sk.label or '' }}</span>
             <button class="sticker-del" data-id="{{ sk.id }}" title="Remove">✕</button>
           </div>
           {% endfor %}
@@ -149,15 +152,17 @@
     <!-- Free sticker overlay layer (card-attached ones live inside their card) -->
     <div id="sticker-layer" class="sticker-layer">
       {% for sk in stickers %}
-      <div class="board-sticker sticker-{{ sk.type }}"
+      <div class="board-sticker sticker-{{ sk.type }}{% if sk.label %} has-label{% endif %}"
            data-id="{{ sk.id }}"
            data-type="{{ sk.type }}"
            data-sx="{{ sk.x | round(1) }}"
            data-sy="{{ sk.y | round(1) }}"
            data-cardstory=""
            data-creator="{{ sk.creator_name or '' }}"
+           data-label="{{ sk.label or '' }}"
            style="left:{{ sk.x }}%;top:{{ sk.y }}%">
-        {{ _sicon.get(sk.type, sk.type) }}
+        <span class="sticker-icon">{{ _sicon.get(sk.type, sk.type) }}</span>
+        <span class="sticker-label">{{ sk.label or '' }}</span>
         <button class="sticker-del" data-id="{{ sk.id }}" title="Remove">✕</button>
       </div>
       {% endfor %}
@@ -327,6 +332,33 @@
   </div>
 </div>
 
+{# ── Sticker edit modal ───────────────────────────────────────────────────── #}
+<div id="sticker-edit-bg" class="sticker-edit-bg" style="display:none" role="dialog" aria-modal="true" aria-label="Edit sticker">
+  <div class="sticker-edit-dialog">
+    <div class="sticker-edit-head">
+      <span id="sticker-edit-title">✏ Edit Sticker</span>
+      <button id="sticker-edit-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="sticker-edit-body">
+      <textarea id="sticker-edit-ta" class="sticker-edit-ta" rows="4"
+                placeholder="Add a note or label…" maxlength="500"></textarea>
+    </div>
+    <div class="sticker-edit-foot">
+      <button class="btn-secondary" id="sticker-edit-cancel">Cancel</button>
+      <button class="btn-primary"   id="sticker-edit-save">Save</button>
+    </div>
+  </div>
+</div>
+
+{# ── Story edit modal (iframe overlay) ───────────────────────────────────── #}
+<div id="story-modal-bg" class="story-modal-bg" style="display:none"
+     role="dialog" aria-modal="true" aria-label="Edit story">
+  <div class="story-modal-wrap">
+    <button id="story-modal-close" class="story-modal-close" aria-label="Close">✕</button>
+    <iframe id="story-modal-frame" class="story-modal-frame" src=""></iframe>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -413,19 +445,6 @@
   document.addEventListener('fullscreenchange', function () { if (document.fullscreenElement) syncFsLabel(); });
   syncFsLabel();
 }());
-
-// ── Fullscreen sticker pill toggle ───────────────────────────────────────────
-(function () {
-  var toggle = document.getElementById('fs-sticker-toggle');
-  var menu   = document.getElementById('fs-sticker-menu');
-  if (!toggle || !menu) return;
-  toggle.addEventListener('click', function (e) {
-    e.stopPropagation();
-    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-  });
-  document.addEventListener('click', function () { if (menu) menu.style.display = 'none'; });
-  menu.addEventListener('click', function (e) { e.stopPropagation(); });
-}());
 </script>
 
 <script>
@@ -500,14 +519,7 @@
         return;
       }
       var href = card.dataset.href;
-      if (href) {
-        // In fullscreen, open in new tab so fullscreen isn't exited
-        if (document.fullscreenElement) {
-          window.open(href, '_blank');
-        } else {
-          window.location = href;
-        }
-      }
+      if (href) openStoryModal(href);
     });
     var cb = card.querySelector('.card-sel-cb');
     if (cb) {
@@ -673,7 +685,7 @@
     ctxMenu.style.display = 'none';
 
     if (action === 'open' && ctxMenu.dataset.href) {
-      window.open(ctxMenu.dataset.href, '_blank');
+      openStoryModal(ctxMenu.dataset.href);
     } else if (action === 'split') {
       openSplitModal(storyId);
     }
@@ -884,15 +896,18 @@
   }
 
   // ── Stories reconciliation ──────────────────────────────────────────────
-  // serverStories: [{id, status_id, order_index}] sorted by order_index
+  // serverStories: [{id, status_id, order_index, subcol_index}] sorted by order_index
   function reconcileStories(serverStories) {
     // Build per-column ordered ID lists from server
-    var serverCols = {}; // statusId → [{id, order_index}, ...]
+    var serverCols = {}; // statusId → [{id, order_index, subcol_index}, ...]
     serverStories.forEach(function (s) {
       var sid = String(s.status_id);
       if (!serverCols[sid]) serverCols[sid] = [];
       serverCols[sid].push(s);
     });
+    // Quick lookup: story id → server record
+    var serverById = {};
+    serverStories.forEach(function (s) { serverById[String(s.id)] = s; });
 
     var changedCols = {};
 
@@ -908,9 +923,15 @@
         if (targetCol) {
           var outer = targetCol.querySelector('.board-cards');
           if (outer) {
+            card.dataset.subcolIndex = String(s.subcol_index || 0);
             outer.appendChild(card);
             changedCols[currentCol.dataset.statusId] = currentCol;
             changedCols[s.status_id]                 = targetCol;
+            // Hero: green glow on the card so observers know it moved
+            card.classList.remove('card-sync-highlight'); void card.offsetWidth;
+            card.classList.add('card-sync-highlight');
+            clearTimeout(card._syncHT);
+            card._syncHT = setTimeout(function () { card.classList.remove('card-sync-highlight'); }, 1300);
           }
         }
       }
@@ -927,18 +948,25 @@
       var hasSuppressed = domCards.some(function (c) { return recentMoves[c.dataset.storyId]; });
       if (hasSuppressed) return;
 
-      // Build the server-ordered ID list (only cards that exist in the DOM)
+      // Build server-ordered map
       var serverIds = serverOrder
         .filter(function (s) { return !!document.querySelector('.board-card[data-story-id="' + s.id + '"]'); })
         .map(function (s) { return String(s.id); });
 
-      // Build current DOM ID list (cards present in this column)
+      // Build current DOM ID list (cards present in this column, in DOM order)
       var domIds = domCards.map(function (c) { return c.dataset.storyId; });
 
       // Compare: same IDs in same order?
-      var match = serverIds.length === domIds.length &&
+      var orderMatch = serverIds.length === domIds.length &&
                   serverIds.every(function (id, i) { return id === domIds[i]; });
-      if (!match) changedCols[sid] = col;
+
+      // Also check if any subcol_index has drifted
+      var subcolMatch = domCards.every(function (c) {
+        var srv = serverById[c.dataset.storyId];
+        return !srv || String(srv.subcol_index || 0) === String(c.dataset.subcolIndex || 0);
+      });
+
+      if (!orderMatch || !subcolMatch) changedCols[sid] = col;
     });
 
     // Step 3: rebuild subcols for changed columns using authoritative server order
@@ -958,6 +986,13 @@
         return ai - bi;
       });
 
+      // Stamp each card with the server's subcol_index so refreshColWidths
+      // places it into the correct subcol, not a recalculated even split.
+      allCards.forEach(function (c) {
+        var srv = serverById[c.dataset.storyId];
+        if (srv) c.dataset.subcolIndex = String(srv.subcol_index || 0);
+      });
+
       // Flatten subcols, put sorted cards directly in outer, force subcol rebuild
       Array.from(outer.querySelectorAll(':scope > .board-subcol')).forEach(function (s) { s.remove(); });
       allCards.forEach(function (c) { outer.appendChild(c); });
@@ -971,7 +1006,22 @@
   }
 
   // ── Stickers reconciliation ─────────────────────────────────────────────
-  // serverStickers: [{id, type, x, y, card_story_id, card_x, card_y, creator_name}]
+  // serverStickers: [{id, type, x, y, label, card_story_id, card_x, card_y, creator_name}]
+  function stickerFlash(el) {
+    el.classList.remove('sticker-sync-flash'); void el.offsetWidth;
+    el.classList.add('sticker-sync-flash');
+    clearTimeout(el._syncFT);
+    el._syncFT = setTimeout(function () { el.classList.remove('sticker-sync-flash'); }, 900);
+  }
+  function applyStickerLabel(el, label) {
+    el.dataset.label = label || '';
+    var span = el.querySelector('.sticker-label');
+    if (span) span.textContent = label || '';
+    if (el.classList.contains('sticker-note')) {
+      if (label) el.classList.add('has-label'); else el.classList.remove('has-label');
+    }
+  }
+
   function reconcileStickers(serverStickers) {
     var changed = false;
     var serverById = {};
@@ -994,15 +1044,17 @@
       var sy     = isCard ? (sk.card_y != null ? sk.card_y : 10) : sk.y;
       sx = Math.round(sx * 10) / 10;
       sy = Math.round(sy * 10) / 10;
+      var serverLabel = sk.label || '';
+      var serverCard  = String(sk.card_story_id || '');
 
       var existing = document.querySelector('.board-sticker[data-id="' + id + '"]');
 
       if (existing) {
-        // Position drift?
-        var currSx = Math.round(parseFloat(existing.dataset.sx || '0') * 10) / 10;
-        var currSy = Math.round(parseFloat(existing.dataset.sy || '0') * 10) / 10;
-        var currCard = String(existing.dataset.cardstory || '');
-        var serverCard = String(sk.card_story_id || '');
+        var currSx    = Math.round(parseFloat(existing.dataset.sx    || '0') * 10) / 10;
+        var currSy    = Math.round(parseFloat(existing.dataset.sy    || '0') * 10) / 10;
+        var currCard  = String(existing.dataset.cardstory || '');
+        var currLabel = existing.dataset.label || '';
+        var needsFlash = false;
 
         if (Math.abs(currSx - sx) > 0.4 || Math.abs(currSy - sy) > 0.4 || currCard !== serverCard) {
           existing.style.left = sx + '%';
@@ -1010,8 +1062,13 @@
           existing.dataset.sx = sx;
           existing.dataset.sy = sy;
           existing.dataset.cardstory = serverCard;
-          changed = true;
+          changed = true; needsFlash = true;
         }
+        if (currLabel !== serverLabel) {
+          applyStickerLabel(existing, serverLabel);
+          changed = true; needsFlash = true;
+        }
+        if (needsFlash) stickerFlash(existing);
 
         // Parent correct?
         if (isCard) {
@@ -1032,16 +1089,18 @@
       } else {
         // New sticker arrived from another client
         var el = document.createElement('div');
-        el.className        = 'board-sticker sticker-' + sk.type + (isCard ? ' sticker-on-card' : '');
+        el.className        = 'board-sticker sticker-' + sk.type + (isCard ? ' sticker-on-card' : '') + (serverLabel ? ' has-label' : '');
         el.dataset.id       = id;
         el.dataset.type     = sk.type;
         el.dataset.sx       = sx;
         el.dataset.sy       = sy;
-        el.dataset.cardstory= String(sk.card_story_id || '');
+        el.dataset.cardstory= serverCard;
         el.dataset.creator  = sk.creator_name || '';
+        el.dataset.label    = serverLabel;
         el.style.left       = sx + '%';
         el.style.top        = sy + '%';
-        el.innerHTML        = (ICON_MAP[sk.type] || '!') +
+        el.innerHTML        = '<span class="sticker-icon">' + (ICON_MAP[sk.type] || '!') + '</span>' +
+          '<span class="sticker-label">' + serverLabel.replace(/</g,'&lt;') + '</span>' +
           '<button class="sticker-del" data-id="' + id + '" title="Remove">\u2715</button>';
 
         if (isCard) {
@@ -1052,6 +1111,7 @@
           if (sl) { sl.appendChild(el); changed = true; }
         }
         if (window._wireStickerEl) window._wireStickerEl(el);
+        stickerFlash(el);
       }
     });
 
@@ -1081,6 +1141,37 @@
 
   if (syncDot) syncDot.style.display = 'inline-block';
   setInterval(poll, 4000);
+}());
+</script>
+
+<script>
+// ── Story edit modal ──────────────────────────────────────────────────────────
+(function () {
+  var bg    = document.getElementById('story-modal-bg');
+  var frame = document.getElementById('story-modal-frame');
+  var closeBtn = document.getElementById('story-modal-close');
+  if (!bg || !frame) return;
+
+  function openStoryModal(href) {
+    frame.src = href + (href.indexOf('?') >= 0 ? '&' : '?') + 'modal=1';
+    bg.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeStoryModal() {
+    bg.style.display = 'none';
+    frame.src = '';
+    document.body.style.overflow = '';
+  }
+
+  closeBtn.addEventListener('click', closeStoryModal);
+  bg.addEventListener('click', function (e) { if (e.target === bg) closeStoryModal(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && bg.style.display !== 'none') closeStoryModal();
+  });
+
+  // Expose so iframe JS (and wireCard, context menu) can call these
+  window.openStoryModal  = openStoryModal;
+  window.closeStoryModal = closeStoryModal;
 }());
 </script>
 

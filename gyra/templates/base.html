@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}">
   {% block head %}{% endblock %}
 </head>
-<body>
+<body{% if request.args.get('modal') %} class="modal-iframe"{% endif %}>
 
 {% if session.user_id %}
 <div class="layout">

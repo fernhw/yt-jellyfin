@@ -11,12 +11,19 @@
 
   <!-- ── Main form ── -->
   <div class="story-main">
-    {% if mode == 'view' %}
+    {% if mode == 'view' and not request.args.get('modal') %}
     <div class="story-breadcrumb">
       <a href="{{ url_for('board', project_id=story.project_id) }}">{{ story.project_name }}</a>
       <span>/</span>
       <span class="story-key">{{ story.project_key }}-{{ story.id }}</span>
     </div>
+    {% endif %}
+
+    {% if request.args.get('modal') and mode == 'view' %}
+    <button type="button" class="story-modal-close-btn"
+            onclick="if(window.parent && window.parent.closeStoryModal) window.parent.closeStoryModal();">
+      ✕ Close
+    </button>
     {% endif %}
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -27,8 +34,41 @@
     {% endif %}
     {% endwith %}
 
+    <!-- ── Images (shown above form in view/edit mode) ────────────── -->
+    {% if mode == 'view' %}
+    <div class="story-images-section mb-4">
+      <h3>Images</h3>
+      {% if images %}
+      <div class="story-images-grid">
+        {% for img in images %}
+        <div class="story-image-item">
+          <img src="{{ url_for('story_image', filename=img.filename) }}" alt=""
+               class="story-zoomable" title="Click to enlarge">
+          <form method="post" action="{{ url_for('story_view', story_id=story.id) }}{% if request.args.get('modal') %}?modal=1{% endif %}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="delete_image">
+            <input type="hidden" name="image_id" value="{{ img.id }}">
+            <button type="submit" class="btn-img-delete" title="Remove">✕</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <form method="post" enctype="multipart/form-data"
+            action="{{ url_for('story_view', story_id=story.id) }}{% if request.args.get('modal') %}?modal=1{% endif %}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="upload_image">
+        <label class="img-upload-label">
+          <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp"
+                 style="display:none" onchange="this.form.submit()">
+          + Attach image
+        </label>
+      </form>
+    </div>
+    {% endif %}
+
     <form method="post"
-          action="{{ url_for('story_view', story_id=story.id) if mode == 'view' else url_for('story_new') }}"
+          action="{{ url_for('story_view', story_id=story.id) if mode == 'view' else url_for('story_new') }}{% if request.args.get('modal') %}{% if mode == 'view' %}?modal=1{% else %}?modal=1{% endif %}{% endif %}"
           id="story-form">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
       <input type="hidden" name="action" value="{{ 'update' if mode == 'view' else 'create' }}">
@@ -196,15 +236,31 @@
       </div>
 
       <div class="form-group">
-        <label>Assignees <span class="form-hint-inline">(hold ⌘/Ctrl for multiple)</span></label>
-        <select name="assignee_ids" multiple class="form-input form-multi-select">
-          {% for u in all_users %}
-          <option value="{{ u.id }}"
-            {{ 'selected' if u.id in assignee_ids else '' }}>
-            {{ u.display_name }} (@{{ u.username }})
-          </option>
-          {% endfor %}
-        </select>
+        <label>Assignees</label>
+        <div class="assignee-picker" id="assignee-picker">
+          <div class="assignee-pills" id="assignee-pills">
+            {% for u in all_users %}
+            {% if u.id in assignee_ids %}
+            <span class="assignee-pill" data-uid="{{ u.id }}" data-name="{{ u.display_name }} (@{{ u.username }})">
+              {{ u.display_name }}
+              <button type="button" class="assignee-remove" aria-label="Remove {{ u.display_name }}">−</button>
+              <input type="hidden" name="assignee_ids" value="{{ u.id }}">
+            </span>
+            {% endif %}
+            {% endfor %}
+          </div>
+          <div class="assignee-add-row">
+            <select class="form-input form-input-sm assignee-add-sel" id="assignee-add-sel">
+              <option value="">— add person —</option>
+              {% for u in all_users %}
+              {% if u.id not in assignee_ids %}
+              <option value="{{ u.id }}" data-name="{{ u.display_name }} (@{{ u.username }})">{{ u.display_name }} (@{{ u.username }})</option>
+              {% endif %}
+              {% endfor %}
+            </select>
+            <button type="button" class="btn btn-secondary btn-sm assignee-add-btn" id="assignee-add-btn">+ Add</button>
+          </div>
+        </div>
       </div>
 
       <div class="story-actions">
@@ -218,37 +274,7 @@
       </div>
     </form>
 
-    <!-- ── Images ──────────────────────────────────────── -->
     {% if mode == 'view' %}
-    <div class="story-images-section mt-4">
-      <h3>Images</h3>
-      {% if images %}
-      <div class="story-images-grid">
-        {% for img in images %}
-        <div class="story-image-item">
-          <img src="{{ url_for('story_image', filename=img.filename) }}" alt="">
-          <form method="post" action="{{ url_for('story_view', story_id=story.id) }}">
-            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-            <input type="hidden" name="action" value="delete_image">
-            <input type="hidden" name="image_id" value="{{ img.id }}">
-            <button type="submit" class="btn-img-delete" title="Remove">✕</button>
-          </form>
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %}
-      <form method="post" enctype="multipart/form-data"
-            action="{{ url_for('story_view', story_id=story.id) }}">
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-        <input type="hidden" name="action" value="upload_image">
-        <label class="img-upload-label">
-          <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp"
-                 style="display:none" onchange="this.form.submit()">
-          + Attach image
-        </label>
-      </form>
-    </div>
-
     <form id="delete-form" method="post"
           action="{{ url_for('story_view', story_id=story.id) }}">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
@@ -319,7 +345,7 @@
         {% else %}
         <p class="form-hint">No comments yet.</p>
         {% endfor %}
-        <form method="post" action="{{ url_for('story_view', story_id=story.id) }}"
+        <form method="post" action="{{ url_for('story_view', story_id=story.id) }}{% if request.args.get('modal') %}?modal=1{% endif %}"
               class="comment-form">
           <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
           <input type="hidden" name="action" value="comment">
@@ -479,6 +505,71 @@
 {% block scripts %}
 <script>
 (function() {
+  // ── Assignee pill picker ───────────────────────────────────────────────────
+  var _pills  = document.getElementById('assignee-pills');
+  var _addSel = document.getElementById('assignee-add-sel');
+  var _addBtn = document.getElementById('assignee-add-btn');
+
+  function addAssignee() {
+    if (!_addSel || !_pills) return;
+    var opt = _addSel.options[_addSel.selectedIndex];
+    if (!opt || !opt.value) return;
+    var uid  = opt.value;
+    var name = opt.dataset.name || opt.text;
+    // Build pill
+    var pill = document.createElement('span');
+    pill.className = 'assignee-pill';
+    pill.dataset.uid  = uid;
+    pill.dataset.name = name;
+    // display name only (strip the @username part for compactness)
+    var displayName = opt.text.replace(/\s*\(@[^)]+\)$/, '');
+    pill.innerHTML =
+      displayName +
+      ' <button type="button" class="assignee-remove" aria-label="Remove">\u2212</button>' +
+      '<input type="hidden" name="assignee_ids" value="' + uid + '">';
+    pill.querySelector('.assignee-remove').addEventListener('click', function () {
+      removeAssignee(pill, uid, name);
+    });
+    _pills.appendChild(pill);
+    // Remove from dropdown
+    opt.remove();
+    _addSel.value = '';
+  }
+
+  function removeAssignee(pill, uid, name) {
+    // Re-add to dropdown
+    var opt = document.createElement('option');
+    opt.value = uid;
+    opt.dataset.name = name;
+    opt.text = name;
+    // Insert alphabetically
+    var inserted = false;
+    for (var i = 1; i < _addSel.options.length; i++) {
+      if (_addSel.options[i].text.localeCompare(opt.text) > 0) {
+        _addSel.insertBefore(opt, _addSel.options[i]);
+        inserted = true; break;
+      }
+    }
+    if (!inserted) _addSel.appendChild(opt);
+    pill.remove();
+  }
+
+  if (_addBtn)  _addBtn.addEventListener('click', addAssignee);
+  if (_addSel)  _addSel.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); addAssignee(); }
+  });
+  // Wire remove buttons for server-rendered pills
+  if (_pills) {
+    _pills.querySelectorAll('.assignee-pill').forEach(function (pill) {
+      var btn = pill.querySelector('.assignee-remove');
+      if (btn) btn.addEventListener('click', function () {
+        removeAssignee(pill, pill.dataset.uid, pill.dataset.name);
+      });
+    });
+  }
+}());
+
+(function() {
   // ── Story builder preview ──────────────────────────────────────────────────
   const actor    = document.getElementById('sb-actor');
   const verb     = document.getElementById('sb-verb');
@@ -534,6 +625,33 @@
     }
   });
 })();
+
+// ── Image lightbox ─────────────────────────────────────────────────────────
+(function () {
+  function openLightbox(src) {
+    var bg = document.createElement('div');
+    bg.className = 'img-lightbox-bg';
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'img-lightbox-close';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.setAttribute('aria-label', 'Close');
+    var img = document.createElement('img');
+    img.src = src;
+    bg.appendChild(closeBtn);
+    bg.appendChild(img);
+    document.body.appendChild(bg);
+
+    function close() { bg.remove(); document.removeEventListener('keydown', onKey); }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    closeBtn.addEventListener('click', close);
+    bg.addEventListener('click', function (e) { if (e.target === bg) close(); });
+    document.addEventListener('keydown', onKey);
+  }
+
+  document.querySelectorAll('.story-zoomable').forEach(function (img) {
+    img.addEventListener('click', function () { openLightbox(this.src); });
+  });
+}());
 
 // ── Activity tabs ──────────────────────────────────────────────────────────
 (function () {
