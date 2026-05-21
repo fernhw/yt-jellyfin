@@ -171,98 +171,6 @@
                   placeholder="Given / When / Then…">{{ story.acceptance_criteria if story else '' }}</textarea>
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label>Story Points</label>
-          <select name="story_points" class="form-input form-select">
-            {% for pt in [0,1,2,3,5,8,13,21] %}
-            <option value="{{ pt }}"
-              {{ 'selected' if story and story.story_points == pt else '' }}>
-              {{ pt if pt else '—' }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Type</label>
-          <select name="story_type" class="form-input form-select" id="sb-type-sel">
-            <option value="">— None —</option>
-            {% for t in story_types %}
-            <option value="{{ t.id }}"
-                    data-color="{{ t.color }}"
-                    {{ 'selected' if story and story.story_type == t.id else '' }}>
-              {{ t.name }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Status</label>
-          <select name="status_id" class="form-input form-select">
-            <option value="">— Backlog —</option>
-            {% for st in statuses %}
-            <option value="{{ st.id }}"
-              {{ 'selected' if story and story.status_id == st.id else '' }}>
-              {{ st.name }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Sprint</label>
-          <select name="sprint" class="form-input form-select">
-            <option value="">— Backlog —</option>
-            <option value="1" {{ 'selected' if (story and story.sprint) or (not story and default_sprint) else '' }}>In Sprint</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Priority</label>
-          <select name="priority" class="form-input form-select priority-select">
-            <option value="">— None —</option>
-            {% for pri in ['VH','H','M','L','VL'] %}
-            <option value="{{ pri }}" {{ 'selected' if story and story.priority == pri else '' }}>{{ pri }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Epic</label>
-          <select name="epic_id" class="form-input form-select">
-            <option value="">— None —</option>
-            {% for e in epics %}
-            <option value="{{ e.id }}" {{ 'selected' if story and story.epic_id == e.id else '' }}>{{ e.title }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Assignees</label>
-        <div class="assignee-picker" id="assignee-picker">
-          <div class="assignee-pills" id="assignee-pills">
-            {% for u in all_users %}
-            {% if u.id in assignee_ids %}
-            <span class="assignee-pill" data-uid="{{ u.id }}" data-name="{{ u.display_name }} (@{{ u.username }})">
-              {{ u.display_name }}
-              <button type="button" class="assignee-remove" aria-label="Remove {{ u.display_name }}">−</button>
-              <input type="hidden" name="assignee_ids" value="{{ u.id }}">
-            </span>
-            {% endif %}
-            {% endfor %}
-          </div>
-          <div class="assignee-add-row">
-            <select class="form-input form-input-sm assignee-add-sel" id="assignee-add-sel">
-              <option value="">— add person —</option>
-              {% for u in all_users %}
-              {% if u.id not in assignee_ids %}
-              <option value="{{ u.id }}" data-name="{{ u.display_name }} (@{{ u.username }})">{{ u.display_name }} (@{{ u.username }})</option>
-              {% endif %}
-              {% endfor %}
-            </select>
-            <button type="button" class="btn btn-secondary btn-sm assignee-add-btn" id="assignee-add-btn">+ Add</button>
-          </div>
-        </div>
-      </div>
-
       <div class="story-actions">
         <button type="submit" class="btn btn-primary">
           {{ 'Save changes' if mode == 'view' else 'Create story' }}
@@ -425,79 +333,120 @@
     {% endif %}
   </div>
 
-  <!-- ── Sidebar meta ── -->
-  {% if mode == 'view' and story %}
-  <aside class="story-meta card">
-    <div class="card-body">
-      <div class="meta-block">
-        <span class="meta-label">Status</span>
-        <span class="status-pill"
-              style="background:{{ (story.status_color or '#6B7280') }}22;
-                     color:{{ story.status_color or '#6B7280' }}">
-          {{ story.status_name or 'Backlog' }}
-        </span>
-      </div>
-      <div class="meta-block">
-        <span class="meta-label">Sprint</span>
-        <span class="meta-value">{{ 'In Sprint' if story.sprint else '— Backlog —' }}</span>
-      </div>
-      <div class="meta-block">
-        <span class="meta-label">Priority</span>
-        {% if story.priority %}
-        <span class="card-tape card-tape-{{ story.priority | lower }}" style="position:static;transform:none;display:inline-block;border-radius:2px;">{{ story.priority }}</span>
-        {% else %}
-        <span class="meta-value">—</span>
-        {% endif %}
-      </div>
-      {% if epics %}
-      <div class="meta-block">
-        <span class="meta-label">Epic</span>
-        {% set cur_epic = epics | selectattr('id', 'equalto', story.epic_id) | first if story.epic_id else None %}
-        {% if cur_epic %}
-        <span class="meta-value" style="color:{{ cur_epic.color }}">{{ cur_epic.title }}</span>
-        {% else %}
-        <span class="meta-value">—</span>
-        {% endif %}
-      </div>
-      {% endif %}
-      <div class="meta-block">
-        <span class="meta-label">Points</span>
-        <span class="meta-value">{{ story.story_points or '—' }}</span>
-      </div>
-      <div class="meta-block">
-        <span class="meta-label">Assignees</span>
-        <div class="meta-assignees">
-          {% for a in assignees %}
-          <div class="meta-user">
-            {% if a.avatar %}
-              <img src="{{ url_for('avatar', filename=a.avatar) }}" class="avatar-xs" alt="">
-            {% else %}
-              <span class="avatar-initial-xs">{{ a.display_name[0]|upper }}</span>
-            {% endif %}
-            <span>{{ a.display_name }}</span>
-          </div>
-          {% else %}
-          <span class="form-hint">Unassigned</span>
+  <!-- ── Editable sidebar (Jira-style) ── -->
+  <aside class="story-sidebar">
+
+    <div class="story-sidebar-field">
+      <label class="story-sidebar-label" for="ss-story-points">Story Points</label>
+      <select name="story_points" id="ss-story-points" class="story-sidebar-select" form="story-form">
+        {% for pt in [0,1,2,3,5,8,13,21] %}
+        <option value="{{ pt }}" {{ 'selected' if story and story.story_points == pt else '' }}>
+          {{ pt if pt else '—' }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="story-sidebar-field">
+      <label class="story-sidebar-label" for="sb-type-sel">Type</label>
+      <select name="story_type" id="sb-type-sel" class="story-sidebar-select" form="story-form">
+        <option value="">— None —</option>
+        {% for t in story_types %}
+        <option value="{{ t.id }}" data-color="{{ t.color }}"
+                {{ 'selected' if story and story.story_type == t.id else '' }}>
+          {{ t.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="story-sidebar-field">
+      <label class="story-sidebar-label">Status</label>
+      <select name="status_id" class="story-sidebar-select" form="story-form">
+        <option value="">— Backlog —</option>
+        {% for st in statuses %}
+        <option value="{{ st.id }}" {{ 'selected' if story and story.status_id == st.id else '' }}>
+          {{ st.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="story-sidebar-field">
+      <label class="story-sidebar-label">Sprint</label>
+      <select name="sprint" class="story-sidebar-select" form="story-form">
+        <option value="">— Backlog —</option>
+        <option value="1" {{ 'selected' if (story and story.sprint) or (not story and default_sprint) else '' }}>In Sprint</option>
+      </select>
+    </div>
+
+    <div class="story-sidebar-field">
+      <label class="story-sidebar-label">Priority</label>
+      <select name="priority" class="story-sidebar-select priority-select" form="story-form">
+        <option value="">— None —</option>
+        {% for pri in ['VH','H','M','L','VL'] %}
+        <option value="{{ pri }}" {{ 'selected' if story and story.priority == pri else '' }}>{{ pri }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="story-sidebar-field">
+      <label class="story-sidebar-label">Epic</label>
+      <select name="epic_id" class="story-sidebar-select" form="story-form">
+        <option value="">— None —</option>
+        {% for e in epics %}
+        <option value="{{ e.id }}" {{ 'selected' if story and story.epic_id == e.id else '' }}>{{ e.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="story-sidebar-field">
+      <label class="story-sidebar-label">Assignees</label>
+      <div class="assignee-picker" id="assignee-picker">
+        <div class="assignee-pills" id="assignee-pills">
+          {% for u in all_users %}
+          {% if u.id in assignee_ids %}
+          <span class="assignee-pill" data-uid="{{ u.id }}" data-name="{{ u.display_name }} (@{{ u.username }})">
+            {{ u.display_name }}
+            <button type="button" class="assignee-remove" aria-label="Remove {{ u.display_name }}">−</button>
+            <input type="hidden" name="assignee_ids" value="{{ u.id }}" form="story-form">
+          </span>
+          {% endif %}
           {% endfor %}
         </div>
+        <div class="assignee-add-row">
+          <select class="form-input form-input-sm assignee-add-sel" id="assignee-add-sel">
+            <option value="">— add person —</option>
+            {% for u in all_users %}
+            {% if u.id not in assignee_ids %}
+            <option value="{{ u.id }}" data-name="{{ u.display_name }} (@{{ u.username }})">{{ u.display_name }} (@{{ u.username }})</option>
+            {% endif %}
+            {% endfor %}
+          </select>
+          <button type="button" class="btn btn-secondary btn-sm assignee-add-btn" id="assignee-add-btn">+ Add</button>
+        </div>
       </div>
-      <div class="meta-block">
-        <span class="meta-label">Reporter</span>
-        <span class="meta-value">{{ story.creator_name or '—' }}</span>
-      </div>
-      <div class="meta-block">
-        <span class="meta-label">Created</span>
-        <span class="meta-value">{{ story.created_at | datetimeformat }}</span>
-      </div>
-      {% if story.updated_at %}
-      <div class="meta-block">
-        <span class="meta-label">Updated</span>
-        <span class="meta-value">{{ story.updated_at | datetimeformat }}</span>
-      </div>
-      {% endif %}
     </div>
+
+    {% if mode == 'view' and story %}
+    <div class="story-sidebar-divider"></div>
+    <div class="story-sidebar-field">
+      <span class="story-sidebar-label">Reporter</span>
+      <span class="story-sidebar-value">{{ story.creator_name or '—' }}</span>
+    </div>
+    <div class="story-sidebar-field">
+      <span class="story-sidebar-label">Created</span>
+      <span class="story-sidebar-value">{{ story.created_at | datetimeformat }}</span>
+    </div>
+    {% if story.updated_at %}
+    <div class="story-sidebar-field">
+      <span class="story-sidebar-label">Updated</span>
+      <span class="story-sidebar-value">{{ story.updated_at | datetimeformat }}</span>
+    </div>
+    {% endif %}
+    {% endif %}
+
   </aside>
-  {% endif %}
 
 </div>
 {% endblock %}
@@ -526,7 +475,7 @@
     pill.innerHTML =
       displayName +
       ' <button type="button" class="assignee-remove" aria-label="Remove">\u2212</button>' +
-      '<input type="hidden" name="assignee_ids" value="' + uid + '">';
+      '<input type="hidden" name="assignee_ids" value="' + uid + '" form="story-form">';
     pill.querySelector('.assignee-remove').addEventListener('click', function () {
       removeAssignee(pill, uid, name);
     });
