@@ -18,6 +18,14 @@
       <span class="zoom-label" id="zoom-label">100%</span>
       <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
     </div>
+    <!-- Epics panel button -->
+    <button class="zoom-btn epics-hdr-btn" id="epics-panel-btn" title="Epics — view sprint epics and their stories">📋 Epics</button>
+    <!-- Show Epics toggle: shows/hides Epic-type story cards on the board -->
+    <label class="show-epics-toggle" title="Show Epic-type story cards on board">
+      <input type="checkbox" id="show-epics-cb">
+      <span class="tog-track"><span class="tog-thumb"></span></span>
+      <span class="tog-lbl">Show Epics</span>
+    </label>
     <!-- Live sync indicator -->
     <span id="board-sync-dot" class="board-sync-dot" title="Live sync active" style="display:none"></span>
     <!-- Screensaver -->
@@ -28,6 +36,7 @@
     <!-- Fullscreen -->
     <button class="zoom-btn" id="board-fullscreen-btn" title="Full screen" style="width:32px">⛶</button>
     <!-- Sticker dropdown -->
+    {% if session.role != 'viewer' %}
     <div class="sticker-dropdown" style="position:relative">
       <button class="sticker-menu-btn" id="sticker-menu-toggle" title="Add sticker">🏷 Sticker ▾</button>
       <div id="sticker-menu" class="sticker-menu" style="display:none">
@@ -45,10 +54,20 @@
         <button class="sticker-btn" data-type="note"><span class="sm-icon" style="background:#5AC8FA"><b>#</b></span> Note</button>
       </div>
     </div>
+    {% endif %}
+    {% if session.role != 'viewer' %}
     <a class="btn btn-primary btn-sm"
        href="{{ url_for('story_new', project_id=project.id, sprint=1) }}">
       + Story
     </a>
+    {% endif %}
+    {% if session.role in ('admin', 'super_user') %}
+    <form method="post" action="{{ url_for('end_sprint', project_id=project.id) }}" style="display:inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-sm btn-warning"
+              onclick="return confirm('End current sprint? Done stories will be archived, unfinished returned to backlog.')">&#x23F9; End Sprint</button>
+    </form>
+    {% endif %}
   </div>
 </div>
 
@@ -97,14 +116,16 @@
         {% else %}
           {% set card_bg = '#FFF9C4' %}
         {% endif %}
-        <div class="board-card"
+        <div class="board-card{% if story.story_type_name == 'Epic' %} is-epic-type{% endif %}"
              draggable="true"
              data-story-id="{{ story.id }}"
              data-order-index="{{ story.order_index }}"
              data-subcol-index="{{ story.subcol_index or 0 }}"
              data-href="{{ url_for('story_view', story_id=story.id) }}"
              data-assignee-ids="{{ story.assignees | map(attribute='id') | join(',') }}"
-             style="--rot:{{ rot }}deg; --card-bg:{{ card_bg }}; --card-accent:{{ card_accent }}">
+             data-epic-id="{{ story.epic_id or '' }}"
+             style="--rot:{{ rot }}deg; --card-bg:{{ card_bg }}; --card-accent:{{ card_accent }}">{% if story.epic_id %}
+          <div class="card-epic-strip" style="--epic-c:{{ story.epic_color or '#7C3AED' }}" title="Epic: {{ story.epic_title }}">{{ story.epic_title }}</div>{% endif %}
 
           {# select hit area — intercepts clicks so card nav doesn't fire #}
           <label class="card-sel" onclick="event.stopPropagation()" title="Select">
@@ -198,6 +219,17 @@
     </div>
   </div>
 </div>
+
+{# Epics side panel #}
+<div id="epics-panel" class="epics-panel">
+  <div class="epics-ph">
+    <span class="epics-ph-title">📋 Epics</span>
+    <button class="epics-ph-close" id="epics-panel-close" title="Close">×</button>
+  </div>
+  <div class="epics-pb" id="epics-pb"></div>
+</div>
+{# Epics data for JS #}
+<script type="application/json" id="epics-json">{{ epics|tojson }}</script>
 
 {# Global card tooltip popup — outside board-wrap so it escapes zoom/overflow #}
 <div id="card-popup" class="card-popup" style="display:none"></div>
@@ -1941,6 +1973,161 @@
     if (!btn) return;
     btn.addEventListener('click', function (e) { e.stopPropagation(); startSS(); });
   });
+}());
+</script>
+
+<script>
+(function () {
+  /* ── Show Epics toggle ───────────────────────────────────────── */
+  var board   = document.getElementById('board');
+  var showCb  = document.getElementById('show-epics-cb');
+  var STORE   = 'gyra_show_epics';
+
+  function applyShowEpics(on) {
+    if (on) {
+      board.classList.remove('hide-epics');
+    } else {
+      board.classList.add('hide-epics');
+    }
+  }
+
+  // Restore from localStorage (default: OFF)
+  var stored = localStorage.getItem(STORE);
+  var initOn = stored === '1';
+  showCb.checked = initOn;
+  applyShowEpics(initOn);
+
+  showCb.addEventListener('change', function () {
+    localStorage.setItem(STORE, this.checked ? '1' : '0');
+    applyShowEpics(this.checked);
+  });
+
+  /* ── Epics side panel ────────────────────────────────────────── */
+  var panel      = document.getElementById('epics-panel');
+  var panelBtn   = document.getElementById('epics-panel-btn');
+  var panelClose = document.getElementById('epics-panel-close');
+  var panelBody  = document.getElementById('epics-pb');
+  var epicsData  = JSON.parse(document.getElementById('epics-json').textContent || '[]');
+  var csrf       = document.querySelector('meta[name=csrf-token]') ?
+                   document.querySelector('meta[name=csrf-token]').content :
+                   (document.querySelector('input[name=_csrf]') || {value:''}).value;
+
+  function setPanel(open) {
+    panel.classList.toggle('is-open', open);
+    panelBtn.classList.toggle('is-active', open);
+    if (open) renderPanel();
+  }
+
+  panelBtn.addEventListener('click', function () { setPanel(!panel.classList.contains('is-open')); });
+  panelClose.addEventListener('click', function () { setPanel(false); });
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function renderPanel() {
+    if (!epicsData.length) {
+      panelBody.innerHTML = '<p class="epics-empty">No epics for this project yet.</p>';
+      return;
+    }
+    var html = epicsData.map(function(e) {
+      var storiesHtml = '';
+      if (e.stories && e.stories.length) {
+        storiesHtml = '<ul class="epic-story-list">' +
+          e.stories.map(function(s) {
+            return '<li><a href="/story/' + s.id + '" class="epic-story-link">' +
+              '<span class="epic-story-dot" style="background:' + esc(s.status_color) + '"></span>' +
+              esc(s.title) +
+              (s.story_points ? '<span class="epic-story-pts">' + s.story_points + 'pt</span>' : '') +
+              '</a></li>';
+          }).join('') +
+        '</ul>';
+      } else {
+        storiesHtml = '<p class="epics-empty" style="margin:4px 0 8px 20px">No stories in sprint.</p>';
+      }
+      return '<div class="epic-item" id="epic-item-' + e.id + '">' +
+        '<div class="epic-item-head" onclick="toggleEpicItem(' + e.id + ')">' +
+          '<span class="epic-dot" style="background:' + esc(e.color) + '"></span>' +
+          '<span class="epic-title" id="epic-title-' + e.id + '">' + esc(e.title) + '</span>' +
+          '<span class="epic-story-count">' + (e.stories ? e.stories.length : 0) + '</span>' +
+          '<span class="epic-chevron">▾</span>' +
+          '<button class="epic-edit-btn" onclick="event.stopPropagation();openEpicEdit(' + e.id + ',\'' + esc(e.title) + '\',\'' + esc(e.color) + '\',\'' + esc(e.description||'') + '\')" title="Edit epic">✏</button>' +
+        '</div>' +
+        '<div class="epic-body" id="epic-body-' + e.id + '" style="display:none">' +
+          storiesHtml +
+        '</div>' +
+      '</div>';
+    }).join('');
+    panelBody.innerHTML = html;
+  }
+
+  window.toggleEpicItem = function(id) {
+    var body    = document.getElementById('epic-body-' + id);
+    var chevron = body && body.previousElementSibling && body.previousElementSibling.querySelector('.epic-chevron');
+    if (!body) return;
+    var open = body.style.display === 'none';
+    body.style.display    = open ? 'block' : 'none';
+    if (chevron) chevron.textContent = open ? '▴' : '▾';
+  };
+
+  window.openEpicEdit = function(id, title, color, desc) {
+    var item = document.getElementById('epic-item-' + id);
+    if (!item || item.querySelector('.epic-edit-form')) return;
+    var form = document.createElement('div');
+    form.className = 'epic-edit-form';
+    form.innerHTML =
+      '<input class="epic-edit-title" value="' + esc(title) + '" placeholder="Title">' +
+      '<div style="display:flex;gap:6px;align-items:center;margin-top:4px">' +
+        '<input type="color" class="epic-edit-color" value="' + esc(color) + '">' +
+        '<button class="btn btn-xs btn-primary epic-edit-save" onclick="saveEpicEdit(' + id + ')">Save</button>' +
+        '<button class="btn btn-xs btn-secondary" onclick="cancelEpicEdit(' + id + ')">Cancel</button>' +
+      '</div>';
+    item.appendChild(form);
+  };
+
+  window.saveEpicEdit = function(id) {
+    var item  = document.getElementById('epic-item-' + id);
+    var form  = item && item.querySelector('.epic-edit-form');
+    if (!form) return;
+    var title = form.querySelector('.epic-edit-title').value.trim();
+    var color = form.querySelector('.epic-edit-color').value;
+    if (!title) return;
+    // Resolve CSRF token from any available source
+    var tok = document.querySelector('meta[name=csrf-token]') ?
+              document.querySelector('meta[name=csrf-token]').content :
+              (document.querySelector('#_csrf_hidden') || document.querySelector('input[name=_csrf]') || {value:''}).value;
+    fetch('/api/epic/' + id, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json','X-CSRF-Token': tok},
+      body: JSON.stringify({title: title, color: color})
+    }).then(function(r){ return r.json(); }).then(function(d) {
+      if (d.ok) {
+        // Update in-memory epics data
+        var ep = epicsData.find(function(e){ return e.id === id; });
+        if (ep) { ep.title = title; ep.color = color; }
+        // Update dot and title in panel
+        var head = document.querySelector('#epic-item-' + id + ' .epic-item-head');
+        if (head) {
+          head.querySelector('.epic-dot').style.background  = color;
+          head.querySelector('.epic-title').textContent     = title;
+        }
+        form.remove();
+      }
+    });
+  };
+
+  window.cancelEpicEdit = function(id) {
+    var form = document.querySelector('#epic-item-' + id + ' .epic-edit-form');
+    if (form) form.remove();
+  };
+
+  // Expose CSRF token via hidden input for the edit JS above
+  var csrfInputs = document.querySelectorAll('input[name=_csrf]');
+  if (csrfInputs.length) {
+    var hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.id   = '_csrf_hidden';
+    hidden.value = csrfInputs[0].value;
+    document.body.appendChild(hidden);
+  }
 }());
 </script>
 

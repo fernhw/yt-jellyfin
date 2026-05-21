@@ -4,7 +4,7 @@ from flask import (abort, redirect, render_template,
 
 from auth import login_required
 from db import (ensure_story_types, get_all_active_users, get_all_sprints,
-                get_backlog_stories, get_board_stories, get_db,
+                get_backlog_stories, get_board_stories, get_db, get_epics,
                 get_project, get_projects, get_statuses, get_stickers,
                 get_stories_tasks_batch, get_story_thumbnails,
                 get_story_types, get_story_users, get_user_projects,
@@ -85,6 +85,25 @@ def register(app) -> None:
                     board_assignees.append(dict(a))
         board_assignees.sort(key=lambda x: x.get("display_name", ""))
 
+        # Build epics panel data: each epic + its sprint stories
+        epics_raw = get_epics(project_id)
+        epic_stories_map: dict = {}
+        for s in stories:
+            eid = s.get("epic_id")
+            if eid:
+                epic_stories_map.setdefault(eid, []).append({
+                    "id":           s["id"],
+                    "title":        s["title"],
+                    "status_name":  s.get("status_name") or "",
+                    "status_color": s.get("status_color") or "#6B7280",
+                    "story_points": s.get("story_points") or 0,
+                })
+        epics_panel = []
+        for e in epics_raw:
+            ed = dict(e)
+            ed["stories"] = epic_stories_map.get(e["id"], [])
+            epics_panel.append(ed)
+
         return render_template(
             "board.html",
             project=project,
@@ -96,6 +115,7 @@ def register(app) -> None:
             all_sprints=all_sprints,
             story_types=story_types,
             board_assignees=board_assignees,
+            epics=epics_panel,
         )
 
     @app.route("/project/<int:project_id>/backlog")

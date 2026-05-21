@@ -122,7 +122,10 @@ def _verify_csrf(token) -> bool:
 
 def enforce_csrf() -> None:
     """Call at the top of every mutating route (POST/PUT/DELETE).
-    Reads the token from the form field *or* the X-CSRF-Token header."""
+    Reads the token from the form field *or* the X-CSRF-Token header.
+    Also blocks viewer-role users from all write operations."""
+    if session.get("role") == "viewer":
+        abort(403)
     token = request.form.get("_csrf") or request.headers.get("X-CSRF-Token")
     if not _verify_csrf(token):
         abort(403)

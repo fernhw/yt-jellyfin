@@ -211,6 +211,7 @@ def _migrate_db() -> None:
         ("stories", "story_type",  "INTEGER DEFAULT NULL"),
         ("stories", "priority",    "TEXT DEFAULT NULL"),
         ("stories", "epic_id",     "INTEGER DEFAULT NULL"),
+        ("stories", "is_archived", "INTEGER DEFAULT 0"),
     ]
     conn = get_db()
     for table, col, col_def in new_cols:
@@ -293,6 +294,35 @@ def _migrate_db() -> None:
         )
         conn.execute("DROP TABLE users")
         conn.execute("ALTER TABLE users_v2 RENAME TO users")
+        conn.execute("PRAGMA foreign_keys = ON")
+
+    # Migrate users: add viewer to role CHECK constraint.
+    # Idempotent: only runs if the current CHECK still excludes 'viewer'.
+    schema_row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='users'"
+    ).fetchone()
+    if schema_row and "'viewer'" not in schema_row[0]:
+        conn.execute("PRAGMA foreign_keys = OFF")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users_v3 (
+                id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+                username            TEXT    UNIQUE NOT NULL COLLATE NOCASE,
+                email               TEXT    UNIQUE NOT NULL COLLATE NOCASE,
+                display_name        TEXT    NOT NULL,
+                avatar              TEXT    DEFAULT NULL,
+                totp_secret_enc     TEXT    DEFAULT NULL,
+                totp_confirmed      INTEGER DEFAULT 0,
+                setup_token_hash    TEXT    DEFAULT NULL,
+                setup_token_expires INTEGER DEFAULT NULL,
+                role                TEXT    DEFAULT 'user' CHECK(role IN ('admin','user','super_user','viewer')),
+                is_active           INTEGER DEFAULT 1,
+                created_at          INTEGER NOT NULL,
+                created_by          INTEGER REFERENCES users_v3(id)
+            )
+        """)
+        conn.execute("INSERT INTO users_v3 SELECT * FROM users")
+        conn.execute("DROP TABLE users")
+        conn.execute("ALTER TABLE users_v3 RENAME TO users")
         conn.execute("PRAGMA foreign_keys = ON")
 
     conn.commit()
@@ -470,11 +500,13 @@ def get_board_stories(project_id: int):
     conn = get_db()
     rows = conn.execute(
         """SELECT s.*, st.name AS status_name, st.color AS status_color,
-                  sty.name AS story_type_name, sty.color AS story_type_color
+                  sty.name AS story_type_name, sty.color AS story_type_color,
+                  e.title AS epic_title, e.color AS epic_color
            FROM stories s
            LEFT JOIN statuses st   ON s.status_id = st.id
            LEFT JOIN story_types sty ON s.story_type = sty.id
-           WHERE s.project_id = ? AND s.sprint IS NOT NULL
+           LEFT JOIN epics e ON s.epic_id = e.id
+           WHERE s.project_id = ? AND s.sprint IS NOT NULL AND s.is_archived = 0
            ORDER BY s.order_index""",
         (project_id,),
     ).fetchall()
@@ -488,7 +520,7 @@ def get_backlog_stories(project_id: int):
         """SELECT s.*, st.name AS status_name, st.color AS status_color
            FROM stories s
            LEFT JOIN statuses st ON s.status_id = st.id
-           WHERE s.project_id = ? AND s.sprint IS NULL
+           WHERE s.project_id = ? AND s.sprint IS NULL AND s.is_archived = 0
            ORDER BY s.order_index""",
         (project_id,),
     ).fetchall()

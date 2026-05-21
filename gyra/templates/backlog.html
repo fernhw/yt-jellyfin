@@ -7,18 +7,51 @@
     <span class="project-key-badge">{{ project.key }}</span>
     <h2>Backlog</h2>
   </div>
-  <div class="page-header-right">
+  <div class="page-header-right" style="display:flex;gap:8px;align-items:center">
+    {% if session.role in ('admin', 'super_user') %}
+    <form method="post" action="{{ url_for('end_sprint', project_id=project.id) }}" style="display:inline">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-sm btn-warning"
+              onclick="return confirm('End current sprint? Done stories will be archived, unfinished returned to backlog.')">⏹ End Sprint</button>
+    </form>
+    <a class="btn btn-sm btn-secondary" href="{{ url_for('bulk_add', project_id=project.id) }}">⚡ Bulk Add</a>
+    {% endif %}
+    {% if session.role != 'viewer' %}
     <a class="btn btn-primary btn-sm"
        href="{{ url_for('story_new', project_id=project.id) }}">
       + Create Story
     </a>
+    {% endif %}
   </div>
 </div>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in messages %}
+  <div class="flash flash-{{ cat }}">{{ msg }}</div>
+  {% endfor %}
+{% endwith %}
+
 {% if stories %}
+{% if session.role != 'viewer' %}
+<div class="bl-toolbar">
+  <label class="bl-select-all">
+    <input type="checkbox" id="bl-check-all"> Select all
+  </label>
+  <form method="post" action="{{ url_for('bulk_sprint', project_id=project.id) }}"
+        id="bulk-sprint-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div id="bulk-sprint-story-ids"></div>
+    <button type="submit" class="btn btn-sm btn-primary" id="bulk-sprint-btn" disabled>
+      → Send to Sprint
+    </button>
+  </form>
+</div>
+{% endif %}
+
 <div class="backlog-list" id="backlog-list">
   {% for story in stories %}
   <div class="backlog-row" data-story-id="{{ story.id }}" data-order-index="{{ story.order_index }}" draggable="true">
+    {% if session.role != 'viewer' %}<input type="checkbox" class="bl-row-check" value="{{ story.id }}" aria-label="Select story">{% endif %}
     <span class="bl-drag-handle" title="Drag to reorder">⠿</span>
     <span class="bl-id">{{ project.key }}-{{ story.id }}</span>
     <a class="bl-title" href="{{ url_for('story_view', story_id=story.id) }}">
@@ -39,11 +72,13 @@
         {% endif %}
       {% endfor %}
     </div>
+    {% if session.role != 'viewer' %}
     <button class="btn btn-sm btn-secondary move-to-sprint"
             data-story-id="{{ story.id }}"
             data-sprint="1">
-      → Add to Sprint
+      → Sprint
     </button>
+    {% endif %}
   </div>
   {% endfor %}
 </div>
@@ -69,6 +104,37 @@
 (function () {
   var CSRF = (document.querySelector('meta[name="csrf-token"]') || {content: ''}).content;
   var ROOT = (document.querySelector('meta[name="app-root"]') || {getAttribute: function(){return '';}}).getAttribute('content') || '';
+
+  // ── Bulk select ──────────────────────────────────────────────────────────
+  var checkAll  = document.getElementById('bl-check-all');
+  var sprintBtn = document.getElementById('bulk-sprint-btn');
+  var hiddenIds = document.getElementById('bulk-sprint-story-ids');
+
+  function syncBulkBtn() {
+    var checked = Array.from(document.querySelectorAll('.bl-row-check:checked'));
+    sprintBtn.disabled = checked.length === 0;
+    hiddenIds.innerHTML = '';
+    checked.forEach(function (cb) {
+      var inp = document.createElement('input');
+      inp.type  = 'hidden';
+      inp.name  = 'story_ids[]';
+      inp.value = cb.value;
+      hiddenIds.appendChild(inp);
+    });
+  }
+
+  if (checkAll) {
+    checkAll.addEventListener('change', function () {
+      document.querySelectorAll('.bl-row-check').forEach(function (cb) {
+        cb.checked = checkAll.checked;
+      });
+      syncBulkBtn();
+    });
+  }
+
+  document.addEventListener('change', function (e) {
+    if (e.target.classList.contains('bl-row-check')) syncBulkBtn();
+  });
 
   // ── Move-to-sprint buttons ───────────────────────────────────────────────
   document.querySelectorAll('.move-to-sprint').forEach(function (btn) {

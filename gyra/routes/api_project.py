@@ -132,6 +132,25 @@ def register(app) -> None:
         delete_epic(epic_id)
         return jsonify(ok=True)
 
+    @app.route("/api/epic/<int:epic_id>", methods=["PATCH"])
+    @login_required
+    def api_update_epic(epic_id):
+        enforce_csrf()
+        data = request.get_json(silent=True) or {}
+        conn = get_db()
+        title = (data.get("title") or "").strip()
+        color = data.get("color", "").strip()
+        desc  = data.get("description")
+        if title:
+            conn.execute("UPDATE epics SET title=? WHERE id=?", (title, epic_id))
+        if color:
+            conn.execute("UPDATE epics SET color=? WHERE id=?", (color, epic_id))
+        if desc is not None:
+            conn.execute("UPDATE epics SET description=? WHERE id=?", (desc, epic_id))
+        conn.commit()
+        conn.close()
+        return jsonify(ok=True)
+
     # ── Stickers ──────────────────────────────────────────────────────────────
 
     @app.route("/api/stickers/<int:project_id>")

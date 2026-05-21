@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — Archive — Gyra{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <span class="project-key-badge">{{ project.key }}</span>
+    <h2>Archive</h2>
+  </div>
+  <div class="page-header-right">
+    <a class="btn btn-sm btn-secondary" href="{{ url_for('board', project_id=project.id) }}">← Board</a>
+  </div>
+</div>
+
+<div class="archive-layout">
+  <!-- Left: scrolling list -->
+  <div class="archive-list" id="archive-list">
+    <div id="archive-items"></div>
+    <div id="archive-sentinel" style="height:1px"></div>
+    <div id="archive-loading" class="archive-loading" style="display:none">Loading…</div>
+    <div id="archive-empty"   class="archive-empty"   style="display:none">
+      <p>No archived stories yet.</p>
+    </div>
+  </div>
+
+  <!-- Right: preview panel -->
+  <div class="archive-preview" id="archive-preview">
+    <div class="archive-preview-placeholder">
+      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
+        <path d="M6 10h36v4H6zm3 4h30v28H9z"/>
+        <line x1="16" y1="22" x2="32" y2="22"/>
+        <line x1="16" y1="28" x2="28" y2="28"/>
+      </svg>
+      <span>Select a story to preview</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var PID    = {{ project.id }};
+  var CSRF   = (document.querySelector('meta[name="csrf-token"]') || {content: ''}).content;
+  var ROOT   = (document.querySelector('meta[name="app-root"]')   || {getAttribute: function(){return '';}}).getAttribute('content') || '';
+  var STORY_URL_BASE = ROOT + '/story/';
+
+  var items    = document.getElementById('archive-items');
+  var sentinel = document.getElementById('archive-sentinel');
+  var loading  = document.getElementById('archive-loading');
+  var empty    = document.getElementById('archive-empty');
+  var preview  = document.getElementById('archive-preview');
+
+  var page     = 0;
+  var fetching = false;
+  var done     = false;
+  var activeRow = null;
+
+  function priorityColor(p) {
+    return {High:'#FF3B30', Medium:'#FF9F0A', Low:'#34C759'}[p] || '#8E8E93';
+  }
+
+  function ago(ts) {
+    if (!ts) return '';
+    var s = Math.floor(Date.now() / 1000) - ts;
+    if (s < 60)  return s + 's ago';
+    if (s < 3600) return Math.floor(s/60) + 'm ago';
+    if (s < 86400) return Math.floor(s/3600) + 'h ago';
+    return Math.floor(s/86400) + 'd ago';
+  }
+
+  function renderRow(item) {
+    var div = document.createElement('div');
+    div.className = 'archive-row';
+    div.dataset.id = item.id;
+    var pts  = item.story_points ? '<span class="card-points">' + item.story_points + 'pt</span>' : '';
+    var prio = item.priority ? '<span class="archive-prio" style="background:' + priorityColor(item.priority) + '">' + item.priority + '</span>' : '';
+    var sprintBadge = item.sprint ? '<span class="archive-sprint-badge">Sprint ' + item.sprint + '</span>' : '';
+    div.innerHTML =
+      '<div class="archive-row-top">' +
+        '<span class="archive-row-title">' + _esc(item.title) + '</span>' +
+        '<div class="archive-row-meta">' + prio + pts + '</div>' +
+      '</div>' +
+      '<div class="archive-row-sub">' +
+        (item.status_name ? '<span class="archive-status-dot" style="background:' + (item.status_color||'#8E8E93') + '"></span><span>' + _esc(item.status_name) + '</span>' : '') +
+        sprintBadge +
+        '<span class="archive-time">' + ago(item.updated_at) + '</span>' +
+      '</div>';
+    div.addEventListener('click', function () { openPreview(item, div); });
+    return div;
+  }
+
+  function _esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function openPreview(item, rowEl) {
+    if (activeRow) activeRow.classList.remove('is-active');
+    activeRow = rowEl;
+    rowEl.classList.add('is-active');
+
+    var prio = item.priority ? '<span class="archive-prio" style="background:' + priorityColor(item.priority) + '">' + item.priority + '</span>' : '';
+    var pts  = item.story_points ? '<span class="card-points">' + item.story_points + 'pt</span>' : '';
+    var sprintBadge = item.sprint ? '<span class="archive-sprint-badge">Sprint ' + item.sprint + '</span>' : '';
+
+    preview.innerHTML =
+      '<div class="archive-preview-card">' +
+        '<div class="archive-preview-head">' +
+          '<div class="archive-preview-title">' + _esc(item.title) + '</div>' +
+          '<div class="archive-preview-badges">' + prio + pts + sprintBadge + '</div>' +
+        '</div>' +
+        '<div class="archive-preview-status">' +
+          (item.status_name ? '<span class="archive-status-dot" style="background:' + (item.status_color||'#8E8E93') + '"></span> ' + _esc(item.status_name) : '') +
+        '</div>' +
+        '<div class="archive-preview-actions">' +
+          '<a class="btn btn-sm btn-secondary archive-edit-btn" href="' + STORY_URL_BASE + item.id + '">✏ View / Edit</a>' +
+          '<button class="btn btn-sm btn-primary archive-readd-btn" data-id="' + item.id + '">↩ Re-add to Sprint</button>' +
+        '</div>' +
+      '</div>';
+
+    preview.querySelector('.archive-readd-btn').addEventListener('click', function () {
+      reAdd(item.id, rowEl, this);
+    });
+  }
+
+  function reAdd(storyId, rowEl, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Adding…';
+    fetch(ROOT + '/api/story/' + storyId + '/unarchive', {
+      method: 'POST',
+      headers: {'X-CSRF-Token': CSRF, 'Content-Type': 'application/x-www-form-urlencoded'},
+      body: '_csrf=' + encodeURIComponent(CSRF),
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.ok) {
+        rowEl.style.transition = 'opacity .3s';
+        rowEl.style.opacity    = '0';
+        setTimeout(function () { rowEl.remove(); }, 300);
+        preview.innerHTML =
+          '<div class="archive-preview-placeholder"><span>Story moved to Sprint ' + d.sprint + '.</span></div>';
+      } else {
+        btn.disabled = false;
+        btn.textContent = '↩ Re-add to Sprint';
+        alert('Error: ' + (d.error || 'unknown'));
+      }
+    })
+    .catch(function () {
+      btn.disabled = false;
+      btn.textContent = '↩ Re-add to Sprint';
+    });
+  }
+
+  function fetchPage() {
+    if (fetching || done) return;
+    fetching = true;
+    loading.style.display = '';
+    fetch(ROOT + '/api/project/' + PID + '/archive?page=' + page + '&per_page=20')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        loading.style.display = 'none';
+        fetching = false;
+        data.items.forEach(function (item) {
+          items.appendChild(renderRow(item));
+        });
+        if (!data.has_more) {
+          done = true;
+          if (page === 0 && data.items.length === 0) empty.style.display = '';
+        }
+        page++;
+      })
+      .catch(function () {
+        loading.style.display = 'none';
+        fetching = false;
+      });
+  }
+
+  // IntersectionObserver for infinite scroll
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) fetchPage();
+    }, { threshold: 0 });
+    io.observe(sentinel);
+  } else {
+    fetchPage();
+  }
+})();
+</script>
+{% endblock %}

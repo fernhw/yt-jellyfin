@@ -40,7 +40,7 @@ def register(app) -> None:
         if not all([username, email, display_name]):
             flash("All fields are required.", "error")
             return redirect(url_for("admin_users"))
-        if role not in ("admin", "user", "super_user"):
+        if role not in ("admin", "user", "super_user", "viewer"):
             role = "user"
 
         raw_token, token_hash = generate_setup_token()
@@ -130,7 +130,7 @@ def register(app) -> None:
             flash("Username, email and display name are required.", "error")
             conn.close()
             return redirect(url_for("admin_users"))
-        if role not in ("admin", "user", "super_user"):
+        if role not in ("admin", "user", "super_user", "viewer"):
             role = "user"
         if user_id == session["user_id"] and role != "admin":
             flash("You cannot remove your own admin role.", "error")

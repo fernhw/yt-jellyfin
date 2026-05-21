@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — Bulk Add — Gyra{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <span class="project-key-badge">{{ project.key }}</span>
+    <h2>Bulk Add Stories</h2>
+  </div>
+  <div class="page-header-right">
+    <a class="btn btn-sm btn-secondary" href="{{ url_for('backlog', project_id=project.id) }}">← Backlog</a>
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in messages %}
+  <div class="flash flash-{{ cat }}">{{ msg }}</div>
+  {% endfor %}
+{% endwith %}
+
+<form method="post" action="{{ url_for('bulk_add', project_id=project.id) }}" id="bulk-add-form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+  <div class="bulk-table-wrap">
+    <table class="bulk-table" id="bulk-table">
+      <thead>
+        <tr>
+          <th style="width:34%">Title <span class="req">*</span></th>
+          <th style="width:8%">Points</th>
+          <th style="width:10%">Priority</th>
+          <th style="width:18%">Assignee</th>
+          <th>Description</th>
+          <th style="width:36px"></th>
+        </tr>
+      </thead>
+      <tbody id="bulk-rows">
+        <tr class="bulk-row">
+          <td><input type="text" name="title[]" class="bulk-title form-control" placeholder="Story title" required></td>
+          <td><input type="number" name="points[]" class="form-control" min="0" max="999" placeholder="0"></td>
+          <td>
+            <select name="priority[]" class="form-control">
+              <option value="">—</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </td>
+          <td>
+            <select name="assignee[]" class="form-control">
+              <option value="">—</option>
+              {% for u in users %}
+              <option value="{{ u.id }}">{{ u.display_name }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td><input type="text" name="description[]" class="form-control" placeholder="Optional"></td>
+          <td><button type="button" class="btn-row-del" title="Remove row">✕</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="bulk-actions">
+    <button type="button" id="bulk-add-row" class="btn btn-sm btn-secondary">+ Add row</button>
+    <button type="submit" class="btn btn-primary" id="bulk-submit">
+      ⚡ Create all stories
+    </button>
+  </div>
+</form>
+
+<script>
+(function () {
+  var tbody    = document.getElementById('bulk-rows');
+  var addBtn   = document.getElementById('bulk-add-row');
+  var form     = document.getElementById('bulk-add-form');
+  var userOpts = document.querySelector('select[name="assignee[]"]').innerHTML;
+
+  function wireRow(row) {
+    var del = row.querySelector('.btn-row-del');
+    if (del) {
+      del.addEventListener('click', function () {
+        if (tbody.querySelectorAll('.bulk-row').length > 1) row.remove();
+      });
+    }
+    var titleInput = row.querySelector('.bulk-title');
+    if (titleInput) {
+      titleInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          var rows = Array.from(tbody.querySelectorAll('.bulk-row'));
+          var idx  = rows.indexOf(row);
+          if (idx === rows.length - 1) addNewRow();
+          else rows[idx + 1].querySelector('.bulk-title').focus();
+        }
+      });
+    }
+  }
+
+  function addNewRow() {
+    var template = tbody.querySelector('.bulk-row');
+    var clone    = template.cloneNode(true);
+    clone.querySelectorAll('input').forEach(function (i) { i.value = ''; });
+    var sel = clone.querySelector('select[name="assignee[]"]');
+    if (sel) sel.innerHTML = userOpts;
+    var pri = clone.querySelector('select[name="priority[]"]');
+    if (pri) pri.selectedIndex = 0;
+    wireRow(clone);
+    tbody.appendChild(clone);
+    clone.querySelector('.bulk-title').focus();
+  }
+
+  addBtn.addEventListener('click', addNewRow);
+
+  Array.from(tbody.querySelectorAll('.bulk-row')).forEach(wireRow);
+
+  form.addEventListener('submit', function () {
+    document.getElementById('bulk-submit').disabled = true;
+  });
+})();
+</script>
+{% endblock %}
