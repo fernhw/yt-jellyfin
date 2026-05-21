@@ -11,7 +11,7 @@ from werkzeug.utils import secure_filename
 from auth import enforce_csrf, login_required
 from config import Config
 from db import (create_addon, create_notification, delete_addon,
-                get_all_active_users, get_db, get_epics, get_statuses,
+                get_all_active_users, get_db, get_statuses,
                 get_story, get_story_addons, get_story_history,
                 get_story_images, get_story_thumbnails, get_story_types,
                 get_story_users, log_story_change, toggle_addon,
@@ -51,6 +51,7 @@ def register(app) -> None:
             story_for=row["story_for"] or "",
             story_y=row["story_y"] or "",
             epic_id=row["epic_id"],
+            acceptance_criteria=row["acceptance_criteria"] or "",
         )
 
     @app.route("/api/story/<int:story_id>/card")
@@ -91,7 +92,6 @@ def register(app) -> None:
         statuses    = get_statuses(s["project_id"])
         all_users   = get_all_active_users()
         story_types = get_story_types(s["project_id"])
-        epics       = get_epics(s["project_id"])
         conn = get_db()
         comments = conn.execute(
             """SELECT c.*, u.display_name, u.avatar FROM comments c
@@ -116,7 +116,6 @@ def register(app) -> None:
             statuses=[dict(st) for st in statuses],
             all_users=[dict(u) for u in all_users],
             story_types=[dict(t) for t in story_types],
-            epics=[dict(e) for e in epics],
             creator_name=s["creator_name"] or "",
         )
 
@@ -136,19 +135,22 @@ def register(app) -> None:
             conn.close()
             abort(404)
 
+        a_title    = (data.get("a_title") or "").strip() or orig["title"]
         a_desc     = data.get("a_description", orig["description"] or "")
         a_points   = data.get("a_points", orig["story_points"] or 0)
         a_priority = data.get("a_priority", orig["priority"] or None) or None
+        a_ac       = data.get("a_acceptance_criteria", orig["acceptance_criteria"] or "")
         conn.execute(
-            "UPDATE stories SET description=?,story_points=?,priority=?,"
-            "updated_at=? WHERE id=?",
-            (a_desc, int(a_points), a_priority, int(time.time()), story_id),
+            "UPDATE stories SET title=?,description=?,story_points=?,priority=?,"
+            "acceptance_criteria=?,updated_at=? WHERE id=?",
+            (a_title, a_desc, int(a_points), a_priority, a_ac, int(time.time()), story_id),
         )
 
         b_title    = (data.get("b_title") or "").strip() or orig["title"]
         b_desc     = data.get("b_description", orig["description"] or "")
         b_points   = data.get("b_points", orig["story_points"] or 0)
         b_priority = data.get("b_priority", orig["priority"] or None) or None
+        b_ac       = data.get("b_acceptance_criteria", orig["acceptance_criteria"] or "")
 
         order_row = conn.execute(
             "SELECT COALESCE(MAX(order_index),0)+1 AS nxt "
@@ -164,7 +166,7 @@ def register(app) -> None:
                 story_type,priority,epic_id)
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (orig["project_id"], b_title, b_desc,
-             orig["acceptance_criteria"] or "",
+             b_ac,
              int(b_points), orig["status_id"], orig["sprint"],
              order_row["nxt"], now, session["user_id"], now,
              orig["story_actor"], orig["story_verb"], orig["story_z"],
@@ -309,8 +311,6 @@ def register(app) -> None:
         story_type = data.get("story_type") or None
         if story_type: story_type = int(story_type)
         priority   = (data.get("priority") or "").strip() or None
-        epic_id    = data.get("epic_id") or None
-        if epic_id:    epic_id    = int(epic_id)
 
         old = dict(s)
         old_assignee_ids = {a["id"] for a in get_story_users(story_id)}
@@ -320,9 +320,9 @@ def register(app) -> None:
             """UPDATE stories SET title=?,description=?,acceptance_criteria=?,
                story_points=?,status_id=?,sprint=?,updated_at=?,
                story_actor=?,story_verb=?,story_z=?,story_x=?,story_for=?,story_y=?,
-               story_type=?,priority=?,epic_id=? WHERE id=?""",
+               story_type=?,priority=? WHERE id=?""",
             (title, desc, ac, points, status_id, sprint, int(time.time()),
-             actor, verb, z, x, for_conn, y, story_type, priority, epic_id, story_id),
+             actor, verb, z, x, for_conn, y, story_type, priority, story_id),
         )
         conn.execute("DELETE FROM story_users WHERE story_id=?", (story_id,))
         for uid in assignees:
@@ -342,8 +342,6 @@ def register(app) -> None:
                          old.get("priority"), priority)
         log_story_change(story_id, uid, "Points",
                          old.get("story_points"), points)
-        log_story_change(story_id, uid, "Epic",
-                         old.get("epic_id"), epic_id)
         if old.get("title") != title:
             log_story_change(story_id, uid, "Title", old.get("title"), title)
 

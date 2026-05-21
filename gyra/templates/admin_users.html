@@ -19,7 +19,8 @@
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     <div class="form-group">
       <label>Username</label>
-      <input name="username" type="text" class="form-input" required placeholder="jane.doe">
+      <input name="username" type="text" class="form-input" required placeholder="jane.doe"
+             pattern="[A-Za-z0-9_.\-]+" title="Letters, numbers, underscores, hyphens and dots only">
     </div>
     <div class="form-group">
       <label>Email</label>
@@ -94,7 +95,7 @@
           <div class="action-group">
             {# Edit button — opens modal #}
             <button type="button" class="btn btn-xs btn-primary"
-                    onclick="openEditModal({{ u.id }}, {{ u.username|tojson }}, {{ u.email|tojson }}, {{ u.display_name|tojson }}, {{ u.role|tojson }}, {{ u.is_active }})">
+                    onclick='openEditModal({{ u.id }}, {{ u.username|tojson }}, {{ u.email|tojson }}, {{ u.display_name|tojson }}, {{ u.role|tojson }}, {{ u.is_active }})'>
               Edit
             </button>
             <form method="post"
@@ -138,7 +139,8 @@
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
       <div class="form-group">
         <label>Username</label>
-        <input id="eu-username" name="username" type="text" class="form-input" required>
+        <input id="eu-username" name="username" type="text" class="form-input" required
+               pattern="[A-Za-z0-9_.\-]+" title="Letters, numbers, underscores, hyphens and dots only">
       </div>
       <div class="form-group">
         <label>Email</label>

@@ -25,10 +25,12 @@
     <table class="bulk-table" id="bulk-table">
       <thead>
         <tr>
-          <th style="width:34%">Title <span class="req">*</span></th>
-          <th style="width:8%">Points</th>
-          <th style="width:10%">Priority</th>
-          <th style="width:18%">Assignee</th>
+          <th style="width:28%">Title <span class="req">*</span></th>
+          <th style="width:6%">Points</th>
+          <th style="width:9%">Priority</th>
+          <th style="width:12%">Type</th>
+          <th style="width:12%">Epic</th>
+          <th style="width:13%">Assignee</th>
           <th>Description</th>
           <th style="width:36px"></th>
         </tr>
@@ -40,9 +42,27 @@
           <td>
             <select name="priority[]" class="form-control">
               <option value="">—</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
+              <option value="VH">VH</option>
+              <option value="H">H</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="VL">VL</option>
+            </select>
+          </td>
+          <td>
+            <select name="story_type[]" class="form-control">
+              <option value="">— None —</option>
+              {% for t in story_types %}
+              <option value="{{ t.id }}">{{ t.name }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td>
+            <select name="epic_id[]" class="form-control">
+              <option value="">— None —</option>
+              {% for e in epics %}
+              <option value="{{ e.id }}">{{ e.title }}</option>
+              {% endfor %}
             </select>
           </td>
           <td>
@@ -74,6 +94,8 @@
   var addBtn   = document.getElementById('bulk-add-row');
   var form     = document.getElementById('bulk-add-form');
   var userOpts = document.querySelector('select[name="assignee[]"]').innerHTML;
+  var typeOpts = document.querySelector('select[name="story_type[]"]').innerHTML;
+  var epicOpts = document.querySelector('select[name="epic_id[]"]').innerHTML;
 
   function wireRow(row) {
     var del = row.querySelector('.btn-row-del');
@@ -102,6 +124,10 @@
     clone.querySelectorAll('input').forEach(function (i) { i.value = ''; });
     var sel = clone.querySelector('select[name="assignee[]"]');
     if (sel) sel.innerHTML = userOpts;
+    var typ = clone.querySelector('select[name="story_type[]"]');
+    if (typ) typ.innerHTML = typeOpts;
+    var epi = clone.querySelector('select[name="epic_id[]"]');
+    if (epi) epi.innerHTML = epicOpts;
     var pri = clone.querySelector('select[name="priority[]"]');
     if (pri) pri.selectedIndex = 0;
     wireRow(clone);

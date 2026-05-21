@@ -2,6 +2,7 @@
 import datetime
 import json
 import os
+import re
 import time
 
 from flask import (abort, flash, jsonify, redirect,
@@ -39,6 +40,9 @@ def register(app) -> None:
 
         if not all([username, email, display_name]):
             flash("All fields are required.", "error")
+            return redirect(url_for("admin_users"))
+        if not re.fullmatch(r'[A-Za-z0-9_.-]+', username):
+            flash("Username may only contain letters, numbers, underscores, hyphens and dots.", "error")
             return redirect(url_for("admin_users"))
         if role not in ("admin", "user", "super_user", "viewer"):
             role = "user"
@@ -128,6 +132,10 @@ def register(app) -> None:
 
         if not all([username, email, display_name]):
             flash("Username, email and display name are required.", "error")
+            conn.close()
+            return redirect(url_for("admin_users"))
+        if not re.fullmatch(r'[A-Za-z0-9_.-]+', username):
+            flash("Username may only contain letters, numbers, underscores, hyphens and dots.", "error")
             conn.close()
             return redirect(url_for("admin_users"))
         if role not in ("admin", "user", "super_user", "viewer"):

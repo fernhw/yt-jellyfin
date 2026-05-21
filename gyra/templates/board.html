@@ -10,6 +10,12 @@
   <div class="page-header-left">
     <span class="project-key-badge">{{ project.key }}</span>
     <h2>Active Sprint</h2>
+    <button class="btn btn-sm btn-secondary" id="epics-panel-btn" title="View sprint epics and their stories">◈ Sprint Epics</button>
+    <label class="show-epics-toggle" title="Show Epic-type story cards on board">
+      <input type="checkbox" id="show-epics-cb">
+      <span class="tog-track"><span class="tog-thumb"></span></span>
+      <span class="tog-lbl">Show Epics</span>
+    </label>
   </div>
   <div class="page-header-right" style="display:flex;gap:8px;align-items:center">
     <!-- Zoom controls -->
@@ -18,14 +24,6 @@
       <span class="zoom-label" id="zoom-label">100%</span>
       <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
     </div>
-    <!-- Epics panel button -->
-    <button class="zoom-btn epics-hdr-btn" id="epics-panel-btn" title="Epics — view sprint epics and their stories">📋 Epics</button>
-    <!-- Show Epics toggle: shows/hides Epic-type story cards on the board -->
-    <label class="show-epics-toggle" title="Show Epic-type story cards on board">
-      <input type="checkbox" id="show-epics-cb">
-      <span class="tog-track"><span class="tog-thumb"></span></span>
-      <span class="tog-lbl">Show Epics</span>
-    </label>
     <!-- Live sync indicator -->
     <span id="board-sync-dot" class="board-sync-dot" title="Live sync active" style="display:none"></span>
     <!-- Screensaver -->
@@ -124,8 +122,7 @@
              data-href="{{ url_for('story_view', story_id=story.id) }}"
              data-assignee-ids="{{ story.assignees | map(attribute='id') | join(',') }}"
              data-epic-id="{{ story.epic_id or '' }}"
-             style="--rot:{{ rot }}deg; --card-bg:{{ card_bg }}; --card-accent:{{ card_accent }}">{% if story.epic_id %}
-          <div class="card-epic-strip" style="--epic-c:{{ story.epic_color or '#7C3AED' }}" title="Epic: {{ story.epic_title }}">{{ story.epic_title }}</div>{% endif %}
+             style="--rot:{{ rot }}deg; --card-bg:{{ card_bg }}; --card-accent:{{ card_accent }}">
 
           {# select hit area — intercepts clicks so card nav doesn't fire #}
           <label class="card-sel" onclick="event.stopPropagation()" title="Select">
@@ -221,11 +218,24 @@
 </div>
 
 {# Epics side panel #}
-<div id="epics-panel" class="epics-panel">
+<div id="epics-panel" class="epics-panel" data-pid="{{ project.id }}">
   <div class="epics-ph">
     <span class="epics-ph-title">📋 Epics</span>
+    {% if session.role != 'viewer' %}
+    <button class="btn btn-xs btn-primary" id="epic-new-btn" style="margin-right:auto;margin-left:8px" title="Create new epic">+ New</button>
+    {% endif %}
     <button class="epics-ph-close" id="epics-panel-close" title="Close">×</button>
   </div>
+  {% if session.role != 'viewer' %}
+  <div id="epic-new-row" class="epic-new-row" style="display:none">
+    <input id="epic-new-title" class="epic-edit-title" placeholder="Epic title…" autocomplete="off" maxlength="120">
+    <div style="display:flex;gap:6px;align-items:center;margin-top:6px">
+      <input type="color" id="epic-new-color" value="#6B7280" class="epic-edit-color">
+      <button class="btn btn-xs btn-primary" id="epic-new-save">Create</button>
+      <button class="btn btn-xs btn-secondary" id="epic-new-cancel">Cancel</button>
+    </div>
+  </div>
+  {% endif %}
   <div class="epics-pb" id="epics-pb"></div>
 </div>
 {# Epics data for JS #}
@@ -335,11 +345,15 @@
 
       {# Panel A — original #}
       <div class="split-panel split-panel-a">
-        <div class="split-panel-label">STORY A <span class="split-badge split-badge-keep">original</span></div>
-        <div class="split-section-label">Title</div>
-        <div id="split-a-title-display" class="split-title-readonly"></div>
+        <div class="split-panel-label">STORY A <span class="split-badge split-badge-keep">renamed</span></div>
+        <div class="split-section-label">Title <span class="split-title-req">— must differ from original</span></div>
+        <input id="split-a-title" class="split-title-input" type="text" placeholder="Rename this story…" autocomplete="off">
+        <div id="split-original-hint" class="split-original-hint"></div>
         <div class="split-section-label">Description</div>
-        <textarea id="split-a-desc" class="split-textarea" rows="5" placeholder="Description (optional)"></textarea>
+        <textarea id="split-a-desc" class="split-textarea" rows="4" placeholder="Description (optional)"></textarea>
+        <div class="split-section-label">Acceptance Criteria</div>
+        <div id="split-a-ac-list" class="ac-list split-ac-list"></div>
+        <button type="button" id="split-a-ac-add" class="btn btn-xs btn-secondary ac-add-btn split-ac-add-btn">+ Add criterion</button>
         <div class="split-fields-row">
           <div class="split-field">
             <label class="split-section-label">Points</label>
@@ -366,10 +380,13 @@
       {# Panel B — new story #}
       <div class="split-panel split-panel-b">
         <div class="split-panel-label">STORY B <span class="split-badge split-badge-new">new</span></div>
-        <div class="split-section-label">Title</div>
-        <input id="split-b-title" class="split-title-input" type="text" placeholder="New story title">
+        <div class="split-section-label">Title <span class="split-title-req">— must differ from original</span></div>
+        <input id="split-b-title" class="split-title-input" type="text" placeholder="New story title" autocomplete="off">
         <div class="split-section-label">Description</div>
-        <textarea id="split-b-desc" class="split-textarea" rows="5" placeholder="Description (optional)"></textarea>
+        <textarea id="split-b-desc" class="split-textarea" rows="4" placeholder="Description (optional)"></textarea>
+        <div class="split-section-label">Acceptance Criteria</div>
+        <div id="split-b-ac-list" class="ac-list split-ac-list"></div>
+        <button type="button" id="split-b-ac-add" class="btn btn-xs btn-secondary ac-add-btn split-ac-add-btn">+ Add criterion</button>
         <div class="split-fields-row">
           <div class="split-field">
             <label class="split-section-label">Points</label>
@@ -454,7 +471,8 @@
         </div>
         <div class="form-group">
           <label class="form-label">Acceptance Criteria</label>
-          <textarea id="sm-ac" rows="3" class="form-input" placeholder="Given / When / Then…"></textarea>
+          <div id="sm-ac-list" class="ac-list"></div>
+          <button type="button" id="sm-ac-add" class="ac-add-btn">+ Add criterion</button>
         </div>
         <div class="story-images-section mb-4">
           <h3>Images</h3>
@@ -526,10 +544,6 @@
             <option value="">— None —</option>
             {% for p in ['VH','H','M','L','VL'] %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
           </select>
-        </div>
-        <div class="story-sidebar-field">
-          <label class="story-sidebar-label">Epic</label>
-          <select id="sm-epic" class="story-sidebar-select"></select>
         </div>
         <div class="story-sidebar-field">
           <label class="story-sidebar-label">Assignees</label>
@@ -862,7 +876,7 @@
   var ctxMenu   = document.getElementById('card-ctx-menu');
   var modalBg   = document.getElementById('split-modal-bg');
   var splitKey  = document.getElementById('split-story-key');
-  var aTitleEl  = document.getElementById('split-a-title-display');
+  var aTitleEl  = document.getElementById('split-a-title');
   var aDescEl   = document.getElementById('split-a-desc');
   var aPtsEl    = document.getElementById('split-a-points');
   var aPriEl    = document.getElementById('split-a-pri');
@@ -871,7 +885,54 @@
   var bPtsEl    = document.getElementById('split-b-points');
   var bPriEl    = document.getElementById('split-b-pri');
   var submitBtn = document.getElementById('split-submit');
+  var origHint  = document.getElementById('split-original-hint');
   var activeStoryId = null;
+  var _origTitle = '';
+
+  function splitAcItem(list, val) {
+    var row = document.createElement('div');
+    row.className = 'ac-item-row';
+    var inp = document.createElement('input');
+    inp.type = 'text'; inp.className = 'ac-item-input split-ac-input';
+    inp.value = val || ''; inp.placeholder = 'Acceptance criterion…';
+    var del = document.createElement('button');
+    del.type = 'button'; del.className = 'ac-del-btn'; del.textContent = '✕';
+    del.addEventListener('click', function() { row.remove(); });
+    row.appendChild(inp); row.appendChild(del);
+    list.appendChild(row);
+    return row;
+  }
+  function populateAcList(listId, text) {
+    var list = document.getElementById(listId);
+    if (!list) return;
+    list.innerHTML = '';
+    var items = (text || '').split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+    if (!items.length) items = [''];
+    items.forEach(function(v) { splitAcItem(list, v); });
+  }
+  function serializeAcList(listId) {
+    var list = document.getElementById(listId);
+    if (!list) return '';
+    return Array.from(list.querySelectorAll('.ac-item-input'))
+      .map(function(i){ return i.value.trim(); }).filter(Boolean).join('\n');
+  }
+
+  // Expose IMMEDIATELY after definition so the story modal IIFE can always use them
+  window.populateAcList  = populateAcList;
+  window.serializeAcList = serializeAcList;
+
+  document.getElementById('split-a-ac-add').addEventListener('click', function() {
+    var row = splitAcItem(document.getElementById('split-a-ac-list'), '');
+    row.querySelector('.ac-item-input').focus();
+  });
+  document.getElementById('split-b-ac-add').addEventListener('click', function() {
+    var row = splitAcItem(document.getElementById('split-b-ac-list'), '');
+    row.querySelector('.ac-item-input').focus();
+  });
+  document.getElementById('sm-ac-add').addEventListener('click', function() {
+    var row = splitAcItem(document.getElementById('sm-ac-list'), '');
+    row.querySelector('.ac-item-input').focus();
+  });
 
   // ── Context menu — open on right-click ──────────────────────────────────
   document.querySelectorAll('.board-card').forEach(function (card) {
@@ -936,21 +997,29 @@
       keyParts.push(storyId);
       splitKey.textContent = keyParts.join('-');
 
-      aTitleEl.textContent = d.title;
-      aDescEl.value        = d.description || '';
+      _origTitle = d.title;
+      if (origHint) origHint.textContent = 'Original: "' + d.title + '"';
+
+      // Pre-fill with [1/2] / [2/2] convention so users must consciously rename
+      aTitleEl.value = d.title + ' [1/2]';
+      aDescEl.value  = d.description || '';
+      populateAcList('split-a-ac-list', d.acceptance_criteria || '');
       setSelectVal(aPtsEl, d.story_points);
       setSelectVal(aPriEl, d.priority || '');
 
-      bTitleEl.value = d.title;
+      bTitleEl.value = d.title + ' [2/2]';
       bDescEl.value  = d.description || '';
+      populateAcList('split-b-ac-list', d.acceptance_criteria || '');
       setSelectVal(bPtsEl, d.story_points);
       setSelectVal(bPriEl, d.priority || '');
 
+      aTitleEl.style.borderColor = '';
+      bTitleEl.style.borderColor = '';
       submitBtn.disabled = false;
       submitBtn.textContent = '✂ Split Story →';
       modalBg.style.display = 'flex';
-      bTitleEl.focus();
-      bTitleEl.select();
+      aTitleEl.focus();
+      aTitleEl.select();
     })
     .catch(function (err) {
       submitBtn.disabled = false;
@@ -969,22 +1038,53 @@
   // ── Submit ───────────────────────────────────────────────────────────────
   submitBtn.addEventListener('click', function () {
     if (!activeStoryId) return;
+    var aTitle = aTitleEl.value.trim();
     var bTitle = bTitleEl.value.trim();
-    if (!bTitle) { bTitleEl.focus(); bTitleEl.style.borderColor = '#ef4444'; return; }
-    bTitleEl.style.borderColor = '';
+    var err = false;
+
+    // Both titles must be non-empty
+    if (!aTitle) { aTitleEl.style.borderColor = '#ef4444'; err = true; } else { aTitleEl.style.borderColor = ''; }
+    if (!bTitle) { bTitleEl.style.borderColor = '#ef4444'; err = true; } else { bTitleEl.style.borderColor = ''; }
+    if (err) { (aTitle ? bTitleEl : aTitleEl).focus(); return; }
+
+    // Both titles must differ from the original (force rename)
+    if (aTitle === _origTitle) {
+      aTitleEl.style.borderColor = '#ef4444';
+      aTitleEl.focus(); aTitleEl.select();
+      alert('Story A must be renamed — it cannot keep the original title.');
+      return;
+    }
+    if (bTitle === _origTitle) {
+      bTitleEl.style.borderColor = '#ef4444';
+      bTitleEl.focus(); bTitleEl.select();
+      alert('Story B must be renamed — it cannot keep the original title.');
+      return;
+    }
+
+    // Both titles must differ from each other
+    if (aTitle === bTitle) {
+      bTitleEl.style.borderColor = '#ef4444';
+      bTitleEl.focus(); bTitleEl.select();
+      alert('Story A and Story B must have different titles.');
+      return;
+    }
+
     submitBtn.disabled = true;
     submitBtn.textContent = 'Splitting…';
     fetch(appRoot + '/api/story/' + activeStoryId + '/split', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
       body:    JSON.stringify({
-        a_description: aDescEl.value,
-        a_points:      parseInt(aPtsEl.value, 10),
-        a_priority:    aPriEl.value,
-        b_title:       bTitle,
-        b_description: bDescEl.value,
-        b_points:      parseInt(bPtsEl.value, 10),
-        b_priority:    bPriEl.value
+        a_title:              aTitle,
+        a_description:        aDescEl.value,
+        a_points:             parseInt(aPtsEl.value, 10),
+        a_priority:           aPriEl.value,
+        a_acceptance_criteria: serializeAcList('split-a-ac-list'),
+        b_title:              bTitle,
+        b_description:        bDescEl.value,
+        b_points:             parseInt(bPtsEl.value, 10),
+        b_priority:           bPriEl.value,
+        b_acceptance_criteria: serializeAcList('split-b-ac-list')
       })
     })
     .then(function (r) { return r.ok ? r.json() : r.json().then(function(d){ return Promise.reject(d); }); })
@@ -1048,7 +1148,11 @@
       if (d.ac && d.ac.trim()) {
         if (html) html += '<div class="cp-tasks-divider"></div>';
         html += '<div class="cp-tasks-head">Acceptance Criteria</div>';
-        html += '<div class="cp-ac">' + esc(d.ac.trim()) + '</div>';
+        html += '<ul class="cp-ac-list">';
+        d.ac.trim().split('\n').forEach(function(line) {
+          var l = line.trim(); if (l) html += '<li>' + esc(l) + '</li>';
+        });
+        html += '</ul>';
       }
 
       if (d.tasks && d.tasks.length) {
@@ -1542,7 +1646,7 @@
     updatePreview();
 
     setVal('sm-desc', s.description         || '');
-    setVal('sm-ac',   s.acceptance_criteria || '');
+    populateAcList('sm-ac-list', s.acceptance_criteria || '');
 
     // Sidebar
     setVal('sm-points',   s.story_points || 0);
@@ -1550,7 +1654,6 @@
     setVal('sm-priority', s.priority     || '');
     dynOpts('sm-type',   d.story_types, 'id', 'name',  s.story_type, '— None —');
     dynOpts('sm-status', d.statuses,    'id', 'name',  s.status_id,  '— Backlog —');
-    dynOpts('sm-epic',   d.epics,       'id', 'title', s.epic_id,    '— None —');
 
     renderAssignees(d.assignees, d.all_users);
     renderImages(d.images);
@@ -1812,13 +1915,12 @@
       story_for:   document.getElementById('sm-for').value,
       story_y:     document.getElementById('sm-y').value,
       description:          document.getElementById('sm-desc').value,
-      acceptance_criteria:  document.getElementById('sm-ac').value,
+      acceptance_criteria:  serializeAcList('sm-ac-list'),
       story_points:  parseInt(document.getElementById('sm-points').value)   || 0,
       story_type:    document.getElementById('sm-type').value     || null,
       status_id:     document.getElementById('sm-status').value   || null,
       sprint:        document.getElementById('sm-sprint').value   || null,
       priority:      document.getElementById('sm-priority').value || null,
-      epic_id:       document.getElementById('sm-epic').value     || null,
       assignee_ids:  assigneeIds,
     };
     var btn = document.getElementById('sm-save-btn');
@@ -2096,9 +2198,12 @@
               (document.querySelector('#_csrf_hidden') || document.querySelector('input[name=_csrf]') || {value:''}).value;
     fetch('/api/epic/' + id, {
       method: 'PATCH',
-      headers: {'Content-Type':'application/json','X-CSRF-Token': tok},
+      headers: {'Content-Type':'application/json','X-CSRF-Token': csrf},
       body: JSON.stringify({title: title, color: color})
-    }).then(function(r){ return r.json(); }).then(function(d) {
+    }).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function(d) {
       if (d.ok) {
         // Update in-memory epics data
         var ep = epicsData.find(function(e){ return e.id === id; });
@@ -2118,6 +2223,48 @@
     var form = document.querySelector('#epic-item-' + id + ' .epic-edit-form');
     if (form) form.remove();
   };
+
+  // ── Create epic ──
+  var newBtn    = document.getElementById('epic-new-btn');
+  var newRow    = document.getElementById('epic-new-row');
+  var newTitle  = document.getElementById('epic-new-title');
+  var newColor  = document.getElementById('epic-new-color');
+  var newSave   = document.getElementById('epic-new-save');
+  var newCancel = document.getElementById('epic-new-cancel');
+  var panelPid  = parseInt(panel.dataset.pid, 10);
+
+  if (newBtn) newBtn.addEventListener('click', function() {
+    newRow.style.display = newRow.style.display === 'none' ? 'block' : 'none';
+    if (newRow.style.display !== 'none') { newTitle.value = ''; newTitle.focus(); }
+  });
+  if (newCancel) newCancel.addEventListener('click', function() { newRow.style.display = 'none'; });
+  if (newSave) newSave.addEventListener('click', function() {
+    var title = (newTitle ? newTitle.value : '').trim();
+    if (!title) { if (newTitle) newTitle.focus(); return; }
+    var color = newColor ? newColor.value : '#6B7280';
+    newSave.disabled = true; newSave.textContent = 'Saving…';
+    fetch('/api/project/' + panelPid + '/epics', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrf},
+      body: JSON.stringify({title: title, color: color})
+    }).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function(d) {
+      newSave.disabled = false; newSave.textContent = 'Create';
+      if (!d.ok) { alert(d.error || 'Failed to create epic'); return; }
+      epicsData.push({id: d.id, title: title, color: color, description: '', stories: []});
+      if (newRow) newRow.style.display = 'none';
+      renderPanel();
+    }).catch(function(err) {
+      newSave.disabled = false; newSave.textContent = 'Create';
+      alert('Could not create epic: ' + err.message);
+    });
+  });
+  if (newTitle) newTitle.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); if (newSave) newSave.click(); }
+    if (e.key === 'Escape') { if (newRow) newRow.style.display = 'none'; }
+  });
 
   // Expose CSRF token via hidden input for the edit JS above
   var csrfInputs = document.querySelectorAll('input[name=_csrf]');

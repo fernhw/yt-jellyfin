@@ -13,26 +13,14 @@
 </div>
 
 <div class="archive-layout">
-  <!-- Left: scrolling list -->
-  <div class="archive-list" id="archive-list">
-    <div id="archive-items"></div>
+  <div class="archive-list-panel">
+    <div id="archive-list"></div>
     <div id="archive-sentinel" style="height:1px"></div>
     <div id="archive-loading" class="archive-loading" style="display:none">Loading…</div>
-    <div id="archive-empty"   class="archive-empty"   style="display:none">
-      <p>No archived stories yet.</p>
-    </div>
+    <div id="archive-empty"   class="archive-empty"   style="display:none">No archived stories yet.</div>
   </div>
-
-  <!-- Right: preview panel -->
-  <div class="archive-preview" id="archive-preview">
-    <div class="archive-preview-placeholder">
-      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.2">
-        <path d="M6 10h36v4H6zm3 4h30v28H9z"/>
-        <line x1="16" y1="22" x2="32" y2="22"/>
-        <line x1="16" y1="28" x2="28" y2="28"/>
-      </svg>
-      <span>Select a story to preview</span>
-    </div>
+  <div class="archive-preview-panel" id="archive-preview">
+    <div class="archive-preview-empty">← tap a story to preview</div>
   </div>
 </div>
 
@@ -40,10 +28,9 @@
 (function () {
   var PID    = {{ project.id }};
   var CSRF   = (document.querySelector('meta[name="csrf-token"]') || {content: ''}).content;
-  var ROOT   = (document.querySelector('meta[name="app-root"]')   || {getAttribute: function(){return '';}}).getAttribute('content') || '';
-  var STORY_URL_BASE = ROOT + '/story/';
+  var ROOT   = (document.querySelector('meta[name="app-root"]') || {getAttribute: function(){return '';}}).getAttribute('content') || '';
 
-  var items    = document.getElementById('archive-items');
+  var list     = document.getElementById('archive-list');
   var sentinel = document.getElementById('archive-sentinel');
   var loading  = document.getElementById('archive-loading');
   var empty    = document.getElementById('archive-empty');
@@ -52,100 +39,145 @@
   var page     = 0;
   var fetching = false;
   var done     = false;
-  var activeRow = null;
+  var selected = null; // currently selected row el
 
-  function priorityColor(p) {
-    return {High:'#FF3B30', Medium:'#FF9F0A', Low:'#34C759'}[p] || '#8E8E93';
-  }
-
-  function ago(ts) {
-    if (!ts) return '';
-    var s = Math.floor(Date.now() / 1000) - ts;
-    if (s < 60)  return s + 's ago';
-    if (s < 3600) return Math.floor(s/60) + 'm ago';
-    if (s < 86400) return Math.floor(s/3600) + 'h ago';
-    return Math.floor(s/86400) + 'd ago';
-  }
-
-  function renderRow(item) {
-    var div = document.createElement('div');
-    div.className = 'archive-row';
-    div.dataset.id = item.id;
-    var pts  = item.story_points ? '<span class="card-points">' + item.story_points + 'pt</span>' : '';
-    var prio = item.priority ? '<span class="archive-prio" style="background:' + priorityColor(item.priority) + '">' + item.priority + '</span>' : '';
-    var sprintBadge = item.sprint ? '<span class="archive-sprint-badge">Sprint ' + item.sprint + '</span>' : '';
-    div.innerHTML =
-      '<div class="archive-row-top">' +
-        '<span class="archive-row-title">' + _esc(item.title) + '</span>' +
-        '<div class="archive-row-meta">' + prio + pts + '</div>' +
-      '</div>' +
-      '<div class="archive-row-sub">' +
-        (item.status_name ? '<span class="archive-status-dot" style="background:' + (item.status_color||'#8E8E93') + '"></span><span>' + _esc(item.status_name) + '</span>' : '') +
-        sprintBadge +
-        '<span class="archive-time">' + ago(item.updated_at) + '</span>' +
-      '</div>';
-    div.addEventListener('click', function () { openPreview(item, div); });
-    return div;
-  }
+  var SICONS = {exclamation:'!',arrow:'→',question:'?',star:'★',fire:'🔥',eyes:'👀',check:'✓',blocked:'✕',up:'↑',note:'#'};
 
   function _esc(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  function openPreview(item, rowEl) {
-    if (activeRow) activeRow.classList.remove('is-active');
-    activeRow = rowEl;
-    rowEl.classList.add('is-active');
+  // ── Render one post-it card (only called for the selected item) ────────────
+  function renderCard(item) {
+    var rot    = (item.id * 7 % 5) - 2;
+    var accent = item.story_type_color || '#B45309';
+    var cardBg = item.story_type_color
+                 ? 'color-mix(in srgb,' + item.story_type_color + ' 22%,white)'
+                 : '#FFF9C4';
 
-    var prio = item.priority ? '<span class="archive-prio" style="background:' + priorityColor(item.priority) + '">' + item.priority + '</span>' : '';
-    var pts  = item.story_points ? '<span class="card-points">' + item.story_points + 'pt</span>' : '';
-    var sprintBadge = item.sprint ? '<span class="archive-sprint-badge">Sprint ' + item.sprint + '</span>' : '';
+    var tape = item.priority
+      ? '<div class="card-tape card-tape-' + item.priority.toLowerCase() + '">' + _esc(item.priority) + '</div>'
+      : '';
+
+    var typeBadge = item.story_type_name
+      ? '<span class="card-type-badge">' + _esc(item.story_type_name) + '</span>'
+      : '';
+
+    var cardId = '<span class="card-id">' + _esc(item.project_key || '') + '-' + item.id + '</span>';
+
+    var thumb = item.thumbnail
+      ? '<div class="card-thumb-wrap" style="--trot:' + ((item.id * 3 % 7) - 3) + 'deg"><img src="' + ROOT + '/story-images/' + _esc(item.thumbnail) + '" alt=""></div>'
+      : '';
+
+    var pts = item.story_points ? '<span class="card-points">' + item.story_points + 'pt</span>' : '';
+
+    var avHtml = '';
+    if (item.assignees && item.assignees.length) {
+      avHtml = '<div class="card-assignees">';
+      item.assignees.forEach(function(a) {
+        if (a.avatar) {
+          avHtml += '<img src="' + ROOT + '/avatars/' + _esc(a.avatar) + '" class="avatar-xs" title="' + _esc(a.display_name) + '" alt="">';
+        } else {
+          avHtml += '<span class="avatar-initial-xs" title="' + _esc(a.display_name) + '">' + _esc(((a.display_name || '?')[0] || '?').toUpperCase()) + '</span>';
+        }
+      });
+      avHtml += '</div>';
+    }
+
+    var skHtml = '';
+    if (item.stickers && item.stickers.length) {
+      item.stickers.forEach(function(sk) {
+        var icon = SICONS[sk.type] || sk.type;
+        var cx = sk.card_x != null ? sk.card_x : 50;
+        var cy = sk.card_y != null ? sk.card_y : 10;
+        skHtml +=
+          '<div class="board-sticker sticker-' + _esc(sk.type) + ' sticker-on-card' + (sk.label ? ' has-label' : '') + '"'
+          + ' style="left:' + cx + '%;top:' + cy + '%">'
+          + '<span class="sticker-icon">' + icon + '</span>'
+          + (sk.label ? '<span class="sticker-label">' + _esc(sk.label) + '</span>' : '')
+          + '</div>';
+      });
+    }
 
     preview.innerHTML =
-      '<div class="archive-preview-card">' +
-        '<div class="archive-preview-head">' +
-          '<div class="archive-preview-title">' + _esc(item.title) + '</div>' +
-          '<div class="archive-preview-badges">' + prio + pts + sprintBadge + '</div>' +
-        '</div>' +
-        '<div class="archive-preview-status">' +
-          (item.status_name ? '<span class="archive-status-dot" style="background:' + (item.status_color||'#8E8E93') + '"></span> ' + _esc(item.status_name) : '') +
-        '</div>' +
-        '<div class="archive-preview-actions">' +
-          '<a class="btn btn-sm btn-secondary archive-edit-btn" href="' + STORY_URL_BASE + item.id + '">✏ View / Edit</a>' +
-          '<button class="btn btn-sm btn-primary archive-readd-btn" data-id="' + item.id + '">↩ Re-add to Sprint</button>' +
-        '</div>' +
-      '</div>';
+      '<div class="archive-preview-card">'
+      + '<div class="board-card" style="--rot:' + rot + 'deg;--card-bg:' + cardBg + ';--card-accent:' + accent + '" data-id="' + item.id + '">'
+      + tape + typeBadge + cardId
+      + '<div class="card-title">' + _esc(item.title) + '</div>'
+      + thumb
+      + '<div class="card-footer">' + pts + avHtml + '</div>'
+      + skHtml
+      + '</div>'
+      + '<div class="archive-preview-actions">'
+      + '<a class="btn btn-sm btn-secondary" href="' + ROOT + '/story/' + item.id + '">✏ Edit</a>'
+      + '<button class="btn btn-sm btn-primary archive-readd-btn" data-id="' + item.id + '">↩ Return to sprint</button>'
+      + '</div>'
+      + '</div>';
 
-    preview.querySelector('.archive-readd-btn').addEventListener('click', function () {
-      reAdd(item.id, rowEl, this);
+    preview.querySelector('.archive-readd-btn').addEventListener('click', function() {
+      reAdd(item.id, this);
     });
   }
 
-  function reAdd(storyId, rowEl, btn) {
+  // ── Render a lightweight list row ─────────────────────────────────────────
+  function renderRow(item, itemData) {
+    var row = document.createElement('div');
+    row.className = 'archive-row';
+    row.dataset.id = item.id;
+
+    var dot = item.story_type_color
+      ? '<span class="archive-row-dot" style="background:' + _esc(item.story_type_color) + '"></span>'
+      : '<span class="archive-row-dot"></span>';
+
+    var key = '<span class="archive-row-key">' + _esc(item.project_key || '') + '-' + item.id + '</span>';
+
+    var title = '<span class="archive-row-title">' + _esc(item.title) + '</span>';
+
+    var meta = '';
+    if (item.story_type_name) meta += '<span class="archive-row-tag">' + _esc(item.story_type_name) + '</span>';
+    if (item.sprint)          meta += '<span class="archive-row-tag">Sprint ' + _esc(item.sprint) + '</span>';
+    if (item.story_points)    meta += '<span class="archive-row-tag">' + item.story_points + 'pt</span>';
+
+    row.innerHTML = '<div class="archive-row-main">' + dot + key + title + '</div>'
+                  + (meta ? '<div class="archive-row-meta">' + meta + '</div>' : '');
+
+    row.addEventListener('click', function() {
+      if (selected) selected.classList.remove('is-active');
+      selected = row;
+      row.classList.add('is-active');
+      renderCard(itemData);
+    });
+
+    return row;
+  }
+
+  function reAdd(storyId, btn) {
     btn.disabled = true;
-    btn.textContent = 'Adding…';
+    btn.textContent = '…';
     fetch(ROOT + '/api/story/' + storyId + '/unarchive', {
       method: 'POST',
       headers: {'X-CSRF-Token': CSRF, 'Content-Type': 'application/x-www-form-urlencoded'},
       body: '_csrf=' + encodeURIComponent(CSRF),
     })
-    .then(function (r) { return r.json(); })
-    .then(function (d) {
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
       if (d.ok) {
-        rowEl.style.transition = 'opacity .3s';
-        rowEl.style.opacity    = '0';
-        setTimeout(function () { rowEl.remove(); }, 300);
-        preview.innerHTML =
-          '<div class="archive-preview-placeholder"><span>Story moved to Sprint ' + d.sprint + '.</span></div>';
+        // remove list row
+        var row = list.querySelector('[data-id="' + storyId + '"]');
+        if (row) row.remove();
+        // clear preview
+        preview.innerHTML = '<div class="archive-preview-empty">← tap a story to preview</div>';
+        selected = null;
       } else {
         btn.disabled = false;
-        btn.textContent = '↩ Re-add to Sprint';
+        btn.textContent = '↩ Return to sprint';
         alert('Error: ' + (d.error || 'unknown'));
       }
     })
-    .catch(function () {
+    .catch(function() {
       btn.disabled = false;
-      btn.textContent = '↩ Re-add to Sprint';
+      btn.textContent = '↩ Return to sprint';
     });
   }
 
@@ -153,13 +185,13 @@
     if (fetching || done) return;
     fetching = true;
     loading.style.display = '';
-    fetch(ROOT + '/api/project/' + PID + '/archive?page=' + page + '&per_page=20')
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
+    fetch(ROOT + '/api/project/' + PID + '/archive?page=' + page + '&per_page=40')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
         loading.style.display = 'none';
         fetching = false;
-        data.items.forEach(function (item) {
-          items.appendChild(renderRow(item));
+        data.items.forEach(function(item) {
+          list.appendChild(renderRow(item, item));
         });
         if (!data.has_more) {
           done = true;
@@ -167,17 +199,16 @@
         }
         page++;
       })
-      .catch(function () {
+      .catch(function() {
         loading.style.display = 'none';
         fetching = false;
       });
   }
 
-  // IntersectionObserver for infinite scroll
   if ('IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function (entries) {
+    var io = new IntersectionObserver(function(entries) {
       if (entries[0].isIntersecting) fetchPage();
-    }, { threshold: 0 });
+    }, {threshold: 0});
     io.observe(sentinel);
   } else {
     fetchPage();
@@ -185,3 +216,4 @@
 })();
 </script>
 {% endblock %}
+

@@ -85,7 +85,7 @@
       {% for m in p.members %}
       <span class="member-chip">
         {% if m.avatar %}
-          <img src="{{ m.avatar }}" class="member-chip-avatar" alt="">
+          <img src="{{ url_for('avatar', filename=m.avatar) }}" class="member-chip-avatar" alt="">
         {% else %}
           <span class="member-chip-initials">{{ m.display_name[:2]|upper }}</span>
         {% endif %}
@@ -107,19 +107,43 @@
 
     {# Add-member picker — only show users not already a member #}
     {% set member_ids = p.members | map(attribute='id') | list %}
+    {% set addable = all_users | selectattr('id', 'ne', none) | list %}
     <form method="post"
           action="{{ url_for('admin_add_project_member', project_id=p.id) }}"
-          class="form-inline mt-2">
+          class="form-inline mt-2" id="add-member-form-{{ p.id }}">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-      <select name="user_id" class="form-input form-input-sm" required>
-        <option value="" disabled selected>Add user…</option>
-        {% for u in all_users %}
+      <input type="hidden" name="user_id" id="add-member-uid-{{ p.id }}" value="">
+      <div class="avatar-picker" id="ap-{{ p.id }}">
+        <button type="button" class="avatar-picker-btn" onclick="toggleAvatarPicker('{{ p.id }}')">
+          <span class="avatar-picker-preview" id="ap-preview-{{ p.id }}">
+            <span class="member-chip-initials" style="width:22px;height:22px;font-size:11px">+</span>
+          </span>
+          <span id="ap-label-{{ p.id }}">Add user…</span>
+          <span class="ap-caret">▾</span>
+        </button>
+        <div class="avatar-picker-dropdown" id="ap-drop-{{ p.id }}" style="display:none">
+          {% for u in all_users %}
           {% if u.id not in member_ids %}
-          <option value="{{ u.id }}">{{ u.display_name }} ({{ u.username }})</option>
+          <button type="button" class="ap-option"
+                  data-pid="{{ p.id }}"
+                  data-uid="{{ u.id }}"
+                  data-name="{{ u.display_name }}"
+                  data-avatar="{{ url_for('avatar', filename=u.avatar) if u.avatar else '' }}"
+                  data-initials="{{ u.display_name[:2]|upper }}"
+                  onclick="selectAvatarUser(this)">
+            {% if u.avatar %}
+            <img src="{{ url_for('avatar', filename=u.avatar) }}" class="member-chip-avatar" alt="">
+            {% else %}
+            <span class="member-chip-initials">{{ u.display_name[:2]|upper }}</span>
+            {% endif %}
+            <span>{{ u.display_name }}</span>
+            <span class="ap-username">@{{ u.username }}</span>
+          </button>
           {% endif %}
-        {% endfor %}
-      </select>
-      <button type="submit" class="btn btn-xs btn-secondary">+ Add</button>
+          {% endfor %}
+        </div>
+      </div>
+      <button type="submit" class="btn btn-xs btn-secondary" id="ap-submit-{{ p.id }}" disabled>+ Add</button>
     </form>
   </div>
 </div>
@@ -210,6 +234,35 @@
   cursor: pointer; font-size: 15px; font-weight: 900; line-height: 1; padding: 0 2px;
 }
 .member-chip-remove:hover { color: #f87171; }
+
+/* Avatar picker */
+/* Let avatar-picker dropdown escape the card's overflow:hidden */
+.card { overflow: visible; }
+.card-header { border-radius: var(--r-lg) var(--r-lg) 0 0; }
+.avatar-picker { position: relative; display: inline-block; }
+.avatar-picker-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--c-purple-900); border: 1.5px solid var(--c-purple-700);
+  border-radius: 6px; padding: 4px 10px 4px 6px;
+  font-size: 12px; font-weight: 600; color: var(--c-purple-100);
+  cursor: pointer; min-width: 150px;
+}
+.avatar-picker-btn:hover { border-color: var(--c-purple-500); }
+.ap-caret { margin-left: auto; font-size: 10px; color: var(--c-purple-400); }
+.avatar-picker-dropdown {
+  position: fixed; z-index: 9999;
+  background: var(--c-purple-950, #1a0f07); border: 1.5px solid var(--c-purple-700);
+  border-radius: 6px; min-width: 200px; max-height: 220px; overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0,0,0,.35);
+}
+.ap-option {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 7px 10px; background: none; border: none; cursor: pointer;
+  font-size: 12px; color: var(--c-purple-100); text-align: left;
+}
+.ap-option:hover { background: var(--c-purple-800); }
+.ap-option.selected { background: var(--c-purple-800); }
+.ap-username { margin-left: auto; font-size: 11px; color: var(--c-purple-400); }
 </style>
 <script>
 (function () {
@@ -277,6 +330,43 @@ function closeDeleteModal() {
 }
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') closeDeleteModal();
+});
+
+function toggleAvatarPicker(pid) {
+  var drop = document.getElementById('ap-drop-' + pid);
+  var btn  = document.querySelector('#ap-' + pid + ' .avatar-picker-btn');
+  var open = drop.style.display !== 'none';
+  document.querySelectorAll('.avatar-picker-dropdown').forEach(function(d){ d.style.display='none'; });
+  if (!open) {
+    var r = btn.getBoundingClientRect();
+    drop.style.top  = (r.bottom + 4) + 'px';
+    drop.style.left = r.left + 'px';
+    drop.style.display = 'block';
+  }
+}
+function selectAvatarUser(btn) {
+  var pid     = btn.dataset.pid;
+  var uid     = btn.dataset.uid;
+  var name    = btn.dataset.name;
+  var avatar  = btn.dataset.avatar;
+  var initials = btn.dataset.initials;
+  document.getElementById('add-member-uid-' + pid).value = uid;
+  document.getElementById('ap-label-' + pid).textContent = name;
+  var preview = document.getElementById('ap-preview-' + pid);
+  if (avatar) {
+    preview.innerHTML = '<img src="' + avatar + '" class="member-chip-avatar" style="width:22px;height:22px" alt="">';
+  } else {
+    preview.innerHTML = '<span class="member-chip-initials" style="width:22px;height:22px;font-size:11px">' + initials + '</span>';
+  }
+  document.querySelectorAll('.ap-option').forEach(function(o){ o.classList.remove('selected'); });
+  btn.classList.add('selected');
+  document.getElementById('ap-drop-' + pid).style.display = 'none';
+  document.getElementById('ap-submit-' + pid).disabled = false;
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.avatar-picker')) {
+    document.querySelectorAll('.avatar-picker-dropdown').forEach(function(d){ d.style.display='none'; });
+  }
 });
 </script>
 {% endblock %}

@@ -147,8 +147,9 @@
 
       <div class="form-group">
         <label>Acceptance Criteria</label>
-        <textarea name="acceptance_criteria" rows="3" class="form-input"
-                  placeholder="Given / When / Then…">{{ story.acceptance_criteria if story else '' }}</textarea>
+        <textarea name="acceptance_criteria" id="ac-hidden" style="display:none">{{ story.acceptance_criteria if story else '' }}</textarea>
+        <div id="ac-list" class="ac-list"></div>
+        <button type="button" id="ac-add-btn" class="btn btn-secondary btn-sm ac-add-btn">+ Add criterion</button>
       </div>
 
       {% if mode == 'new' %}
@@ -390,16 +391,6 @@
         <option value="">— None —</option>
         {% for pri in ['VH','H','M','L','VL'] %}
         <option value="{{ pri }}" {{ 'selected' if story and story.priority == pri else '' }}>{{ pri }}</option>
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="story-sidebar-field">
-      <label class="story-sidebar-label">Epic</label>
-      <select name="epic_id" class="story-sidebar-select" form="story-form">
-        <option value="">— None —</option>
-        {% for e in epics %}
-        <option value="{{ e.id }}" {{ 'selected' if story and story.epic_id == e.id else '' }}>{{ e.title }}</option>
         {% endfor %}
       </select>
     </div>
@@ -847,6 +838,90 @@
 
   // Expose so dynamically added tasks also get drag
   window._taskEnableDrag = enableDrag;
+}());
+
+// ── Acceptance Criteria list ───────────────────────────────────────────────
+(function () {
+  var hidden = document.getElementById('ac-hidden');
+  var list   = document.getElementById('ac-list');
+  var addBtn = document.getElementById('ac-add-btn');
+  if (!list || !hidden) return;
+
+  // ── drag state ────────────────────────────────────────────────────────────
+  var acDragSrc = null;
+
+  function onAcDragStart(e) {
+    acDragSrc = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+  function onAcDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    var target = e.target.closest('.ac-item-row');
+    if (!target || target === acDragSrc) return;
+    var rows = Array.from(list.querySelectorAll('.ac-item-row'));
+    var srcIdx = rows.indexOf(acDragSrc);
+    var tgtIdx = rows.indexOf(target);
+    if (srcIdx < tgtIdx) list.insertBefore(acDragSrc, target.nextSibling);
+    else                 list.insertBefore(acDragSrc, target);
+  }
+  function onAcDragEnd() {
+    if (acDragSrc) acDragSrc.classList.remove('dragging');
+    acDragSrc = null;
+  }
+
+  function enableAcDrag(row) {
+    var handle = row.querySelector('.ac-drag-handle');
+    if (!handle) return;
+    handle.addEventListener('mousedown', function () { row.setAttribute('draggable', 'true'); });
+    handle.addEventListener('mouseup',   function () { row.setAttribute('draggable', 'false'); });
+    row.addEventListener('dragstart', onAcDragStart);
+    row.addEventListener('dragover',  onAcDragOver);
+    row.addEventListener('dragend',   onAcDragEnd);
+  }
+
+  function buildRow(val) {
+    var row = document.createElement('div');
+    row.className = 'ac-item-row';
+    var handle = document.createElement('span');
+    handle.className = 'ac-drag-handle';
+    handle.textContent = '⠿';
+    handle.title = 'Drag to reorder';
+    var inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'ac-item-input';
+    inp.value = val || '';
+    inp.placeholder = 'Acceptance criterion…';
+    var del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'ac-del-btn';
+    del.title = 'Remove';
+    del.textContent = '✕';
+    del.addEventListener('click', function () { row.remove(); });
+    row.appendChild(handle);
+    row.appendChild(inp);
+    row.appendChild(del);
+    enableAcDrag(row);
+    return row;
+  }
+
+  var existing = (hidden.value || '').split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+  existing.forEach(function(v) { list.appendChild(buildRow(v)); });
+  if (!existing.length) list.appendChild(buildRow(''));
+
+  if (addBtn) addBtn.addEventListener('click', function () {
+    var row = buildRow('');
+    list.appendChild(row);
+    row.querySelector('.ac-item-input').focus();
+  });
+
+  var form = document.getElementById('story-form');
+  if (form) form.addEventListener('submit', function () {
+    var items = Array.from(list.querySelectorAll('.ac-item-input'))
+      .map(function(i){ return i.value.trim(); }).filter(Boolean);
+    hidden.value = items.join('\n');
+  }, true);
 }());
 </script>
 

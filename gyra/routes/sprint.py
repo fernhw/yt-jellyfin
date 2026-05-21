@@ -6,7 +6,7 @@ from flask import (abort, flash, jsonify, redirect,
 
 from auth import enforce_csrf, login_required, super_user_required
 from db import (get_all_active_users, get_current_sprint, get_db,
-                get_project, user_in_project)
+                get_epics, get_project, get_story_types, user_in_project)
 
 
 def _check_project_access(project_id: int):
@@ -30,11 +30,13 @@ def register(app) -> None:
 
         if request.method == "POST":
             enforce_csrf()
-            titles      = request.form.getlist("title[]")
-            points_list = request.form.getlist("points[]")
-            priorities  = request.form.getlist("priority[]")
-            descs       = request.form.getlist("description[]")
-            assignees   = request.form.getlist("assignee[]")
+            titles           = request.form.getlist("title[]")
+            points_list      = request.form.getlist("points[]")
+            priorities       = request.form.getlist("priority[]")
+            descs            = request.form.getlist("description[]")
+            assignees        = request.form.getlist("assignee[]")
+            story_types_list = request.form.getlist("story_type[]")
+            epic_ids         = request.form.getlist("epic_id[]")
 
             conn = get_db()
             first_status = conn.execute(
@@ -55,6 +57,10 @@ def register(app) -> None:
                 desc    = descs[i].strip() if i < len(descs) else ""
                 a_raw   = assignees[i].strip() if i < len(assignees) else ""
                 a_id    = int(a_raw) if a_raw.isdigit() else None
+                st_raw  = story_types_list[i].strip() if i < len(story_types_list) else ""
+                st_id   = int(st_raw) if st_raw.isdigit() else None
+                ep_raw  = epic_ids[i].strip() if i < len(epic_ids) else ""
+                ep_id   = int(ep_raw) if ep_raw.isdigit() else None
 
                 max_idx = conn.execute(
                     "SELECT COALESCE(MAX(order_index), 0) + 1 FROM stories WHERE project_id=?",
@@ -63,9 +69,11 @@ def register(app) -> None:
                 cur = conn.execute(
                     """INSERT INTO stories
                        (project_id, title, description, story_points, priority,
+                        story_type, epic_id,
                         status_id, created_at, created_by, order_index, is_archived)
-                       VALUES (?,?,?,?,?,?,?,?,?,0)""",
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,0)""",
                     (project_id, title, desc, pts, prio or None,
+                     st_id, ep_id,
                      status_id, now, session["user_id"], max_idx),
                 )
                 if a_id:
@@ -80,8 +88,11 @@ def register(app) -> None:
             flash(f"{created} {'story' if created == 1 else 'stories'} created.", "success")
             return redirect(url_for("backlog", project_id=project_id))
 
-        users = get_all_active_users()
-        return render_template("bulk_add.html", project=project, users=users)
+        users       = get_all_active_users()
+        story_types = get_story_types(project_id)
+        epics       = get_epics(project_id)
+        return render_template("bulk_add.html", project=project, users=users,
+                               story_types=story_types, epics=epics)
 
     # ── Bulk send to sprint ───────────────────────────────────────────────────
 
@@ -180,18 +191,64 @@ def register(app) -> None:
         rows = conn.execute(
             """SELECT s.id, s.title, s.story_points, s.priority, s.sprint,
                       s.updated_at, s.created_at,
-                      st.name AS status_name, st.color AS status_color
+                      st.name AS status_name, st.color AS status_color,
+                      sty.name AS story_type_name, sty.color AS story_type_color,
+                      p.key AS project_key
                FROM stories s
                LEFT JOIN statuses st ON s.status_id = st.id
+               LEFT JOIN story_types sty ON s.story_type = sty.id
+               LEFT JOIN projects p ON s.project_id = p.id
                WHERE s.project_id=? AND s.is_archived=1
                ORDER BY s.updated_at DESC
                LIMIT ? OFFSET ?""",
             (project_id, per_page + 1, offset),
         ).fetchall()
-        conn.close()
 
         has_more = len(rows) > per_page
-        return jsonify(items=[dict(r) for r in rows[:per_page]], has_more=has_more, page=page)
+        items = [dict(r) for r in rows[:per_page]]
+
+        if items:
+            story_ids = [it["id"] for it in items]
+            ph = ",".join("?" * len(story_ids))
+
+            sk_rows = conn.execute(
+                f"SELECT id, type, card_x, card_y, label, card_story_id"
+                f" FROM stickers WHERE card_story_id IN ({ph})",
+                story_ids,
+            ).fetchall()
+            stickers_map: dict = {}
+            for sk in sk_rows:
+                stickers_map.setdefault(sk["card_story_id"], []).append(dict(sk))
+
+            a_rows = conn.execute(
+                f"""SELECT su.story_id, u.display_name, u.avatar
+                    FROM story_users su JOIN users u ON su.user_id = u.id
+                    WHERE su.story_id IN ({ph})""",
+                story_ids,
+            ).fetchall()
+            assignees_map: dict = {}
+            for a in a_rows:
+                assignees_map.setdefault(a["story_id"], []).append(
+                    {"display_name": a["display_name"], "avatar": a["avatar"]}
+                )
+
+            th_rows = conn.execute(
+                f"""SELECT si.story_id, si.filename FROM story_images si
+                    INNER JOIN (
+                        SELECT story_id, MIN(id) AS min_id FROM story_images
+                        WHERE story_id IN ({ph}) GROUP BY story_id
+                    ) m ON si.id = m.min_id""",
+                story_ids,
+            ).fetchall()
+            thumbnails = {r["story_id"]: r["filename"] for r in th_rows}
+
+            for it in items:
+                it["stickers"]  = stickers_map.get(it["id"], [])
+                it["assignees"] = assignees_map.get(it["id"], [])
+                it["thumbnail"] = thumbnails.get(it["id"])
+
+        conn.close()
+        return jsonify(items=items, has_more=has_more, page=page)
 
     # ── Unarchive (re-add to active sprint) ───────────────────────────────────
 
