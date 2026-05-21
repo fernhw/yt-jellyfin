@@ -243,6 +243,7 @@ def _migrate_db() -> None:
         ("epics",   "due_date",    "TEXT DEFAULT NULL"),
         ("epics",   "status",      "TEXT DEFAULT 'planning'"),
         ("epics",   "updated_at",  "INTEGER DEFAULT NULL"),
+        ("epics",   "order_index", "INTEGER DEFAULT 0"),
     ]
     conn = get_db()
     for table, col, col_def in new_cols:
@@ -655,7 +656,7 @@ def get_stickers(project_id: int):
 def get_epics(project_id: int):
     conn = get_db()
     rows = conn.execute(
-        "SELECT * FROM epics WHERE project_id=? ORDER BY title",
+        "SELECT * FROM epics WHERE project_id=? ORDER BY order_index, id",
         (project_id,),
     ).fetchall()
     conn.close()
@@ -664,9 +665,14 @@ def get_epics(project_id: int):
 
 def create_epic(project_id: int, title: str, color: str, description: str, user_id: int):
     conn = get_db()
+    nxt  = conn.execute(
+        "SELECT COALESCE(MAX(order_index),0)+1 AS n FROM epics WHERE project_id=?",
+        (project_id,),
+    ).fetchone()["n"]
     cur = conn.execute(
-        "INSERT INTO epics (project_id,title,color,description,created_at,created_by) VALUES (?,?,?,?,?,?)",
-        (project_id, title, color, description or '', int(time.time()), user_id),
+        "INSERT INTO epics (project_id,title,color,description,created_at,created_by,order_index) "
+        "VALUES (?,?,?,?,?,?,?)",
+        (project_id, title, color, description, int(time.time()), user_id, nxt),
     )
     conn.commit()
     epic_id = cur.lastrowid
@@ -679,6 +685,58 @@ def delete_epic(epic_id: int) -> None:
     conn.execute("DELETE FROM epics WHERE id=?", (epic_id,))
     conn.commit()
     conn.close()
+
+
+def move_epic(epic_id: int, direction: str):
+    """Swap an epic's order_index with its neighbor in the same project.
+    direction: 'up' (lower order_index) or 'down' (higher order_index).
+    Returns (ok, swapped_with_id_or_None)."""
+    if direction not in ("up", "down"):
+        return False, None
+    conn = get_db()
+    me = conn.execute(
+        "SELECT id, project_id, order_index FROM epics WHERE id=?",
+        (epic_id,),
+    ).fetchone()
+    if not me:
+        conn.close()
+        return False, None
+
+    if direction == "up":
+        neighbor = conn.execute(
+            "SELECT id, order_index FROM epics "
+            "WHERE project_id=? AND (order_index < ? OR (order_index = ? AND id < ?)) "
+            "ORDER BY order_index DESC, id DESC LIMIT 1",
+            (me["project_id"], me["order_index"], me["order_index"], me["id"]),
+        ).fetchone()
+    else:
+        neighbor = conn.execute(
+            "SELECT id, order_index FROM epics "
+            "WHERE project_id=? AND (order_index > ? OR (order_index = ? AND id > ?)) "
+            "ORDER BY order_index ASC, id ASC LIMIT 1",
+            (me["project_id"], me["order_index"], me["order_index"], me["id"]),
+        ).fetchone()
+
+    if not neighbor:
+        conn.close()
+        return False, None
+
+    # If both rows share the same order_index (legacy data), give them
+    # distinct values before swapping so the order actually changes.
+    a_oi = me["order_index"]
+    b_oi = neighbor["order_index"]
+    if a_oi == b_oi:
+        if direction == "up":
+            a_oi, b_oi = b_oi, b_oi + 1
+        else:
+            a_oi, b_oi = b_oi + 1, b_oi
+        # Pull adjacent value down by 1 so swap creates a gap-free order.
+        # Simpler: just assign distinct ints; full re-sequence happens lazily.
+    conn.execute("UPDATE epics SET order_index=? WHERE id=?", (b_oi, me["id"]))
+    conn.execute("UPDATE epics SET order_index=? WHERE id=?", (a_oi, neighbor["id"]))
+    conn.commit()
+    conn.close()
+    return True, neighbor["id"]
 
 
 def get_epic(epic_id: int):

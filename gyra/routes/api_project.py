@@ -7,6 +7,7 @@ from auth import admin_required, enforce_csrf, login_required
 from db import (create_epic, delete_epic, get_db, get_epic,
                 get_epic_stories_full, get_epics, get_statuses,
                 get_stickers, get_story_thumbnails, get_story_previews,
+                move_epic,
                 update_epic)
 from routes.helpers import bold_verb_in_title
 
@@ -155,6 +156,19 @@ def register(app) -> None:
                 fields[k] = v
         update_epic(epic_id, fields)
         return jsonify(ok=True)
+
+    @app.route("/api/epic/<int:epic_id>/move", methods=["POST"])
+    @login_required
+    def api_move_epic(epic_id):
+        enforce_csrf()
+        data      = request.get_json(silent=True) or {}
+        direction = (data.get("direction") or "").strip().lower()
+        if direction not in ("up", "down"):
+            return jsonify(ok=False, error="direction must be up or down"), 400
+        ok, swapped_with = move_epic(epic_id, direction)
+        if not ok:
+            return jsonify(ok=False, error="cannot move"), 400
+        return jsonify(ok=True, swapped_with=swapped_with)
 
     @app.route("/api/epic/<int:epic_id>/full", methods=["GET"])
     @login_required

@@ -2504,6 +2504,8 @@
           '<span class="epic-dot" style="background:' + esc(e.color) + '"></span>' +
           '<span class="epic-title" id="epic-title-' + e.id + '">' + esc(e.title) + '</span>' +
           '<span class="epic-story-count">' + (e.stories ? e.stories.length : 0) + '</span>' +
+          '<button class="epic-move-btn" onclick="event.stopPropagation();moveEpic(' + e.id + ',\'up\')" title="Move up">▲</button>' +
+          '<button class="epic-move-btn" onclick="event.stopPropagation();moveEpic(' + e.id + ',\'down\')" title="Move down">▼</button>' +
           '<span class="epic-chevron" onclick="event.stopPropagation();toggleEpicItem(' + e.id + ')" title="Show stories">▾</span>' +
           '<button class="epic-edit-btn" data-epic-modal-id="' + e.id + '" title="Open epic">✏</button>' +
         '</div>' +
@@ -2522,6 +2524,30 @@
     var open = body.style.display === 'none';
     body.style.display    = open ? 'block' : 'none';
     if (chevron) chevron.textContent = open ? '▴' : '▾';
+  };
+
+  window.moveEpic = function(id, direction) {
+    var idx = -1;
+    for (var i = 0; i < epicsData.length; i++) {
+      if (epicsData[i].id === id) { idx = i; break; }
+    }
+    if (idx < 0) return;
+    var swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= epicsData.length) return;
+    fetch('/api/epic/' + id + '/move', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRF-Token': csrf},
+      body: JSON.stringify({direction: direction})
+    }).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function(d) {
+      if (!d || !d.ok) return;
+      var tmp = epicsData[idx];
+      epicsData[idx] = epicsData[swapIdx];
+      epicsData[swapIdx] = tmp;
+      renderPanel();
+    }).catch(function(err) { console.error('moveEpic failed:', err); });
   };
 
   window.openEpicEdit = function(id, title, color, desc) {
