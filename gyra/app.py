@@ -1260,6 +1260,76 @@ def api_statuses(project_id):
     return jsonify([dict(s) for s in get_statuses(project_id)])
 
 
+@app.route("/api/stories/reorder", methods=["POST"])
+@login_required
+def api_reorder():
+    enforce_csrf()
+    data  = request.get_json(silent=True) or {}
+    items = data.get("items", [])
+    if not items:
+        return jsonify(ok=True)
+    conn = get_db()
+    now  = int(time.time())
+    for item in items:
+        try:
+            conn.execute(
+                "UPDATE stories SET order_index=?,updated_at=? WHERE id=?",
+                (int(item["order_index"]), now, int(item["id"])),
+            )
+        except (KeyError, ValueError, TypeError):
+            pass
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True)
+
+
+@app.route("/api/project/<int:project_id>/board-full-state")
+@login_required
+def api_board_full_state(project_id):
+    """Return the complete, authoritative board state for real-time sync.
+    No delta/since — always returns the full picture so clients can reconcile
+    exactly, including after a reconnect or long pause.
+    """
+    conn = get_db()
+    stories = conn.execute(
+        """SELECT id, status_id, order_index
+           FROM stories
+           WHERE project_id=? AND sprint IS NOT NULL
+           ORDER BY order_index""",
+        (project_id,),
+    ).fetchall()
+    stickers = conn.execute(
+        """SELECT s.id, s.type, s.x, s.y,
+                  s.card_story_id, s.card_x, s.card_y,
+                  u.display_name AS creator_name
+           FROM stickers s
+           LEFT JOIN users u ON u.id = s.created_by
+           WHERE s.project_id=?""",
+        (project_id,),
+    ).fetchall()
+    conn.close()
+    return jsonify(
+        stories=[dict(r) for r in stories],
+        stickers=[dict(r) for r in stickers],
+    )
+
+
+@app.route("/api/project/<int:project_id>/board-snapshot")
+@login_required
+def api_board_snapshot(project_id):
+    since = request.args.get("since", 0, type=int)
+    conn  = get_db()
+    rows  = conn.execute(
+        """SELECT id, status_id, sprint, order_index, updated_at
+           FROM stories
+           WHERE project_id=? AND sprint IS NOT NULL AND updated_at > ?
+           ORDER BY order_index""",
+        (project_id, since),
+    ).fetchall()
+    conn.close()
+    return jsonify(stories=[dict(r) for r in rows])
+
+
 @app.route("/api/stories/bulk-move", methods=["POST"])
 @login_required
 def api_bulk_move():

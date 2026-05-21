@@ -14,6 +14,8 @@
       <span class="zoom-label" id="zoom-label">100%</span>
       <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
     </div>
+    <!-- Live sync indicator -->
+    <span id="board-sync-dot" class="board-sync-dot" title="Live sync active" style="display:none"></span>
     <!-- Fullscreen -->
     <button class="zoom-btn" id="board-fullscreen-btn" title="Full screen" style="width:32px">⛶</button>
     <!-- Sticker dropdown -->
@@ -128,6 +130,10 @@
           {% for sk in card_stickers_map.get(story.id, []) %}
           <div class="board-sticker sticker-{{ sk.type }} sticker-on-card"
                data-id="{{ sk.id }}"
+               data-type="{{ sk.type }}"
+               data-sx="{{ (sk.card_x or 50) | round(1) }}"
+               data-sy="{{ (sk.card_y or 10) | round(1) }}"
+               data-cardstory="{{ story.id }}"
                data-creator="{{ sk.creator_name or '' }}"
                style="left:{{ sk.card_x or 50 }}%;top:{{ sk.card_y or 10 }}%">
             {{ _sicon.get(sk.type, sk.type) }}
@@ -145,6 +151,10 @@
       {% for sk in stickers %}
       <div class="board-sticker sticker-{{ sk.type }}"
            data-id="{{ sk.id }}"
+           data-type="{{ sk.type }}"
+           data-sx="{{ sk.x | round(1) }}"
+           data-sy="{{ sk.y | round(1) }}"
+           data-cardstory=""
            data-creator="{{ sk.creator_name or '' }}"
            style="left:{{ sk.x }}%;top:{{ sk.y }}%">
         {{ _sicon.get(sk.type, sk.type) }}
@@ -832,6 +842,245 @@
       hideTimer = setTimeout(function () { popup.style.display = 'none'; }, 80);
     });
   });
+}());
+</script>
+
+<script>
+// ── Real-time board sync — full-state reconciliation ─────────────────────────
+// Every 4 seconds we fetch the COMPLETE authoritative board state (all story
+// column/order positions + all sticker positions) and reconcile the DOM to
+// match exactly.  Own-moves are suppressed for 8 s to avoid fighting the user
+// while they're dragging.  After 8 s (or after a reconnect) the server is
+// always the single source of truth.
+(function () {
+  var appRoot   = (document.querySelector('meta[name="app-root"]') || {}).getAttribute('content') || '';
+  var csrf      = (document.querySelector('meta[name="csrf-token"]') || {}).getAttribute('content') || '';
+  var boardEl   = document.getElementById('board');
+  var projectId = boardEl ? boardEl.dataset.project : null;
+  var syncDot   = document.getElementById('board-sync-dot');
+  if (!projectId) return;
+
+  var ICON_MAP = {exclamation:'!',arrow:'→',question:'?',star:'★',fire:'🔥',eyes:'👀',check:'✓',blocked:'✕',up:'↑',note:'#'};
+
+  var isDragging   = false;
+  var recentMoves  = {}; // storyId  → ms timestamp of last local move
+  var recentSticks = {}; // stickerId → ms timestamp of last local move/create
+
+  // ── Called by board.js after each drag-drop ─────────────────────────────
+  window._markBoardMoves = function (ids) {
+    var t = Date.now();
+    ids.forEach(function (id) { recentMoves[String(id)] = t; });
+  };
+  // ── Called by stickers.js after each drag/create ─────────────────────────
+  window._markStickerMove = function (id) { recentSticks[String(id)] = Date.now(); };
+
+  document.addEventListener('dragstart', function () { isDragging = true; });
+  document.addEventListener('dragend',   function () { isDragging = false; });
+
+  function purge() {
+    var now = Date.now();
+    Object.keys(recentMoves) .forEach(function (k) { if (now - recentMoves[k]  > 8000) delete recentMoves[k];  });
+    Object.keys(recentSticks).forEach(function (k) { if (now - recentSticks[k] > 8000) delete recentSticks[k]; });
+  }
+
+  // ── Stories reconciliation ──────────────────────────────────────────────
+  // serverStories: [{id, status_id, order_index}] sorted by order_index
+  function reconcileStories(serverStories) {
+    // Build per-column ordered ID lists from server
+    var serverCols = {}; // statusId → [{id, order_index}, ...]
+    serverStories.forEach(function (s) {
+      var sid = String(s.status_id);
+      if (!serverCols[sid]) serverCols[sid] = [];
+      serverCols[sid].push(s);
+    });
+
+    var changedCols = {};
+
+    // Step 1: fix cross-column placements
+    serverStories.forEach(function (s) {
+      if (recentMoves[String(s.id)]) return;
+      var card = document.querySelector('.board-card[data-story-id="' + s.id + '"]');
+      if (!card) return;
+      var currentCol = card.closest('.board-column');
+      if (!currentCol) return;
+      if (String(currentCol.dataset.statusId) !== String(s.status_id)) {
+        var targetCol = document.querySelector('.board-column[data-status-id="' + s.status_id + '"]');
+        if (targetCol) {
+          var outer = targetCol.querySelector('.board-cards');
+          if (outer) {
+            outer.appendChild(card);
+            changedCols[currentCol.dataset.statusId] = currentCol;
+            changedCols[s.status_id]                 = targetCol;
+          }
+        }
+      }
+      card.dataset.orderIndex = s.order_index;
+    });
+
+    // Step 2: check & fix order within each column
+    document.querySelectorAll('.board-column').forEach(function (col) {
+      var sid = String(col.dataset.statusId);
+      var serverOrder = (serverCols[sid] || []);
+
+      // Skip this column entirely if ANY card in it was recently moved by this client
+      var domCards = Array.from(col.querySelectorAll('.board-card'));
+      var hasSuppressed = domCards.some(function (c) { return recentMoves[c.dataset.storyId]; });
+      if (hasSuppressed) return;
+
+      // Build the server-ordered ID list (only cards that exist in the DOM)
+      var serverIds = serverOrder
+        .filter(function (s) { return !!document.querySelector('.board-card[data-story-id="' + s.id + '"]'); })
+        .map(function (s) { return String(s.id); });
+
+      // Build current DOM ID list (cards present in this column)
+      var domIds = domCards.map(function (c) { return c.dataset.storyId; });
+
+      // Compare: same IDs in same order?
+      var match = serverIds.length === domIds.length &&
+                  serverIds.every(function (id, i) { return id === domIds[i]; });
+      if (!match) changedCols[sid] = col;
+    });
+
+    // Step 3: rebuild subcols for changed columns using authoritative server order
+    Object.keys(changedCols).forEach(function (sid) {
+      var col   = changedCols[sid];
+      var outer = col.querySelector('.board-cards');
+      if (!outer) return;
+      var serverOrder = (serverCols[sid] || []);
+      var serverIds   = serverOrder.map(function (s) { return String(s.id); });
+
+      var allCards = Array.from(col.querySelectorAll('.board-card'));
+      allCards.sort(function (a, b) {
+        var ai = serverIds.indexOf(a.dataset.storyId);
+        var bi = serverIds.indexOf(b.dataset.storyId);
+        if (ai === -1) ai = 99999; // cards not in server list stay at end
+        if (bi === -1) bi = 99999;
+        return ai - bi;
+      });
+
+      // Flatten subcols, put sorted cards directly in outer, force subcol rebuild
+      Array.from(outer.querySelectorAll(':scope > .board-subcol')).forEach(function (s) { s.remove(); });
+      allCards.forEach(function (c) { outer.appendChild(c); });
+      outer.dataset.innerCols = '0';
+      var badge = col.querySelector('.col-count');
+      if (badge) badge.textContent = allCards.length;
+    });
+
+    if (Object.keys(changedCols).length && window._refreshColWidths) window._refreshColWidths();
+    return Object.keys(changedCols).length > 0;
+  }
+
+  // ── Stickers reconciliation ─────────────────────────────────────────────
+  // serverStickers: [{id, type, x, y, card_story_id, card_x, card_y, creator_name}]
+  function reconcileStickers(serverStickers) {
+    var changed = false;
+    var serverById = {};
+    serverStickers.forEach(function (sk) { serverById[String(sk.id)] = sk; });
+
+    // Remove DOM stickers not present on server (unless recently created locally)
+    document.querySelectorAll('.board-sticker').forEach(function (el) {
+      var id = String(el.dataset.id || '');
+      if (!id || recentSticks[id]) return;
+      if (!serverById[id]) { el.remove(); changed = true; }
+    });
+
+    // Add / update stickers from server
+    serverStickers.forEach(function (sk) {
+      var id = String(sk.id);
+      if (recentSticks[id]) return; // own recent move — skip
+
+      var isCard = !!sk.card_story_id;
+      var sx     = isCard ? (sk.card_x != null ? sk.card_x : 50) : sk.x;
+      var sy     = isCard ? (sk.card_y != null ? sk.card_y : 10) : sk.y;
+      sx = Math.round(sx * 10) / 10;
+      sy = Math.round(sy * 10) / 10;
+
+      var existing = document.querySelector('.board-sticker[data-id="' + id + '"]');
+
+      if (existing) {
+        // Position drift?
+        var currSx = Math.round(parseFloat(existing.dataset.sx || '0') * 10) / 10;
+        var currSy = Math.round(parseFloat(existing.dataset.sy || '0') * 10) / 10;
+        var currCard = String(existing.dataset.cardstory || '');
+        var serverCard = String(sk.card_story_id || '');
+
+        if (Math.abs(currSx - sx) > 0.4 || Math.abs(currSy - sy) > 0.4 || currCard !== serverCard) {
+          existing.style.left = sx + '%';
+          existing.style.top  = sy + '%';
+          existing.dataset.sx = sx;
+          existing.dataset.sy = sy;
+          existing.dataset.cardstory = serverCard;
+          changed = true;
+        }
+
+        // Parent correct?
+        if (isCard) {
+          var targetCard = document.querySelector('.board-card[data-story-id="' + sk.card_story_id + '"]');
+          if (targetCard && !targetCard.contains(existing)) {
+            existing.classList.add('sticker-on-card');
+            targetCard.appendChild(existing);
+            changed = true;
+          }
+        } else {
+          var layer = document.getElementById('sticker-layer');
+          if (layer && existing.parentNode !== layer) {
+            existing.classList.remove('sticker-on-card');
+            layer.appendChild(existing);
+            changed = true;
+          }
+        }
+      } else {
+        // New sticker arrived from another client
+        var el = document.createElement('div');
+        el.className        = 'board-sticker sticker-' + sk.type + (isCard ? ' sticker-on-card' : '');
+        el.dataset.id       = id;
+        el.dataset.type     = sk.type;
+        el.dataset.sx       = sx;
+        el.dataset.sy       = sy;
+        el.dataset.cardstory= String(sk.card_story_id || '');
+        el.dataset.creator  = sk.creator_name || '';
+        el.style.left       = sx + '%';
+        el.style.top        = sy + '%';
+        el.innerHTML        = (ICON_MAP[sk.type] || '!') +
+          '<button class="sticker-del" data-id="' + id + '" title="Remove">\u2715</button>';
+
+        if (isCard) {
+          var pCard = document.querySelector('.board-card[data-story-id="' + sk.card_story_id + '"]');
+          if (pCard) { pCard.appendChild(el); changed = true; }
+        } else {
+          var sl = document.getElementById('sticker-layer');
+          if (sl) { sl.appendChild(el); changed = true; }
+        }
+        if (window._wireStickerEl) window._wireStickerEl(el);
+      }
+    });
+
+    return changed;
+  }
+
+  // ── Poll ────────────────────────────────────────────────────────────────
+  function poll() {
+    if (isDragging) return;
+    purge();
+    fetch(appRoot + '/api/project/' + projectId + '/board-full-state', {
+      headers: { 'X-CSRF-Token': csrf },
+    })
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function (data) {
+      if (isDragging) return;
+      var sc = reconcileStories (data.stories  || []);
+      var sk = reconcileStickers(data.stickers || []);
+      if ((sc || sk) && syncDot) {
+        syncDot.classList.add('sync-dot-pulse');
+        clearTimeout(syncDot._pt);
+        syncDot._pt = setTimeout(function () { syncDot.classList.remove('sync-dot-pulse'); }, 1400);
+      }
+    })
+    .catch(function () {});
+  }
+
+  if (syncDot) syncDot.style.display = 'inline-block';
+  setInterval(poll, 4000);
 }());
 </script>
 

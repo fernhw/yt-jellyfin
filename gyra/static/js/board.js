@@ -61,19 +61,12 @@
       const storyId  = dragCard.dataset.storyId;
       const statusId = col.dataset.statusId;
       const sprint   = col.dataset.sprint || null;
+      const isCross  = sourceCol && sourceCol !== col;
 
       const afterCard   = getCardAfterDrop(subcol, e.clientY);
-      const allInCol    = Array.from(col.querySelectorAll('.board-card'));
-      let newIndex;
-      if (afterCard) {
-        newIndex = parseInt(afterCard.dataset.orderIndex || '0', 10) - 1;
-      } else {
-        const last = allInCol[allInCol.length - 1];
-        newIndex = last ? parseInt(last.dataset.orderIndex || '0', 10) + 1 : 0;
-      }
-
       const prevSibling = dragCard.nextSibling;
       const prevParent  = dragCard.parentNode;
+
       if (afterCard) {
         subcol.insertBefore(dragCard, afterCard);
       } else {
@@ -81,7 +74,7 @@
       }
 
       refreshColWidths();
-      if (sourceCol && sourceCol !== col) updateCount(sourceCol);
+      if (isCross) updateCount(sourceCol);
       updateCount(col);
 
       // Multi-select: move all selected cards into this same subcol
@@ -90,7 +83,7 @@
 
       if (isMulti) {
         const otherSelected = selectedCards.filter(c => c !== dragCard);
-        const affectedCols  = new Set();
+        const affectedCols  = new Set([col]);
         otherSelected.forEach(c => {
           const oc = c.closest('.board-column');
           if (oc) affectedCols.add(oc);
@@ -101,6 +94,13 @@
         updateCount(col);
 
         const allIds = selectedCards.map(c => parseInt(c.dataset.storyId, 10));
+        // Suppress reconciler for all affected cards BEFORE the network call
+        if (window._markBoardMoves) {
+          const _earlyIds = [];
+          affectedCols.forEach(ac => Array.from(ac.querySelectorAll('.board-card')).forEach(c => _earlyIds.push(c.dataset.storyId)));
+          window._markBoardMoves(_earlyIds);
+        }
+
         fetch(appRoot + '/api/stories/bulk-move', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
@@ -111,6 +111,7 @@
           }),
         })
         .then(r => { if (!r.ok) throw new Error('API error ' + r.status); })
+        .then(() => { affectedCols.forEach(saveColOrder); })
         .catch(() => {
           if (prevParent) {
             if (prevSibling) prevParent.insertBefore(dragCard, prevSibling);
@@ -123,26 +124,54 @@
         return;
       }
 
-      // Single-card move
-      fetch(appRoot + `/api/story/${storyId}/move`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({
-          status_id:   parseInt(statusId, 10),
-          sprint:      sprint ? parseInt(sprint, 10) : null,
-          order_index: newIndex,
-        }),
-      })
-      .then(r => { if (!r.ok) throw new Error('API error ' + r.status); })
-      .catch(() => {
-        if (prevParent) {
-          if (prevSibling) prevParent.insertBefore(dragCard, prevSibling);
-          else prevParent.appendChild(dragCard);
+      // Single-card cross-column move: update status, then persist order for both cols
+      if (isCross) {
+        // Suppress reconciler for BOTH affected columns right now, before the network call
+        if (window._markBoardMoves) {
+          const _earlyColIds = Array.from(col.querySelectorAll('.board-card')).map(c => c.dataset.storyId);
+          const _earlySrcIds = sourceCol ? Array.from(sourceCol.querySelectorAll('.board-card')).map(c => c.dataset.storyId) : [];
+          window._markBoardMoves([..._earlyColIds, ..._earlySrcIds]);
         }
-        refreshColWidths();
-        if (sourceCol) updateCount(sourceCol);
-        updateCount(col);
-      });
+
+        fetch(appRoot + `/api/story/${storyId}/move`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+          body: JSON.stringify({
+            status_id:   parseInt(statusId, 10),
+            sprint:      sprint ? parseInt(sprint, 10) : null,
+            order_index: 0,
+          }),
+        })
+        .then(r => { if (!r.ok) throw new Error('API error ' + r.status); })
+        .then(() => { saveColOrder(col); saveColOrder(sourceCol); })
+        .catch(() => {
+          if (prevParent) {
+            if (prevSibling) prevParent.insertBefore(dragCard, prevSibling);
+            else prevParent.appendChild(dragCard);
+          }
+          refreshColWidths();
+          if (sourceCol) updateCount(sourceCol);
+          updateCount(col);
+        });
+      } else {
+        // Same-column reorder only — no status change needed
+        saveColOrder(col);
+      }
+    });
+  }
+
+  // Persist the DOM order of all cards in a column to the server
+  function saveColOrder(col) {
+    if (!col) return;
+    const cards = Array.from(col.querySelectorAll('.board-card'));
+    cards.forEach((c, i) => { c.dataset.orderIndex = String(i); });
+    const items = cards.map((c, i) => ({ id: parseInt(c.dataset.storyId, 10), order_index: i }));
+    if (!items.length) return;
+    if (window._markBoardMoves) window._markBoardMoves(items.map(it => String(it.id)));
+    fetch(appRoot + '/api/stories/reorder', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+      body:    JSON.stringify({ items }),
     });
   }
 

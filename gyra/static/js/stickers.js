@@ -120,9 +120,13 @@
       sticker.style.left = cardX + '%';
       sticker.style.top  = cardY + '%';
       sticker.classList.add('sticker-on-card');
+      sticker.dataset.sx = cardX;
+      sticker.dataset.sy = cardY;
+      sticker.dataset.cardstory = targetCard.dataset.storyId;
       targetCard.appendChild(sticker);
 
       if (id) {
+        if (window._markStickerMove) window._markStickerMove(id);
         fetch(appRoot + '/api/stickers/' + id, {
           method:  'PATCH',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf() },
@@ -137,7 +141,11 @@
       // ── Free on board ────────────────────────────────────────────────────
       var x = parseFloat(sticker.style.left);
       var y = parseFloat(sticker.style.top);
+      sticker.dataset.sx = Math.round(x * 10) / 10;
+      sticker.dataset.sy = Math.round(y * 10) / 10;
+      sticker.dataset.cardstory = '';
       if (id) {
+        if (window._markStickerMove) window._markStickerMove(id);
         fetch(appRoot + '/api/stickers/' + id, {
           method:  'PATCH',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf() },
@@ -253,16 +261,24 @@
       .then(function (data) {
         if (!data.id) return;
         var el      = document.createElement('div');
-        el.className    = 'board-sticker sticker-' + type;
+        el.className       = 'board-sticker sticker-' + type;
         el.dataset.id      = data.id;
+        el.dataset.type    = type;
+        el.dataset.sx      = Math.round(x * 10) / 10;
+        el.dataset.sy      = Math.round(y * 10) / 10;
+        el.dataset.cardstory = '';
         el.dataset.creator = data.creator_name || '';
-        el.style.left   = x + '%';
-        el.style.top  = y + '%';
-        el.innerHTML  = (STICKER_HTML[type] || type) +
-          '<button class="sticker-del" data-id="' + data.id + '" title="Remove">\u2715</button>';
+        el.style.left      = x + '%';
+        el.style.top       = y + '%';
+        el.innerHTML       = (STICKER_HTML[type] || type) +
+          '<button class="sticker-del" data-id="' + data.id + '" title="Remove">✕</button>';
         layer.appendChild(el);
         wireSticker(el);
+        if (window._markStickerMove) window._markStickerMove(String(data.id));
       });
     });
   });
+
+  // Export wireSticker so the live-sync poller can wire newly arrived stickers
+  window._wireStickerEl = wireSticker;
 }());

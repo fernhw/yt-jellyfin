@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-20
 
-> *Good evening! Here's what landed on Wednesday, May 20, 2026 at 06:05 PM.*
-> **YT Mirror:** 536.60 GB used · 1.18 TB free
+> *Good evening! Here's what landed on Wednesday, May 20, 2026 at 07:06 PM.*
+> **YT Mirror:** 536.41 GB used · 1.18 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@
 
 ## Non-Priority Videos
 
+- **Death by Nostalgia** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
 - **Elon's ex is out of her mind..** — *Asmongold TV* · downloaded 05:05 PM · not podcastable
 - **Ranking THE BEST Spring 2026 Anime Openings** — *Garnt* · downloaded 05:05 PM · not podcastable
 - **Google I/O 2026 Made Me Want to Cry** — *SAMTIME* · downloaded 03:09 PM · not podcastable
