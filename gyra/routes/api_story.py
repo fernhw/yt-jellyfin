@@ -31,7 +31,7 @@ def register(app) -> None:
         s = get_story(story_id)
         if not s:
             return None
-        if session.get("role") == "admin":
+        if session.get("role") in ("admin", "super_user"):
             return s
         uid = session.get("user_id")
         if uid and user_in_project(uid, s["project_id"]):
@@ -458,6 +458,182 @@ def register(app) -> None:
                 for a in updated_assignees
             ],
         )
+
+    # ── Quick-update: single-field patch for the right-click context menu ──
+    @app.route("/api/story/<int:story_id>/quick-update", methods=["POST"])
+    @login_required
+    def api_quick_update_story(story_id):
+        """Apply a single targeted mutation to a story.
+
+        Body: {"op": "<operation>", "value": <op-specific>}
+
+        Supported ops:
+          set_priority      value=str|null
+          set_points        value=int (0 = clear)
+          set_type          value=int|null
+          set_epic          value=int|null
+          set_status        value=int        (also moves card, logs Status)
+          set_sprint        value=int|null   (null = remove from sprint)
+          add_assignee      value=int (user id)
+          remove_assignee   value=int (user id)
+          set_addon_done    value={"addon_id": int, "is_done": bool}
+        """
+        enforce_csrf()
+        s = _require_story_access(story_id)
+        if not s:
+            return jsonify(ok=False), 404
+        data  = request.get_json(silent=True) or {}
+        op    = (data.get("op") or "").strip()
+        value = data.get("value")
+        uid   = session["user_id"]
+        conn  = get_db()
+
+        def _name(user_id):
+            r = conn.execute(
+                "SELECT display_name FROM users WHERE id=?", (user_id,)
+            ).fetchone()
+            return r["display_name"] if r else f"#{user_id}"
+
+        try:
+            if op == "set_priority":
+                new = (value or "").strip() or None
+                old = s["priority"]
+                conn.execute(
+                    "UPDATE stories SET priority=?, updated_at=? WHERE id=?",
+                    (new, int(time.time()), story_id),
+                )
+                conn.commit()
+                log_story_change(story_id, uid, "Priority", old, new)
+                return jsonify(ok=True, priority=new or "")
+
+            if op == "set_points":
+                new = int(value or 0)
+                old = s["story_points"]
+                conn.execute(
+                    "UPDATE stories SET story_points=?, updated_at=? WHERE id=?",
+                    (new, int(time.time()), story_id),
+                )
+                conn.commit()
+                log_story_change(story_id, uid, "Points", old, new)
+                return jsonify(ok=True, story_points=new)
+
+            if op == "set_type":
+                new = int(value) if value not in (None, "", 0, "0") else None
+                old = s["story_type"] if "story_type" in s.keys() else None
+                conn.execute(
+                    "UPDATE stories SET story_type=?, updated_at=? WHERE id=?",
+                    (new, int(time.time()), story_id),
+                )
+                conn.commit()
+                if old != new:
+                    log_story_change(story_id, uid, "Type", old, new)
+                return jsonify(ok=True, story_type=new)
+
+            if op == "set_epic":
+                new = int(value) if value not in (None, "", 0, "0") else None
+                old = s["epic_id"] if "epic_id" in s.keys() else None
+                conn.execute(
+                    "UPDATE stories SET epic_id=?, updated_at=? WHERE id=?",
+                    (new, int(time.time()), story_id),
+                )
+                conn.commit()
+                if old != new:
+                    log_story_change(story_id, uid, "Epic", old, new)
+                return jsonify(ok=True, epic_id=new)
+
+            if op == "set_status":
+                new = int(value)
+                old = s["status_id"]
+                conn.execute(
+                    "UPDATE stories SET status_id=?, updated_at=? WHERE id=?",
+                    (new, int(time.time()), story_id),
+                )
+                if old != new:
+                    old_st = conn.execute(
+                        "SELECT name FROM statuses WHERE id=?", (old,)
+                    ).fetchone()
+                    new_st = conn.execute(
+                        "SELECT name FROM statuses WHERE id=?", (new,)
+                    ).fetchone()
+                    conn.execute(
+                        "INSERT INTO story_history "
+                        "(story_id,user_id,field_name,old_value,new_value,created_at) "
+                        "VALUES (?,?,?,?,?,?)",
+                        (story_id, uid, "Status",
+                         old_st["name"] if old_st else str(old),
+                         new_st["name"] if new_st else str(new),
+                         int(time.time())),
+                    )
+                conn.commit()
+                return jsonify(ok=True, status_id=new)
+
+            if op == "set_sprint":
+                new = int(value) if value not in (None, "", 0, "0") else None
+                old = s["sprint"]
+                conn.execute(
+                    "UPDATE stories SET sprint=?, updated_at=? WHERE id=?",
+                    (new, int(time.time()), story_id),
+                )
+                conn.commit()
+                if old != new:
+                    log_story_change(story_id, uid, "Sprint", old, new)
+                return jsonify(ok=True, sprint=new)
+
+            if op == "add_assignee":
+                aid = int(value)
+                conn.execute(
+                    "INSERT OR IGNORE INTO story_users (story_id, user_id) "
+                    "VALUES (?, ?)", (story_id, aid),
+                )
+                conn.commit()
+                log_story_change(story_id, uid, "Assigned", None, _name(aid))
+                if aid != uid:
+                    create_notification(
+                        user_id=aid, type_="assignment",
+                        message=(f"{session['display_name']} assigned you to "
+                                 f"'{s['title'][:50]}'"),
+                        story_id=story_id, from_user=uid,
+                    )
+                assignees = get_story_users(story_id)
+                return jsonify(ok=True, assignees=[
+                    {"id": a["id"], "display_name": a["display_name"],
+                     "avatar": a["avatar"]} for a in assignees])
+
+            if op == "remove_assignee":
+                aid = int(value)
+                conn.execute(
+                    "DELETE FROM story_users WHERE story_id=? AND user_id=?",
+                    (story_id, aid),
+                )
+                conn.commit()
+                log_story_change(story_id, uid, "Unassigned", _name(aid), None)
+                assignees = get_story_users(story_id)
+                return jsonify(ok=True, assignees=[
+                    {"id": a["id"], "display_name": a["display_name"],
+                     "avatar": a["avatar"]} for a in assignees])
+
+            if op == "set_addon_done":
+                v = value or {}
+                aid = int(v.get("addon_id"))
+                want_done = 1 if v.get("is_done") else 0
+                # Confirm addon belongs to this story
+                row = conn.execute(
+                    "SELECT content FROM story_addons WHERE id=? AND story_id=?",
+                    (aid, story_id),
+                ).fetchone()
+                if not row:
+                    return jsonify(ok=False, error="addon not found"), 404
+                toggle_addon(aid, uid, want_done)
+                label = "Subtask done" if want_done else "Subtask reopened"
+                if want_done:
+                    log_story_change(story_id, uid, label, None, row["content"])
+                else:
+                    log_story_change(story_id, uid, label, row["content"], None)
+                return jsonify(ok=True)
+
+            return jsonify(ok=False, error=f"unknown op: {op}"), 400
+        finally:
+            conn.close()
 
     @app.route("/api/story/<int:story_id>", methods=["DELETE"])
     @login_required

@@ -1371,7 +1371,7 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
   white-space: pre-wrap; margin-bottom: 2px;
 }
 .cp-ac {
-  font-size: 10px; color: #D4B896; line-height: 1.5;
+  font-size: 10px; color: #F5E6D3; line-height: 1.5;
   white-space: pre-wrap; margin-top: 2px;
 }
 .cp-tasks-divider { border-top: 1px solid #4A2D12; margin: 6px 0; }
@@ -1465,8 +1465,9 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
   position: fixed; z-index: 12000;
   background: #fff; border: 1.5px solid var(--c-gray-200, #e5e7eb);
   box-shadow: 3px 5px 0 rgba(0,0,0,.16);
-  border-radius: 4px; min-width: 172px; max-width: 320px; padding: 4px 0;
+  border-radius: 4px; min-width: 220px; max-width: 320px; padding: 4px 0;
   font-size: 13px;
+  max-height: 85vh; overflow-y: auto;
 }
 .ctx-item {
   display: block; width: 100%;
@@ -1476,6 +1477,71 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
 }
 .ctx-item:hover { background: #f0f4ff; }
 .ctx-item + .ctx-item { border-top: 1px solid #f0f0f0; }
+
+/* Modify sections */
+.ctx-mod-section { border-top: 1.5px solid #e5e7eb; padding: 6px 10px 8px; }
+.ctx-mod-header {
+  font-size: 10.5px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: #7A6A52;
+  padding: 2px 0 4px;
+}
+.ctx-mod-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.ctx-mod-col { display: flex; flex-direction: column; gap: 2px; }
+.ctx-scroll  { max-height: 180px; overflow-y: auto; padding-right: 2px; }
+
+.ctx-chip {
+  border: 1px solid #d1d5db; background: #fff;
+  border-radius: 3px; padding: 3px 8px; font-size: 12px;
+  cursor: pointer; font-weight: 600; min-width: 28px;
+  color: #1a1a2e;
+}
+.ctx-chip:hover { background: #f0f4ff; }
+.ctx-chip.is-current { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+
+.ctx-pri-vh { color: #fff; background: var(--priority-vh, #b91c1c); border-color: transparent; }
+.ctx-pri-h  { color: #fff; background: var(--priority-h,  #ea580c); border-color: transparent; }
+.ctx-pri-m  { color: #fff; background: var(--priority-m,  #d97706); border-color: transparent; }
+.ctx-pri-l  { color: #fff; background: var(--priority-l,  #65a30d); border-color: transparent; }
+.ctx-pri-vl { color: #fff; background: var(--priority-vl, #6b7280); border-color: transparent; }
+.ctx-pri-clear, .ctx-pt-clear { color: #6b7280; }
+
+.ctx-row-btn {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  border: none; background: none; text-align: left;
+  padding: 5px 6px; border-radius: 3px; cursor: pointer;
+  font-size: 12.5px; color: #1a1a2e;
+}
+.ctx-row-btn:hover { background: #f0f4ff; }
+.ctx-row-btn.is-current { background: #eef2ff; font-weight: 700; }
+.ctx-row-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ctx-color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,.1); }
+
+.ctx-assignee-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 4px; border-radius: 3px;
+}
+.ctx-assignee-row:hover { background: #f8fafc; }
+.ctx-assignee-row.is-assigned { background: #ecfdf5; }
+.ctx-assignee-btn {
+  border: 1px solid #d1d5db; background: #fff;
+  width: 22px; height: 22px; border-radius: 3px;
+  font-weight: 700; cursor: pointer; font-size: 13px; line-height: 1;
+  flex-shrink: 0;
+}
+.ctx-assignee-add:hover    { background: #d1fae5; border-color: #34d399; color: #065f46; }
+.ctx-assignee-remove:hover { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+
+.ctx-mod-danger { display: flex; flex-direction: column; gap: 4px; }
+.ctx-row-btn-warn {
+  background: #fef3c7; color: #92400e; font-weight: 600;
+  justify-content: center;
+}
+.ctx-row-btn-warn:hover { background: #fde68a; }
+.ctx-row-btn-danger {
+  background: #fee2e2; color: #991b1b; font-weight: 700;
+  justify-content: center;
+}
+.ctx-row-btn-danger:hover { background: #fecaca; }
 
 /* Subtasks section inside the right-click menu */
 .ctx-tasks-section { border-top: 1.5px solid #e5e7eb; margin-top: 4px; padding-top: 4px; }
@@ -1898,8 +1964,8 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
 .split-ac-add-btn { margin-top: 4px; margin-bottom: 6px; font-size: 11px; padding: 3px 8px; }
 
 /* Hover popup AC list */
-.cp-ac-list { margin: 2px 0 0 0; padding: 0 0 0 14px; list-style: disc; }
-.cp-ac-list li { font-size: 11px; color: #374151; margin-bottom: 1px; }
+.cp-ac-list { margin: 2px 0 0 0; padding: 0 0 0 14px; list-style: disc; color: #F5E6D3; }
+.cp-ac-list li { font-size: 11px; color: #F5E6D3; margin-bottom: 1px; }
 
 /* ─────────────────────────────────────────────────────────────────────────
    GYRA Sidebar — PIN logo + byline + help button

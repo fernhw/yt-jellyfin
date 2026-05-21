@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Grooming — {{ project.name }} — Gyra{% endblock %}
+{% block title %}Refinement — {{ project.name }} — Gyra{% endblock %}
 
 {% block content %}
 <style>
@@ -160,12 +160,78 @@
     animation:gr-pulse 1.4s infinite;
   }
   @keyframes gr-pulse { 0%,100% {opacity:1;} 50% {opacity:.35;} }
+
+  /* In-grooming edit sections */
+  .gr-edit-section { margin-top:18px; }
+  .gr-edit-h {
+    font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--c-gray-500,#7A6A52); margin-bottom:6px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .gr-chip-row { display:flex; flex-wrap:wrap; gap:6px; }
+  .gr-chip {
+    display:inline-flex; align-items:center; gap:5px; padding:3px 9px;
+    border:1.5px solid var(--c-gray-200,#DDD0B8); border-radius:14px;
+    font-size:12px; background:#fff; cursor:pointer; color:var(--c-gray-700,#3D2E1A);
+  }
+  .gr-chip.is-on { background:var(--c-purple-500,#7C4A1E); color:#fff; border-color:var(--c-purple-700,#4A2D12); }
+  .gr-chip:hover { box-shadow:var(--shadow-sm, 0 1px 3px rgba(0,0,0,.1)); }
+  .gr-chip .gr-chip-avatar {
+    width:18px; height:18px; border-radius:50%; overflow:hidden;
+    background:var(--c-gray-200,#DDD0B8); display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:700; color:var(--c-gray-900,#1A1208);
+  }
+  .gr-chip .gr-chip-avatar img { width:100%; height:100%; object-fit:cover; }
+  .gr-chip.is-on .gr-chip-avatar { background:var(--c-purple-700,#4A2D12); color:#fff; }
+
+  .gr-epic-select {
+    width:100%; max-width:100%; box-sizing:border-box;
+    padding:5px 9px; border:1.5px solid var(--c-gray-200,#DDD0B8);
+    border-radius:5px; font-size:13px; background:#fff; font-family:inherit;
+  }
+
+  .gr-sub-list { display:flex; flex-direction:column; gap:5px; }
+  .gr-sub-row {
+    display:flex; align-items:center; gap:6px; padding:6px 8px;
+    background:var(--c-gray-50,#F9F5EE); border:1.5px solid var(--c-gray-200,#DDD0B8);
+    border-radius:5px;
+  }
+  .gr-sub-row.is-done .gr-sub-text { text-decoration:line-through; color:var(--c-gray-500,#7A6A52); }
+  .gr-sub-cb { flex:0 0 auto; cursor:pointer; }
+  .gr-sub-text {
+    flex:1; min-width:0; padding:3px 6px; border:1px solid transparent;
+    border-radius:4px; background:transparent; font-size:13px;
+    color:var(--c-gray-900,#1A1208); font-family:inherit;
+  }
+  .gr-sub-text:focus { border-color:var(--c-purple-500,#7C4A1E); background:#fff; outline:none; }
+  .gr-sub-assign {
+    padding:3px 5px; border:1.5px solid var(--c-gray-200,#DDD0B8);
+    border-radius:4px; font-size:11px; background:#fff; font-family:inherit;
+    max-width:130px;
+  }
+  .gr-sub-del {
+    flex:0 0 auto; background:transparent; border:none; color:var(--c-gray-500,#7A6A52);
+    cursor:pointer; font-size:16px; padding:0 4px;
+  }
+  .gr-sub-del:hover { color:#DC2626; }
+  .gr-sub-add {
+    display:flex; gap:6px; margin-top:6px;
+  }
+  .gr-sub-add input {
+    flex:1; padding:6px 9px; border:1.5px solid var(--c-gray-200,#DDD0B8);
+    border-radius:5px; font-size:13px; background:#fff; font-family:inherit;
+  }
+  .gr-sub-add button {
+    padding:6px 14px; border:1.5px solid var(--c-purple-500,#7C4A1E);
+    background:var(--c-purple-500,#7C4A1E); color:#fff; border-radius:5px;
+    font-size:12px; font-weight:700; cursor:pointer;
+  }
 </style>
 
 <div class="gr-page">
   <div class="gr-header">
     <span class="project-key-badge">{{ project.key }}</span>
-    <h2>Grooming{% if is_admin %} Central{% endif %}</h2>
+    <h2>Refinement{% if is_admin %} Room{% endif %}</h2>
     <span id="gr-state-pill" class="gr-status-pill s-idle">Idle</span>
     <span style="flex:1"></span>
     <span class="gr-pulse" title="Realtime"></span>
@@ -192,6 +258,13 @@
           <button id="gr-reveal-btn" class="btn btn-primary btn-sm">Reveal</button>
           <button id="gr-clear-btn"  class="btn btn-secondary btn-sm">Clear votes</button>
           <button id="gr-deactivate-btn" class="btn btn-secondary btn-sm">Stop</button>
+        </div>
+      </div>
+
+      <div class="gr-panel-section">
+        <div class="gr-panel-h">Edit active story</div>
+        <div id="gr-admin-edit">
+          <div style="font-size:12px;color:var(--c-gray-500,#7A6A52);text-align:center;padding:10px">No active story</div>
         </div>
       </div>
 
@@ -257,6 +330,12 @@
       headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},
       body:JSON.stringify(b||{})
     }).then(function(r){return r.json();});
+  }
+  function apiFetch(method, p, b){
+    var opt = {method:method, credentials:'same-origin',
+      headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF}};
+    if (b !== undefined) opt.body = JSON.stringify(b);
+    return fetch(p, opt).then(function(r){return r.json();});
   }
 
   // ── State + render ──────────────────────────────────────────────────────
@@ -343,6 +422,160 @@
     });
 
     renderVoters(d);
+  }
+
+  // ── Admin sidebar: Edit active story (epic / assignees / subtasks) ──────
+  function renderAdminEdit(d){
+    if (!IS_ADMIN) return;
+    var el = document.getElementById('gr-admin-edit');
+    if (!el) return;
+    var s = d.story;
+    if (!s) {
+      el.innerHTML = '<div style="font-size:12px;color:var(--c-gray-500,#7A6A52);text-align:center;padding:10px">No active story</div>';
+      return;
+    }
+    // Skip rebuild only if user is actively typing in this panel (avoid stomping input)
+    var ae = document.activeElement;
+    var typing = ae && el.contains(ae) && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT' || ae.isContentEditable);
+    if (typing) return;
+    el.innerHTML = renderEditSections(s, d);
+    wireEditSections(s, d);
+  }
+
+  function renderEditSections(s, d){
+    var members = d.members || [];
+    var epics   = d.epics   || [];
+    var assigned = (s.assignees || []).reduce(function(acc, a){ acc[a.id]=true; return acc; }, {});
+    var html = '';
+
+    // Epic
+    html += '<div class="gr-edit-section">';
+    html += '<div class="gr-edit-h">Epic</div>';
+    html += '<select class="gr-epic-select" id="gr-epic-select">';
+    html += '<option value="">— None —</option>';
+    epics.forEach(function(e){
+      var sel = String(s.epic_id||'') === String(e.id) ? ' selected' : '';
+      html += '<option value="'+e.id+'"'+sel+'>'+esc(e.title||'')+'</option>';
+    });
+    html += '</select>';
+    html += '</div>';
+
+    // Assignees +/−
+    html += '<div class="gr-edit-section">';
+    html += '<div class="gr-edit-h">Assignees <span style="font-weight:500;color:var(--c-gray-500,#7A6A52);text-transform:none;letter-spacing:0">click to toggle</span></div>';
+    html += '<div class="gr-chip-row" id="gr-assignee-chips">';
+    if (!members.length) html += '<span style="font-size:12px;color:var(--c-gray-500,#7A6A52)">No project members</span>';
+    members.forEach(function(m){
+      var on = assigned[m.id];
+      var initials = (m.display_name || '?').slice(0,1).toUpperCase();
+      var av = m.avatar
+        ? '<img src="/static/avatars/'+esc(m.avatar)+'" alt="">'
+        : esc(initials);
+      html += '<button type="button" class="gr-chip ' + (on?'is-on':'') + '" data-uid="'+m.id+'">'
+            + '<span class="gr-chip-avatar">'+av+'</span>'
+            + esc(m.display_name||'') + (on?' ✓':'')
+            + '</button>';
+    });
+    html += '</div></div>';
+
+    // Subtasks
+    var addons = s.addons || [];
+    html += '<div class="gr-edit-section">';
+    html += '<div class="gr-edit-h">Subtasks <span style="font-weight:500;color:var(--c-gray-500,#7A6A52);text-transform:none;letter-spacing:0">('+addons.length+')</span></div>';
+    html += '<div class="gr-sub-list" id="gr-sub-list">';
+    addons.forEach(function(a){
+      var done = a.is_done_by_me ? 'is-done' : '';
+      html += '<div class="gr-sub-row '+done+'" data-aid="'+a.id+'">'
+        + '<input type="checkbox" class="gr-sub-cb"'+(a.is_done_by_me?' checked':'')+'>'
+        + '<input type="text" class="gr-sub-text" value="'+esc(a.content||'')+'">'
+        + '<select class="gr-sub-assign"><option value="">unassigned</option>';
+      members.forEach(function(m){
+        var sel = String(a.assigned_user_id||'') === String(m.id) ? ' selected' : '';
+        html += '<option value="'+m.id+'"'+sel+'>'+esc(m.display_name||'')+'</option>';
+      });
+      html += '</select>'
+        + '<button class="gr-sub-del" title="Delete">×</button>'
+        + '</div>';
+    });
+    html += '</div>';
+    html += '<div class="gr-sub-add">'
+      + '<input type="text" id="gr-sub-new" placeholder="Add a subtask…">'
+      + '<button id="gr-sub-add-btn">+ Add</button>'
+      + '</div>';
+    html += '</div>';
+
+    return html;
+  }
+
+  function wireEditSections(s, d){
+    var sid = s.id;
+    var es = document.getElementById('gr-epic-select');
+    if (es) {
+      es.addEventListener('change', function(){
+        var v = es.value ? parseInt(es.value,10) : null;
+        apiPost('/api/story/'+sid+'/quick-update', {op:'set_epic', value:v}).then(function(r){
+          if (!r.ok) alert('Set epic failed: ' + (r.error||''));
+          poll();
+        });
+      });
+    }
+    document.querySelectorAll('#gr-assignee-chips .gr-chip').forEach(function(b){
+      b.addEventListener('click', function(){
+        var uid = parseInt(b.getAttribute('data-uid'),10);
+        var on  = b.classList.contains('is-on');
+        var op  = on ? 'remove_assignee' : 'add_assignee';
+        apiPost('/api/story/'+sid+'/quick-update', {op:op, value:uid}).then(function(r){
+          if (!r.ok) alert('Assignee change failed: ' + (r.error||''));
+          poll();
+        });
+      });
+    });
+    document.querySelectorAll('#gr-sub-list .gr-sub-row').forEach(function(row){
+      var aid = parseInt(row.getAttribute('data-aid'),10);
+      var cb  = row.querySelector('.gr-sub-cb');
+      var tx  = row.querySelector('.gr-sub-text');
+      var sel = row.querySelector('.gr-sub-assign');
+      var del = row.querySelector('.gr-sub-del');
+      cb.addEventListener('change', function(){
+        apiFetch('PATCH', '/api/addon/'+aid, {is_done: cb.checked})
+          .then(function(r){ if (!r.ok) alert('Toggle failed'); poll(); });
+      });
+      tx.addEventListener('blur', function(){
+        var v = tx.value.trim();
+        if (!v) return;
+        apiFetch('PATCH', '/api/addon/'+aid, {content: v})
+          .then(function(r){ if (!r.ok) alert('Save failed'); poll(); });
+      });
+      tx.addEventListener('keydown', function(ev){
+        if (ev.key === 'Enter') { ev.preventDefault(); tx.blur(); }
+      });
+      sel.addEventListener('change', function(){
+        var v = sel.value ? parseInt(sel.value,10) : null;
+        apiFetch('PATCH', '/api/addon/'+aid, {assigned_user_id: v})
+          .then(function(r){ if (!r.ok) alert('Assign failed'); poll(); });
+      });
+      del.addEventListener('click', function(){
+        if (!confirm('Delete this subtask?')) return;
+        apiFetch('DELETE', '/api/addon/'+aid).then(function(r){
+          if (!r.ok) alert('Delete failed'); poll();
+        });
+      });
+    });
+    var addBtn = document.getElementById('gr-sub-add-btn');
+    var addInp = document.getElementById('gr-sub-new');
+    function doAdd(){
+      var v = (addInp.value||'').trim();
+      if (!v) return;
+      apiPost('/api/story/'+sid+'/addons', {content: v}).then(function(r){
+        if (!r.ok) { alert('Add failed'); return; }
+        addInp.value = '';
+        poll();
+      });
+    }
+    if (addBtn) addBtn.addEventListener('click', doAdd);
+    if (addInp) addInp.addEventListener('keydown', function(ev){
+      if (ev.key === 'Enter') { ev.preventDefault(); doAdd(); }
+    });
   }
 
   function renderVoters(d){
@@ -469,11 +702,31 @@
       var prevActive = lastState && lastState.state ? lastState.state.active_story_id : null;
       var prevRev    = lastState && lastState.state ? lastState.state.revealed : null;
       var prevUpd    = lastState && lastState.state ? lastState.state.updated_at : 0;
+      var prevStory  = lastState && lastState.story;
       var curUpd     = d.state ? d.state.updated_at : 0;
       lastState = d;
 
-      // Only re-render the story card on active-change (avoids stomping voting clicks)
-      if (prevActive !== (d.state && d.state.active_story_id) || prevRev !== (d.state && d.state.revealed)) {
+      // Re-render the story card when active-change OR reveal-change OR the
+      // story's editable payload (addons / assignees / epic) changed remotely.
+      // Skip the rebuild if the user is actively editing inside the story card
+      // so we don't stomp their in-progress input.
+      var newActive = d.state && d.state.active_story_id;
+      var newRev    = d.state && d.state.revealed;
+      var activeChanged = prevActive !== newActive;
+      var revChanged    = prevRev !== newRev;
+      var payloadChanged = false;
+      if (!activeChanged && d.story && prevStory && d.story.id === prevStory.id) {
+        function ids(arr, k){ return (arr||[]).map(function(x){return x[k];}).sort().join(','); }
+        if (ids(d.story.assignees,'id') !== ids(prevStory.assignees,'id')) payloadChanged = true;
+        if (String(d.story.epic_id||'') !== String(prevStory.epic_id||'')) payloadChanged = true;
+        var aSig = function(a){ return (a.id+'|'+(a.content||'')+'|'+(a.assigned_user_id||'')+'|'+(a.is_done_by_me?1:0)); };
+        var sigA = (d.story.addons||[]).map(aSig).join('~');
+        var sigB = (prevStory.addons||[]).map(aSig).join('~');
+        if (sigA !== sigB) payloadChanged = true;
+      }
+      var focusInside = document.activeElement && document.getElementById('gr-story-area') &&
+                        document.getElementById('gr-story-area').contains(document.activeElement);
+      if (activeChanged || revChanged || (payloadChanged && !focusInside)) {
         renderStory(d);
       } else if (curUpd !== prevUpd) {
         renderVoters(d);
@@ -481,6 +734,7 @@
       renderStatePill(d);
       renderQueue(d);
       renderAdminStats(d);
+      renderAdminEdit(d);
     });
   }
   poll();
@@ -547,13 +801,22 @@
       if (ac.trim()) body.acceptance_criteria = ac;
       apiPost('/api/project/'+PID+'/grooming/apply', body).then(function(r){
         if (r.ok) {
-          // Clear fields, deactivate, refresh
+          // Clear fields, then auto-advance to next queue item (or deactivate)
           document.getElementById('gr-apply-points').value = '';
           document.getElementById('gr-apply-priority').value = '';
           document.getElementById('gr-apply-desc').value = '';
           document.getElementById('gr-apply-ac').value = '';
-          apiPost('/api/project/'+PID+'/grooming/active', {story_id: null}).then(function(){
-            poll(); loadEligible();
+          apiGet('/api/project/'+PID+'/grooming/state').then(function(st){
+            var nextQ = (st && st.queue) || [];
+            // Filter out the story we just applied (apply already dequeued it,
+            // but guard against any race)
+            var nextSid = null;
+            for (var i=0; i<nextQ.length; i++) {
+              if (nextQ[i].story_id !== sid) { nextSid = nextQ[i].story_id; break; }
+            }
+            apiPost('/api/project/'+PID+'/grooming/active', {story_id: nextSid}).then(function(){
+              poll(); loadEligible();
+            });
           });
         } else { alert('Apply failed: ' + (r.error || '')); }
       });

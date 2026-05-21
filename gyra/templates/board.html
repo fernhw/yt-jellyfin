@@ -341,11 +341,95 @@
 
 {# ── Right-click context menu ─────────────────────────────────────────────── #}
 <div id="card-ctx-menu" class="card-ctx-menu" style="display:none">
-  <button class="ctx-item" data-action="split">✂ Split Story</button>
   <button class="ctx-item" data-action="open">↗ Open in new tab</button>
+  <button class="ctx-item" data-action="split">✂ Split Story</button>
+
+  <div class="ctx-mod-section">
+    <div class="ctx-mod-header">Priority</div>
+    <div class="ctx-mod-row" id="ctx-priority-row">
+      {% for p in ['VH','H','M','L','VL'] %}
+        <button class="ctx-chip ctx-pri ctx-pri-{{ p|lower }}" data-priority="{{ p }}">{{ p }}</button>
+      {% endfor %}
+      <button class="ctx-chip ctx-pri-clear" data-priority="">×</button>
+    </div>
+  </div>
+
+  <div class="ctx-mod-section">
+    <div class="ctx-mod-header">Story points</div>
+    <div class="ctx-mod-row" id="ctx-points-row">
+      {% for n in [1,2,3,5,8,13,21] %}
+        <button class="ctx-chip ctx-pt" data-points="{{ n }}">{{ n }}</button>
+      {% endfor %}
+      <button class="ctx-chip ctx-pt-clear" data-points="0">×</button>
+    </div>
+  </div>
+
+  <div class="ctx-mod-section">
+    <div class="ctx-mod-header">Status (move card)</div>
+    <div class="ctx-mod-col" id="ctx-status-list">
+      {% for st in statuses %}
+        <button class="ctx-row-btn ctx-status-btn" data-status-id="{{ st.id }}">
+          <span class="ctx-color-dot" style="background:{{ st.color or '#6B7280' }}"></span>
+          <span class="ctx-row-label">{{ st.name }}</span>
+        </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="ctx-mod-section">
+    <div class="ctx-mod-header">Assignees</div>
+    <div class="ctx-mod-col ctx-scroll" id="ctx-assignee-list">
+      {% for u in all_users %}
+        <div class="ctx-assignee-row" data-user-id="{{ u.id }}">
+          {% if u.avatar %}
+            <img src="{{ url_for('avatar', filename=u.avatar) }}" class="avatar-xs">
+          {% else %}
+            <span class="avatar-initial-xs">{{ u.display_name[0]|upper }}</span>
+          {% endif %}
+          <span class="ctx-row-label">{{ u.display_name }}</span>
+          <button class="ctx-assignee-btn ctx-assignee-add"    data-user-id="{{ u.id }}" title="Assign">+</button>
+          <button class="ctx-assignee-btn ctx-assignee-remove" data-user-id="{{ u.id }}" title="Unassign">−</button>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="ctx-mod-section">
+    <div class="ctx-mod-header">Story type</div>
+    <div class="ctx-mod-col" id="ctx-type-list">
+      {% for t in story_types %}
+        <button class="ctx-row-btn ctx-type-btn" data-type-id="{{ t.id }}">
+          <span class="ctx-color-dot" style="background:{{ t.color or '#6B7280' }}"></span>
+          <span class="ctx-row-label">{{ t.name }}</span>
+        </button>
+      {% endfor %}
+      <button class="ctx-row-btn ctx-type-btn" data-type-id=""><span class="ctx-color-dot" style="background:#e5e7eb"></span><span class="ctx-row-label">— None —</span></button>
+    </div>
+  </div>
+
+  <div class="ctx-mod-section">
+    <div class="ctx-mod-header">Epic</div>
+    <div class="ctx-mod-col ctx-scroll" id="ctx-epic-list">
+      <button class="ctx-row-btn ctx-epic-btn" data-epic-id=""><span class="ctx-color-dot" style="background:#e5e7eb"></span><span class="ctx-row-label">— None —</span></button>
+      {% for e in epics %}
+        <button class="ctx-row-btn ctx-epic-btn" data-epic-id="{{ e.id }}">
+          <span class="ctx-color-dot" style="background:{{ e.color or '#6B7280' }}"></span>
+          <span class="ctx-row-label">{{ e.title }}</span>
+        </button>
+      {% endfor %}
+    </div>
+  </div>
+
   <div class="ctx-tasks-section" id="ctx-tasks-section" style="display:none">
     <div class="ctx-tasks-header" id="ctx-tasks-header">Subtasks</div>
     <div class="ctx-tasks-list" id="ctx-tasks-list"></div>
+  </div>
+
+  <div class="ctx-mod-section ctx-mod-danger">
+    <button class="ctx-row-btn ctx-row-btn-warn" data-action="remove-sprint">⊖ Remove from sprint</button>
+    {% if session.role in ('admin', 'super_user') %}
+      <button class="ctx-row-btn ctx-row-btn-danger" data-action="delete">🗑 Delete story</button>
+    {% endif %}
   </div>
 </div>
 
@@ -1257,6 +1341,7 @@
       // Keep inside viewport
       ctxMenu.style.display = 'block';
       loadCtxTasks(card.dataset.storyId);
+      syncCtxState(card);
       if (x + ctxMenu.offsetWidth  + 4 > window.innerWidth)  x = x - ctxMenu.offsetWidth;
       if (y + ctxMenu.offsetHeight + 4 > window.innerHeight) y = y - ctxMenu.offsetHeight;
       ctxMenu.style.left = Math.max(4, x) + 'px';
@@ -1338,23 +1423,237 @@
     ctxMenu.style.top  = y + 'px';
   }
 
-  document.addEventListener('click', function () { ctxMenu.style.display = 'none'; });
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('#card-ctx-menu')) return;
+    ctxMenu.style.display = 'none';
+  });
   document.addEventListener('contextmenu', function (e) {
     if (!e.target.closest('.board-card')) ctxMenu.style.display = 'none';
   });
 
+  // ── Sync "current" highlights on menu open ───────────────────────────────
+  function syncCtxState(card) {
+    var pri = (card.querySelector('.card-tape') || {}).textContent || '';
+    pri = pri.trim();
+    ctxMenu.querySelectorAll('.ctx-pri').forEach(function(b){
+      b.classList.toggle('is-current', b.dataset.priority === pri);
+    });
+    ctxMenu.querySelector('.ctx-pri-clear').classList.toggle('is-current', !pri);
+
+    var ptsEl = card.querySelector('.card-points');
+    var pts = ptsEl ? parseInt(ptsEl.textContent, 10) || 0 : 0;
+    ctxMenu.querySelectorAll('.ctx-pt').forEach(function(b){
+      b.classList.toggle('is-current', parseInt(b.dataset.points, 10) === pts);
+    });
+    ctxMenu.querySelector('.ctx-pt-clear').classList.toggle('is-current', !pts);
+
+    // Status: derive from parent column
+    var col = card.closest('[data-status-id]');
+    var sid = col ? col.getAttribute('data-status-id') : '';
+    ctxMenu.querySelectorAll('.ctx-status-btn').forEach(function(b){
+      b.classList.toggle('is-current', b.dataset.statusId === sid);
+    });
+
+    var assignedIds = (card.dataset.assigneeIds || '').split(',').filter(Boolean);
+    ctxMenu.querySelectorAll('.ctx-assignee-row').forEach(function(r){
+      r.classList.toggle('is-assigned', assignedIds.indexOf(r.dataset.userId) >= 0);
+    });
+
+    var typeBadge = card.querySelector('.card-type-badge');
+    var typeName  = typeBadge ? typeBadge.textContent.trim() : '';
+    ctxMenu.querySelectorAll('.ctx-type-btn').forEach(function(b){
+      var lbl = (b.querySelector('.ctx-row-label') || {}).textContent || '';
+      b.classList.toggle('is-current', lbl.trim() === typeName);
+    });
+
+    var epId = card.dataset.epicId || '';
+    ctxMenu.querySelectorAll('.ctx-epic-btn').forEach(function(b){
+      b.classList.toggle('is-current', (b.dataset.epicId || '') === epId);
+    });
+  }
+
+  function quickUpdate(storyId, op, value) {
+    return fetch(appRoot + '/api/story/' + storyId + '/quick-update', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+      body: JSON.stringify({ op: op, value: value })
+    }).then(function(r){
+      if (!r.ok) return r.json().catch(function(){return{};}).then(function(j){
+        throw new Error(j.error || ('HTTP ' + r.status));
+      });
+      return r.json();
+    });
+  }
+
+  function currentCard() {
+    var sid = ctxMenu.dataset.storyId;
+    return document.querySelector('.board-card[data-story-id="' + sid + '"]');
+  }
+
   // ── Context menu actions ─────────────────────────────────────────────────
   ctxMenu.addEventListener('click', function (e) {
-    var btn = e.target.closest('.ctx-item');
-    if (!btn) return;
-    var action  = btn.dataset.action;
     var storyId = ctxMenu.dataset.storyId;
-    ctxMenu.style.display = 'none';
+    if (!storyId) return;
 
-    if (action === 'open' && ctxMenu.dataset.href) {
-      openStoryModal(ctxMenu.dataset.href);
-    } else if (action === 'split') {
-      openSplitModal(storyId);
+    // Open / Split
+    var item = e.target.closest('.ctx-item');
+    if (item) {
+      var action = item.dataset.action;
+      ctxMenu.style.display = 'none';
+      if (action === 'open' && ctxMenu.dataset.href) openStoryModal(ctxMenu.dataset.href);
+      else if (action === 'split') openSplitModal(storyId);
+      return;
+    }
+
+    // Danger zone
+    var danger = e.target.closest('[data-action]');
+    if (danger && danger.dataset.action === 'remove-sprint') {
+      if (!confirm('Remove this story from the current sprint?')) return;
+      quickUpdate(storyId, 'set_sprint', null).then(function(){
+        ctxMenu.style.display = 'none';
+        location.reload();
+      }).catch(function(err){ alert('Failed: ' + err.message); });
+      return;
+    }
+    if (danger && danger.dataset.action === 'delete') {
+      if (!confirm('Permanently delete this story? This cannot be undone.')) return;
+      fetch(appRoot + '/api/story/' + storyId, {
+        method: 'DELETE', credentials: 'same-origin',
+        headers: { 'X-CSRF-Token': csrf }
+      }).then(function(r){
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        ctxMenu.style.display = 'none';
+        var card = currentCard();
+        if (card) card.remove();
+      }).catch(function(err){ alert('Delete failed: ' + err.message); });
+      return;
+    }
+
+    // Priority chip
+    var pri = e.target.closest('.ctx-pri, .ctx-pri-clear');
+    if (pri) {
+      var val = pri.dataset.priority;
+      quickUpdate(storyId, 'set_priority', val).then(function(){
+        var card = currentCard(); if (!card) return;
+        var old = card.querySelector('.card-tape'); if (old) old.remove();
+        if (val) {
+          var tape = document.createElement('div');
+          tape.className = 'card-tape card-tape-' + val.toLowerCase();
+          tape.textContent = val;
+          card.insertBefore(tape, card.firstChild);
+        }
+        syncCtxState(card);
+      }).catch(function(err){ alert('Failed: ' + err.message); });
+      return;
+    }
+
+    // Points chip
+    var pt = e.target.closest('.ctx-pt, .ctx-pt-clear');
+    if (pt) {
+      var n = parseInt(pt.dataset.points, 10) || 0;
+      quickUpdate(storyId, 'set_points', n).then(function(){
+        var card = currentCard(); if (!card) return;
+        var footer = card.querySelector('.card-footer');
+        var ptsEl  = card.querySelector('.card-points');
+        if (n) {
+          if (!ptsEl && footer) {
+            ptsEl = document.createElement('span');
+            ptsEl.className = 'card-points';
+            footer.insertBefore(ptsEl, footer.firstChild);
+          }
+          if (ptsEl) ptsEl.textContent = n + 'pt';
+        } else if (ptsEl) { ptsEl.remove(); }
+        syncCtxState(card);
+      }).catch(function(err){ alert('Failed: ' + err.message); });
+      return;
+    }
+
+    // Status — physically move the card to that column
+    var stBtn = e.target.closest('.ctx-status-btn');
+    if (stBtn) {
+      var newSid = stBtn.dataset.statusId;
+      quickUpdate(storyId, 'set_status', parseInt(newSid, 10)).then(function(){
+        var card = currentCard();
+        var dest = document.querySelector('.board-column[data-status-id="' + newSid + '"] .col-stack')
+                || document.querySelector('[data-status-id="' + newSid + '"]');
+        if (card && dest && !dest.contains(card)) dest.appendChild(card);
+        ctxMenu.style.display = 'none';
+      }).catch(function(err){ alert('Failed: ' + err.message); });
+      return;
+    }
+
+    // Assignee +/-
+    var addBtn = e.target.closest('.ctx-assignee-add');
+    var rmBtn  = e.target.closest('.ctx-assignee-remove');
+    if (addBtn || rmBtn) {
+      var op  = addBtn ? 'add_assignee' : 'remove_assignee';
+      var uid = (addBtn || rmBtn).dataset.userId;
+      quickUpdate(storyId, op, parseInt(uid, 10)).then(function(resp){
+        var card = currentCard(); if (!card) return;
+        var ids = (resp.assignees || []).map(function(a){ return a.id; });
+        card.dataset.assigneeIds = ids.join(',');
+        // Rebuild avatar row
+        var oldRow = card.querySelector('.card-assignees');
+        if (oldRow) oldRow.remove();
+        if (resp.assignees && resp.assignees.length) {
+          var footer = card.querySelector('.card-footer');
+          if (footer) {
+            var row = document.createElement('div');
+            row.className = 'card-assignees';
+            resp.assignees.forEach(function(a){
+              if (a.avatar) {
+                row.insertAdjacentHTML('beforeend',
+                  '<img src="' + appRoot + '/avatars/' + a.avatar + '" class="avatar-xs" title="' + escCtx(a.display_name) + '">');
+              } else {
+                row.insertAdjacentHTML('beforeend',
+                  '<span class="avatar-initial-xs" title="' + escCtx(a.display_name) + '">' + escCtx(a.display_name[0].toUpperCase()) + '</span>');
+              }
+            });
+            footer.appendChild(row);
+          }
+        }
+        syncCtxState(card);
+      }).catch(function(err){ alert('Failed: ' + err.message); });
+      return;
+    }
+
+    // Story type
+    var tyBtn = e.target.closest('.ctx-type-btn');
+    if (tyBtn) {
+      var tid = tyBtn.dataset.typeId || null;
+      var newLabel = (tyBtn.querySelector('.ctx-row-label') || {}).textContent || '';
+      var newColor = (tyBtn.querySelector('.ctx-color-dot') || {}).style.background || '';
+      quickUpdate(storyId, 'set_type', tid ? parseInt(tid, 10) : null).then(function(){
+        var card = currentCard(); if (!card) return;
+        var badge = card.querySelector('.card-type-badge');
+        if (tid && newLabel.indexOf('— None —') < 0) {
+          if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'card-type-badge';
+            var idEl = card.querySelector('.card-id');
+            card.insertBefore(badge, idEl || card.firstChild);
+          }
+          badge.textContent = newLabel.trim();
+          if (newColor) {
+            card.style.setProperty('--card-accent', newColor);
+          }
+        } else if (badge) {
+          badge.remove();
+        }
+        syncCtxState(card);
+      }).catch(function(err){ alert('Failed: ' + err.message); });
+      return;
+    }
+
+    // Epic
+    var epBtn = e.target.closest('.ctx-epic-btn');
+    if (epBtn) {
+      var eid = epBtn.dataset.epicId || null;
+      quickUpdate(storyId, 'set_epic', eid ? parseInt(eid, 10) : null).then(function(){
+        var card = currentCard(); if (card) card.dataset.epicId = eid || '';
+        syncCtxState(card);
+      }).catch(function(err){ alert('Failed: ' + err.message); });
+      return;
     }
   });
 

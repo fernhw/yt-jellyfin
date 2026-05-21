@@ -2,17 +2,19 @@
 
 ## What to Watch — 2026-05-21
 
-> *Good morning! Here's what landed on Thursday, May 21, 2026 at 11:44 AM.*
-> **YT Mirror:** 535.12 GB used · 1.18 TB free
+> *Good afternoon! Here's what landed on Thursday, May 21, 2026 at 03:14 PM.*
+> **YT Mirror:** 532.78 GB used · 1.18 TB free
 
 ### Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **mixtape is a CANCER..** — *FLEEKAZOID* · downloaded 03:07 PM · not podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **DOA: Cyberpower Pre-Built Gaming PC Doesn't Even Turn On | Review, Thermals, & Benchmarks** — *Gamers Nexus* · downloaded 03:11 PM · not podcastable
+- **He called me out. It instantly backfired..** — *Asmongold TV* · downloaded 03:08 PM · not podcastable
 - **Can We Actually Make Exotic Weapons... Exotic? | Semi-Ramblomatic** — *Second Wind* · downloaded 11:38 AM · podcastable
 - **Nobody thought this would ever happen..** — *Asmongold TV* · downloaded 11:38 AM · not podcastable
 - **Even more ambitious than we thought - Assassin's Creed Black Flag Resynced (Hands-On Impressions)** — *Skill Up* · downloaded 11:36 AM · not podcastable

@@ -19,7 +19,8 @@ import time
 from flask import abort, jsonify, render_template, request, session
 
 from auth import enforce_csrf, login_required
-from db import (get_db, get_project, get_story_users, user_in_project)
+from db import (get_db, get_epics, get_project, get_project_members,
+                get_story_addons, get_story_users, user_in_project)
 from routes.helpers import bold_verb_in_title
 
 
@@ -67,13 +68,15 @@ def _get_state(conn, project_id: int):
     return dict(row)
 
 
-def _serialize_story(conn, story_id: int):
+def _serialize_story(conn, story_id: int, current_user_id: int = None):
     if not story_id:
         return None
     s = conn.execute(
-        """SELECT s.*, st.name AS status_name, st.color AS status_color
+        """SELECT s.*, st.name AS status_name, st.color AS status_color,
+                  e.title AS epic_title, e.color AS epic_color
            FROM stories s
            LEFT JOIN statuses st ON st.id = s.status_id
+           LEFT JOIN epics    e  ON e.id  = s.epic_id
            WHERE s.id=?""",
         (story_id,),
     ).fetchone()
@@ -82,6 +85,7 @@ def _serialize_story(conn, story_id: int):
     d = dict(s)
     d["html_title"]   = bold_verb_in_title(d.get("title") or "", d.get("story_z") or "")
     d["assignees"]    = [dict(u) for u in get_story_users(story_id)]
+    d["addons"]       = [dict(a) for a in get_story_addons(story_id, current_user_id)]
     img_rows = conn.execute(
         "SELECT id, filename FROM story_images WHERE story_id=? ORDER BY id",
         (story_id,),
@@ -124,7 +128,7 @@ def register(app) -> None:
         conn  = get_db()
         state = _get_state(conn, project_id)
         active_id = state["active_story_id"]
-        story = _serialize_story(conn, active_id) if active_id else None
+        story = _serialize_story(conn, active_id, session["user_id"]) if active_id else None
 
         # Queue (with brief story info)
         q_rows = conn.execute(
@@ -190,6 +194,12 @@ def register(app) -> None:
         avg     = round(sum(numeric)/len(numeric), 2) if numeric else None
         fib_avg = _fib_round(avg) if avg is not None else None
 
+        # Project members (for assignee +/−) and epics (for epic picker)
+        members = [{"id": m["id"], "display_name": m["display_name"], "avatar": m["avatar"]}
+                   for m in get_project_members(project_id)]
+        epics   = [{"id": e["id"], "title": e["title"], "color": e["color"]}
+                   for e in get_epics(project_id)]
+
         conn.close()
         my_vote = voted_map.get(session["user_id"])
         return jsonify(
@@ -200,12 +210,14 @@ def register(app) -> None:
             story=story,
             queue=queue,
             voters=voter_states,
+            members=members,
+            epics=epics,
             my_vote=(my_vote["vote"] if my_vote else None),
             stats={
                 "votes_cast":  len(votes_rows),
                 "total_voters": len(voters),
-                "average":      avg,
-                "fib_average":  fib_avg,
+                "average":      avg if revealed else None,
+                "fib_average":  fib_avg if revealed else None,
             },
             fib_scale=FIB_SCALE,
         )
