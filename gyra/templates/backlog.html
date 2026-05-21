@@ -16,9 +16,10 @@
 </div>
 
 {% if stories %}
-<div class="backlog-list">
+<div class="backlog-list" id="backlog-list">
   {% for story in stories %}
-  <div class="backlog-row" data-story-id="{{ story.id }}">
+  <div class="backlog-row" data-story-id="{{ story.id }}" data-order-index="{{ story.order_index }}" draggable="true">
+    <span class="bl-drag-handle" title="Drag to reorder">⠿</span>
     <span class="bl-id">{{ project.key }}-{{ story.id }}</span>
     <a class="bl-title" href="{{ url_for('story_view', story_id=story.id) }}">
       {{ story.title }}
@@ -65,18 +66,86 @@
 
 {% block scripts %}
 <script>
-const CSRF = document.querySelector('meta[name="csrf-token"]').content;
-document.querySelectorAll('.move-to-sprint').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const storyId = btn.dataset.storyId;
-    const sprint  = parseInt(btn.dataset.sprint, 10);
-    const res = await fetch(`/api/story/${storyId}/sprint`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json','X-CSRF-Token': CSRF},
-      body: JSON.stringify({ sprint }),
+(function () {
+  var CSRF = (document.querySelector('meta[name="csrf-token"]') || {content: ''}).content;
+  var ROOT = (document.querySelector('meta[name="app-root"]') || {getAttribute: function(){return '';}}).getAttribute('content') || '';
+
+  // ── Move-to-sprint buttons ───────────────────────────────────────────────
+  document.querySelectorAll('.move-to-sprint').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var storyId = btn.dataset.storyId;
+      var sprint  = parseInt(btn.dataset.sprint, 10);
+      fetch(ROOT + '/api/story/' + storyId + '/sprint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+        body: JSON.stringify({ sprint: sprint }),
+      }).then(function (r) { if (r.ok) btn.closest('.backlog-row').remove(); });
     });
-    if (res.ok) btn.closest('.backlog-row').remove();
   });
-});
+
+  // ── Drag-to-reorder ──────────────────────────────────────────────────────
+  var list    = document.getElementById('backlog-list');
+  if (!list) return;
+  var draggingRow = null;
+
+  list.addEventListener('dragstart', function (e) {
+    var row = e.target.closest('.backlog-row');
+    if (!row) return;
+    draggingRow = row;
+    row.classList.add('bl-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', row.dataset.storyId);
+  });
+
+  list.addEventListener('dragend', function () {
+    if (draggingRow) draggingRow.classList.remove('bl-dragging');
+    draggingRow = null;
+    list.querySelectorAll('.bl-drag-over').forEach(function (r) { r.classList.remove('bl-drag-over'); });
+  });
+
+  list.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    var row = e.target.closest('.backlog-row');
+    list.querySelectorAll('.bl-drag-over').forEach(function (r) { r.classList.remove('bl-drag-over'); });
+    if (row && row !== draggingRow) row.classList.add('bl-drag-over');
+  });
+
+  list.addEventListener('dragleave', function (e) {
+    if (!list.contains(e.relatedTarget)) {
+      list.querySelectorAll('.bl-drag-over').forEach(function (r) { r.classList.remove('bl-drag-over'); });
+    }
+  });
+
+  list.addEventListener('drop', function (e) {
+    e.preventDefault();
+    var target = e.target.closest('.backlog-row');
+    if (!target || !draggingRow || target === draggingRow) return;
+    target.classList.remove('bl-drag-over');
+
+    // Insert draggingRow before or after target depending on mouse position
+    var rect = target.getBoundingClientRect();
+    var mid  = rect.top + rect.height / 2;
+    if (e.clientY < mid) {
+      list.insertBefore(draggingRow, target);
+    } else {
+      list.insertBefore(draggingRow, target.nextSibling);
+    }
+
+    saveOrder();
+  });
+
+  function saveOrder() {
+    var rows  = Array.from(list.querySelectorAll('.backlog-row'));
+    var items = rows.map(function (r, i) {
+      return { id: parseInt(r.dataset.storyId, 10), order_index: i, subcol_index: 0 };
+    });
+    fetch(ROOT + '/api/stories/reorder', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+      body:    JSON.stringify({ items: items }),
+    });
+  }
+}());
 </script>
 {% endblock %}

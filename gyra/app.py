@@ -252,7 +252,9 @@ def setup_totp(token):
 @app.route("/")
 @login_required
 def index():
-    projects = get_projects()
+    uid  = session["user_id"]
+    role = session.get("role")
+    projects = get_projects() if role == "admin" else get_user_projects(uid)
     if projects:
         return redirect(url_for("board", project_id=projects[0]["id"]))
     return render_template("no_project.html")
@@ -264,6 +266,8 @@ def board(project_id):
     project = get_project(project_id)
     if not project:
         abort(404)
+    if session.get("role") != "admin" and not user_in_project(session["user_id"], project_id):
+        abort(403)
 
     statuses = get_statuses(project_id)
 
@@ -308,6 +312,16 @@ def board(project_id):
     all_sprints  = get_all_sprints(project_id)
     story_types  = get_story_types(project_id)
 
+    seen_uids = set()
+    board_assignees = []
+    for s in stories:
+        for a in s.get("assignees", []):
+            uid = a["id"]
+            if uid not in seen_uids:
+                seen_uids.add(uid)
+                board_assignees.append(dict(a))
+    board_assignees.sort(key=lambda x: x.get("display_name", ""))
+
     return render_template(
         "board.html",
         project=project,
@@ -318,6 +332,7 @@ def board(project_id):
         all_users=all_users,
         all_sprints=all_sprints,
         story_types=story_types,
+        board_assignees=board_assignees,
     )
 
 
@@ -327,6 +342,8 @@ def backlog(project_id):
     project = get_project(project_id)
     if not project:
         abort(404)
+    if session.get("role") != "admin" and not user_in_project(session["user_id"], project_id):
+        abort(403)
 
     raw_stories = get_backlog_stories(project_id)
     stories     = []
@@ -479,6 +496,8 @@ def story_view(story_id):
     s = get_story(story_id)
     if not s:
         abort(404)
+    if session.get("role") != "admin" and not user_in_project(session["user_id"], s["project_id"]):
+        abort(403)
 
     if request.method == "POST":
         enforce_csrf()
@@ -920,6 +939,11 @@ def admin_create_project():
                 "INSERT INTO statuses (project_id,name,color,order_index,is_done) VALUES (?,?,?,?,?)",
                 (project_id, sname, color, idx, is_done),
             )
+        # Auto-add creator as first member
+        conn.execute(
+            "INSERT OR IGNORE INTO project_members (project_id, user_id, added_by, added_at) VALUES (?,?,?,?)",
+            (project_id, session["user_id"], session["user_id"], int(time.time())),
+        )
         conn.commit()
         conn.close()
         flash(f"Project {key} created.", "success")
@@ -1324,10 +1348,16 @@ def api_board_full_state(project_id):
     """
     conn = get_db()
     stories = conn.execute(
-        """SELECT id, status_id, order_index, subcol_index
-           FROM stories
-           WHERE project_id=? AND sprint IS NOT NULL
-           ORDER BY order_index""",
+        """SELECT s.id, s.status_id, s.order_index, s.subcol_index,
+                  s.title, s.story_z, s.priority, s.story_points, s.updated_at,
+                  sty.name  AS story_type_name,
+                  sty.color AS story_type_color,
+                  (SELECT si.filename FROM story_images si
+                   WHERE si.story_id = s.id ORDER BY si.id LIMIT 1) AS thumbnail
+           FROM stories s
+           LEFT JOIN story_types sty ON s.story_type = sty.id
+           WHERE s.project_id=? AND s.sprint IS NOT NULL
+           ORDER BY s.order_index""",
         (project_id,),
     ).fetchall()
     stickers = conn.execute(
@@ -1339,9 +1369,28 @@ def api_board_full_state(project_id):
            WHERE s.project_id=?""",
         (project_id,),
     ).fetchall()
+    # Assignees per story (single query)
+    story_ids = [r["id"] for r in stories]
+    assignees_by_story: dict = {}
+    if story_ids:
+        ph = ",".join("?" * len(story_ids))
+        for a in conn.execute(
+            f"SELECT su.story_id, u.display_name, u.avatar FROM story_users su"
+            f" JOIN users u ON su.user_id=u.id WHERE su.story_id IN ({ph})",
+            story_ids,
+        ).fetchall():
+            assignees_by_story.setdefault(a["story_id"], []).append(
+                {"display_name": a["display_name"], "avatar": a["avatar"]}
+            )
     conn.close()
+    result = []
+    for r in stories:
+        d = dict(r)
+        d["html_title"] = str(_bold_verb_in_title(r["title"], r["story_z"] or ""))
+        d["assignees"]  = assignees_by_story.get(r["id"], [])
+        result.append(d)
     return jsonify(
-        stories=[dict(r) for r in stories],
+        stories=result,
         stickers=[dict(r) for r in stickers],
     )
 
@@ -1618,6 +1667,7 @@ def api_update_story(story_id):
             )
     updated_s         = get_story(story_id)
     updated_assignees = get_story_users(story_id)
+    _thumbs           = get_story_thumbnails([story_id])
     return jsonify(
         ok=True,
         story_id=story_id,
@@ -1628,6 +1678,7 @@ def api_update_story(story_id):
         priority=updated_s["priority"] or "",
         story_points=updated_s["story_points"] or 0,
         status_id=updated_s["status_id"],
+        thumbnail=_thumbs.get(story_id),
         assignees=[
             {"id": a["id"], "display_name": a["display_name"], "avatar": a["avatar"]}
             for a in updated_assignees
@@ -1950,6 +2001,42 @@ def admin_backup():
     shutil.copy2(db_path, bak_path)
     return send_from_directory("/tmp", bak_name, as_attachment=True,
                                download_name=bak_name)
+
+
+# ── WIP placeholder pages ─────────────────────────────────────────────────────
+
+def _wip_view(project_id: int, feature: str):
+    """Shared handler for not-yet-built project feature pages."""
+    project = get_project(project_id)
+    if not project:
+        abort(404)
+    if session.get("role") != "admin" and not user_in_project(session["user_id"], project_id):
+        abort(403)
+    return render_template("wip.html", project=project, feature=feature)
+
+
+@app.route("/project/<int:project_id>/grooming")
+@login_required
+def grooming(project_id):
+    return _wip_view(project_id, "Grooming")
+
+
+@app.route("/project/<int:project_id>/standup")
+@login_required
+def standup(project_id):
+    return _wip_view(project_id, "Daily Standup")
+
+
+@app.route("/project/<int:project_id>/dailies")
+@login_required
+def dailies(project_id):
+    return _wip_view(project_id, "Dailies")
+
+
+@app.route("/project/<int:project_id>/retro")
+@login_required
+def retro(project_id):
+    return _wip_view(project_id, "Retro")
 
 
 # ── Entry-point ───────────────────────────────────────────────────────────────

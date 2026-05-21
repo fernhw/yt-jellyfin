@@ -80,6 +80,51 @@
       </label>
       <button type="submit" class="btn btn-xs btn-secondary">+ Add column</button>
     </form>
+
+    {# ── Members ────────────────────────────────────────────────────────── #}
+    <hr class="section-divider mt-4 mb-3">
+    <p class="form-hint mb-2">Members — users who can see and access this project</p>
+
+    <div class="member-chips" id="members-{{ p.id }}">
+      {% for m in p.members %}
+      <span class="member-chip">
+        {% if m.avatar %}
+          <img src="{{ m.avatar }}" class="member-chip-avatar" alt="">
+        {% else %}
+          <span class="member-chip-initials">{{ m.display_name[:2]|upper }}</span>
+        {% endif %}
+        <span class="member-chip-name">{{ m.display_name }}</span>
+        <form method="post"
+              action="{{ url_for('admin_remove_project_member', project_id=p.id) }}"
+              style="display:inline;margin:0">
+          <input type="hidden" name="_csrf"    value="{{ csrf_token() }}">
+          <input type="hidden" name="user_id"  value="{{ m.id }}">
+          <button type="submit" class="member-chip-remove"
+                  title="Remove {{ m.display_name }}"
+                  onclick="return confirm('Remove {{ m.display_name }} from this project?')">×</button>
+        </form>
+      </span>
+      {% else %}
+      <span class="form-hint">No members yet.</span>
+      {% endfor %}
+    </div>
+
+    {# Add-member picker — only show users not already a member #}
+    {% set member_ids = p.members | map(attribute='id') | list %}
+    <form method="post"
+          action="{{ url_for('admin_add_project_member', project_id=p.id) }}"
+          class="form-inline mt-2">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <select name="user_id" class="form-input form-input-sm" required>
+        <option value="" disabled selected>Add user…</option>
+        {% for u in all_users %}
+          {% if u.id not in member_ids %}
+          <option value="{{ u.id }}">{{ u.display_name }} ({{ u.username }})</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-xs btn-secondary">+ Add</button>
+    </form>
   </div>
 </div>
 {% else %}
@@ -115,6 +160,31 @@
 .status-del-btn:hover { color: #f87171; }
 .btn-danger { background: #8B1A1A !important; color: #FFCACA !important; border: none !important; }
 .btn-danger:hover { background: #B91C1C !important; color: #fff !important; }
+
+/* Member chips */
+.section-divider { border: none; border-top: 1px solid var(--c-purple-800); }
+.member-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.member-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--c-purple-900); border: 1.5px solid var(--c-purple-700);
+  border-radius: 20px; padding: 3px 6px 3px 4px;
+  font-size: 12px; font-weight: 600; color: var(--c-purple-100);
+}
+.member-chip-avatar {
+  width: 20px; height: 20px; border-radius: 50%; object-fit: cover;
+}
+.member-chip-initials {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--c-purple-700); color: var(--c-purple-200);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; flex-shrink: 0;
+}
+.member-chip-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-chip-remove {
+  background: none; border: none; color: var(--c-purple-500);
+  cursor: pointer; font-size: 15px; font-weight: 900; line-height: 1; padding: 0 2px;
+}
+.member-chip-remove:hover { color: #f87171; }
 </style>
 <script>
 (function () {

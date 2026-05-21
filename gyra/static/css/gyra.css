@@ -115,6 +115,10 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 .sidebar-link:hover { background: var(--c-purple-800); text-decoration: none; color: #fff; }
 .sidebar-link.active { background: var(--c-purple-700); color: #fff; font-weight: 600; }
 .sidebar-link.active svg { opacity: 1; }
+.sidebar-link-sm { padding: 4px 16px 4px 32px; font-size: 12px; color: var(--c-purple-400); }
+.sidebar-link-sm svg { width: 13px; height: 13px; }
+.sidebar-link-sm:hover { color: var(--c-purple-100); }
+.sidebar-link-sm.active { color: #fff; background: var(--c-purple-700); }
 .sidebar-footer { padding: 8px 0 0; border-top: 1px solid var(--c-purple-800); margin-top: 8px; }
 .admin-link { color: #C4956A; }
 
@@ -738,6 +742,31 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
   box-shadow: 0 2px 6px rgba(0,0,0,.3);
 }
 
+/* ── Board assignee filter bar ── */
+.board-filter-bar {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 7px 16px; background: #fff;
+  border-bottom: 1px solid var(--c-gray-200);
+}
+.board-filter-label {
+  font-size: 11px; font-weight: 700; letter-spacing: .5px;
+  text-transform: uppercase; color: var(--c-gray-500); margin-right: 2px;
+}
+.board-filter-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px;
+  border: 1.5px solid var(--c-gray-200);
+  background: #fff; cursor: pointer; font-size: 12px; font-weight: 600;
+  color: var(--c-gray-700); transition: border-color .12s, background .12s, color .12s;
+}
+.board-filter-btn:hover { border-color: var(--c-purple-400); color: var(--c-purple-400); }
+.board-filter-btn.is-active {
+  background: var(--c-purple-500); color: #fff; border-color: var(--c-purple-500);
+}
+.board-filter-btn.is-active .avatar-initial-xs { background: rgba(255,255,255,.25); color: #fff; }
+.board-filter-name { font-size: 11px; }
+.board-card.card-filtered { opacity: .12; pointer-events: none; }
+
 /* ── Backlog ── */
 .backlog-list { display: flex; flex-direction: column; gap: 2px; }
 .backlog-row {
@@ -746,6 +775,13 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
   padding: 10px 14px; transition: background .1s;
 }
 .backlog-row:hover { background: var(--c-gray-50); }
+.backlog-row.bl-dragging { opacity: .4; }
+.backlog-row.bl-drag-over { border-color: var(--c-purple-400); background: var(--c-purple-100); }
+.bl-drag-handle {
+  cursor: grab; color: var(--c-gray-300); font-size: 16px; line-height: 1;
+  user-select: none; padding: 0 2px; flex-shrink: 0;
+}
+.bl-drag-handle:active { cursor: grabbing; }
 .bl-id    { font-size: 11px; font-weight: 700; color: var(--c-gray-500); min-width: 60px; }
 .bl-title { flex: 1; font-weight: 600; font-size: 13px; color: var(--c-gray-900); }
 .bl-assignees { display: flex; gap: 4px; }

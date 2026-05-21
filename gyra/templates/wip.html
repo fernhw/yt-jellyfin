@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ feature }} — {{ project.name }} — Gyra{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h2>{{ feature }}</h2>
+    <span class="form-hint">{{ project.key }} · {{ project.name }}</span>
+  </div>
+</div>
+
+<div class="wip-container">
+  <div class="wip-icon">🚧</div>
+  <h3 class="wip-title">Coming Soon</h3>
+  <p class="wip-body">
+    <strong>{{ feature }}</strong> is planned but not yet built.<br>
+    This page is a placeholder so you never forget it exists.
+  </p>
+  <div class="wip-back">
+    <a href="{{ url_for('board', project_id=project.id) }}" class="btn btn-secondary">← Board</a>
+    <a href="{{ url_for('backlog', project_id=project.id) }}" class="btn btn-secondary">Backlog</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.wip-container {
+  max-width: 480px;
+  margin: 80px auto;
+  text-align: center;
+  padding: 48px 32px;
+  background: var(--c-purple-900);
+  border: 1.5px solid var(--c-purple-700);
+  border-radius: 12px;
+}
+.wip-icon  { font-size: 48px; margin-bottom: 16px; line-height: 1; }
+.wip-title { font-size: 22px; font-weight: 700; color: var(--c-purple-100); margin: 0 0 10px; }
+.wip-body  { color: var(--c-purple-300); line-height: 1.6; margin: 0 0 28px; }
+.wip-back  { display: flex; gap: 10px; justify-content: center; }
+</style>
+{% endblock %}

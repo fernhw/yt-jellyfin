@@ -84,6 +84,7 @@
       if (isMulti) {
         const otherSelected = selectedCards.filter(c => c !== dragCard);
         const affectedCols  = new Set([col]);
+        if (sourceCol && sourceCol !== col) affectedCols.add(sourceCol);
         otherSelected.forEach(c => {
           const oc = c.closest('.board-column');
           if (oc) affectedCols.add(oc);
@@ -111,7 +112,7 @@
           }),
         })
         .then(r => { if (!r.ok) throw new Error('API error ' + r.status); })
-        .then(() => { affectedCols.forEach(saveColOrder); })
+        .then(() => { affectedCols.forEach(saveColOrder); clearSelection(); })
         .catch(() => {
           if (prevParent) {
             if (prevSibling) prevParent.insertBefore(dragCard, prevSibling);
