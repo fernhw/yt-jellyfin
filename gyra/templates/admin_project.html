@@ -338,9 +338,15 @@ function toggleAvatarPicker(pid) {
   var open = drop.style.display !== 'none';
   document.querySelectorAll('.avatar-picker-dropdown').forEach(function(d){ d.style.display='none'; });
   if (!open) {
-    var r = btn.getBoundingClientRect();
-    drop.style.top  = (r.bottom + 4) + 'px';
+    var r        = btn.getBoundingClientRect();
+    var dropH    = 224; // max-height + a little padding
+    var spaceBelow = window.innerHeight - r.bottom;
     drop.style.left = r.left + 'px';
+    if (spaceBelow < dropH && r.top > dropH) {
+      drop.style.top = (r.top - dropH) + 'px';  // open upward
+    } else {
+      drop.style.top = (r.bottom + 4) + 'px';   // open downward
+    }
     drop.style.display = 'block';
   }
 }

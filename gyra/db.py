@@ -429,8 +429,7 @@ _DEFAULT_TYPES = [
     ("Feature",     "#7C3AED", 1),
     ("Task",        "#3B82F6", 2),
     ("Improvement", "#10B981", 3),
-    ("Epic",        "#F59E0B", 4),
-    ("Chore",       "#6B7280", 5),
+    ("Chore",       "#6B7280", 4),
 ]
 
 

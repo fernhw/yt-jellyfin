@@ -11,11 +11,6 @@
     <span class="project-key-badge">{{ project.key }}</span>
     <h2>Active Sprint</h2>
     <button class="btn btn-sm btn-secondary" id="epics-panel-btn" title="View sprint epics and their stories">◈ Sprint Epics</button>
-    <label class="show-epics-toggle" title="Show Epic-type story cards on board">
-      <input type="checkbox" id="show-epics-cb">
-      <span class="tog-track"><span class="tog-thumb"></span></span>
-      <span class="tog-lbl">Show Epics</span>
-    </label>
   </div>
   <div class="page-header-right" style="display:flex;gap:8px;align-items:center">
     <!-- Zoom controls -->
@@ -2149,30 +2144,6 @@
 
 <script>
 (function () {
-  /* ── Show Epics toggle ───────────────────────────────────────── */
-  var board   = document.getElementById('board');
-  var showCb  = document.getElementById('show-epics-cb');
-  var STORE   = 'gyra_show_epics';
-
-  function applyShowEpics(on) {
-    if (on) {
-      board.classList.remove('hide-epics');
-    } else {
-      board.classList.add('hide-epics');
-    }
-  }
-
-  // Restore from localStorage (default: OFF)
-  var stored = localStorage.getItem(STORE);
-  var initOn = stored === '1';
-  showCb.checked = initOn;
-  applyShowEpics(initOn);
-
-  showCb.addEventListener('change', function () {
-    localStorage.setItem(STORE, this.checked ? '1' : '0');
-    applyShowEpics(this.checked);
-  });
-
   /* ── Epics side panel ────────────────────────────────────────── */
   var panel      = document.getElementById('epics-panel');
   var panelBtn   = document.getElementById('epics-panel-btn');
