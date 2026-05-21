@@ -19,12 +19,7 @@
     </div>
     {% endif %}
 
-    {% if request.args.get('modal') and mode == 'view' %}
-    <button type="button" class="story-modal-close-btn"
-            onclick="if(window.parent && window.parent.closeStoryModal) window.parent.closeStoryModal();">
-      ✕ Close
-    </button>
-    {% endif %}
+
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -69,7 +64,8 @@
 
     <form method="post"
           action="{{ url_for('story_view', story_id=story.id) if mode == 'view' else url_for('story_new') }}{% if request.args.get('modal') %}{% if mode == 'view' %}?modal=1{% else %}?modal=1{% endif %}{% endif %}"
-          id="story-form">
+          id="story-form"
+          {% if mode == 'new' %}enctype="multipart/form-data"{% endif %}>
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
       <input type="hidden" name="action" value="{{ 'update' if mode == 'view' else 'create' }}">
       {% if mode == 'new' %}
@@ -110,24 +106,8 @@
           <div class="sb-field-wrap">
             <input name="story_z" type="text" class="sb-input sb-verb-input" id="sb-z"
                    placeholder="Verb (e.g. Walking)"
-                   list="verb-suggestions"
                    value="{{ story.story_z if story and story.story_z else '' }}"
                    required autocomplete="off">
-            <datalist id="verb-suggestions">
-              {% for v in ['Accessing','Adding','Allowing','Browsing','Building','Checking',
-                           'Choosing','Clicking','Completing','Configuring','Connecting',
-                           'Creating','Deleting','Deploying','Downloading','Editing',
-                           'Exporting','Filtering','Finding','Generating','Implementing',
-                           'Importing','Integrating','Launching','Loading','Logging',
-                           'Managing','Monitoring','Navigating','Ordering','Processing',
-                           'Reading','Running','Saving','Searching','Selecting','Setting',
-                           'Sharing','Submitting','Switching','Testing','Tracking',
-                           'Uploading','Using','Validating','Verifying','Viewing',
-                           'Walking','Writing'] %}
-              <option value="{{ v }}">
-              {% endfor %}
-            </datalist>
-            <span class="sb-hint">gerund verb</span>
           </div>
 
           <input name="story_x" type="text" class="sb-input sb-x-input" id="sb-x"
@@ -171,6 +151,30 @@
                   placeholder="Given / When / Then…">{{ story.acceptance_criteria if story else '' }}</textarea>
       </div>
 
+      {% if mode == 'new' %}
+      <div class="story-tasks-section mt-4">
+        <div class="tasks-header"><h3>Tasks</h3></div>
+        <div id="new-tasks-list" class="tasks-list"></div>
+        <div class="task-add-row">
+          <input type="text" id="new-task-input" class="form-input"
+                 placeholder="Add a task…" style="flex:1;font-size:12px;" autocomplete="off">
+          <button type="button" id="new-task-add-btn" class="btn btn-secondary btn-sm">Add</button>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if mode == 'new' %}
+      <div class="form-group">
+        <label>Attach Images</label>
+        <label class="img-upload-label">
+          <input type="file" name="images" accept=".png,.jpg,.jpeg,.webp" multiple
+                 style="display:none">
+          + Attach images
+        </label>
+        <div id="new-img-preview" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;"></div>
+      </div>
+      {% endif %}
+
       <div class="story-actions">
         <button type="submit" class="btn btn-primary">
           {{ 'Save changes' if mode == 'view' else 'Create story' }}
@@ -184,7 +188,7 @@
 
     {% if mode == 'view' %}
     <form id="delete-form" method="post"
-          action="{{ url_for('story_view', story_id=story.id) }}">
+          action="{{ url_for('story_view', story_id=story.id) }}{% if request.args.get('modal') %}?modal=1{% endif %}">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
       <input type="hidden" name="action" value="delete">
     </form>
@@ -423,7 +427,7 @@
             {% endif %}
             {% endfor %}
           </select>
-          <button type="button" class="btn btn-secondary btn-sm assignee-add-btn" id="assignee-add-btn">+ Add</button>
+
         </div>
       </div>
     </div>
@@ -453,11 +457,49 @@
 
 {% block scripts %}
 <script>
+{% if mode == 'new' %}
+(function () {
+  var inp = document.querySelector('input[name="images"]');
+  var preview = document.getElementById('new-img-preview');
+  if (!inp || !preview) return;
+  inp.addEventListener('change', function () {
+    preview.innerHTML = '';
+    Array.from(inp.files).forEach(function (file) {
+      var url = URL.createObjectURL(file);
+      var img = document.createElement('img');
+      img.src = url; img.style.cssText = 'height:64px;width:64px;object-fit:cover;border-radius:3px;border:1px solid #ccc;';
+      preview.appendChild(img);
+    });
+  });
+
+  // ── New story task list ────────────────────────────────────────────────────
+  var _taskInp  = document.getElementById('new-task-input');
+  var _taskList = document.getElementById('new-tasks-list');
+  var _taskBtn  = document.getElementById('new-task-add-btn');
+  function addNewTask() {
+    var val = _taskInp ? _taskInp.value.trim() : '';
+    if (!val || !_taskList) return;
+    var item = document.createElement('div');
+    item.className = 'task-item';
+    item.innerHTML =
+      '<span class="task-content">' + val.replace(/</g,'&lt;') + '</span>' +
+      '<input type="hidden" name="new_task" value="' + val.replace(/"/g,'&quot;') + '" form="story-form">' +
+      '<button type="button" class="task-del" title="Remove">\u2715</button>';
+    item.querySelector('.task-del').addEventListener('click', function() { item.remove(); });
+    _taskList.appendChild(item);
+    _taskInp.value = '';
+    _taskInp.focus();
+  }
+  if (_taskBtn) _taskBtn.addEventListener('click', addNewTask);
+  if (_taskInp) _taskInp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); addNewTask(); }
+  });
+}());
+{% endif %}
 (function() {
   // ── Assignee pill picker ───────────────────────────────────────────────────
   var _pills  = document.getElementById('assignee-pills');
   var _addSel = document.getElementById('assignee-add-sel');
-  var _addBtn = document.getElementById('assignee-add-btn');
 
   function addAssignee() {
     if (!_addSel || !_pills) return;
@@ -503,10 +545,7 @@
     pill.remove();
   }
 
-  if (_addBtn)  _addBtn.addEventListener('click', addAssignee);
-  if (_addSel)  _addSel.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); addAssignee(); }
-  });
+  if (_addSel)  _addSel.addEventListener('change', function () { addAssignee(); });
   // Wire remove buttons for server-rendered pills
   if (_pills) {
     _pills.querySelectorAll('.assignee-pill').forEach(function (pill) {
@@ -810,4 +849,45 @@
   window._taskEnableDrag = enableDrag;
 }());
 </script>
+
+{% if request.args.get('modal') and mode == 'view' %}
+<script>
+// ── Modal AJAX: intercept save/delete so the board can update in-place ────────
+(function () {
+  var CSRF    = (document.querySelector('meta[name="csrf-token"]') || {content:''}).content;
+  var storyId = {{ story.id }};
+
+  function modalPost(form) {
+    var fd = new FormData(form);
+    fetch(form.action, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'modal', 'X-CSRF-Token': CSRF },
+      body: fd,
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.ok) { alert(d.error || 'Error saving'); return; }
+      if (window.parent && window.parent.closeStoryModal) {
+        window.parent.closeStoryModal({ storyId: storyId, action: d.action });
+      }
+    }).catch(function (err) { alert('Error: ' + err); });
+  }
+
+  var storyForm  = document.getElementById('story-form');
+  var deleteForm = document.getElementById('delete-form');
+
+  if (storyForm) {
+    storyForm.addEventListener('submit', function (e) {
+      if (e.defaultPrevented) return; // client-side validation already blocked it
+      e.preventDefault();
+      modalPost(storyForm);
+    });
+  }
+  if (deleteForm) {
+    deleteForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      modalPost(deleteForm);
+    });
+  }
+}());
+</script>
+{% endif %}
 {% endblock %}

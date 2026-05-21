@@ -2,17 +2,19 @@
 
 ## What to Watch — 2026-05-20
 
-> *Good evening! Here's what landed on Wednesday, May 20, 2026 at 08:05 PM.*
-> **YT Mirror:** 536.41 GB used · 1.18 TB free
+> *Good evening! Here's what landed on Wednesday, May 20, 2026 at 09:07 PM.*
+> **YT Mirror:** 537.18 GB used · 1.18 TB free
 
 ### Priority Videos
 
+- **What Happened to Subaru? | Re:ZERO Season 4 Episode 7 Reaction/Analysis** — *Echidnut* · downloaded 09:04 PM · not podcastable
 - **Forza Horizon 6 vs Samson** — *videogamedunkey* · downloaded 03:05 PM · not podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **Google Search is Truly Dead** — *TechLinked* · downloaded 09:06 PM · podcastable
 - **Death by Nostalgia** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
 - **Elon's ex is out of her mind..** — *Asmongold TV* · downloaded 05:05 PM · not podcastable
 - **Ranking THE BEST Spring 2026 Anime Openings** — *Garnt* · downloaded 05:05 PM · not podcastable

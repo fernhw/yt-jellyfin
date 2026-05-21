@@ -415,6 +415,29 @@ def story_new():
         conn.commit()
         conn.close()
 
+        # Process any attached images
+        for f in request.files.getlist("images"):
+            if f and f.filename and _allowed_image(f.filename):
+                ext      = secure_filename(f.filename).rsplit(".", 1)[1].lower()
+                filename = f"{uuid.uuid4().hex}.{ext}"
+                filepath = os.path.join(Config.STORY_IMAGES_FOLDER, filename)
+                img = Image.open(f.stream)
+                img.thumbnail((900, 900), Image.LANCZOS)
+                img.save(filepath, quality=88)
+                conn2 = get_db()
+                conn2.execute(
+                    "INSERT INTO story_images (story_id,filename,created_at) VALUES (?,?,?)",
+                    (story_id, filename, int(time.time())),
+                )
+                conn2.commit()
+                conn2.close()
+
+        # Process new tasks
+        for task_text in request.form.getlist("new_task"):
+            task_text = task_text.strip()
+            if task_text:
+                create_addon(story_id, task_text, None, session["user_id"])
+
         flash("Story created.", "success")
         if sprint:
             return redirect(url_for("board", project_id=project_id))
@@ -459,6 +482,7 @@ def story_view(story_id):
 
     if request.method == "POST":
         enforce_csrf()
+        is_modal = bool(request.args.get('modal'))
         action = request.form.get("action")
 
         if action == "update":
@@ -471,11 +495,15 @@ def story_view(story_id):
             title    = _build_story_title(actor, verb, z, x, for_conn, y)
 
             if z and " " in z.strip():
+                if is_modal:
+                    return jsonify(ok=False, error="The action word must be a single word (e.g. Walking, Killing, Building).")
                 flash("The action word must be a single word (e.g. Walking, Killing, Building).", "error")
                 return redirect(url_for("story_view", story_id=story_id))
 
             word_count = _count_words(actor, verb, z, x, for_conn, y)
             if word_count > 19:
+                if is_modal:
+                    return jsonify(ok=False, error=f"Story is {word_count} words — max 19.")
                 flash(f"Story is {word_count} words — max 19.", "error")
                 return redirect(url_for("story_view", story_id=story_id))
 
@@ -535,6 +563,8 @@ def story_view(story_id):
                     )
 
             flash("Story updated.", "success")
+            if is_modal:
+                return jsonify(ok=True, action='update', story_id=story_id)
             pid = s["project_id"]
             if sprint:
                 return redirect(url_for("board", project_id=pid))
@@ -587,6 +617,8 @@ def story_view(story_id):
             conn.commit()
             conn.close()
             flash("Story deleted.", "success")
+            if is_modal:
+                return jsonify(ok=True, action='delete', story_id=story_id)
             return redirect(url_for("backlog", project_id=project_id))
 
         if action == "upload_image":
@@ -1449,6 +1481,254 @@ def api_bulk_sprint():
     conn.commit()
     conn.close()
     return jsonify(ok=True)
+
+
+@app.route("/api/story/<int:story_id>/card")
+@login_required
+def api_story_card(story_id):
+    """Return card-level data so the board can update a card in-place after modal edit."""
+    s = get_story(story_id)
+    if not s:
+        return jsonify(ok=False), 404
+    assignees = get_story_users(story_id)
+    html_title = str(_bold_verb_in_title(s["title"], s["story_z"] or ""))
+    return jsonify(
+        ok=True,
+        story_id=story_id,
+        html_title=html_title,
+        story_type_name=s["story_type_name"] or "",
+        story_type_color=s["story_type_color"] or "",
+        priority=s["priority"] or "",
+        story_points=s["story_points"] or 0,
+        status_id=s["status_id"],
+        assignees=[
+            {"id": a["id"], "display_name": a["display_name"], "avatar": a["avatar"]}
+            for a in assignees
+        ],
+    )
+
+
+@app.route("/api/story/<int:story_id>/full")
+@login_required
+def api_story_full(story_id):
+    s = get_story(story_id)
+    if not s:
+        return jsonify(ok=False), 404
+    assignees   = get_story_users(story_id)
+    images      = get_story_images(story_id)
+    addons      = get_story_addons(story_id, session["user_id"])
+    history     = get_story_history(story_id)
+    statuses    = get_statuses(s["project_id"])
+    all_users   = get_all_active_users()
+    story_types = get_story_types(s["project_id"])
+    epics       = get_epics(s["project_id"])
+    conn = get_db()
+    comments = conn.execute(
+        """SELECT c.*, u.display_name, u.avatar FROM comments c
+           JOIN users u ON c.user_id = u.id
+           WHERE c.story_id = ? ORDER BY c.created_at""",
+        (story_id,),
+    ).fetchall()
+    conn.close()
+    return jsonify(
+        ok=True,
+        story=dict(s),
+        html_title=str(_bold_verb_in_title(s["title"], s["story_z"] or "")),
+        assignees=[dict(a) for a in assignees],
+        images=[{"id": img["id"], "url": url_for("story_image", filename=img["filename"])} for img in images],
+
+        addons=[dict(a) for a in addons],
+        comments=[dict(c) for c in comments],
+        history=[dict(h) for h in history],
+        statuses=[dict(st) for st in statuses],
+        all_users=[dict(u) for u in all_users],
+        story_types=[dict(t) for t in story_types],
+        epics=[dict(e) for e in epics],
+        creator_name=s["creator_name"] or "",
+    )
+
+
+@app.route("/api/story/<int:story_id>", methods=["PATCH"])
+@login_required
+def api_update_story(story_id):
+    enforce_csrf()
+    s = get_story(story_id)
+    if not s:
+        return jsonify(ok=False), 404
+    data     = request.get_json(silent=True) or {}
+    actor    = (data.get("story_actor") or "User").strip()
+    verb     = (data.get("story_verb") or "needs").strip()
+    z        = (data.get("story_z") or "").strip()
+    x        = (data.get("story_x") or "").strip()
+    for_conn = (data.get("story_for") or "to").strip()
+    y        = (data.get("story_y") or "").strip()
+    if z and " " in z:
+        return jsonify(ok=False, error="The action word must be a single word."), 400
+    title      = _build_story_title(actor, verb, z, x, for_conn, y)
+    word_count = _count_words(actor, verb, z, x, for_conn, y)
+    if word_count > 19:
+        return jsonify(ok=False, error=f"Story is {word_count} words — max 19."), 400
+    desc       = (data.get("description") or "").strip()
+    ac         = (data.get("acceptance_criteria") or "").strip()
+    points     = int(data.get("story_points") or 0)
+    status_id  = data.get("status_id") or None
+    if status_id:  status_id  = int(status_id)
+    sprint     = data.get("sprint") or None
+    if sprint:     sprint     = int(sprint)
+    assignees  = [int(i) for i in (data.get("assignee_ids") or [])]
+    story_type = data.get("story_type") or None
+    if story_type: story_type = int(story_type)
+    priority   = (data.get("priority") or "").strip() or None
+    epic_id    = data.get("epic_id") or None
+    if epic_id:    epic_id    = int(epic_id)
+    old = dict(s)
+    old_assignee_ids = {a["id"] for a in get_story_users(story_id)}
+    conn = get_db()
+    conn.execute(
+        """UPDATE stories SET title=?,description=?,acceptance_criteria=?,
+           story_points=?,status_id=?,sprint=?,updated_at=?,
+           story_actor=?,story_verb=?,story_z=?,story_x=?,story_for=?,story_y=?,
+           story_type=?,priority=?,epic_id=? WHERE id=?""",
+        (title, desc, ac, points, status_id, sprint, int(time.time()),
+         actor, verb, z, x, for_conn, y, story_type, priority, epic_id, story_id),
+    )
+    conn.execute("DELETE FROM story_users WHERE story_id=?", (story_id,))
+    for uid in assignees:
+        conn.execute(
+            "INSERT OR IGNORE INTO story_users (story_id, user_id) VALUES (?,?)",
+            (story_id, uid),
+        )
+    conn.commit()
+    conn.close()
+    uid = session["user_id"]
+    log_story_change(story_id, uid, "Status",   old.get("status_id"),    status_id)
+    log_story_change(story_id, uid, "Sprint",   old.get("sprint"),        sprint)
+    log_story_change(story_id, uid, "Priority", old.get("priority"),      priority)
+    log_story_change(story_id, uid, "Points",   old.get("story_points"),  points)
+    log_story_change(story_id, uid, "Epic",     old.get("epic_id"),       epic_id)
+    if old.get("title") != title:
+        log_story_change(story_id, uid, "Title", old.get("title"), title)
+    new_assignee_ids = set(assignees)
+    for newly_assigned_id in (new_assignee_ids - old_assignee_ids):
+        if newly_assigned_id != uid:
+            create_notification(
+                user_id=newly_assigned_id, type_="assignment",
+                message=f"{session['display_name']} assigned you to '{s['title'][:50]}'",
+                story_id=story_id, from_user=uid,
+            )
+    updated_s         = get_story(story_id)
+    updated_assignees = get_story_users(story_id)
+    return jsonify(
+        ok=True,
+        story_id=story_id,
+        html_title=str(_bold_verb_in_title(updated_s["title"], updated_s["story_z"] or "")),
+        title=updated_s["title"],
+        story_type_name=updated_s["story_type_name"] or "",
+        story_type_color=updated_s["story_type_color"] or "",
+        priority=updated_s["priority"] or "",
+        story_points=updated_s["story_points"] or 0,
+        status_id=updated_s["status_id"],
+        assignees=[
+            {"id": a["id"], "display_name": a["display_name"], "avatar": a["avatar"]}
+            for a in updated_assignees
+        ],
+    )
+
+
+@app.route("/api/story/<int:story_id>", methods=["DELETE"])
+@login_required
+def api_delete_story(story_id):
+    enforce_csrf()
+    s = get_story(story_id)
+    if not s:
+        return jsonify(ok=False), 404
+    if session["role"] != "admin" and s["created_by"] != session["user_id"]:
+        return jsonify(ok=False, error="Not authorized"), 403
+    conn = get_db()
+    conn.execute("DELETE FROM stories WHERE id=?", (story_id,))
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True, story_id=story_id)
+
+
+@app.route("/api/story/<int:story_id>/image", methods=["POST"])
+@login_required
+def api_upload_story_image(story_id):
+    enforce_csrf()
+    s = get_story(story_id)
+    if not s:
+        return jsonify(ok=False), 404
+    f = request.files.get("image")
+    if not f or not f.filename or not _allowed_image(f.filename):
+        return jsonify(ok=False, error="Invalid file"), 400
+    ext      = secure_filename(f.filename).rsplit(".", 1)[1].lower()
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    filepath = os.path.join(Config.STORY_IMAGES_FOLDER, filename)
+    img = Image.open(f.stream)
+    img.thumbnail((900, 900), Image.LANCZOS)
+    img.save(filepath, quality=88)
+    conn = get_db()
+    cur = conn.execute(
+        "INSERT INTO story_images (story_id, filename, created_at) VALUES (?,?,?)",
+        (story_id, filename, int(time.time())),
+    )
+    image_id = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return jsonify(ok=True, id=image_id, url=url_for("story_image", filename=filename))
+
+
+@app.route("/api/story/<int:story_id>/image/<int:image_id>", methods=["DELETE"])
+@login_required
+def api_delete_story_image(story_id, image_id):
+    enforce_csrf()
+    conn = get_db()
+    row = conn.execute(
+        "SELECT * FROM story_images WHERE id=? AND story_id=?", (image_id, story_id)
+    ).fetchone()
+    if row:
+        fp = os.path.join(Config.STORY_IMAGES_FOLDER, row["filename"])
+        if os.path.isfile(fp):
+            os.remove(fp)
+        conn.execute("DELETE FROM story_images WHERE id=?", (image_id,))
+        conn.commit()
+    conn.close()
+    return jsonify(ok=True)
+
+
+@app.route("/api/story/<int:story_id>/comment", methods=["POST"])
+@login_required
+def api_create_comment(story_id):
+    enforce_csrf()
+    s = get_story(story_id)
+    if not s:
+        return jsonify(ok=False), 404
+    data    = request.get_json(silent=True) or {}
+    content = (data.get("content") or "").strip()
+    if not content:
+        return jsonify(ok=False, error="Content required"), 400
+    conn = get_db()
+    cur  = conn.execute(
+        "INSERT INTO comments (story_id, user_id, content, created_at) VALUES (?,?,?,?)",
+        (story_id, session["user_id"], content, int(time.time())),
+    )
+    cid = cur.lastrowid
+    conn.commit()
+    row = conn.execute(
+        """SELECT c.*, u.display_name, u.avatar FROM comments c
+           JOIN users u ON c.user_id = u.id WHERE c.id=?""",
+        (cid,),
+    ).fetchone()
+    conn.close()
+    commenter = session["user_id"]
+    for assignee in get_story_users(story_id):
+        if assignee["id"] != commenter:
+            create_notification(
+                user_id=assignee["id"], type_="comment",
+                message=f"{session['display_name']} commented on '{s['title'][:50]}'",
+                story_id=story_id, from_user=commenter,
+            )
+    return jsonify(ok=True, comment=dict(row))
 
 
 @app.route("/api/stories/bulk-type", methods=["POST"])
