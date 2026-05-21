@@ -7,6 +7,7 @@ import os
 
 from flask import Flask, session
 from markupsafe import Markup, escape
+from PIL import Image
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from auth import get_csrf_token
@@ -14,6 +15,10 @@ from config import Config
 from db import (get_db, get_projects, get_unread_count,
                 get_user_projects, init_db)
 from routes import register_all
+
+# F1: cap Pillow decode pixel count to mitigate decompression bombs.
+# 50 MP comfortably covers a 8000×6000 photo but blocks crafted huge canvases.
+Image.MAX_IMAGE_PIXELS = 50_000_000
 
 # ── App factory ───────────────────────────────────────────────────────────────
 
@@ -54,12 +59,28 @@ def bootstrap():
 
 @app.after_request
 def set_no_cache(response):
-    """Prevent caching of HTML pages that contain CSRF tokens."""
-    if response.content_type and response.content_type.startswith("text/html"):
+    """Prevent caching of HTML pages that contain CSRF tokens, and add
+    baseline security headers on every response (G1)."""
+    ct = response.content_type or ""
+    if ct.startswith("text/html"):
         response.headers["Cache-Control"] = (
             "no-store, no-cache, must-revalidate, max-age=0"
         )
         response.headers["Pragma"] = "no-cache"
+    # G2: JSON API responses should not be cached by intermediaries either.
+    elif ct.startswith("application/json"):
+        response.headers.setdefault("Cache-Control", "no-store, private")
+
+    # G1: baseline security headers (safe, non-breaking — no CSP).
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "same-origin")
+    if Config.SESSION_COOKIE_SECURE:
+        # Only advertise HSTS when we actually expect HTTPS.
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains",
+        )
     return response
 
 # ── Register all route modules ────────────────────────────────────────────────
@@ -70,4 +91,4 @@ register_all(app)
 
 if __name__ == "__main__":
     init_db()
-    app.run(debug=False, host="127.0.0.1", port=5000)
+    app.run(debug=False, host="127.0.0.1", port=5050)

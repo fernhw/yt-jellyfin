@@ -6,6 +6,14 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="app-root" content="{{ request.script_root }}">
   <title>{% block title %}Gyra{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="mask-icon" href="{{ url_for('static', filename='favicon.svg') }}" color="#A0632A">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <meta name="theme-color" content="#A0632A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GYRA">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}">
   {% block head %}{% endblock %}
 </head>
@@ -15,15 +23,24 @@
 <div class="layout">
   <!-- ── Sidebar ── -->
   <aside class="sidebar">
-    <a class="sidebar-brand" href="{{ url_for('index') }}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/>
-        <line x1="12" y1="2"  x2="12" y2="22"/>
-        <line x1="2"  y1="8.5"  x2="22" y2="8.5"/>
-        <line x1="2"  y1="15.5" x2="22" y2="15.5"/>
-      </svg>
-      <span>GYRA</span>
-    </a>
+    <div class="sidebar-brand-wrap">
+      <a class="sidebar-brand" href="{{ url_for('index') }}">
+        <svg class="sidebar-pin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Pin needle (angled) -->
+          <line x1="13" y1="13" x2="21" y2="21" stroke="#7C4A1E" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- Pushpin head -->
+          <circle cx="9" cy="9" r="7" fill="#A0632A"/>
+          <!-- Head depth -->
+          <circle cx="9" cy="9" r="4.5" fill="#8A5220" opacity="0.4"/>
+          <!-- Glare -->
+          <ellipse cx="6.5" cy="6.5" rx="2.5" ry="1.8" fill="#D4A060" opacity="0.65" transform="rotate(-20 6.5 6.5)"/>
+          <!-- Center hole -->
+          <circle cx="9" cy="9" r="1.5" fill="#5C3010" opacity="0.7"/>
+        </svg>
+        <span>GYRA</span>
+      </a>
+      <a class="sidebar-byline" href="https://studiohighground.com" target="_blank" rel="noopener noreferrer">by High Ground</a>
+    </div>
 
     <nav class="sidebar-nav">
       {% for p in projects %}
@@ -92,14 +109,17 @@
       </a>
       {% endif %}
 
-      <a class="sidebar-link user-link" href="{{ url_for('profile') }}">
-        {% if session.avatar %}
-          <img src="{{ url_for('avatar', filename=session.avatar) }}" class="avatar-xs" alt="">
-        {% else %}
-          <span class="avatar-initial-xs">{{ session.display_name[0]|upper }}</span>
-        {% endif %}
-        <span>{{ session.display_name }}</span>
-      </a>
+      <div class="sidebar-user-row">
+        <a class="sidebar-link user-link" href="{{ url_for('profile') }}">
+          {% if session.avatar %}
+            <img src="{{ url_for('avatar', filename=session.avatar) }}" class="avatar-xs" alt="">
+          {% else %}
+            <span class="avatar-initial-xs">{{ session.display_name[0]|upper }}</span>
+          {% endif %}
+          <span>{{ session.display_name }}</span>
+        </a>
+        <button class="sidebar-help-btn" id="gyra-help-open" title="GYRA Guide — Scrum for Indies" aria-label="Open GYRA Guide">?</button>
+      </div>
 
       <a class="sidebar-link" href="{{ url_for('logout') }}">
         <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V5h10v10H4a1 1 0 100 2h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm9.293 4.293a1 1 0 011.414 1.414L12.414 10l1.293 1.293a1 1 0 01-1.414 1.414l-2-2a1 1 0 010-1.414l2-2z" clip-rule="evenodd"/></svg>
@@ -127,6 +147,209 @@
   </main>
 </div>
 
+  <!-- ── GYRA Guide / Tutorial Modal ── -->
+  <div id="gyra-help-overlay" class="gyra-help-overlay" role="dialog" aria-modal="true" aria-labelledby="gyra-help-title" style="display:none">
+    <div class="gyra-help-dialog">
+
+      <!-- Header -->
+      <div class="gyra-help-hdr">
+        <div class="gyra-help-hdr-left">
+          <svg class="gyra-help-pin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Pin needle (angled) -->
+            <line x1="13" y1="13" x2="21" y2="21" stroke="#7C4A1E" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- Pushpin head -->
+            <circle cx="9" cy="9" r="7" fill="#A0632A"/>
+            <!-- Head depth -->
+            <circle cx="9" cy="9" r="4.5" fill="#8A5220" opacity="0.4"/>
+            <!-- Glare -->
+            <ellipse cx="6.5" cy="6.5" rx="2.5" ry="1.8" fill="#D4A060" opacity="0.65" transform="rotate(-20 6.5 6.5)"/>
+            <!-- Center hole -->
+            <circle cx="9" cy="9" r="1.5" fill="#5C3010" opacity="0.7"/>
+          </svg>
+          <div>
+            <h2 class="gyra-help-title" id="gyra-help-title">GYRA Guide</h2>
+            <p class="gyra-help-sub">Scrum for Indies &mdash; from zero to shipped</p>
+          </div>
+        </div>
+        <button class="gyra-help-close" id="gyra-help-close" aria-label="Close guide">&times;</button>
+      </div>
+
+      <!-- Body -->
+      <div class="gyra-help-body">
+        <nav class="gyra-help-nav" aria-label="Tutorial sections">
+          <a href="#gh-gyra">What is GYRA?</a>
+          <a href="#gh-scrum">What is Scrum?</a>
+          <a href="#gh-stories">User Stories</a>
+          <a href="#gh-points">Story Points</a>
+          <a href="#gh-poker">Planning Poker</a>
+          <a href="#gh-iterate">Why Iterate?</a>
+          <a href="#gh-multi">Multiple Assignees</a>
+          <a href="#gh-roles">Role-Less Design</a>
+          <a href="#gh-board">The Board</a>
+        </nav>
+
+        <article class="gyra-help-article">
+
+          <section id="gh-gyra">
+            <h3>What is GYRA?</h3>
+            <p>GYRA is a free Scrum board built for indie developers, small studios, and solo creators. Think of it as <strong>Jira's dark mirror</strong> &mdash; the same structural power, none of the corporate bloat, none of the pricing tiers.</p>
+            <p>If you've never used a project management tool before: welcome. You're about to see why Scrum changed how software gets made. GYRA was designed specifically to make that framework accessible to people working outside of enterprise teams &mdash; meaning you can run a real sprint without needing a Product Owner, a Scrum Master certificate, or a $50/seat/month subscription.</p>
+            <div class="gh-callout">
+              <strong>GYRA is free for Indies.</strong> Made by <a href="https://studiohighground.com" target="_blank" rel="noopener">High Ground</a> because good tools shouldn't require an enterprise budget.
+            </div>
+          </section>
+
+          <section id="gh-scrum">
+            <h3>What is Scrum?</h3>
+            <p>Scrum is a lightweight framework for delivering work in short, focused bursts called <strong>sprints</strong>. Instead of planning a year-long project all at once (and watching that plan collapse by week two), Scrum says: <em>plan two weeks, build two weeks, ship something, learn, repeat.</em></p>
+            <p>No grand plan survives contact with reality. Scrum makes peace with that.</p>
+            <h4>The three core ideas</h4>
+            <ol>
+              <li>Work in <strong>sprints</strong> (usually 1&ndash;2 weeks). A sprint has a fixed end date &mdash; you work toward it, you ship something, and you reflect.</li>
+              <li>Every piece of work is a <strong>User Story</strong> &mdash; a small, shippable thing that delivers real value to someone.</li>
+              <li>Stories get <strong>points</strong> &mdash; a relative size estimate, not a time estimate. More on this shortly.</li>
+            </ol>
+            <p>That's the whole framework. Everything else in Scrum &mdash; ceremonies, roles, velocity &mdash; is in service of these three ideas.</p>
+          </section>
+
+          <section id="gh-stories">
+            <h3>User Stories &mdash; GYRA's Format</h3>
+            <p>GYRA doesn't use the traditional &ldquo;As a / I want / so that&rdquo; format. It enforces a tighter, grammar-structured sentence built from six specific parts, assembled with dropdowns and constrained text fields.</p>
+            <blockquote class="gh-quote"><strong>[Actor]</strong> &nbsp;[needs/wants/must]&nbsp; <strong>[Action&nbsp;Word]</strong> &nbsp;[what/feature]&nbsp; [to/because/so&nbsp;they] &nbsp;[outcome]</blockquote>
+            <h4>The six parts</h4>
+            <table class="gh-table">
+              <thead><tr><th>Field</th><th>Type</th><th>What goes here</th></tr></thead>
+              <tbody>
+                <tr><td>Actor</td><td>Dropdown</td><td><code>User</code>, <code>Developer</code>, <code>Admin</code>, <code>Guest</code>, <code>Manager</code> &mdash; who this story serves</td></tr>
+                <tr><td>Verb</td><td>Free text</td><td>The relationship: <em>needs</em>, <em>wants</em>, <em>must</em>, <em>should have</em></td></tr>
+                <tr><td>Action Word</td><td>Single word (enforced)</td><td>A gerund &mdash; the thing being built: <em>Walking</em>, <em>Uploading</em>, <em>Deleting</em>, <em>Sorting</em>. GYRA rejects spaces here &mdash; one word only.</td></tr>
+                <tr><td>Feature</td><td>Free text</td><td>What the action applies to: <em>animation frames</em>, <em>user accounts</em>, <em>payment receipts</em></td></tr>
+                <tr><td>Connector</td><td>Dropdown</td><td><code>to</code>, <code>because</code>, <code>so they</code></td></tr>
+                <tr><td>Outcome</td><td>Free text</td><td>Why it matters: <em>the game feels alive</em>, <em>get a refund without calling support</em></td></tr>
+              </tbody>
+            </table>
+            <h4>Real examples</h4>
+            <ul>
+              <li><em>User needs Walking Animation to make the world feel alive</em></li>
+              <li><em>Developer wants Automated Testing to catch regressions before deploy</em></li>
+              <li><em>Admin must Bulk Delete accounts to remove bots after an attack</em></li>
+              <li><em>Guest wants Password Reset to recover their account without support</em></li>
+            </ul>
+            <p>The <strong>Action Word</strong> is displayed bold on the board card &mdash; it is the core of the story at a glance. It must be a single gerund. If you find yourself typing two words, your story probably needs to be two stories.</p>
+            <h4>Hard rules GYRA enforces</h4>
+            <ul>
+              <li>The Action Word must be <strong>one word</strong> with no spaces &mdash; the server rejects it otherwise</li>
+              <li>The full sentence must be <strong>19 words or fewer</strong></li>
+              <li>All six parts must be filled in</li>
+              <li>If the story won't fit in a sprint, split it into smaller stories before adding it</li>
+            </ul>
+          </section>
+
+          <section id="gh-points">
+            <h3>Story Points</h3>
+            <p>Story points are <strong>not hours</strong>. This is the most important thing to internalize about Scrum estimation.</p>
+            <p>Estimating &ldquo;this will take 4 hours&rdquo; is almost always wrong &mdash; it ignores unknowns, interruptions, context-switching, and the optimism bias your brain applies to every estimate before you've actually touched the code. Estimating &ldquo;this is <em>about the same size</em> as the login screen we built last sprint&rdquo; is honest and surprisingly accurate over time.</p>
+            <p>Points use a modified Fibonacci scale. The gaps grow intentionally to prevent false precision:</p>
+            <table class="gh-table">
+              <thead><tr><th>Points</th><th>What it means in practice</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>Trivial &mdash; change a color, fix a typo, update copy, tweak a config</td></tr>
+                <tr><td>2</td><td>Small &mdash; a new button, a simple DB query, a CSS component</td></tr>
+                <tr><td>3</td><td>Medium &mdash; a form with validation, a new API endpoint, a modal</td></tr>
+                <tr><td>5</td><td>Large &mdash; a feature with multiple states, branching logic, edge cases</td></tr>
+                <tr><td>8</td><td>Very large &mdash; a whole subsystem, a third-party integration, a new screen</td></tr>
+                <tr><td>13</td><td>Huge &mdash; this probably needs to be split before it enters a sprint</td></tr>
+                <tr><td>21</td><td>Epic &mdash; definitely split this. You don't know enough yet to build it whole.</td></tr>
+              </tbody>
+            </table>
+            <p>A 5-point story isn't &ldquo;5 hours&rdquo; &mdash; it's &ldquo;meaningfully bigger than a 3-pointer, but not yet in large-system territory.&rdquo; The fuzziness is intentional. It prevents debates about whether something is 3 hours or 3.5.</p>
+            <div class="gh-callout">
+              <strong>Velocity</strong> &mdash; the total points your team completes per sprint &mdash; is your planning compass, not a performance grade. Never use velocity to judge output or compare people. Use it to answer one question: &ldquo;realistically, how many points can we commit to next sprint?&rdquo;
+            </div>
+          </section>
+
+          <section id="gh-poker">
+            <h3>Planning Poker</h3>
+            <p>When estimating in a team, everyone should reveal their point estimate <strong>simultaneously</strong> &mdash; so no one anchors off someone else's guess. Each person names a number at the same time. Then you discuss the outliers. Re-estimate if the discussion changes minds.</p>
+            <p>In GYRA, you do this during <strong>Grooming</strong> (accessible from the sidebar). Groom your backlog before stories enter a sprint: add acceptance criteria, point them, and order them by priority. Only well-groomed stories should enter a sprint.</p>
+            <div class="gh-callout">
+              <strong>The secret of Planning Poker:</strong> the disagreements are the entire point. When one person says &ldquo;1&rdquo; and another says &ldquo;8,&rdquo; you've just discovered an assumption gap. That conversation &mdash; before any code is written &mdash; is worth more than the estimate itself.
+            </div>
+          </section>
+
+          <section id="gh-iterate">
+            <h3>Why Iterate? (The Most Important Section)</h3>
+            <p><strong>Perfect is the enemy of shipped.</strong></p>
+            <p>Iteration means: build a small thing, put it in front of real people (or at least yourself), learn what was wrong, and make it better next sprint. Repeat indefinitely. The compound effect of this over months is dramatic.</p>
+            <p>One two-week sprint where you ship <em>something</em> beats six months of planning and never shipping. Every single time. The benefits are real and compounding:</p>
+            <ul>
+              <li><strong>Early feedback</strong> &mdash; find out your idea was wrong <em>before</em> you've built three other systems on top of it</li>
+              <li><strong>Visible progress</strong> &mdash; morale stays high when you're always shipping something tangible</li>
+              <li><strong>Adaptability</strong> &mdash; sprint two can pivot based on what you learned in sprint one. You can't do that with a waterfall plan.</li>
+              <li><strong>Scope creep defense</strong> &mdash; &ldquo;that's a great idea, let's put it in the backlog and revisit next sprint&rdquo; is the most powerful phrase in product development</li>
+              <li><strong>Faster learning</strong> &mdash; every shipped thing teaches you something a design doc never could</li>
+            </ul>
+            <h4>The Backlog is not a failure bin</h4>
+            <p>The backlog is your prioritized list of everything the product <em>could</em> become. Things get added constantly. Many will never get built &mdash; and that's perfectly fine, because it means you were building the <em>right</em> things instead. A healthy backlog grows faster than it shrinks. That's not a problem; that's a product.</p>
+          </section>
+
+          <section id="gh-multi">
+            <h3>Multiple Assignees Per Story</h3>
+            <p>GYRA lets you assign multiple people to a single story. This is intentional, and it matters more than it sounds.</p>
+            <p>In enterprise tools, a ticket has one owner. In indie dev, that's often a polite fiction &mdash; two people pair on a feature, one implements while another reviews and deploys, or the solo dev is simultaneously the designer, backend engineer, and QA. GYRA reflects how small teams actually work rather than how org charts say they should work.</p>
+            <p>Multiple assignees also means <strong>shared accountability</strong>. Nobody owns a story in isolation &mdash; the whole team owns the sprint together. If a story stalls, everyone can see who it's with and anyone can pick it up. There's no waiting for the &ldquo;ticket owner&rdquo; to respond.</p>
+            <div class="gh-callout">
+              When a story has one assigned person and they go quiet, the story goes quiet too. Multiple assignees create a natural safety net &mdash; and signal that help is expected and welcome.
+            </div>
+          </section>
+
+          <section id="gh-roles">
+            <h3>The Rugby Scrum &mdash; Why GYRA Assigns Stories to the Team</h3>
+            <p>The word &ldquo;Scrum&rdquo; comes from rugby. In a rugby scrum, the whole pack binds together and moves as a single mass. No individual player decides where the unit pushes &mdash; the whole team commits together and wins together. That is the metaphor Jeff Sutherland had in mind when he named the framework.</p>
+            <p><strong>Jira, Linear, and most project management tools got this exactly wrong.</strong> By forcing a single owner on every ticket, they turned a collective framework into a grid of individual to-do lists that happen to share a deadline. The scrum breaks the moment one person &ldquo;owns&rdquo; a card and everyone else waits on them. That is a task tracker with Scrum branding &mdash; not Scrum.</p>
+            <p>GYRA assigns multiple people to stories intentionally, because that is the actual point. When anyone on the team can help on any story, stories move faster. When someone is blocked, anyone can step in without a reassignment ceremony. When the sprint closes, the <em>team</em> finished &mdash; not a list of individuals.</p>
+            <div class="gh-callout">
+              <strong>Scrum does have roles. They matter.</strong> But their purpose is to serve the collective, not to build a hierarchy.
+            </div>
+            <h4>The three Scrum roles and what they actually mean</h4>
+            <ul>
+              <li><strong>Scrum Master</strong> &mdash; protects the team from outside interruptions, removes blockers that individuals can't clear alone, and runs the ceremonies (standups, retros, grooming). Not a manager. Not a ticket-assigner. A shield for the team's focus.</li>
+              <li><strong>Product Owner</strong> &mdash; owns the backlog priority and defines what &ldquo;done&rdquo; means for each story. Decides the <em>what</em>; the team decides the <em>how</em>. One voice for the stakeholders so the team isn't pulled in ten directions.</li>
+              <li><strong>Development Team</strong> &mdash; self-organizes around the sprint goal. No &ldquo;senior dev who assigns work to juniors&rdquo; &mdash; the team pulls from the backlog together and decides collectively how to tackle each story.</li>
+            </ul>
+            <p>In a two-person indie studio these roles might all be you on different days. That is fine. The framework still works. What GYRA removes is the <strong>bureaucratic overhead</strong> those roles accumulate in enterprise environments &mdash; the approval gates, the ticket-routing ceremonies, the permission layers &mdash; none of which scale down.</p>
+            <p>What GYRA corrects is the <strong>tool assumption that one story = one person</strong>. That assumption is the thing that breaks the rugby scrum. GYRA brings it back.</p>
+          </section>
+
+          <section id="gh-board">
+            <h3>The Sprint Board</h3>
+            <p>The board is the most visible part of Scrum: columns representing the lifecycle of a story within a sprint.</p>
+            <p><strong>To Do &rarr; In Progress &rarr; Done</strong> (with optional Review / QA columns depending on your workflow).</p>
+            <p>A card starts in To Do and moves right as work progresses. That's the whole mechanic. The power is in the visibility: the board makes the state of the entire sprint legible at a glance. You can see what's stuck, what's moving, and whether you'll actually finish by the sprint end.</p>
+            <h4>Reading the board honestly</h4>
+            <ul>
+              <li>If everything is in &ldquo;In Progress&rdquo; for days &mdash; something is blocked or scope is too large</li>
+              <li>If nothing has reached &ldquo;Done&rdquo; by mid-sprint &mdash; stories need to be split smaller</li>
+              <li>If the same person always carries 8+ cards &mdash; redistribute; the sprint will fail</li>
+              <li>If the board doesn't match reality &mdash; update the board. It only works when it's honest.</li>
+            </ul>
+            <h4>The Retrospective</h4>
+            <p>At the end of every sprint, run a quick <strong>Retrospective</strong>. Ask three questions: <em>What went well? What didn't? What will we change next sprint?</em> Even five minutes of honest retro accelerates team learning faster than any process document ever could.</p>
+            <p>GYRA has a Retro view in the sidebar. Use it every sprint, even if you work alone. Especially if you work alone.</p>
+            <div class="gh-callout">
+              <strong>The sprint board is a shared lie-detector.</strong> Cards that never move reveal process problems before they become team problems. Trust the board.
+            </div>
+          </section>
+
+        </article>
+      </div><!-- /gyra-help-body -->
+
+      <div class="gyra-help-footer">
+        GYRA is free for indie developers &mdash; made by <a href="https://studiohighground.com" target="_blank" rel="noopener">High Ground</a>.
+      </div>
+    </div><!-- /gyra-help-dialog -->
+  </div><!-- /gyra-help-overlay -->
+
 {% else %}
   {% block auth_content %}{% endblock %}
 {% endif %}
@@ -147,6 +370,58 @@
     var hidden = layout.classList.toggle('sidebar-hidden');
     toggle.textContent = hidden ? '\u25BA' : '\u25C4';
     localStorage.setItem(KEY, hidden ? '1' : '0');
+  });
+}());
+
+// GYRA Guide modal
+(function () {
+  var overlay  = document.getElementById('gyra-help-overlay');
+  var openBtn  = document.getElementById('gyra-help-open');
+  var closeBtn = document.getElementById('gyra-help-close');
+  if (!overlay || !openBtn) return;
+
+  function openModal() {
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    overlay.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  openBtn.addEventListener('click', openModal);
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) closeModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && overlay.style.display !== 'none') closeModal();
+  });
+
+  // Highlight active nav link while scrolling article
+  var article = overlay.querySelector('.gyra-help-article');
+  var navLinks = overlay.querySelectorAll('.gyra-help-nav a');
+  if (article && navLinks.length) {
+    article.addEventListener('scroll', function () {
+      var sections = article.querySelectorAll('section[id]');
+      var scrollTop = article.scrollTop + 40;
+      var active = null;
+      sections.forEach(function (s) {
+        if (s.offsetTop <= scrollTop) active = s.id;
+      });
+      navLinks.forEach(function (a) {
+        a.classList.toggle('is-active', a.getAttribute('href') === '#' + active);
+      });
+    });
+  }
+
+  // Nav links scroll within the article, not the page
+  navLinks.forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      var target = article.querySelector(a.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   });
 }());
 </script>

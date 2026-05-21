@@ -30,4 +30,7 @@ class Config:
     # ── Session hardening ────────────────────────────────────────────────────
     SESSION_COOKIE_HTTPONLY  = True
     SESSION_COOKIE_SAMESITE  = "Lax"
+    # A4: opt-in HTTPS-only cookie. Enable by exporting GYRA_SECURE_COOKIE=1
+    # when serving behind cloudflared / nginx-TLS. Leave off for localhost.
+    SESSION_COOKIE_SECURE    = os.environ.get("GYRA_SECURE_COOKIE", "0") == "1"
     PERMANENT_SESSION_LIFETIME = 86400  # 24 h

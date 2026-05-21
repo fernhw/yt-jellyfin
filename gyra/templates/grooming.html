@@ -1,0 +1,564 @@
+{% extends "base.html" %}
+{% block title %}Grooming — {{ project.name }} — Gyra{% endblock %}
+
+{% block content %}
+<style>
+  .gr-page { display:flex; flex-direction:column; height:calc(100vh - 60px); padding:0; }
+  .gr-header {
+    display:flex; align-items:center; gap:14px;
+    padding:12px 20px; border-bottom:1.5px solid var(--c-gray-200,#DDD0B8);
+    background:var(--c-gray-100,#EDE4D0);
+  }
+  .gr-header h2 { margin:0; font-size:20px; }
+  .gr-status-pill {
+    font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
+    padding:4px 10px; border-radius:12px;
+  }
+  .gr-status-pill.s-live    { background:#FECACA; color:#991B1B; }
+  .gr-status-pill.s-idle    { background:#E5E7EB; color:#374151; }
+  .gr-status-pill.s-reveal  { background:#D1FAE5; color:#065F46; }
+
+  .gr-body { flex:1; display:flex; overflow:hidden; }
+  .gr-left {
+    flex:1; overflow-y:auto; padding:24px 32px;
+    background:var(--c-gray-50,#F9F5EE);
+  }
+  .gr-right {
+    width:380px; flex-shrink:0; overflow-y:auto;
+    border-left:1.5px solid var(--c-gray-200,#DDD0B8);
+    background:var(--c-gray-100,#EDE4D0);
+    padding:18px 18px 40px;
+  }
+
+  /* Story display */
+  .gr-story-card {
+    background:#fff; border:1.5px solid var(--c-gray-200,#DDD0B8); border-radius:10px;
+    padding:24px 26px; max-width:780px; margin:0 auto;
+    box-shadow:var(--shadow-sm, 0 1px 3px rgba(0,0,0,.08));
+  }
+  .gr-story-title {
+    font-size:22px; font-weight:800; color:var(--c-gray-900,#1A1208);
+    margin:0 0 6px;
+  }
+  .gr-story-meta {
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+    font-size:12px; color:var(--c-gray-500,#7A6A52); margin-bottom:18px;
+  }
+  .gr-badge {
+    background:var(--c-gray-100,#EDE4D0); padding:3px 9px; border-radius:10px;
+    font-weight:700; font-size:11px; color:var(--c-gray-700,#3D2E1A);
+  }
+  .gr-badge.is-missing { background:#FEE2E2; color:#991B1B; }
+  .gr-section { margin-top:20px; }
+  .gr-section-h {
+    font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--c-gray-500,#7A6A52); margin-bottom:8px;
+  }
+  .gr-prose { font-size:14px; line-height:1.6; color:var(--c-gray-900,#1A1208); white-space:pre-wrap; }
+  .gr-prose-empty { font-style:italic; color:var(--c-gray-500,#7A6A52); }
+  .gr-images {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+    gap:10px; margin-top:6px;
+  }
+  .gr-images img {
+    width:100%; aspect-ratio:4/3; object-fit:cover;
+    border-radius:6px; cursor:pointer; border:1.5px solid var(--c-gray-200,#DDD0B8);
+  }
+
+  /* Vote buttons */
+  .gr-vote-wrap {
+    margin-top:26px; padding-top:22px;
+    border-top:2px dashed var(--c-gray-300,#C4B49A);
+  }
+  .gr-vote-row { display:flex; flex-wrap:wrap; gap:10px; }
+  .gr-vote-btn {
+    flex:0 0 64px; height:84px; border-radius:8px;
+    background:#fff; border:2px solid var(--c-gray-300,#C4B49A);
+    font-size:22px; font-weight:800; color:var(--c-gray-900,#1A1208);
+    cursor:pointer; transition:transform .1s, box-shadow .1s;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .gr-vote-btn:hover { transform:translateY(-3px); box-shadow:var(--shadow-md,0 4px 12px rgba(0,0,0,.12)); }
+  .gr-vote-btn.is-picked {
+    background:var(--c-purple-500,#7C4A1E); color:#fff;
+    border-color:var(--c-purple-700,#4A2D12);
+  }
+  .gr-vote-status {
+    margin-top:14px; font-size:13px; color:var(--c-gray-700,#3D2E1A);
+  }
+
+  /* Voter chips */
+  .gr-voters { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .gr-voter-chip {
+    display:flex; align-items:center; gap:6px;
+    background:#fff; padding:5px 10px 5px 5px; border-radius:18px;
+    border:1.5px solid var(--c-gray-200,#DDD0B8); font-size:12px;
+  }
+  .gr-voter-chip.is-voted { border-color:var(--c-green,#059669); }
+  .gr-voter-chip .gv-avatar {
+    width:22px; height:22px; border-radius:50%;
+    background:var(--c-purple-500,#7C4A1E); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700;
+  }
+  .gr-voter-chip .gv-avatar img { width:100%; height:100%; border-radius:50%; object-fit:cover; }
+  .gr-voter-chip .gv-vote {
+    font-weight:800; background:var(--c-gray-100,#EDE4D0);
+    padding:1px 7px; border-radius:8px; font-size:12px;
+  }
+
+  /* Admin panel */
+  .gr-panel-section {
+    background:#fff; border:1.5px solid var(--c-gray-200,#DDD0B8); border-radius:8px;
+    padding:14px; margin-bottom:14px;
+  }
+  .gr-panel-h {
+    font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--c-gray-700,#3D2E1A); margin:0 0 10px;
+  }
+  .gr-stat-row { display:flex; gap:8px; margin-bottom:10px; }
+  .gr-stat {
+    flex:1; background:var(--c-gray-50,#F9F5EE);
+    border:1.5px solid var(--c-gray-200,#DDD0B8); border-radius:6px;
+    padding:8px; text-align:center;
+  }
+  .gr-stat-v { font-size:20px; font-weight:800; color:var(--c-gray-900,#1A1208); }
+  .gr-stat-l { font-size:10px; font-weight:700; text-transform:uppercase; color:var(--c-gray-500,#7A6A52); }
+  .gr-btn-row { display:flex; gap:6px; flex-wrap:wrap; }
+  .gr-btn-row .btn { flex:1; }
+
+  .gr-list { display:flex; flex-direction:column; gap:6px; max-height:280px; overflow-y:auto; }
+  .gr-list-item {
+    display:flex; align-items:center; gap:8px; padding:7px 9px;
+    background:var(--c-gray-50,#F9F5EE); border:1.5px solid var(--c-gray-200,#DDD0B8);
+    border-radius:6px; font-size:12px; cursor:pointer;
+  }
+  .gr-list-item.is-active { border-color:var(--c-purple-500,#7C4A1E); background:#FEF3C7; }
+  .gr-list-item .gli-title { flex:1; color:var(--c-gray-900,#1A1208); }
+  .gr-list-item .gli-actions { display:flex; gap:4px; }
+  .gr-mini-badge {
+    font-size:9px; font-weight:700; padding:1px 6px; border-radius:8px;
+    background:#FEE2E2; color:#991B1B;
+  }
+
+  .gr-form-row { display:flex; gap:6px; margin-bottom:8px; }
+  .gr-form-row > * { flex:1; }
+  .gr-input, .gr-select, .gr-textarea {
+    width:100%; padding:6px 9px; border:1.5px solid var(--c-gray-200,#DDD0B8);
+    border-radius:5px; font-size:13px; background:#fff; font-family:inherit;
+  }
+  .gr-textarea { min-height:60px; resize:vertical; }
+  .gr-search { width:100%; margin-bottom:8px; }
+
+  .gr-empty {
+    text-align:center; padding:40px 20px; color:var(--c-gray-500,#7A6A52);
+    font-size:14px;
+  }
+  .gr-pulse {
+    display:inline-block; width:8px; height:8px; border-radius:50%;
+    background:var(--c-red,#DC2626);
+    animation:gr-pulse 1.4s infinite;
+  }
+  @keyframes gr-pulse { 0%,100% {opacity:1;} 50% {opacity:.35;} }
+</style>
+
+<div class="gr-page">
+  <div class="gr-header">
+    <span class="project-key-badge">{{ project.key }}</span>
+    <h2>Grooming{% if is_admin %} Central{% endif %}</h2>
+    <span id="gr-state-pill" class="gr-status-pill s-idle">Idle</span>
+    <span style="flex:1"></span>
+    <span class="gr-pulse" title="Realtime"></span>
+    <span style="font-size:11px;color:var(--c-gray-500,#7A6A52)">Live</span>
+  </div>
+
+  <div class="gr-body">
+    <div class="gr-left">
+      <div id="gr-story-area">
+        <div class="gr-empty">No active story. Waiting for a story to be brought in for grooming…</div>
+      </div>
+    </div>
+
+    {% if is_admin %}
+    <aside class="gr-right">
+      <div class="gr-panel-section">
+        <div class="gr-panel-h">Voting controls</div>
+        <div class="gr-stat-row">
+          <div class="gr-stat"><div id="gr-stat-votes"  class="gr-stat-v">0/0</div><div class="gr-stat-l">Votes</div></div>
+          <div class="gr-stat"><div id="gr-stat-avg"    class="gr-stat-v">—</div><div class="gr-stat-l">Avg</div></div>
+          <div class="gr-stat"><div id="gr-stat-fib"    class="gr-stat-v">—</div><div class="gr-stat-l">Fib</div></div>
+        </div>
+        <div class="gr-btn-row">
+          <button id="gr-reveal-btn" class="btn btn-primary btn-sm">Reveal</button>
+          <button id="gr-clear-btn"  class="btn btn-secondary btn-sm">Clear votes</button>
+          <button id="gr-deactivate-btn" class="btn btn-secondary btn-sm">Stop</button>
+        </div>
+      </div>
+
+      <div class="gr-panel-section">
+        <div class="gr-panel-h">Apply final score</div>
+        <div class="gr-form-row">
+          <input id="gr-apply-points" type="number" min="0" class="gr-input" placeholder="Points">
+          <button id="gr-use-fib"   class="btn btn-secondary btn-sm">Use Fib avg</button>
+        </div>
+        <div class="gr-form-row">
+          <select id="gr-apply-priority" class="gr-select">
+            <option value="">Priority…</option>
+            <option value="VH">VH — Very High</option>
+            <option value="H">H — High</option>
+            <option value="M">M — Medium</option>
+            <option value="L">L — Low</option>
+            <option value="VL">VL — Very Low</option>
+          </select>
+        </div>
+        <textarea id="gr-apply-desc" class="gr-textarea" placeholder="Description (overrides if filled)"></textarea>
+        <textarea id="gr-apply-ac"   class="gr-textarea" placeholder="Acceptance criteria (overrides if filled)" style="margin-top:6px"></textarea>
+        <button id="gr-apply-btn" class="btn btn-primary btn-full" style="margin-top:8px">Apply &amp; mark groomed</button>
+      </div>
+
+      <div class="gr-panel-section">
+        <div class="gr-panel-h">Queue <span id="gr-queue-count" style="color:var(--c-gray-500,#7A6A52);font-weight:600">(0)</span></div>
+        <div id="gr-queue" class="gr-list">
+          <div class="gr-empty" style="padding:14px">Empty</div>
+        </div>
+      </div>
+
+      <div class="gr-panel-section">
+        <div class="gr-panel-h">Stories needing grooming</div>
+        {% if session.get('role') == 'super_user' %}
+        <button id="gr-queue-all-btn" class="btn btn-primary btn-full"
+                style="margin-bottom:10px;padding:14px;font-size:1.05rem;font-weight:700;letter-spacing:.02em">
+          ⚡ Auto-queue ALL groomable stories
+        </button>
+        {% endif %}
+        <input id="gr-eligible-search" class="gr-input gr-search" placeholder="Search title…">
+        <div id="gr-eligible" class="gr-list">
+          <div class="gr-empty" style="padding:14px">Loading…</div>
+        </div>
+      </div>
+    </aside>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+(function () {
+  var PID  = {{ project.id }};
+  var IS_ADMIN = {{ 'true' if is_admin else 'false' }};
+  var CSRF = (document.querySelector('meta[name="csrf-token"]') || {getAttribute:function(){return '';}}).getAttribute('content') || '';
+
+  function esc(s){ return String(s||'').replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });}
+
+  function apiGet(p){ return fetch(p, {credentials:'same-origin'}).then(function(r){return r.json();}); }
+  function apiPost(p, b){
+    return fetch(p, {method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},
+      body:JSON.stringify(b||{})
+    }).then(function(r){return r.json();});
+  }
+
+  // ── State + render ──────────────────────────────────────────────────────
+  var lastState = null;
+  var pickedVote = null;  // visual: what the current user has picked locally
+
+  function renderStory(d){
+    var area = document.getElementById('gr-story-area');
+    var s = d.story;
+    if (!s) {
+      area.innerHTML = '<div class="gr-empty">No active story. Waiting for a story to be brought in for grooming…</div>';
+      return;
+    }
+    var missing = [];
+    if (!s.story_points) missing.push('points');
+    if (!(s.priority || '').trim()) missing.push('priority');
+    if (!(s.description || '').trim()) missing.push('description');
+    if (!(s.acceptance_criteria || '').trim()) missing.push('AC');
+
+    var html = '<div class="gr-story-card">';
+    html += '<h2 class="gr-story-title">' + esc(s.title || '') + '</h2>';
+    html += '<div class="gr-story-meta">';
+    if (s.priority)     html += '<span class="gr-badge">Priority: ' + esc(s.priority) + '</span>';
+    if (s.story_points) html += '<span class="gr-badge">' + s.story_points + ' pts</span>';
+    if (s.status_name)  html += '<span class="gr-badge" style="background:'+esc(s.status_color||'#EDE4D0')+';color:#fff">' + esc(s.status_name) + '</span>';
+    missing.forEach(function(m){ html += '<span class="gr-badge is-missing">Missing: ' + esc(m) + '</span>'; });
+    html += '</div>';
+
+    if (s.images && s.images.length) {
+      html += '<div class="gr-section"><div class="gr-section-h">Images</div><div class="gr-images">';
+      s.images.forEach(function(im){
+        html += '<img src="'+esc(im.med||im.url)+'" data-full="'+esc(im.url)+'" alt="">';
+      });
+      html += '</div></div>';
+    }
+
+    html += '<div class="gr-section"><div class="gr-section-h">Description</div>';
+    html += s.description
+      ? '<div class="gr-prose">'+esc(s.description)+'</div>'
+      : '<div class="gr-prose gr-prose-empty">(empty)</div>';
+    html += '</div>';
+
+    html += '<div class="gr-section"><div class="gr-section-h">Acceptance Criteria</div>';
+    html += s.acceptance_criteria
+      ? '<div class="gr-prose">'+esc(s.acceptance_criteria)+'</div>'
+      : '<div class="gr-prose gr-prose-empty">(empty)</div>';
+    html += '</div>';
+
+    // Vote buttons
+    var scale = d.fib_scale || [0,1,2,3,5,8,13,21,34];
+    html += '<div class="gr-vote-wrap"><div class="gr-section-h">Your vote</div><div class="gr-vote-row">';
+    scale.forEach(function(v){
+      var cls = 'gr-vote-btn' + (String(d.my_vote) === String(v) ? ' is-picked' : '');
+      html += '<button class="'+cls+'" data-vote="'+v+'">'+v+'</button>';
+    });
+    html += '<button class="gr-vote-btn" data-vote="?">?</button>';
+    html += '<button class="gr-vote-btn" data-vote="☕">☕</button>';
+    html += '</div>';
+    html += '<div class="gr-vote-status" id="gr-vote-status"></div>';
+
+    // Voters
+    html += '<div class="gr-voters" id="gr-voters"></div>';
+    html += '</div></div>';
+
+    area.innerHTML = html;
+
+    // Wire vote buttons
+    area.querySelectorAll('.gr-vote-btn').forEach(function(b){
+      b.addEventListener('click', function(){
+        var v = b.getAttribute('data-vote');
+        pickedVote = v;
+        area.querySelectorAll('.gr-vote-btn').forEach(function(x){x.classList.remove('is-picked');});
+        b.classList.add('is-picked');
+        apiPost('/api/project/'+PID+'/grooming/vote', {vote: v}).then(function(r){
+          if (!r.ok) alert('Vote failed: ' + (r.error || ''));
+          poll();
+        });
+      });
+    });
+
+    // Image full-view (simple new tab)
+    area.querySelectorAll('.gr-images img').forEach(function(img){
+      img.addEventListener('click', function(){ window.open(img.getAttribute('data-full'), '_blank'); });
+    });
+
+    renderVoters(d);
+  }
+
+  function renderVoters(d){
+    var el = document.getElementById('gr-voters');
+    if (!el) return;
+    var revealed = d.state && d.state.revealed;
+    var html = '';
+    (d.voters || []).forEach(function(v){
+      var initials = (v.display_name || '?').slice(0,1).toUpperCase();
+      var av = v.avatar
+        ? '<img src="/static/avatars/'+esc(v.avatar)+'" alt="">'
+        : esc(initials);
+      html += '<span class="gr-voter-chip ' + (v.has_voted ? 'is-voted' : '') + '">'
+            + '<span class="gv-avatar">'+av+'</span>'
+            + esc(v.display_name || '')
+            + (revealed && v.vote !== null
+                ? ' <span class="gv-vote">'+esc(v.vote)+'</span>'
+                : (v.has_voted ? ' <span class="gv-vote">✓</span>' : ''))
+            + '</span>';
+    });
+    el.innerHTML = html;
+
+    var st = document.getElementById('gr-vote-status');
+    if (st) {
+      var voted = (d.voters||[]).filter(function(x){return x.has_voted;}).length;
+      var total = (d.voters||[]).length;
+      st.textContent = voted + ' of ' + total + ' voted' + (revealed ? ' • Revealed' : '');
+    }
+  }
+
+  function renderStatePill(d){
+    var p = document.getElementById('gr-state-pill');
+    if (!d.story) { p.className='gr-status-pill s-idle'; p.textContent='Idle'; }
+    else if (d.state && d.state.revealed) { p.className='gr-status-pill s-reveal'; p.textContent='Revealed'; }
+    else { p.className='gr-status-pill s-live'; p.textContent='Voting'; }
+  }
+
+  // ── Admin: queue + eligible ────────────────────────────────────────────
+  function renderQueue(d){
+    if (!IS_ADMIN) return;
+    var el = document.getElementById('gr-queue');
+    var cnt = document.getElementById('gr-queue-count');
+    cnt.textContent = '(' + (d.queue||[]).length + ')';
+    if (!d.queue || !d.queue.length) {
+      el.innerHTML = '<div class="gr-empty" style="padding:14px">Empty</div>';
+      return;
+    }
+    var activeId = d.state && d.state.active_story_id;
+    el.innerHTML = (d.queue||[]).map(function(q){
+      var isActive = q.story_id === activeId;
+      var miss = (q.missing||[]).map(function(m){return '<span class="gr-mini-badge">'+esc(m)+'</span>';}).join(' ');
+      return '<div class="gr-list-item ' + (isActive?'is-active':'') + '" data-sid="'+q.story_id+'">'
+        + '<span class="gli-title">'+esc(q.title||'')+' '+miss+'</span>'
+        + '<span class="gli-actions">'
+        + (isActive ? '' : '<button class="btn btn-xs btn-primary" data-act="activate">▶</button>')
+        + '<button class="btn btn-xs btn-secondary" data-act="remove">×</button>'
+        + '</span>'
+        + '</div>';
+    }).join('');
+    el.querySelectorAll('.gr-list-item').forEach(function(row){
+      var sid = parseInt(row.getAttribute('data-sid')||'0',10);
+      row.querySelectorAll('button').forEach(function(b){
+        b.addEventListener('click', function(ev){
+          ev.stopPropagation();
+          var act = b.getAttribute('data-act');
+          if (act === 'activate') {
+            apiPost('/api/project/'+PID+'/grooming/active', {story_id: sid}).then(poll);
+          } else if (act === 'remove') {
+            apiPost('/api/project/'+PID+'/grooming/queue/remove', {story_id: sid}).then(poll);
+          }
+        });
+      });
+    });
+  }
+
+  function renderAdminStats(d){
+    if (!IS_ADMIN) return;
+    var s = d.stats || {};
+    document.getElementById('gr-stat-votes').textContent = (s.votes_cast||0) + '/' + (s.total_voters||0);
+    document.getElementById('gr-stat-avg').textContent   = (s.average !== null && s.average !== undefined) ? s.average : '—';
+    document.getElementById('gr-stat-fib').textContent   = (s.fib_average !== null && s.fib_average !== undefined) ? s.fib_average : '—';
+
+    var rb = document.getElementById('gr-reveal-btn');
+    if (d.state && d.state.revealed) { rb.textContent = 'Hide'; rb.classList.remove('btn-primary'); rb.classList.add('btn-secondary'); }
+    else                              { rb.textContent = 'Reveal'; rb.classList.add('btn-primary'); rb.classList.remove('btn-secondary'); }
+  }
+
+  function loadEligible(){
+    if (!IS_ADMIN) return;
+    apiGet('/api/project/'+PID+'/grooming/eligible').then(function(r){
+      var el = document.getElementById('gr-eligible');
+      if (!r.ok) { el.innerHTML = '<div class="gr-empty">Error loading</div>'; return; }
+      var q = (document.getElementById('gr-eligible-search').value || '').toLowerCase();
+      var list = (r.stories||[]).filter(function(s){
+        return !s.in_queue && (!q || (s.title||'').toLowerCase().indexOf(q) !== -1);
+      });
+      if (!list.length) {
+        el.innerHTML = '<div class="gr-empty" style="padding:14px">Nothing to groom — everything has points, priority, description &amp; AC.</div>';
+        return;
+      }
+      el.innerHTML = list.slice(0,80).map(function(s){
+        var miss = (s.missing||[]).map(function(m){return '<span class="gr-mini-badge">'+esc(m)+'</span>';}).join(' ');
+        return '<div class="gr-list-item" data-sid="'+s.id+'">'
+          + '<span class="gli-title">'+esc(s.title||'')+' '+miss+'</span>'
+          + '<span class="gli-actions">'
+          + '<button class="btn btn-xs btn-primary" data-act="add">+ Queue</button>'
+          + '</span></div>';
+      }).join('');
+      el.querySelectorAll('.gr-list-item').forEach(function(row){
+        var sid = parseInt(row.getAttribute('data-sid')||'0',10);
+        row.querySelector('[data-act="add"]').addEventListener('click', function(){
+          apiPost('/api/project/'+PID+'/grooming/queue', {story_id: sid}).then(function(){
+            poll(); loadEligible();
+          });
+        });
+      });
+    });
+  }
+
+  // ── Polling ─────────────────────────────────────────────────────────────
+  function poll(){
+    apiGet('/api/project/'+PID+'/grooming/state').then(function(d){
+      if (!d || !d.ok) return;
+      var prevActive = lastState && lastState.state ? lastState.state.active_story_id : null;
+      var prevRev    = lastState && lastState.state ? lastState.state.revealed : null;
+      var prevUpd    = lastState && lastState.state ? lastState.state.updated_at : 0;
+      var curUpd     = d.state ? d.state.updated_at : 0;
+      lastState = d;
+
+      // Only re-render the story card on active-change (avoids stomping voting clicks)
+      if (prevActive !== (d.state && d.state.active_story_id) || prevRev !== (d.state && d.state.revealed)) {
+        renderStory(d);
+      } else if (curUpd !== prevUpd) {
+        renderVoters(d);
+      }
+      renderStatePill(d);
+      renderQueue(d);
+      renderAdminStats(d);
+    });
+  }
+  poll();
+  setInterval(poll, 2000);
+
+  // Periodically refresh eligible list (lighter cadence)
+  if (IS_ADMIN) {
+    loadEligible();
+    setInterval(loadEligible, 8000);
+    document.getElementById('gr-eligible-search').addEventListener('input', loadEligible);
+
+    var qaBtn = document.getElementById('gr-queue-all-btn');
+    if (qaBtn) {
+      qaBtn.addEventListener('click', function(){
+        if (qaBtn.disabled) return;
+        if (!confirm('Auto-queue every story that still needs grooming?')) return;
+        var orig = qaBtn.innerHTML;
+        qaBtn.disabled = true;
+        qaBtn.innerHTML = 'Queueing…';
+        apiPost('/api/project/'+PID+'/grooming/queue/all', {}).then(function(r){
+          qaBtn.disabled = false;
+          qaBtn.innerHTML = orig;
+          if (r && r.ok) {
+            qaBtn.innerHTML = '✓ Added ' + (r.added||0);
+            setTimeout(function(){ qaBtn.innerHTML = orig; }, 1800);
+          } else {
+            alert('Failed to queue: ' + ((r && r.error) || 'unknown error'));
+          }
+          poll(); loadEligible();
+        }).catch(function(){
+          qaBtn.disabled = false;
+          qaBtn.innerHTML = orig;
+          alert('Network error');
+        });
+      });
+    }
+
+    document.getElementById('gr-reveal-btn').addEventListener('click', function(){
+      var nowRevealed = !(lastState && lastState.state && lastState.state.revealed);
+      apiPost('/api/project/'+PID+'/grooming/reveal', {revealed: nowRevealed ? 1 : 0}).then(poll);
+    });
+    document.getElementById('gr-clear-btn').addEventListener('click', function(){
+      if (!confirm('Clear all votes for the active story?')) return;
+      apiPost('/api/project/'+PID+'/grooming/clear', {}).then(poll);
+    });
+    document.getElementById('gr-deactivate-btn').addEventListener('click', function(){
+      apiPost('/api/project/'+PID+'/grooming/active', {story_id: null}).then(poll);
+    });
+    document.getElementById('gr-use-fib').addEventListener('click', function(){
+      var f = lastState && lastState.stats && lastState.stats.fib_average;
+      if (f !== null && f !== undefined) document.getElementById('gr-apply-points').value = f;
+    });
+    document.getElementById('gr-apply-btn').addEventListener('click', function(){
+      var sid = lastState && lastState.state && lastState.state.active_story_id;
+      if (!sid) { alert('No active story'); return; }
+      var body = { story_id: sid };
+      var pts  = document.getElementById('gr-apply-points').value;
+      if (pts !== '') body.points = parseInt(pts, 10);
+      var pr = document.getElementById('gr-apply-priority').value;
+      if (pr) body.priority = pr;
+      var ds = document.getElementById('gr-apply-desc').value;
+      if (ds.trim()) body.description = ds;
+      var ac = document.getElementById('gr-apply-ac').value;
+      if (ac.trim()) body.acceptance_criteria = ac;
+      apiPost('/api/project/'+PID+'/grooming/apply', body).then(function(r){
+        if (r.ok) {
+          // Clear fields, deactivate, refresh
+          document.getElementById('gr-apply-points').value = '';
+          document.getElementById('gr-apply-priority').value = '';
+          document.getElementById('gr-apply-desc').value = '';
+          document.getElementById('gr-apply-ac').value = '';
+          apiPost('/api/project/'+PID+'/grooming/active', {story_id: null}).then(function(){
+            poll(); loadEligible();
+          });
+        } else { alert('Apply failed: ' + (r.error || '')); }
+      });
+    });
+  }
+}());
+</script>
+{% endblock %}

@@ -4,8 +4,10 @@ import time
 from flask import abort, jsonify, request, session
 
 from auth import admin_required, enforce_csrf, login_required
-from db import (create_epic, delete_epic, get_db, get_epics, get_statuses,
-                get_stickers, get_story_thumbnails, get_story_previews)
+from db import (create_epic, delete_epic, get_db, get_epic,
+                get_epic_stories_full, get_epics, get_statuses,
+                get_stickers, get_story_thumbnails, get_story_previews,
+                update_epic)
 from routes.helpers import bold_verb_in_title
 
 
@@ -137,19 +139,92 @@ def register(app) -> None:
     def api_update_epic(epic_id):
         enforce_csrf()
         data = request.get_json(silent=True) or {}
-        conn = get_db()
-        title = (data.get("title") or "").strip()
-        color = data.get("color", "").strip()
-        desc  = data.get("description")
-        if title:
-            conn.execute("UPDATE epics SET title=? WHERE id=?", (title, epic_id))
-        if color:
-            conn.execute("UPDATE epics SET color=? WHERE id=?", (color, epic_id))
-        if desc is not None:
-            conn.execute("UPDATE epics SET description=? WHERE id=?", (desc, epic_id))
-        conn.commit()
-        conn.close()
+        fields = {}
+        for k in ("title", "color", "description", "start_date", "due_date", "status"):
+            if k in data:
+                v = data[k]
+                if isinstance(v, str):
+                    v = v.strip()
+                # Empty string for dates means "clear"
+                if k in ("start_date", "due_date") and v == "":
+                    v = None
+                if k == "title" and not v:
+                    continue  # don't blank out title
+                if k == "status" and v not in ("planning", "active", "completed", "on_hold"):
+                    continue
+                fields[k] = v
+        update_epic(epic_id, fields)
         return jsonify(ok=True)
+
+    @app.route("/api/epic/<int:epic_id>/full", methods=["GET"])
+    @login_required
+    def api_get_epic_full(epic_id):
+        epic = get_epic(epic_id)
+        if not epic:
+            return jsonify(ok=False, error="not found"), 404
+        stories = get_epic_stories_full(epic_id)
+        statuses = get_statuses(epic["project_id"])
+
+        # Per-status grouping (counts + points)
+        by_status = {}
+        for st in statuses:
+            by_status[st["id"]] = {
+                "id": st["id"], "name": st["name"], "color": st["color"],
+                "is_done": st["is_done"], "count": 0, "points": 0,
+            }
+        total_pts = done_pts = 0
+        done_count = 0
+        for s in stories:
+            sid = s["status_id"]
+            pts = s.get("story_points") or 0
+            total_pts += pts
+            if sid in by_status:
+                by_status[sid]["count"] += 1
+                by_status[sid]["points"] += pts
+            if s.get("status_is_done"):
+                done_count += 1
+                done_pts  += pts
+        total = len(stories)
+        pct_count  = round(100 * done_count / total) if total else 0
+        pct_points = round(100 * done_pts / total_pts) if total_pts else 0
+
+        # Timeline math
+        from datetime import date
+        days_total = days_elapsed = days_remaining = None
+        sched_pct = None
+        sd, dd = epic.get("start_date"), epic.get("due_date")
+        try:
+            if sd and dd:
+                d0 = date.fromisoformat(sd)
+                d1 = date.fromisoformat(dd)
+                today = date.today()
+                days_total = (d1 - d0).days
+                days_elapsed = max(0, (today - d0).days)
+                days_remaining = (d1 - today).days
+                if days_total > 0:
+                    sched_pct = round(100 * min(max(days_elapsed,0), days_total) / days_total)
+        except Exception:
+            pass
+
+        return jsonify(
+            ok=True,
+            epic=epic,
+            stories=stories,
+            statuses=[dict(s) for s in statuses],
+            stats={
+                "total_stories":  total,
+                "done_stories":   done_count,
+                "total_points":   total_pts,
+                "done_points":    done_pts,
+                "pct_count":      pct_count,
+                "pct_points":     pct_points,
+                "by_status":      list(by_status.values()),
+                "days_total":     days_total,
+                "days_elapsed":   days_elapsed,
+                "days_remaining": days_remaining,
+                "sched_pct":      sched_pct,
+            },
+        )
 
     # ── Stickers ──────────────────────────────────────────────────────────────
 

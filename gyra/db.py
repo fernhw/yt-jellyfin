@@ -179,6 +179,33 @@ CREATE TABLE IF NOT EXISTS project_members (
     added_at    INTEGER NOT NULL,
     PRIMARY KEY (project_id, user_id)
 );
+
+-- Grooming: queued stories, current voting state, per-user votes
+CREATE TABLE IF NOT EXISTS grooming_queue (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    story_id    INTEGER NOT NULL REFERENCES stories(id)  ON DELETE CASCADE,
+    order_index INTEGER DEFAULT 0,
+    added_by    INTEGER REFERENCES users(id),
+    added_at    INTEGER NOT NULL,
+    UNIQUE (project_id, story_id)
+);
+
+CREATE TABLE IF NOT EXISTS grooming_state (
+    project_id       INTEGER PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+    active_story_id  INTEGER REFERENCES stories(id) ON DELETE SET NULL,
+    revealed         INTEGER DEFAULT 0,
+    updated_at       INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS grooming_votes (
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    story_id   INTEGER NOT NULL REFERENCES stories(id)  ON DELETE CASCADE,
+    user_id    INTEGER NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
+    vote       TEXT    NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (project_id, story_id, user_id)
+);
 """
 
 
@@ -212,6 +239,10 @@ def _migrate_db() -> None:
         ("stories", "priority",    "TEXT DEFAULT NULL"),
         ("stories", "epic_id",     "INTEGER DEFAULT NULL"),
         ("stories", "is_archived", "INTEGER DEFAULT 0"),
+        ("epics",   "start_date",  "TEXT DEFAULT NULL"),
+        ("epics",   "due_date",    "TEXT DEFAULT NULL"),
+        ("epics",   "status",      "TEXT DEFAULT 'planning'"),
+        ("epics",   "updated_at",  "INTEGER DEFAULT NULL"),
     ]
     conn = get_db()
     for table, col, col_def in new_cols:
@@ -648,6 +679,77 @@ def delete_epic(epic_id: int) -> None:
     conn.execute("DELETE FROM epics WHERE id=?", (epic_id,))
     conn.commit()
     conn.close()
+
+
+def get_epic(epic_id: int):
+    conn = get_db()
+    row = conn.execute(
+        """SELECT e.*, u.display_name AS creator_name
+           FROM epics e
+           LEFT JOIN users u ON u.id = e.created_by
+           WHERE e.id=?""",
+        (epic_id,),
+    ).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def update_epic(epic_id: int, fields: dict) -> None:
+    allowed = {"title", "color", "description", "start_date", "due_date", "status"}
+    sets, vals = [], []
+    for k, v in fields.items():
+        if k in allowed:
+            sets.append(f"{k}=?")
+            vals.append(v)
+    if not sets:
+        return
+    sets.append("updated_at=?")
+    vals.append(int(time.time()))
+    vals.append(epic_id)
+    conn = get_db()
+    conn.execute(f"UPDATE epics SET {','.join(sets)} WHERE id=?", vals)
+    conn.commit()
+    conn.close()
+
+
+def get_epic_stories_full(epic_id: int):
+    """All stories under an epic with status info + story points."""
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT s.id, s.title, s.status_id, s.story_points, s.sprint, s.priority,
+                  s.story_z, s.updated_at,
+                  st.name  AS status_name,
+                  st.color AS status_color,
+                  st.is_done AS status_is_done
+           FROM stories s
+           LEFT JOIN statuses st ON st.id = s.status_id
+           WHERE s.epic_id=? AND COALESCE(s.is_archived,0)=0
+           ORDER BY st.order_index, s.id""",
+        (epic_id,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_epics_with_stats(project_id: int):
+    """Epics for a project with aggregate stats."""
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT e.*,
+                  COUNT(s.id)                                   AS total_stories,
+                  SUM(CASE WHEN st.is_done=1 THEN 1 ELSE 0 END) AS done_stories,
+                  COALESCE(SUM(s.story_points),0)               AS total_points,
+                  COALESCE(SUM(CASE WHEN st.is_done=1 THEN s.story_points ELSE 0 END),0) AS done_points
+           FROM epics e
+           LEFT JOIN stories  s  ON s.epic_id = e.id AND COALESCE(s.is_archived,0)=0
+           LEFT JOIN statuses st ON st.id     = s.status_id
+           WHERE e.project_id=?
+           GROUP BY e.id
+           ORDER BY e.title""",
+        (project_id,),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 # ── Story addons (tasks/checklist) ────────────────────────────────────────────

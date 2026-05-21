@@ -1,0 +1,17 @@
+{
+  "name": "GYRA",
+  "short_name": "GYRA",
+  "description": "Scrum board for indie developers — by High Ground",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1A1208",
+  "theme_color": "#A0632A",
+  "icons": [
+    {
+      "src": "/static/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

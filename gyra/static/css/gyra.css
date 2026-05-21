@@ -874,7 +874,7 @@ body.is-fullscreen    .fs-pill { display: flex; }  /* JS-class fallback */
 .story-image-item:hover .btn-img-delete { display: flex; }
 /* Lightbox */
 .img-lightbox-bg {
-  position: fixed; inset: 0; z-index: 30000;
+  position: fixed; inset: 0; z-index: 40000;
   background: rgba(0,0,0,.88);
   display: flex; align-items: center; justify-content: center;
   cursor: zoom-out;
@@ -889,14 +889,14 @@ body.is-fullscreen    .fs-pill { display: flex; }  /* JS-class fallback */
   position: fixed; top: 16px; right: 20px;
   background: none; border: none; color: #fff;
   font-size: 32px; line-height: 1; cursor: pointer;
-  opacity: .8; z-index: 30001;
+  opacity: .8; z-index: 40001;
 }
 .img-lightbox-close:hover { opacity: 1; }
 .img-lightbox-prev, .img-lightbox-next {
   position: fixed; top: 50%; transform: translateY(-50%);
   background: rgba(0,0,0,.45); border: none; color: #fff;
   font-size: 48px; line-height: 1; padding: 8px 16px;
-  cursor: pointer; z-index: 30001; border-radius: 4px;
+  cursor: pointer; z-index: 40001; border-radius: 4px;
   transition: background .15s;
   user-select: none;
 }
@@ -1755,3 +1755,244 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
 /* Hover popup AC list */
 .cp-ac-list { margin: 2px 0 0 0; padding: 0 0 0 14px; list-style: disc; }
 .cp-ac-list li { font-size: 11px; color: #374151; margin-bottom: 1px; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   GYRA Sidebar — PIN logo + byline + help button
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Wrapper that holds the brand link + byline */
+.sidebar-brand-wrap {
+  border-bottom: 2px solid var(--c-purple-800);
+}
+
+/* Move border from brand link to wrap; keep existing padding/layout */
+.sidebar-brand {
+  border-bottom: none !important;
+  padding-bottom: 4px !important;
+}
+
+/* The pin SVG — explicit size, no stroke override */
+.sidebar-pin {
+  width: 26px; height: 26px; flex-shrink: 0;
+}
+
+/* "by High Ground" tiny tagline */
+.sidebar-byline {
+  display: block;
+  padding: 0 16px 10px 52px; /* indent to align under GYRA text (16px pad + 26px icon + 10px gap) */
+  font-size: 9px; letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--c-purple-400);
+  text-decoration: none;
+  line-height: 1;
+}
+.sidebar-byline:hover { color: var(--c-gray-300); text-decoration: none; }
+
+/* Row that contains user link + help button side by side */
+.sidebar-user-row {
+  display: flex; align-items: center;
+}
+.sidebar-user-row .user-link {
+  flex: 1; min-width: 0;
+}
+
+/* (?) help button */
+.sidebar-help-btn {
+  flex-shrink: 0;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--c-purple-500);
+  background: transparent;
+  color: var(--c-purple-400);
+  font-size: 12px; font-weight: 800;
+  margin-right: 10px;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+.sidebar-help-btn:hover {
+  background: var(--c-purple-500);
+  color: #fff;
+  border-color: var(--c-purple-500);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   GYRA Guide / Tutorial Modal
+   ───────────────────────────────────────────────────────────────────────── */
+
+.gyra-help-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(26,18,8,.82);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+
+.gyra-help-dialog {
+  background: var(--c-white);
+  border-radius: var(--r-md);
+  width: min(880px, 100%);
+  height: min(84vh, 720px);
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,.55);
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.gyra-help-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 24px;
+  background: var(--c-purple-900);
+  flex-shrink: 0;
+}
+.gyra-help-hdr-left {
+  display: flex; align-items: center; gap: 14px;
+}
+.gyra-help-pin {
+  width: 34px; height: 34px; flex-shrink: 0;
+}
+.gyra-help-title {
+  font-size: 18px; font-weight: 900; letter-spacing: 3px;
+  text-transform: uppercase; color: #fff; margin: 0;
+}
+.gyra-help-sub {
+  font-size: 11px; color: var(--c-purple-400); margin: 3px 0 0;
+}
+.gyra-help-close {
+  width: 32px; height: 32px;
+  border-radius: 50%; border: none;
+  background: var(--c-purple-800);
+  color: var(--c-gray-300);
+  font-size: 20px; line-height: 1;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.gyra-help-close:hover { background: var(--c-purple-700); color: #fff; }
+
+/* ── Body (nav + article) ── */
+.gyra-help-body {
+  display: flex; flex: 1; overflow: hidden;
+}
+
+.gyra-help-nav {
+  width: 175px; flex-shrink: 0;
+  background: var(--c-gray-100);
+  border-right: 1px solid var(--c-gray-200);
+  overflow-y: auto;
+  padding: 14px 0;
+}
+.gyra-help-nav a {
+  display: block;
+  padding: 7px 14px;
+  font-size: 12px; color: var(--c-gray-700);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.gyra-help-nav a:hover {
+  background: var(--c-gray-200);
+  color: var(--c-gray-900);
+  border-left-color: var(--c-purple-400);
+}
+.gyra-help-nav a.is-active {
+  background: var(--c-gray-200);
+  color: var(--c-gray-900);
+  border-left-color: var(--c-purple-500);
+  font-weight: 600;
+}
+
+.gyra-help-article {
+  flex: 1; overflow-y: auto;
+  padding: 28px 32px;
+}
+
+.gyra-help-article section {
+  padding-bottom: 32px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid var(--c-gray-200);
+}
+.gyra-help-article section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.gyra-help-article h3 {
+  font-size: 16px; font-weight: 800;
+  color: var(--c-purple-900);
+  margin-bottom: 10px;
+  letter-spacing: .4px;
+}
+.gyra-help-article h4 {
+  font-size: 11px; font-weight: 700;
+  color: var(--c-gray-700);
+  margin: 16px 0 6px;
+  text-transform: uppercase; letter-spacing: .8px;
+}
+.gyra-help-article p  { margin-bottom: 10px; line-height: 1.65; color: var(--c-gray-900); }
+.gyra-help-article ul,
+.gyra-help-article ol { margin: 6px 0 10px 20px; }
+.gyra-help-article li { margin-bottom: 5px; line-height: 1.55; color: var(--c-gray-900); }
+.gyra-help-article strong { color: var(--c-gray-900); }
+.gyra-help-article em { color: var(--c-purple-500); font-style: italic; }
+.gyra-help-article a { color: var(--c-purple-500); }
+.gyra-help-article a:hover { color: var(--c-purple-400); }
+
+/* Blockquote */
+.gh-quote {
+  margin: 12px 0; padding: 12px 16px;
+  border-left: 4px solid var(--c-purple-400);
+  background: var(--c-gray-50);
+  font-style: italic; font-size: 14px;
+  color: var(--c-gray-700);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+
+/* Callout / note box */
+.gh-callout {
+  margin: 14px 0; padding: 12px 14px;
+  background: #FFF9C4;
+  border-left: 4px solid #D97706;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: 13px; color: var(--c-gray-900);
+  line-height: 1.55;
+}
+
+/* Points table */
+.gh-table {
+  width: 100%; border-collapse: collapse;
+  margin: 12px 0; font-size: 13px;
+}
+.gh-table th {
+  text-align: left; padding: 7px 10px;
+  background: var(--c-gray-100);
+  font-weight: 700; font-size: 11px;
+  text-transform: uppercase; letter-spacing: .5px;
+  color: var(--c-gray-700);
+}
+.gh-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--c-gray-200);
+  color: var(--c-gray-900);
+}
+.gh-table tr:last-child td { border-bottom: none; }
+.gh-table td:first-child {
+  font-weight: 700; color: var(--c-purple-500);
+  width: 70px;
+}
+
+/* ── Footer ── */
+.gyra-help-footer {
+  padding: 10px 24px;
+  background: var(--c-gray-100);
+  border-top: 1px solid var(--c-gray-200);
+  font-size: 11px; color: var(--c-gray-500);
+  flex-shrink: 0; text-align: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .gyra-help-nav { display: none; }
+  .gyra-help-dialog { height: 92vh; width: 100%; }
+  .gyra-help-article { padding: 20px 16px; }
+}

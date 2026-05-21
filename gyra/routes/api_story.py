@@ -15,18 +15,45 @@ from db import (create_addon, create_notification, delete_addon,
                 get_story, get_story_addons, get_story_history,
                 get_story_images, get_story_thumbnails, get_story_previews, get_story_types,
                 get_story_users, log_story_change, toggle_addon,
-                update_addon_content)
+                update_addon_content, user_in_project)
 from routes.helpers import (allowed_image, bold_verb_in_title,
                              build_story_title, count_words)
 
 
 def register(app) -> None:
 
+    # ── B1: project-membership guard for every per-story endpoint ────────────
+    def _require_story_access(story_id):
+        """Return the story row if the current session user may access it,
+        else None.  Admins always pass; everyone else must be a member of the
+        story's project.  Callers should return 404 on None to avoid leaking
+        story-id existence to unauthorised users."""
+        s = get_story(story_id)
+        if not s:
+            return None
+        if session.get("role") == "admin":
+            return s
+        uid = session.get("user_id")
+        if uid and user_in_project(uid, s["project_id"]):
+            return s
+        return None
+
+    def _addon_story_id(addon_id):
+        """Resolve the story_id that owns an addon (for B1 access checks)."""
+        conn = get_db()
+        row  = conn.execute(
+            "SELECT story_id FROM addons WHERE id=?", (addon_id,)
+        ).fetchone()
+        conn.close()
+        return row["story_id"] if row else None
+
     # ── Single-story read ──────────────────────────────────────────────────────
 
     @app.route("/api/story/<int:story_id>/detail")
     @login_required
     def api_story_detail(story_id):
+        if not _require_story_access(story_id):
+            abort(404)
         conn = get_db()
         row  = conn.execute(
             "SELECT * FROM stories WHERE id=?", (story_id,)
@@ -58,7 +85,7 @@ def register(app) -> None:
     @login_required
     def api_story_card(story_id):
         """Card-level snapshot — used by the board to refresh a card after an edit."""
-        s = get_story(story_id)
+        s = _require_story_access(story_id)
         if not s:
             return jsonify(ok=False), 404
         assignees  = get_story_users(story_id)
@@ -84,7 +111,7 @@ def register(app) -> None:
     @app.route("/api/story/<int:story_id>/full")
     @login_required
     def api_story_full(story_id):
-        s = get_story(story_id)
+        s = _require_story_access(story_id)
         if not s:
             return jsonify(ok=False), 404
         assignees   = get_story_users(story_id)
@@ -129,6 +156,8 @@ def register(app) -> None:
     @login_required
     def api_split_story(story_id):
         enforce_csrf()
+        if not _require_story_access(story_id):
+            abort(404)
         data = request.get_json(silent=True) or {}
 
         conn = get_db()
@@ -201,6 +230,8 @@ def register(app) -> None:
     @login_required
     def api_move_story(story_id):
         enforce_csrf()
+        if not _require_story_access(story_id):
+            return jsonify(ok=False), 404
         data      = request.get_json(silent=True) or {}
         status_id = data.get("status_id")
         sprint    = data.get("sprint")
@@ -250,6 +281,8 @@ def register(app) -> None:
     @login_required
     def api_move_to_sprint(story_id):
         enforce_csrf()
+        if not _require_story_access(story_id):
+            return jsonify(ok=False), 404
         data   = request.get_json(silent=True) or {}
         sprint = data.get("sprint")
 
@@ -286,7 +319,7 @@ def register(app) -> None:
     @login_required
     def api_update_story(story_id):
         enforce_csrf()
-        s = get_story(story_id)
+        s = _require_story_access(story_id)
         if not s:
             return jsonify(ok=False), 404
         data     = request.get_json(silent=True) or {}
@@ -385,7 +418,7 @@ def register(app) -> None:
     @login_required
     def api_delete_story(story_id):
         enforce_csrf()
-        s = get_story(story_id)
+        s = _require_story_access(story_id)
         if not s:
             return jsonify(ok=False), 404
         if (session["role"] != "admin"
@@ -403,7 +436,7 @@ def register(app) -> None:
     @login_required
     def api_upload_story_image(story_id):
         enforce_csrf()
-        s = get_story(story_id)
+        s = _require_story_access(story_id)
         if not s:
             return jsonify(ok=False), 404
         f = request.files.get("image")
@@ -446,6 +479,8 @@ def register(app) -> None:
     @login_required
     def api_delete_story_image(story_id, image_id):
         enforce_csrf()
+        if not _require_story_access(story_id):
+            return jsonify(ok=False), 404
         conn = get_db()
         row = conn.execute(
             "SELECT * FROM story_images WHERE id=? AND story_id=?",
@@ -474,7 +509,7 @@ def register(app) -> None:
     @login_required
     def api_create_comment(story_id):
         enforce_csrf()
-        s = get_story(story_id)
+        s = _require_story_access(story_id)
         if not s:
             return jsonify(ok=False), 404
         data    = request.get_json(silent=True) or {}
@@ -703,6 +738,8 @@ def register(app) -> None:
     @app.route("/api/story/<int:story_id>/addons", methods=["GET"])
     @login_required
     def api_get_addons(story_id):
+        if not _require_story_access(story_id):
+            return jsonify([]), 404
         addons = get_story_addons(story_id, session["user_id"])
         return jsonify([dict(a) for a in addons])
 
@@ -710,6 +747,8 @@ def register(app) -> None:
     @login_required
     def api_create_addon(story_id):
         enforce_csrf()
+        if not _require_story_access(story_id):
+            return jsonify(ok=False), 404
         data     = request.get_json(silent=True) or {}
         content  = (data.get("content") or "").strip()
         if not content:
@@ -722,6 +761,9 @@ def register(app) -> None:
     @login_required
     def api_update_addon(addon_id):
         enforce_csrf()
+        sid = _addon_story_id(addon_id)
+        if not sid or not _require_story_access(sid):
+            return jsonify(ok=False), 404
         data = request.get_json(silent=True) or {}
         if "is_done" in data:
             toggle_addon(addon_id, session["user_id"], int(bool(data["is_done"])))
@@ -738,5 +780,8 @@ def register(app) -> None:
     @login_required
     def api_delete_addon(addon_id):
         enforce_csrf()
+        sid = _addon_story_id(addon_id)
+        if not sid or not _require_story_access(sid):
+            return jsonify(ok=False), 404
         delete_addon(addon_id)
         return jsonify(ok=True)

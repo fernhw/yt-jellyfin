@@ -100,10 +100,30 @@ def register(app) -> None:
                     "story_points": s.get("story_points") or 0,
                 })
         epics_panel = []
+        epic_by_id: dict = {}
         for e in epics_raw:
             ed = dict(e)
             ed["stories"] = epic_stories_map.get(e["id"], [])
             epics_panel.append(ed)
+            epic_by_id[e["id"]] = ed
+
+        # Per-column epic chips: which epics have stories in each column?
+        column_epics: dict = {}
+        for st in statuses:
+            seen = {}
+            for s in board_map.get(st["id"], []):
+                eid = s.get("epic_id")
+                if eid and eid in epic_by_id and eid not in seen:
+                    e = epic_by_id[eid]
+                    # count this epic's stories in this column
+                    cnt = sum(1 for x in board_map[st["id"]] if x.get("epic_id") == eid)
+                    seen[eid] = {
+                        "id":    eid,
+                        "title": e["title"],
+                        "color": e["color"],
+                        "count": cnt,
+                    }
+            column_epics[st["id"]] = list(seen.values())
 
         return render_template(
             "board.html",
@@ -117,6 +137,7 @@ def register(app) -> None:
             story_types=story_types,
             board_assignees=board_assignees,
             epics=epics_panel,
+            column_epics=column_epics,
         )
 
     @app.route("/project/<int:project_id>/backlog")
@@ -153,11 +174,6 @@ def register(app) -> None:
         if session.get("role") != "admin" and not user_in_project(session["user_id"], project_id):
             abort(403)
         return render_template("wip.html", project=project, feature=feature)
-
-    @app.route("/project/<int:project_id>/grooming")
-    @login_required
-    def grooming(project_id):
-        return _wip(project_id, "Grooming")
 
     @app.route("/project/<int:project_id>/standup")
     @login_required

@@ -96,6 +96,20 @@
         <span class="col-dot" style="background:{{ status.color }}"></span>
         <span class="col-name">{{ status.name }}</span>
         <span class="col-count">{{ board_map.get(status.id, []) | list | length }}</span>
+        {% set _col_eps = column_epics.get(status.id, []) %}
+        {% if _col_eps %}
+        <span class="col-epics" title="Epics with stories in this column">
+          {% for ep in _col_eps %}
+          <button type="button"
+                  class="col-epic-chip"
+                  data-epic-id="{{ ep.id }}"
+                  style="background:{{ ep.color }}"
+                  title="{{ ep.title }} — {{ ep.count }} story{{ 'ies' if ep.count != 1 else '' }} in {{ status.name }}">
+            <span class="col-epic-count">{{ ep.count }}</span>
+          </button>
+          {% endfor %}
+        </span>
+        {% endif %}
       </div>
 
       <div class="board-cards" id="col-{{ status.id }}">
@@ -442,6 +456,14 @@
     <div id="sm-content" class="sm-content-body story-layout" style="display:none">
       {# ── Main area ── #}
       <div class="story-main sm-scrollable">
+        <div class="story-images-section mb-4">
+          <h3>Images</h3>
+          <div class="story-images-grid" id="sm-images-grid"></div>
+          <label class="img-upload-label">
+            <input type="file" id="sm-img-input" accept=".png,.jpg,.jpeg,.webp" style="display:none" multiple>
+            + Attach image
+          </label>
+        </div>
         <div class="story-builder-card">
           <div class="story-builder-label">User Story</div>
           <div class="story-builder-row">
@@ -460,14 +482,6 @@
             <span class="story-preview-text" id="sm-preview">Preview will appear here…</span>
             <span class="story-wc" id="sm-wc">0 / 19</span>
           </div>
-        </div>
-        <div class="story-images-section mb-4">
-          <h3>Images</h3>
-          <div class="story-images-grid" id="sm-images-grid"></div>
-          <label class="img-upload-label">
-            <input type="file" id="sm-img-input" accept=".png,.jpg,.jpeg,.webp" style="display:none" multiple>
-            + Attach image
-          </label>
         </div>
         <div class="form-group mt-4">
           <label class="form-label">Description</label>
@@ -562,6 +576,285 @@
         <div class="story-sidebar-field">
           <span class="story-sidebar-label">Updated</span>
           <span id="sm-updated" class="story-sidebar-value"></span>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+{# ──────────────────────── EPIC MODAL ─────────────────────────── #}
+<style>
+  /* Column-header epic chips */
+  .col-epics { display:inline-flex; gap:4px; margin-left:6px; flex-wrap:wrap; }
+  .col-epic-chip {
+    width:18px; height:18px; border-radius:50%;
+    border:1.5px solid rgba(0,0,0,.18);
+    cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+    padding:0; box-shadow:0 1px 2px rgba(0,0,0,.15); transition:transform .12s;
+    position:relative;
+  }
+  .col-epic-chip:hover { transform:scale(1.18); z-index:2; }
+  .col-epic-chip .col-epic-count {
+    font-size:9px; font-weight:800; color:#fff;
+    text-shadow:0 1px 1px rgba(0,0,0,.55);
+    line-height:1; pointer-events:none;
+  }
+
+  /* Epic modal */
+  .epic-modal-bg {
+    position:fixed; inset:0; background:rgba(0,0,0,.6);
+    z-index:35001; display:none; align-items:center; justify-content:center;
+  }
+  .epic-modal-wrap {
+    background:var(--c-gray-50,#F9F5EE); border-radius:10px;
+    width:92vw; max-width:1100px; height:90vh; display:flex; flex-direction:column;
+    box-shadow:var(--shadow-md, 0 8px 32px rgba(0,0,0,.25));
+    border:1.5px solid var(--c-gray-200,#DDD0B8);
+  }
+  .em-header {
+    display:flex; align-items:center; gap:12px;
+    padding:14px 20px; border-bottom:1.5px solid var(--c-gray-200,#DDD0B8);
+    background:var(--c-gray-100,#EDE4D0); border-radius:10px 10px 0 0;
+  }
+  .em-color-dot {
+    width:22px; height:22px; border-radius:50%;
+    border:2px solid #fff; box-shadow:0 0 0 1.5px rgba(0,0,0,.18);
+    cursor:pointer; flex-shrink:0;
+  }
+  .em-title-input {
+    flex:1; font-size:20px; font-weight:700; background:transparent;
+    border:none; outline:none; color:var(--c-gray-900,#1A1208);
+    padding:4px 6px; border-radius:4px;
+  }
+  .em-title-input:focus { background:#fff; box-shadow:0 0 0 2px var(--c-purple-500,#7C4A1E); }
+  .em-status-badge {
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
+    padding:4px 10px; border-radius:12px;
+  }
+  .em-status-badge.s-planning  { background:#E5E7EB; color:#374151; }
+  .em-status-badge.s-active    { background:#DBEAFE; color:#1E40AF; }
+  .em-status-badge.s-completed { background:#D1FAE5; color:#065F46; }
+  .em-status-badge.s-on_hold   { background:#FEF3C7; color:#92400E; }
+  .em-close {
+    width:32px; height:32px; border-radius:50%;
+    border:1.5px solid var(--c-gray-300,#C4B49A); background:#fff;
+    cursor:pointer; font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center;
+  }
+  .em-close:hover { background:var(--c-red,#DC2626); color:#fff; border-color:var(--c-red,#DC2626); }
+
+  .em-body { flex:1; display:flex; overflow:hidden; }
+  .em-main { flex:1; overflow-y:auto; padding:20px 24px; }
+  .em-side {
+    width:280px; flex-shrink:0; border-left:1.5px solid var(--c-gray-200,#DDD0B8);
+    background:var(--c-gray-100,#EDE4D0); padding:20px 18px; overflow-y:auto;
+  }
+
+  /* Progress section */
+  .em-progress-section { margin-bottom:22px; }
+  .em-progress-row {
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin-bottom:6px; font-size:13px;
+  }
+  .em-progress-label { font-weight:700; color:var(--c-gray-700,#3D2E1A); }
+  .em-progress-pct   { font-weight:800; font-size:18px; color:var(--c-purple-500,#7C4A1E); }
+  .em-progress-bar {
+    height:14px; background:var(--c-gray-200,#DDD0B8); border-radius:7px;
+    overflow:hidden; border:1px solid rgba(0,0,0,.08); position:relative;
+  }
+  .em-progress-fill {
+    height:100%; background:linear-gradient(90deg, var(--c-green,#059669), #10B981);
+    border-radius:7px; transition:width .4s ease;
+  }
+  .em-progress-fill.is-points { background:linear-gradient(90deg, var(--c-purple-500,#7C4A1E), var(--c-purple-400,#A0632A)); }
+  .em-progress-marker {
+    position:absolute; top:-3px; bottom:-3px; width:2px;
+    background:var(--c-red,#DC2626); pointer-events:none;
+  }
+  .em-progress-marker::after {
+    content:'Today'; position:absolute; top:-16px; left:50%; transform:translateX(-50%);
+    font-size:9px; font-weight:700; color:var(--c-red,#DC2626); white-space:nowrap;
+  }
+  .em-progress-meta { font-size:11px; color:var(--c-gray-500,#7A6A52); margin-top:4px; }
+
+  /* Stats grid */
+  .em-stats-grid {
+    display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:24px;
+  }
+  .em-stat-card {
+    background:#fff; border:1.5px solid var(--c-gray-200,#DDD0B8);
+    border-radius:8px; padding:12px; text-align:center;
+  }
+  .em-stat-value { font-size:22px; font-weight:800; color:var(--c-gray-900,#1A1208); line-height:1.1; }
+  .em-stat-label { font-size:10px; font-weight:700; text-transform:uppercase; color:var(--c-gray-500,#7A6A52); margin-top:4px; letter-spacing:.5px; }
+
+  /* Status breakdown bar */
+  .em-status-bar {
+    display:flex; height:24px; border-radius:6px; overflow:hidden;
+    border:1.5px solid var(--c-gray-200,#DDD0B8); margin-bottom:8px;
+  }
+  .em-status-seg {
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; color:#fff;
+    text-shadow:0 1px 1px rgba(0,0,0,.4); min-width:24px;
+  }
+  .em-status-legend { display:flex; flex-wrap:wrap; gap:10px; font-size:11px; }
+  .em-status-legend-item { display:flex; align-items:center; gap:5px; color:var(--c-gray-700,#3D2E1A); }
+  .em-status-legend-dot { width:10px; height:10px; border-radius:50%; }
+
+  /* Story list */
+  .em-section-title {
+    font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--c-gray-700,#3D2E1A); margin:24px 0 10px; padding-bottom:6px;
+    border-bottom:1.5px solid var(--c-gray-200,#DDD0B8);
+  }
+  .em-story-list { display:flex; flex-direction:column; gap:6px; }
+  .em-story-row {
+    display:flex; align-items:center; gap:10px; padding:8px 12px;
+    background:#fff; border:1.5px solid var(--c-gray-200,#DDD0B8); border-radius:6px;
+    cursor:pointer; transition:transform .1s, box-shadow .1s;
+  }
+  .em-story-row:hover { transform:translateX(2px); box-shadow:var(--shadow-sm, 0 1px 3px rgba(0,0,0,.1)); }
+  .em-story-status-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .em-story-title { flex:1; font-size:13px; color:var(--c-gray-900,#1A1208); }
+  .em-story-pts {
+    font-size:11px; font-weight:700; background:var(--c-gray-100,#EDE4D0);
+    padding:2px 7px; border-radius:10px; color:var(--c-gray-700,#3D2E1A);
+  }
+  .em-story-status-name { font-size:10px; color:var(--c-gray-500,#7A6A52); text-transform:uppercase; font-weight:700; }
+
+  /* Sidebar fields */
+  .em-side-field { margin-bottom:16px; }
+  .em-side-label {
+    font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--c-gray-500,#7A6A52); display:block; margin-bottom:6px;
+  }
+  .em-side-input, .em-side-select {
+    width:100%; padding:7px 10px; border:1.5px solid var(--c-gray-200,#DDD0B8);
+    border-radius:5px; background:#fff; font-size:13px; color:var(--c-gray-900,#1A1208);
+  }
+  .em-side-textarea {
+    width:100%; padding:8px 10px; border:1.5px solid var(--c-gray-200,#DDD0B8);
+    border-radius:5px; background:#fff; font-size:13px; resize:vertical; min-height:90px;
+    font-family:inherit;
+  }
+  .em-side-row { display:flex; gap:8px; }
+  .em-side-row > * { flex:1; }
+  .em-color-picker {
+    display:flex; gap:6px; flex-wrap:wrap;
+  }
+  .em-color-swatch {
+    width:24px; height:24px; border-radius:50%; cursor:pointer;
+    border:2px solid transparent;
+  }
+  .em-color-swatch.is-selected { border-color:var(--c-gray-900,#1A1208); }
+  .em-btn-row { display:flex; gap:8px; margin-top:18px; }
+  .em-days-badge {
+    display:inline-block; padding:3px 9px; border-radius:10px;
+    font-size:11px; font-weight:700;
+  }
+  .em-days-badge.is-late { background:#FEE2E2; color:#991B1B; }
+  .em-days-badge.is-soon { background:#FEF3C7; color:#92400E; }
+  .em-days-badge.is-ok   { background:#D1FAE5; color:#065F46; }
+</style>
+
+<div id="em-bg" class="epic-modal-bg" role="dialog" aria-modal="true" aria-label="Edit epic">
+  <div class="epic-modal-wrap">
+    <div class="em-header">
+      <span id="em-color-dot" class="em-color-dot" style="background:#6B7280" title="Change color"></span>
+      <input id="em-title" class="em-title-input" placeholder="Epic title">
+      <span id="em-status-badge" class="em-status-badge s-planning">Planning</span>
+      <button type="button" class="em-close" id="em-close" aria-label="Close">×</button>
+    </div>
+    <div class="em-body">
+      <div class="em-main">
+        <div id="em-loading" style="padding:40px;text-align:center;color:var(--c-gray-500,#7A6A52)">Loading…</div>
+        <div id="em-content" style="display:none">
+
+          <div class="em-progress-section">
+            <div class="em-progress-row">
+              <span class="em-progress-label">Stories complete</span>
+              <span id="em-pct-count" class="em-progress-pct">0%</span>
+            </div>
+            <div class="em-progress-bar">
+              <div id="em-fill-count" class="em-progress-fill" style="width:0%"></div>
+              <div id="em-today-marker" class="em-progress-marker" style="display:none"></div>
+            </div>
+            <div id="em-progress-meta" class="em-progress-meta"></div>
+          </div>
+
+          <div class="em-progress-section">
+            <div class="em-progress-row">
+              <span class="em-progress-label">Story points complete</span>
+              <span id="em-pct-points" class="em-progress-pct">0%</span>
+            </div>
+            <div class="em-progress-bar">
+              <div id="em-fill-points" class="em-progress-fill is-points" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div class="em-stats-grid">
+            <div class="em-stat-card">
+              <div id="em-stat-stories" class="em-stat-value">0</div>
+              <div class="em-stat-label">Stories</div>
+            </div>
+            <div class="em-stat-card">
+              <div id="em-stat-points"  class="em-stat-value">0</div>
+              <div class="em-stat-label">Points</div>
+            </div>
+            <div class="em-stat-card">
+              <div id="em-stat-done"    class="em-stat-value">0</div>
+              <div class="em-stat-label">Done</div>
+            </div>
+            <div class="em-stat-card">
+              <div id="em-stat-days"    class="em-stat-value">—</div>
+              <div class="em-stat-label">Days left</div>
+            </div>
+          </div>
+
+          <div class="em-section-title">Status breakdown</div>
+          <div id="em-status-bar"    class="em-status-bar"></div>
+          <div id="em-status-legend" class="em-status-legend"></div>
+
+          <div class="em-section-title">Stories <span id="em-story-total" style="color:var(--c-gray-500,#7A6A52);font-weight:600">(0)</span></div>
+          <div id="em-story-list" class="em-story-list">
+            <div style="padding:14px;text-align:center;color:var(--c-gray-500,#7A6A52);font-size:13px">No stories assigned yet.</div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="em-side">
+        <div class="em-side-field">
+          <label class="em-side-label">Status</label>
+          <select id="em-status" class="em-side-select">
+            <option value="planning">Planning</option>
+            <option value="active">Active</option>
+            <option value="on_hold">On hold</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="em-side-field">
+          <label class="em-side-label">Timeline</label>
+          <div class="em-side-row">
+            <input type="date" id="em-start" class="em-side-input" title="Start date">
+            <input type="date" id="em-due"   class="em-side-input" title="Due date">
+          </div>
+          <div id="em-days-badge-wrap" style="margin-top:6px"></div>
+        </div>
+        <div class="em-side-field">
+          <label class="em-side-label">Color</label>
+          <div id="em-color-picker" class="em-color-picker"></div>
+        </div>
+        <div class="em-side-field">
+          <label class="em-side-label">Description</label>
+          <textarea id="em-desc" class="em-side-textarea" placeholder="What's this epic about?"></textarea>
+        </div>
+        <div class="em-btn-row">
+          <button type="button" id="em-save"  class="btn btn-primary btn-full">Save</button>
+        </div>
+        <div style="margin-top:14px;font-size:11px;color:var(--c-gray-500,#7A6A52)">
+          <div>Created by <span id="em-creator">—</span></div>
+          <div>Created <span id="em-created">—</span></div>
+          <div>Updated <span id="em-updated">—</span></div>
         </div>
       </aside>
     </div>
@@ -739,7 +1032,7 @@
       if (href) {
         e.preventDefault();
         e.stopPropagation();
-        if (window.openStoryModal) window.openStoryModal(href);
+        document.dispatchEvent(new CustomEvent('gyra:openStory', {detail: {href: href}}));
       }
     });
     var cb = card.querySelector('.card-sel-cb');
@@ -1556,9 +1849,33 @@
   var bg    = document.getElementById('sm-bg');
   var smKey = document.getElementById('sm-key');
 
+  // Listen for card-click events dispatched by wireCard
+  document.addEventListener('gyra:openStory', function(e) {
+    openStoryModal(e.detail.href);
+  });
+
+  // Bulletproof delegated fallback: catch any .board-card click directly
+  document.addEventListener('click', function (e) {
+    var card = e.target.closest && e.target.closest('.board-card');
+    if (!card) return;
+    if (e.target.closest('.card-sel')) return;
+    if (e.ctrlKey || e.metaKey) return;
+    var href = card.dataset.href;
+    if (!href) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openStoryModal(href);
+  }, true); // capture phase: runs before other handlers
+
+  window.openStoryModal  = openStoryModal;
+  window.closeStoryModal = closeStoryModal;
+
   // ── Fetch helpers ──
   function apiGet(path) {
-    return fetch(ROOT + path, {credentials: 'same-origin'}).then(function(r){ return r.json(); });
+    return fetch(ROOT + path, {credentials: 'same-origin'}).then(function(r) {
+      if (!r.ok) return {ok: false, status: r.status};
+      return r.json();
+    });
   }
   function apiJson(path, method, body) {
     return fetch(ROOT + path, {
@@ -2015,6 +2332,7 @@
   window.openStoryModal  = openStoryModal;
   window.closeStoryModal = closeStoryModal;
 }());
+</script>
 
 <script>
 // ── Story modal image lightbox ───────────────────────────────────────────────
@@ -2182,12 +2500,12 @@
         storiesHtml = '<p class="epics-empty" style="margin:4px 0 8px 20px">No stories in sprint.</p>';
       }
       return '<div class="epic-item" id="epic-item-' + e.id + '">' +
-        '<div class="epic-item-head" onclick="toggleEpicItem(' + e.id + ')">' +
+        '<div class="epic-item-head" data-epic-modal-id="' + e.id + '" style="cursor:pointer">' +
           '<span class="epic-dot" style="background:' + esc(e.color) + '"></span>' +
           '<span class="epic-title" id="epic-title-' + e.id + '">' + esc(e.title) + '</span>' +
           '<span class="epic-story-count">' + (e.stories ? e.stories.length : 0) + '</span>' +
-          '<span class="epic-chevron">▾</span>' +
-          '<button class="epic-edit-btn" onclick="event.stopPropagation();openEpicEdit(' + e.id + ',\'' + esc(e.title) + '\',\'' + esc(e.color) + '\',\'' + esc(e.description||'') + '\')" title="Edit epic">✏</button>' +
+          '<span class="epic-chevron" onclick="event.stopPropagation();toggleEpicItem(' + e.id + ')" title="Show stories">▾</span>' +
+          '<button class="epic-edit-btn" data-epic-modal-id="' + e.id + '" title="Open epic">✏</button>' +
         '</div>' +
         '<div class="epic-body" id="epic-body-' + e.id + '" style="display:none">' +
           storiesHtml +
@@ -2311,6 +2629,262 @@
     hidden.value = csrfInputs[0].value;
     document.body.appendChild(hidden);
   }
+}());
+</script>
+
+{# ───────────────────── EPIC MODAL JS ───────────────────── #}
+<script>
+(function () {
+  var ROOT = '';
+  var CSRF = (document.querySelector('meta[name="csrf-token"]') || {getAttribute:function(){return '';}}).getAttribute('content') || '';
+
+  var EPIC_COLORS = [
+    '#6B7280', '#DC2626', '#EA580C', '#D97706', '#65A30D',
+    '#059669', '#0891B2', '#2563EB', '#7C3AED', '#C026D3',
+    '#DB2777', '#7C4A1E'
+  ];
+  var STATUS_LABELS = {
+    planning:  'Planning',
+    active:    'Active',
+    on_hold:   'On hold',
+    completed: 'Completed'
+  };
+
+  var bg          = document.getElementById('em-bg');
+  if (!bg) return;
+  var loading     = document.getElementById('em-loading');
+  var content     = document.getElementById('em-content');
+  var titleInput  = document.getElementById('em-title');
+  var statusBadge = document.getElementById('em-status-badge');
+  var colorDot    = document.getElementById('em-color-dot');
+
+  var currentEpic = null;
+
+  function esc(s){ return String(s||'').replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });}
+  function fmtDate(ts){ if(!ts) return '—'; try { return new Date(ts*1000).toLocaleDateString(); } catch(e){ return '—'; } }
+
+  function apiGet(path){
+    return fetch(ROOT+path, {credentials:'same-origin'}).then(function(r){
+      if (!r.ok) return {ok:false, status:r.status};
+      return r.json();
+    });
+  }
+  function apiPatch(path, body){
+    return fetch(ROOT+path, {
+      method:'PATCH', credentials:'same-origin',
+      headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},
+      body: JSON.stringify(body)
+    }).then(function(r){ return r.json(); });
+  }
+
+  function renderColorPicker(selected){
+    var wrap = document.getElementById('em-color-picker');
+    wrap.innerHTML = '';
+    EPIC_COLORS.forEach(function(c){
+      var sw = document.createElement('span');
+      sw.className = 'em-color-swatch' + (c.toLowerCase() === (selected||'').toLowerCase() ? ' is-selected' : '');
+      sw.style.background = c;
+      sw.setAttribute('data-color', c);
+      sw.addEventListener('click', function(){
+        wrap.querySelectorAll('.em-color-swatch').forEach(function(x){x.classList.remove('is-selected');});
+        sw.classList.add('is-selected');
+        colorDot.style.background = c;
+      });
+      wrap.appendChild(sw);
+    });
+  }
+
+  function updateStatusBadge(s){
+    statusBadge.className = 'em-status-badge s-' + s;
+    statusBadge.textContent = STATUS_LABELS[s] || 'Planning';
+  }
+
+  function renderStatusBreakdown(by_status, total){
+    var bar    = document.getElementById('em-status-bar');
+    var legend = document.getElementById('em-status-legend');
+    bar.innerHTML = ''; legend.innerHTML = '';
+    if (!total) {
+      bar.innerHTML = '<div style="flex:1;background:var(--c-gray-200,#DDD0B8)"></div>';
+      legend.innerHTML = '<span style="color:var(--c-gray-500,#7A6A52);font-style:italic">No stories yet</span>';
+      return;
+    }
+    by_status.forEach(function(s){
+      if (!s.count) return;
+      var pct = (s.count / total) * 100;
+      var seg = document.createElement('div');
+      seg.className = 'em-status-seg';
+      seg.style.width = pct + '%';
+      seg.style.background = s.color || '#6B7280';
+      seg.textContent = s.count;
+      seg.title = s.name + ': ' + s.count + ' (' + s.points + ' pts)';
+      bar.appendChild(seg);
+
+      var li = document.createElement('span');
+      li.className = 'em-status-legend-item';
+      li.innerHTML = '<span class="em-status-legend-dot" style="background:'+esc(s.color||'#6B7280')+'"></span>'
+                  + esc(s.name) + ' (' + s.count + ')';
+      legend.appendChild(li);
+    });
+  }
+
+  function renderStories(stories){
+    var list = document.getElementById('em-story-list');
+    document.getElementById('em-story-total').textContent = '(' + stories.length + ')';
+    if (!stories.length) {
+      list.innerHTML = '<div style="padding:14px;text-align:center;color:var(--c-gray-500,#7A6A52);font-size:13px">No stories assigned yet.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    stories.forEach(function(s){
+      var row = document.createElement('div');
+      row.className = 'em-story-row';
+      row.innerHTML =
+        '<span class="em-story-status-dot" style="background:'+esc(s.status_color||'#6B7280')+'"></span>'
+      + '<span class="em-story-title">'+esc(s.title||'')+'</span>'
+      + '<span class="em-story-status-name">'+esc(s.status_name||'')+'</span>'
+      + '<span class="em-story-pts">'+(s.story_points||0)+' pts</span>';
+      row.addEventListener('click', function(){
+        closeEpicModal();
+        if (typeof window.openStoryModal === 'function') {
+          window.openStoryModal(s.id);
+        }
+      });
+      list.appendChild(row);
+    });
+  }
+
+  function renderDaysBadge(stats){
+    var wrap = document.getElementById('em-days-badge-wrap');
+    wrap.innerHTML = '';
+    var d = stats.days_remaining;
+    if (d === null || d === undefined) { return; }
+    var cls, txt;
+    if (d < 0)       { cls = 'is-late'; txt = Math.abs(d) + ' day' + (Math.abs(d)===1?'':'s') + ' overdue'; }
+    else if (d <= 3) { cls = 'is-soon'; txt = d + ' day' + (d===1?'':'s') + ' left'; }
+    else             { cls = 'is-ok';   txt = d + ' days left'; }
+    var b = document.createElement('span');
+    b.className = 'em-days-badge ' + cls;
+    b.textContent = txt;
+    wrap.appendChild(b);
+  }
+
+  function populate(data){
+    var e = data.epic; currentEpic = e;
+    var s = data.stats;
+
+    titleInput.value          = e.title || '';
+    document.getElementById('em-desc').value     = e.description || '';
+    document.getElementById('em-status').value   = e.status || 'planning';
+    document.getElementById('em-start').value    = e.start_date || '';
+    document.getElementById('em-due').value      = e.due_date   || '';
+    document.getElementById('em-creator').textContent = e.creator_name || '—';
+    document.getElementById('em-created').textContent = fmtDate(e.created_at);
+    document.getElementById('em-updated').textContent = fmtDate(e.updated_at);
+
+    colorDot.style.background = e.color || '#6B7280';
+    updateStatusBadge(e.status || 'planning');
+    renderColorPicker(e.color);
+
+    document.getElementById('em-pct-count').textContent  = s.pct_count + '%';
+    document.getElementById('em-fill-count').style.width = s.pct_count + '%';
+    document.getElementById('em-pct-points').textContent  = s.pct_points + '%';
+    document.getElementById('em-fill-points').style.width = s.pct_points + '%';
+
+    document.getElementById('em-stat-stories').textContent = s.total_stories;
+    document.getElementById('em-stat-points').textContent  = s.total_points;
+    document.getElementById('em-stat-done').textContent    = s.done_stories;
+    document.getElementById('em-stat-days').textContent    =
+      (s.days_remaining === null || s.days_remaining === undefined) ? '—' : s.days_remaining;
+
+    // Today marker on the count progress bar (based on schedule pct)
+    var marker = document.getElementById('em-today-marker');
+    if (s.sched_pct !== null && s.sched_pct !== undefined) {
+      marker.style.display = 'block';
+      marker.style.left = Math.min(100, Math.max(0, s.sched_pct)) + '%';
+    } else { marker.style.display = 'none'; }
+
+    // Meta line
+    var meta = '';
+    if (e.start_date || e.due_date) {
+      meta = (e.start_date || '?') + ' → ' + (e.due_date || '?');
+      if (s.days_total !== null && s.days_total !== undefined) {
+        meta += '  •  ' + s.days_total + ' day' + (s.days_total===1?'':'s') + ' total';
+      }
+    }
+    document.getElementById('em-progress-meta').textContent = meta;
+
+    renderStatusBreakdown(s.by_status || [], s.total_stories);
+    renderStories(data.stories || []);
+    renderDaysBadge(s);
+  }
+
+  function openEpicModal(epicId){
+    bg.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    loading.style.display = 'block';
+    content.style.display = 'none';
+    apiGet('/api/epic/' + epicId + '/full').then(function(d){
+      if (!d || !d.ok) { alert('Could not load epic'); closeEpicModal(); return; }
+      populate(d);
+      loading.style.display = 'none';
+      content.style.display = '';
+    });
+  }
+  function closeEpicModal(){
+    bg.style.display = 'none';
+    document.body.style.overflow = '';
+    currentEpic = null;
+  }
+
+  document.getElementById('em-close').addEventListener('click', closeEpicModal);
+  bg.addEventListener('click', function(ev){ if (ev.target === bg) closeEpicModal(); });
+  document.addEventListener('keydown', function(ev){
+    if (ev.key === 'Escape' && bg.style.display === 'flex') closeEpicModal();
+  });
+
+  document.getElementById('em-status').addEventListener('change', function(){
+    updateStatusBadge(this.value);
+  });
+
+  document.getElementById('em-save').addEventListener('click', function(){
+    if (!currentEpic) return;
+    var btn = this;
+    var swatch = document.querySelector('#em-color-picker .em-color-swatch.is-selected');
+    var body = {
+      title:       titleInput.value.trim(),
+      description: document.getElementById('em-desc').value,
+      status:      document.getElementById('em-status').value,
+      start_date:  document.getElementById('em-start').value || '',
+      due_date:    document.getElementById('em-due').value   || '',
+      color:       swatch ? swatch.getAttribute('data-color') : (currentEpic.color || '#6B7280')
+    };
+    if (!body.title) { alert('Title is required'); return; }
+    btn.disabled = true; btn.textContent = 'Saving…';
+    apiPatch('/api/epic/' + currentEpic.id, body).then(function(r){
+      btn.disabled = false; btn.textContent = 'Save';
+      if (r && r.ok) {
+        // refresh to get recalculated stats / timeline
+        openEpicModal(currentEpic.id);
+      } else {
+        alert('Save failed' + (r && r.error ? ': ' + r.error : ''));
+      }
+    });
+  });
+
+  // Delegated handler: column-header epic chips + Sprint Epics panel rows + pencil
+  document.addEventListener('click', function(ev){
+    var chip = ev.target.closest('.col-epic-chip, [data-epic-modal-id]');
+    if (!chip) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    var id = parseInt(chip.getAttribute('data-epic-id') || chip.getAttribute('data-epic-modal-id') || '0', 10);
+    if (id) openEpicModal(id);
+  }, true);
+
+  window.openEpicModal  = openEpicModal;
+  window.closeEpicModal = closeEpicModal;
 }());
 </script>
 
