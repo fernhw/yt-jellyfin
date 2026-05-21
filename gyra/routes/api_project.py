@@ -37,6 +37,7 @@ def register(app) -> None:
                FROM stories s
                LEFT JOIN story_types sty ON s.story_type = sty.id
                WHERE s.project_id=? AND s.sprint IS NOT NULL
+                 AND COALESCE(s.is_archived,0)=0
                ORDER BY s.order_index""",
             (project_id,),
         ).fetchall()
@@ -103,6 +104,7 @@ def register(app) -> None:
             """SELECT id, status_id, sprint, order_index, updated_at
                FROM stories
                WHERE project_id=? AND sprint IS NOT NULL AND updated_at > ?
+                 AND COALESCE(is_archived,0)=0
                ORDER BY order_index""",
             (project_id, since),
         ).fetchall()

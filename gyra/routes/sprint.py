@@ -10,7 +10,8 @@ from markupsafe import Markup, escape
 from auth import enforce_csrf, login_required, super_user_required
 from db import (get_all_active_users, get_current_sprint, get_db,
                 get_epics, get_project, get_story_types, user_in_project)
-from routes.helpers import build_story_title, validate_story_parts
+from routes.helpers import bold_verb_in_title, build_story_title, validate_story_parts
+from db import get_story_previews
 
 
 def _check_project_access(project_id: int):
@@ -411,7 +412,7 @@ def register(app) -> None:
 
         conn = get_db()
         rows = conn.execute(
-            """SELECT s.id, s.title, s.story_points, s.priority, s.sprint,
+            """SELECT s.id, s.title, s.story_z, s.story_points, s.priority, s.sprint,
                       s.updated_at, s.created_at,
                       st.name AS status_name, st.color AS status_color,
                       sty.name AS story_type_name, sty.color AS story_type_color,
@@ -454,20 +455,14 @@ def register(app) -> None:
                     {"display_name": a["display_name"], "avatar": a["avatar"]}
                 )
 
-            th_rows = conn.execute(
-                f"""SELECT si.story_id, si.filename FROM story_images si
-                    INNER JOIN (
-                        SELECT story_id, MIN(id) AS min_id FROM story_images
-                        WHERE story_id IN ({ph}) GROUP BY story_id
-                    ) m ON si.id = m.min_id""",
-                story_ids,
-            ).fetchall()
-            thumbnails = {r["story_id"]: r["filename"] for r in th_rows}
+            previews_map = get_story_previews(story_ids)
 
             for it in items:
-                it["stickers"]  = stickers_map.get(it["id"], [])
-                it["assignees"] = assignees_map.get(it["id"], [])
-                it["thumbnail"] = thumbnails.get(it["id"])
+                it["stickers"]   = stickers_map.get(it["id"], [])
+                it["assignees"]  = assignees_map.get(it["id"], [])
+                it["images"]     = previews_map.get(it["id"], [])
+                it["thumbnail"]  = it["images"][0] if it["images"] else None
+                it["html_title"] = str(bold_verb_in_title(it["title"], it.get("story_z") or ""))
 
         conn.close()
         return jsonify(items=items, has_more=has_more, page=page)

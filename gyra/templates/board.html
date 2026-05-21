@@ -1872,6 +1872,31 @@
       hideTimer = setTimeout(function () { popup.style.display = 'none'; }, 80);
     });
   });
+
+  // Hide tooltip immediately when any drag begins, and keep it suppressed
+  // until the drag ends — prevents the hint from re-appearing under the cursor
+  // while the user is dragging a card.
+  var dragging = false;
+  function hidePopup() {
+    clearTimeout(hideTimer);
+    popup.style.display = 'none';
+  }
+  document.addEventListener('dragstart', function () {
+    dragging = true;
+    hidePopup();
+  }, true);
+  document.addEventListener('dragend', function () {
+    dragging = false;
+  }, true);
+  document.addEventListener('drop', function () {
+    dragging = false;
+  }, true);
+  // Block mouseenter-driven re-show while dragging
+  document.addEventListener('mouseenter', function (e) {
+    if (dragging && e.target && e.target.closest && e.target.closest('.board-card')) {
+      hidePopup();
+    }
+  }, true);
 }());
 </script>
 

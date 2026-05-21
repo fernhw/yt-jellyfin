@@ -49,12 +49,21 @@
   }
 
   // ── Render one post-it card (only called for the selected item) ────────────
+  // Markup mirrors templates/board.html exactly so the preview is pixel-identical.
   function renderCard(item) {
     var rot    = (item.id * 7 % 5) - 2;
     var accent = item.story_type_color || '#B45309';
     var cardBg = item.story_type_color
                  ? 'color-mix(in srgb,' + item.story_type_color + ' 22%,white)'
                  : '#FFF9C4';
+
+    var isEpic = item.story_type_name === 'Epic' ? ' is-epic-type' : '';
+
+    // select hit area — same as board, but inert in archive preview
+    var selBox = '<label class="card-sel" onclick="event.stopPropagation()" title="Select">'
+               + '<input type="checkbox" class="card-sel-cb" disabled>'
+               + '<span class="card-sel-mark"></span>'
+               + '</label>';
 
     var tape = item.priority
       ? '<div class="card-tape card-tape-' + item.priority.toLowerCase() + '">' + _esc(item.priority) + '</div>'
@@ -66,24 +75,36 @@
 
     var cardId = '<span class="card-id">' + _esc(item.project_key || '') + '-' + item.id + '</span>';
 
-    var thumb = item.thumbnail
-      ? '<div class="card-thumb-wrap" style="--trot:' + ((item.id * 3 % 7) - 3) + 'deg"><img src="' + ROOT + '/story-images/' + _esc(item.thumbnail) + '" alt=""></div>'
-      : '';
+    // html_title comes pre-rendered from the server (with <strong> for the verb)
+    var titleHtml = item.html_title || _esc(item.title || '');
 
-    var pts = item.story_points ? '<span class="card-points">' + item.story_points + 'pt</span>' : '';
+    var imagesHtml = '';
+    if (item.images && item.images.length) {
+      imagesHtml = '<div class="card-images">';
+      item.images.slice(0, 5).forEach(function(fname) {
+        imagesHtml += '<div class="card-image-item">'
+                   +  '<img src="' + ROOT + '/story-images/thumb_' + _esc(fname) + '" alt="" loading="lazy">'
+                   +  '</div>';
+      });
+      imagesHtml += '</div>';
+    }
 
-    var avHtml = '';
+    var footHtml = '<div class="card-footer">';
+    if (item.story_points) {
+      footHtml += '<span class="card-points">' + item.story_points + 'pt</span>';
+    }
     if (item.assignees && item.assignees.length) {
-      avHtml = '<div class="card-assignees">';
+      footHtml += '<div class="card-assignees">';
       item.assignees.forEach(function(a) {
         if (a.avatar) {
-          avHtml += '<img src="' + ROOT + '/avatars/' + _esc(a.avatar) + '" class="avatar-xs" title="' + _esc(a.display_name) + '" alt="">';
+          footHtml += '<img src="' + ROOT + '/avatars/' + _esc(a.avatar) + '" class="avatar-xs" title="' + _esc(a.display_name) + '" alt="">';
         } else {
-          avHtml += '<span class="avatar-initial-xs" title="' + _esc(a.display_name) + '">' + _esc(((a.display_name || '?')[0] || '?').toUpperCase()) + '</span>';
+          footHtml += '<span class="avatar-initial-xs" title="' + _esc(a.display_name) + '">' + _esc(((a.display_name || '?')[0] || '?').toUpperCase()) + '</span>';
         }
       });
-      avHtml += '</div>';
+      footHtml += '</div>';
     }
+    footHtml += '</div>';
 
     var skHtml = '';
     if (item.stickers && item.stickers.length) {
@@ -102,11 +123,13 @@
 
     preview.innerHTML =
       '<div class="archive-preview-card">'
-      + '<div class="board-card" style="--rot:' + rot + 'deg;--card-bg:' + cardBg + ';--card-accent:' + accent + '" data-id="' + item.id + '">'
-      + tape + typeBadge + cardId
-      + '<div class="card-title">' + _esc(item.title) + '</div>'
-      + thumb
-      + '<div class="card-footer">' + pts + avHtml + '</div>'
+      + '<div class="board-card' + isEpic + '"'
+      +   ' style="--rot:' + rot + 'deg;--card-bg:' + cardBg + ';--card-accent:' + accent + '"'
+      +   ' data-story-id="' + item.id + '">'
+      + selBox + tape + typeBadge + cardId
+      + '<div class="card-title">' + titleHtml + '</div>'
+      + imagesHtml
+      + footHtml
       + skHtml
       + '</div>'
       + '<div class="archive-preview-actions">'
