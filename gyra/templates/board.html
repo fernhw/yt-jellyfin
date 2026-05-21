@@ -739,11 +739,7 @@
       if (href) {
         e.preventDefault();
         e.stopPropagation();
-        if (typeof window.openStoryModal === 'function') {
-          window.openStoryModal(href);
-        } else {
-          window.location.href = href;
-        }
+        if (window.openStoryModal) window.openStoryModal(href);
       }
     });
     var cb = card.querySelector('.card-sel-cb');
