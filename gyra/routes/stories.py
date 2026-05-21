@@ -12,11 +12,13 @@ from werkzeug.utils import secure_filename
 from auth import enforce_csrf, login_required
 from config import Config
 from db import (create_addon, create_notification, ensure_story_types,
-                get_all_active_users, get_db, get_project,
+                get_all_active_users, get_db, get_epics, get_project,
                 get_statuses, get_story, get_story_addons, get_story_history,
                 get_story_images, get_story_types, get_story_users,
                 get_user_by_username, log_story_change, user_in_project)
-from routes.helpers import (allowed_image, build_story_title, count_words)
+from routes.helpers import (ACTOR_OPTIONS, CONNECTOR_OPTIONS, VERB_OPTIONS,
+                            allowed_image, build_story_title, count_words,
+                            validate_story_parts)
 
 
 def register(app) -> None:
@@ -44,21 +46,22 @@ def register(app) -> None:
             assignees   = request.form.getlist("assignee_ids", type=int)
             sprint      = request.form.get("sprint", type=int) or None
             story_type  = request.form.get("story_type", type=int) or None
+            epic_id     = request.form.get("epic_id", type=int) or None
             priority    = request.form.get("priority", "").strip() or None
+            software_version = request.form.get("software_version", "").strip() or None
+            os_field    = request.form.get("os", "").strip() or None
 
-            if not z or not x or not y or not project_id:
-                flash("All story parts are required.", "error")
+            if not project_id:
+                flash("Project is required.", "error")
                 return redirect(request.url)
 
-            if " " in z.strip():
-                flash("The action word must be a single word "
-                      "(e.g. Walking, Killing, Building).", "error")
+            errors, warnings = validate_story_parts(actor, verb, z, x, for_conn, y)
+            if errors:
+                for e in errors:
+                    flash(e, "error")
                 return redirect(request.url)
-
-            word_count = count_words(actor, verb, z, x, for_conn, y)
-            if word_count > 19:
-                flash(f"Story title is {word_count} words — max is 19.", "error")
-                return redirect(request.url)
+            for w in warnings:
+                flash(w, "warning")
 
             now  = int(time.time())
             conn = get_db()
@@ -74,11 +77,12 @@ def register(app) -> None:
                    (project_id,title,description,acceptance_criteria,story_points,
                     status_id,sprint,order_index,created_at,created_by,updated_at,
                     story_actor,story_verb,story_z,story_x,story_for,story_y,
-                    story_type,priority)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    story_type,epic_id,priority,software_version,os)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (project_id, title, description, ac, points,
                  status_id, sprint, order, now, session["user_id"], now,
-                 actor, verb, z, x, for_conn, y, story_type, priority),
+                 actor, verb, z, x, for_conn, y, story_type, epic_id, priority,
+                 software_version, os_field),
             )
             story_id = cur.lastrowid
             for uid in assignees:
@@ -130,6 +134,7 @@ def register(app) -> None:
             with get_db() as _c:
                 ensure_story_types(project_id, _c)
         story_types = get_story_types(project_id) if project_id else []
+        epics       = get_epics(project_id) if project_id else []
         return render_template(
             "story.html",
             mode="new",
@@ -139,6 +144,7 @@ def register(app) -> None:
             statuses=statuses,
             all_users=all_users,
             story_types=story_types,
+            epics=epics,
             assignees=[],
             assignee_ids=[],
             comments=[],
@@ -172,21 +178,15 @@ def register(app) -> None:
                 y        = request.form.get("story_y", "").strip()
                 title    = build_story_title(actor, verb, z, x, for_conn, y)
 
-                if z and " " in z.strip():
+                errors, warnings = validate_story_parts(actor, verb, z, x, for_conn, y)
+                if errors:
                     if is_modal:
-                        return jsonify(ok=False, error="The action word must be a "
-                                       "single word (e.g. Walking, Killing, Building).")
-                    flash("The action word must be a single word "
-                          "(e.g. Walking, Killing, Building).", "error")
+                        return jsonify(ok=False, error=" ".join(errors))
+                    for e in errors:
+                        flash(e, "error")
                     return redirect(url_for("story_view", story_id=story_id))
-
-                word_count = count_words(actor, verb, z, x, for_conn, y)
-                if word_count > 19:
-                    if is_modal:
-                        return jsonify(ok=False,
-                                       error=f"Story is {word_count} words — max 19.")
-                    flash(f"Story is {word_count} words — max 19.", "error")
-                    return redirect(url_for("story_view", story_id=story_id))
+                for w in warnings:
+                    flash(w, "warning")
 
                 desc       = request.form.get("description", "").strip()
                 ac         = request.form.get("acceptance_criteria", "").strip()
@@ -195,7 +195,10 @@ def register(app) -> None:
                 sprint     = request.form.get("sprint", type=int) or None
                 assignees  = request.form.getlist("assignee_ids", type=int)
                 story_type = request.form.get("story_type", type=int) or None
+                epic_id    = request.form.get("epic_id", type=int) or None
                 priority   = request.form.get("priority", "").strip() or None
+                software_version = request.form.get("software_version", "").strip() or None
+                os_field   = request.form.get("os", "").strip() or None
 
                 old = dict(s)
                 old_assignee_ids = {a["id"] for a in get_story_users(story_id)}
@@ -205,11 +208,12 @@ def register(app) -> None:
                     """UPDATE stories SET title=?,description=?,acceptance_criteria=?,
                        story_points=?,status_id=?,sprint=?,updated_at=?,
                        story_actor=?,story_verb=?,story_z=?,story_x=?,
-                       story_for=?,story_y=?,story_type=?,priority=?
+                       story_for=?,story_y=?,story_type=?,epic_id=?,priority=?,
+                       software_version=?,os=?
                        WHERE id=?""",
                     (title, desc, ac, points, status_id, sprint, int(time.time()),
                      actor, verb, z, x, for_conn, y,
-                     story_type, priority, story_id),
+                     story_type, epic_id, priority, software_version, os_field, story_id),
                 )
                 conn.execute("DELETE FROM story_users WHERE story_id=?", (story_id,))
                 for uid in assignees:
@@ -229,11 +233,38 @@ def register(app) -> None:
                                  old.get("priority"), priority)
                 log_story_change(story_id, uid, "Points",
                                  old.get("story_points"), points)
+                log_story_change(story_id, uid, "Description",
+                                 old.get("description"), desc)
+                log_story_change(story_id, uid, "Acceptance Criteria",
+                                 old.get("acceptance_criteria"), ac)
+                if old.get("story_type") != story_type:
+                    log_story_change(story_id, uid, "Type",
+                                     old.get("story_type"), story_type)
+                if old.get("epic_id") != epic_id:
+                    log_story_change(story_id, uid, "Epic",
+                                     old.get("epic_id"), epic_id)
                 if old.get("title") != title:
                     log_story_change(story_id, uid, "Title",
                                      old.get("title"), title)
 
                 new_assignee_ids = set(assignees)
+                added_ids   = new_assignee_ids - old_assignee_ids
+                removed_ids = old_assignee_ids - new_assignee_ids
+                if added_ids or removed_ids:
+                    name_conn = get_db()
+                    id_to_name = {}
+                    for r in name_conn.execute(
+                        "SELECT id, display_name FROM users"
+                    ).fetchall():
+                        id_to_name[r["id"]] = r["display_name"]
+                    name_conn.close()
+                    for aid in added_ids:
+                        log_story_change(story_id, uid, "Assigned",
+                                         None, id_to_name.get(aid, f"#{aid}"))
+                    for aid in removed_ids:
+                        log_story_change(story_id, uid, "Unassigned",
+                                         id_to_name.get(aid, f"#{aid}"), None)
+
                 for newly_assigned_id in (new_assignee_ids - old_assignee_ids):
                     if newly_assigned_id != uid:
                         create_notification(
@@ -363,6 +394,7 @@ def register(app) -> None:
         all_users    = get_all_active_users()
         images       = get_story_images(story_id)
         story_types  = get_story_types(s["project_id"])
+        epics        = get_epics(s["project_id"])
         history      = get_story_history(story_id)
         addons       = get_story_addons(story_id, session.get("user_id"))
 
@@ -375,6 +407,7 @@ def register(app) -> None:
             statuses=statuses,
             all_users=all_users,
             story_types=story_types,
+            epics=epics,
             assignees=assignees,
             assignee_ids=assignee_ids,
             comments=comments,

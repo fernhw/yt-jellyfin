@@ -24,6 +24,8 @@ Image.MAX_IMAGE_PIXELS = 50_000_000
 
 app = Flask(__name__)
 app.config.from_object(Config)
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.jinja_env.auto_reload = True
 # Trust X-Forwarded-Prefix from nginx so url_for() works behind /gyra sub-path
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
@@ -42,20 +44,37 @@ def datetimeformat(ts):
 
 @app.context_processor
 def inject_globals():
+    from routes.helpers import ACTOR_OPTIONS, CONNECTOR_OPTIONS, VERB_OPTIONS
+    base = dict(
+        story_actor_options=ACTOR_OPTIONS,
+        story_verb_options=VERB_OPTIONS,
+        story_connector_options=CONNECTOR_OPTIONS,
+        csrf_token=get_csrf_token,
+    )
     if "user_id" not in session:
-        return dict(projects=[], csrf_token=get_csrf_token, notif_count=0)
+        return dict(base, projects=[], notif_count=0)
     uid     = session["user_id"]
     role    = session.get("role")
     projects    = get_projects() if role == "admin" else get_user_projects(uid)
     notif_count = get_unread_count(uid)
-    return dict(projects=projects, csrf_token=get_csrf_token,
-                notif_count=notif_count)
+    return dict(base, projects=projects, notif_count=notif_count)
 
 # ── DB initialisation ─────────────────────────────────────────────────────────
 
 @app.before_request
 def bootstrap():
     init_db()
+    # Refresh session role from DB on every request so admin-changed roles
+    # take effect immediately without requiring the user to log out.
+    uid = session.get("user_id")
+    if uid:
+        row = get_db().execute(
+            "SELECT role, is_active FROM users WHERE id = ?", (uid,)
+        ).fetchone()
+        if not row or not row["is_active"]:
+            session.clear()
+        elif row["role"] != session.get("role"):
+            session["role"] = row["role"]
 
 @app.after_request
 def set_no_cache(response):

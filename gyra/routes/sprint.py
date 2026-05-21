@@ -1,12 +1,16 @@
 """routes/sprint.py — Bulk story add, end-sprint, archive, and unarchive."""
+import csv
+import io
 import time
 
 from flask import (abort, flash, jsonify, redirect,
                    render_template, request, session, url_for)
+from markupsafe import Markup, escape
 
 from auth import enforce_csrf, login_required, super_user_required
 from db import (get_all_active_users, get_current_sprint, get_db,
                 get_epics, get_project, get_story_types, user_in_project)
+from routes.helpers import build_story_title, validate_story_parts
 
 
 def _check_project_access(project_id: int):
@@ -30,13 +34,23 @@ def register(app) -> None:
 
         if request.method == "POST":
             enforce_csrf()
-            titles           = request.form.getlist("title[]")
-            points_list      = request.form.getlist("points[]")
-            priorities       = request.form.getlist("priority[]")
-            descs            = request.form.getlist("description[]")
-            assignees        = request.form.getlist("assignee[]")
+            actors       = request.form.getlist("story_actor[]")
+            verbs        = request.form.getlist("story_verb[]")
+            zs           = request.form.getlist("story_z[]")
+            xs           = request.form.getlist("story_x[]")
+            fors         = request.form.getlist("story_for[]")
+            ys           = request.form.getlist("story_y[]")
+            points_list  = request.form.getlist("points[]")
+            priorities   = request.form.getlist("priority[]")
+            descs        = request.form.getlist("description[]")
+            assignees    = request.form.getlist("assignee[]")
             story_types_list = request.form.getlist("story_type[]")
-            epic_ids         = request.form.getlist("epic_id[]")
+            epic_ids     = request.form.getlist("epic_id[]")
+
+            n = max(len(actors), len(verbs), len(zs), len(xs), len(fors), len(ys))
+
+            def at(lst, i):
+                return lst[i].strip() if i < len(lst) else ""
 
             conn = get_db()
             first_status = conn.execute(
@@ -46,20 +60,43 @@ def register(app) -> None:
             status_id = first_status["id"] if first_status else None
             now       = int(time.time())
             created   = 0
+            skipped   = 0
+            row_errors = []   # list[(row_num, [messages])]
+            row_warnings = [] # list[(row_num, [messages])]
 
-            for i, title in enumerate(titles):
-                title = title.strip()
-                if not title:
+            for i in range(n):
+                actor    = at(actors, i)
+                verb     = at(verbs, i)
+                z        = at(zs, i)
+                x        = at(xs, i)
+                for_conn = at(fors, i)
+                y        = at(ys, i)
+
+                # Skip totally-empty rows silently (no Action Word, no What,
+                # no Outcome — clearly a placeholder row the user never filled in).
+                if not (z or x or y):
                     continue
-                pts_raw = points_list[i].strip() if i < len(points_list) else ""
+
+                errors, warnings = validate_story_parts(actor, verb, z, x, for_conn, y)
+                row_num = i + 1
+                if errors:
+                    row_errors.append((row_num, errors))
+                    skipped += 1
+                    continue
+                if warnings:
+                    row_warnings.append((row_num, warnings))
+
+                title = build_story_title(actor, verb, z, x, for_conn, y)
+
+                pts_raw = at(points_list, i)
                 pts     = int(pts_raw) if pts_raw.isdigit() else 0
-                prio    = priorities[i].strip() if i < len(priorities) else None
-                desc    = descs[i].strip() if i < len(descs) else ""
-                a_raw   = assignees[i].strip() if i < len(assignees) else ""
+                prio    = at(priorities, i) or None
+                desc    = at(descs, i)
+                a_raw   = at(assignees, i)
                 a_id    = int(a_raw) if a_raw.isdigit() else None
-                st_raw  = story_types_list[i].strip() if i < len(story_types_list) else ""
+                st_raw  = at(story_types_list, i)
                 st_id   = int(st_raw) if st_raw.isdigit() else None
-                ep_raw  = epic_ids[i].strip() if i < len(epic_ids) else ""
+                ep_raw  = at(epic_ids, i)
                 ep_id   = int(ep_raw) if ep_raw.isdigit() else None
 
                 max_idx = conn.execute(
@@ -70,11 +107,13 @@ def register(app) -> None:
                     """INSERT INTO stories
                        (project_id, title, description, story_points, priority,
                         story_type, epic_id,
-                        status_id, created_at, created_by, order_index, is_archived)
-                       VALUES (?,?,?,?,?,?,?,?,?,?,?,0)""",
-                    (project_id, title, desc, pts, prio or None,
+                        status_id, created_at, created_by, order_index, is_archived,
+                        story_actor, story_verb, story_z, story_x, story_for, story_y)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?)""",
+                    (project_id, title, desc, pts, prio,
                      st_id, ep_id,
-                     status_id, now, session["user_id"], max_idx),
+                     status_id, now, session["user_id"], max_idx,
+                     actor, verb, z, x, for_conn, y),
                 )
                 if a_id:
                     conn.execute(
@@ -85,14 +124,197 @@ def register(app) -> None:
 
             conn.commit()
             conn.close()
-            flash(f"{created} {'story' if created == 1 else 'stories'} created.", "success")
-            return redirect(url_for("backlog", project_id=project_id))
+
+            # Build flash messages — keep them readable per-row.
+            if row_errors:
+                lines = ["<strong>{} row(s) rejected.</strong>".format(skipped)]
+                for row_num, errs in row_errors:
+                    lines.append("<br><strong>Row {}:</strong>".format(row_num))
+                    for e in errs:
+                        lines.append("<br>&nbsp;&nbsp;• " + str(escape(e)))
+                flash(Markup("".join(lines)), "error")
+
+            if row_warnings:
+                wlines = ["<strong>Warnings:</strong>"]
+                for row_num, warns in row_warnings:
+                    wlines.append("<br><strong>Row {}:</strong>".format(row_num))
+                    for w in warns:
+                        wlines.append("<br>&nbsp;&nbsp;• " + str(escape(w)))
+                flash(Markup("".join(wlines)), "warning")
+
+            if created:
+                flash(f"{created} {'story' if created == 1 else 'stories'} created.", "success")
+            elif not row_errors:
+                flash("Nothing to create — all rows were empty.", "warning")
+
+            # If everything succeeded, send the user to the backlog. Otherwise
+            # stay on the bulk-add page so they can fix the rejected rows.
+            if created and not row_errors:
+                return redirect(url_for("backlog", project_id=project_id))
+            return redirect(url_for("bulk_add", project_id=project_id))
 
         users       = get_all_active_users()
         story_types = get_story_types(project_id)
         epics       = get_epics(project_id)
         return render_template("bulk_add.html", project=project, users=users,
                                story_types=story_types, epics=epics)
+
+    # ── Bulk story add (CSV import) ───────────────────────────────────────────
+
+    @app.route("/project/<int:project_id>/bulk-add/csv", methods=["POST"])
+    @super_user_required
+    def bulk_add_csv(project_id):
+        project = _check_project_access(project_id)
+        enforce_csrf()
+
+        f = request.files.get("csv_file")
+        if not f or not f.filename:
+            flash("No CSV file selected.", "error")
+            return redirect(url_for("bulk_add", project_id=project_id))
+
+        try:
+            raw = f.read().decode("utf-8-sig", errors="replace")
+        except Exception as e:
+            flash(f"Could not read CSV: {escape(str(e))}", "error")
+            return redirect(url_for("bulk_add", project_id=project_id))
+
+        try:
+            reader = csv.DictReader(io.StringIO(raw))
+        except Exception as e:
+            flash(f"Invalid CSV: {escape(str(e))}", "error")
+            return redirect(url_for("bulk_add", project_id=project_id))
+
+        # Normalise header keys → lower-case, stripped.
+        def norm(s): return (s or "").strip().lower()
+        rows = []
+        for r in reader:
+            rows.append({norm(k): (v or "").strip() for k, v in r.items()})
+
+        if not rows:
+            flash("CSV had no data rows.", "warning")
+            return redirect(url_for("bulk_add", project_id=project_id))
+
+        # Lookup maps for human-friendly columns (assignee/type/epic by name).
+        users_map = {u["display_name"].lower(): u["id"]
+                     for u in get_all_active_users()}
+        types_map = {t["name"].lower(): t["id"]
+                     for t in get_story_types(project_id)}
+        epics_map = {e["title"].lower(): e["id"]
+                     for e in get_epics(project_id)}
+
+        conn = get_db()
+        first_status = conn.execute(
+            "SELECT id FROM statuses WHERE project_id=? ORDER BY order_index LIMIT 1",
+            (project_id,),
+        ).fetchone()
+        status_id = first_status["id"] if first_status else None
+        now = int(time.time())
+
+        created = 0
+        skipped = 0
+        row_errors = []
+        row_warnings = []
+
+        for idx, r in enumerate(rows, start=1):
+            actor    = r.get("actor", "")
+            verb     = r.get("verb", "")
+            z        = r.get("z", "") or r.get("action", "") or r.get("action_word", "")
+            x        = r.get("x", "") or r.get("what", "")
+            for_conn = r.get("for", "") or r.get("connector", "")
+            y        = r.get("y", "") or r.get("outcome", "") or r.get("why", "")
+
+            if not (z or x or y):
+                continue  # blank row
+
+            errors, warnings = validate_story_parts(actor, verb, z, x, for_conn, y)
+            if errors:
+                row_errors.append((idx, errors))
+                skipped += 1
+                continue
+            if warnings:
+                row_warnings.append((idx, warnings))
+
+            title = build_story_title(actor, verb, z, x, for_conn, y)
+            pts_raw = r.get("points", "")
+            pts     = int(pts_raw) if pts_raw.isdigit() else 0
+            prio    = (r.get("priority", "") or "").upper() or None
+            desc    = r.get("description", "")
+            os_val  = r.get("os", "") or None
+            ver_val = r.get("software_version", "") or r.get("version", "") or None
+
+            a_raw = r.get("assignee", "").lower()
+            a_id  = users_map.get(a_raw) if a_raw else None
+            t_raw = r.get("type", "").lower() or r.get("story_type", "").lower()
+            st_id = types_map.get(t_raw) if t_raw else None
+            e_raw = r.get("epic", "").lower()
+            ep_id = epics_map.get(e_raw) if e_raw else None
+
+            max_idx = conn.execute(
+                "SELECT COALESCE(MAX(order_index), 0) + 1 FROM stories WHERE project_id=?",
+                (project_id,),
+            ).fetchone()[0]
+            cur = conn.execute(
+                """INSERT INTO stories
+                   (project_id, title, description, story_points, priority,
+                    story_type, epic_id,
+                    status_id, created_at, created_by, order_index, is_archived,
+                    story_actor, story_verb, story_z, story_x, story_for, story_y,
+                    software_version, os)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",
+                (project_id, title, desc, pts, prio,
+                 st_id, ep_id,
+                 status_id, now, session["user_id"], max_idx,
+                 actor, verb, z, x, for_conn, y,
+                 ver_val, os_val),
+            )
+            if a_id:
+                conn.execute(
+                    "INSERT OR IGNORE INTO story_users (story_id, user_id, role) VALUES (?,?,'assignee')",
+                    (cur.lastrowid, a_id),
+                )
+            created += 1
+
+        conn.commit()
+        conn.close()
+
+        if row_errors:
+            lines = ["<strong>{} CSV row(s) rejected.</strong>".format(skipped)]
+            for n, errs in row_errors:
+                lines.append("<br><strong>Row {}:</strong>".format(n))
+                for e in errs:
+                    lines.append("<br>&nbsp;&nbsp;• " + str(escape(e)))
+            flash(Markup("".join(lines)), "error")
+        if row_warnings:
+            wlines = ["<strong>CSV warnings:</strong>"]
+            for n, ws in row_warnings:
+                wlines.append("<br><strong>Row {}:</strong>".format(n))
+                for w in ws:
+                    wlines.append("<br>&nbsp;&nbsp;• " + str(escape(w)))
+            flash(Markup("".join(wlines)), "warning")
+        if created:
+            flash(f"{created} {'story' if created == 1 else 'stories'} imported from CSV.", "success")
+        elif not row_errors:
+            flash("CSV had no valid rows.", "warning")
+
+        if created and not row_errors:
+            return redirect(url_for("backlog", project_id=project_id))
+        return redirect(url_for("bulk_add", project_id=project_id))
+
+    @app.route("/project/<int:project_id>/bulk-add/csv-template")
+    @super_user_required
+    def bulk_add_csv_template(project_id):
+        _check_project_access(project_id)
+        sample = (
+            "actor,verb,z,x,for,y,points,priority,type,epic,assignee,description,os,software_version\n"
+            "Player,needs,Saving,their progress,to,avoid losing game state,3,H,Feature,,,Add a manual save button to the pause menu.,,\n"
+            "Designer,needs,Tuning,enemy damage curves,to,balance combat pacing,2,M,Task,,,,,\n"
+        )
+        from flask import Response
+        return Response(
+            sample,
+            mimetype="text/csv",
+            headers={"Content-Disposition": "attachment; filename=gyra-bulk-template.csv"},
+        )
 
     # ── Bulk send to sprint ───────────────────────────────────────────────────
 

@@ -12,132 +12,167 @@
   </div>
 </div>
 
+<div class="bulk-help">
+  <strong>GYRA grammar.</strong> Every story is six fields:
+  <code>[Actor] [verb] <strong>[Action&nbsp;Word]</strong> [what] [connector] [outcome]</code>.
+  The Action Word is one gerund — <em>Walking</em>, <em>Saving</em>, <em>Banning</em>. Invalid rows are rejected with a reason. Valid rows are created.
+</div>
+
+<div class="bulk-csv-card">
+  <form method="post" enctype="multipart/form-data"
+        action="{{ url_for('bulk_add_csv', project_id=project.id) }}"
+        class="bulk-csv-form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="bulk-csv-head">
+      <strong>📂 Import from CSV</strong>
+      <a class="bulk-csv-template" href="{{ url_for('bulk_add_csv_template', project_id=project.id) }}">⬇ Download template</a>
+    </div>
+    <div class="bulk-csv-row">
+      <input type="file" name="csv_file" accept=".csv,text/csv" required class="form-input">
+      <button type="submit" class="btn btn-primary btn-sm">Import CSV</button>
+    </div>
+    <div class="bulk-csv-hint">
+      Columns (any order, case-insensitive):
+      <code>actor, verb, z, x, for, y, points, priority, type, epic, assignee, description, os, software_version</code>.
+      Each row is validated against GYRA grammar — invalid rows are reported and skipped.
+    </div>
+  </form>
+</div>
+
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% for cat, msg in messages %}
-  <div class="flash flash-{{ cat }}">{{ msg }}</div>
+  <div class="flash flash-{{ cat }}">{{ msg|safe }}</div>
   {% endfor %}
 {% endwith %}
 
-<form method="post" action="{{ url_for('bulk_add', project_id=project.id) }}" id="bulk-add-form">
+<form method="post" action="{{ url_for('bulk_add', project_id=project.id) }}" id="bulk-add-form" class="bulk-add-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
-  <div class="bulk-table-wrap">
-    <table class="bulk-table" id="bulk-table">
-      <thead>
-        <tr>
-          <th style="width:28%">Title <span class="req">*</span></th>
-          <th style="width:6%">Points</th>
-          <th style="width:9%">Priority</th>
-          <th style="width:12%">Type</th>
-          <th style="width:12%">Epic</th>
-          <th style="width:13%">Assignee</th>
-          <th>Description</th>
-          <th style="width:36px"></th>
-        </tr>
-      </thead>
-      <tbody id="bulk-rows">
-        <tr class="bulk-row">
-          <td><input type="text" name="title[]" class="bulk-title form-control" placeholder="Story title" required></td>
-          <td><input type="number" name="points[]" class="form-control" min="0" max="999" placeholder="0"></td>
-          <td>
-            <select name="priority[]" class="form-control">
-              <option value="">—</option>
-              <option value="VH">VH</option>
-              <option value="H">H</option>
-              <option value="M">M</option>
-              <option value="L">L</option>
-              <option value="VL">VL</option>
-            </select>
-          </td>
-          <td>
-            <select name="story_type[]" class="form-control">
-              <option value="">— None —</option>
-              {% for t in story_types %}
-              <option value="{{ t.id }}">{{ t.name }}</option>
-              {% endfor %}
-            </select>
-          </td>
-          <td>
-            <select name="epic_id[]" class="form-control">
-              <option value="">— None —</option>
-              {% for e in epics %}
-              <option value="{{ e.id }}">{{ e.title }}</option>
-              {% endfor %}
-            </select>
-          </td>
-          <td>
-            <select name="assignee[]" class="form-control">
-              <option value="">—</option>
-              {% for u in users %}
-              <option value="{{ u.id }}">{{ u.display_name }}</option>
-              {% endfor %}
-            </select>
-          </td>
-          <td><input type="text" name="description[]" class="form-control" placeholder="Optional"></td>
-          <td><button type="button" class="btn-row-del" title="Remove row">✕</button></td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="bulk-rows" id="bulk-rows">
+    <div class="bulk-card bulk-row">
+      <div class="bulk-row-head">
+        <span class="bulk-row-num">1</span>
+        <button type="button" class="btn-row-del" title="Remove row">✕</button>
+      </div>
+
+      <div class="bulk-grammar">
+        <select name="story_actor[]" class="form-input bulk-actor" required>
+          {% for opt in story_actor_options %}
+          <option value="{{ opt }}" {% if opt == 'User' %}selected{% endif %}>{{ opt }}</option>
+          {% endfor %}
+        </select>
+        <select name="story_verb[]" class="form-input bulk-verb" required>
+          {% for v in story_verb_options %}
+          <option value="{{ v }}" {% if v == 'needs' %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" name="story_z[]" class="form-input bulk-z"
+               placeholder="Action Word (gerund — Walking)" required>
+        <input type="text" name="story_x[]" class="form-input bulk-x"
+               placeholder="what / the feature" required>
+        <select name="story_for[]" class="form-input bulk-for" required>
+          {% for c in story_connector_options %}
+          <option value="{{ c }}" {% if c == 'to' %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" name="story_y[]" class="form-input bulk-y"
+               placeholder="outcome / why" required>
+      </div>
+
+      <div class="bulk-preview-bar">
+        <span class="bulk-preview">Preview will appear here…</span>
+        <span class="bulk-wc">0 / 19</span>
+      </div>
+
+      <div class="bulk-meta">
+        <input type="number" name="points[]" class="form-input" min="0" max="999" placeholder="Pts">
+        <select name="priority[]" class="form-input">
+          <option value="">Prio</option>
+          <option value="VH">VH</option>
+          <option value="H">H</option>
+          <option value="M">M</option>
+          <option value="L">L</option>
+          <option value="VL">VL</option>
+        </select>
+        <select name="story_type[]" class="form-input">
+          <option value="">— Type —</option>
+          {% for t in story_types %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+        </select>
+        <select name="epic_id[]" class="form-input">
+          <option value="">— Epic —</option>
+          {% for e in epics %}<option value="{{ e.id }}">{{ e.title }}</option>{% endfor %}
+        </select>
+        <select name="assignee[]" class="form-input">
+          <option value="">— Assignee —</option>
+          {% for u in users %}<option value="{{ u.id }}">{{ u.display_name }}</option>{% endfor %}
+        </select>
+        <input type="text" name="description[]" class="form-input bulk-desc" placeholder="Description (optional)">
+      </div>
+    </div>
   </div>
 
   <div class="bulk-actions">
     <button type="button" id="bulk-add-row" class="btn btn-sm btn-secondary">+ Add row</button>
-    <button type="submit" class="btn btn-primary" id="bulk-submit">
-      ⚡ Create all stories
-    </button>
+    <button type="submit" class="btn btn-primary" id="bulk-submit">⚡ Create all valid stories</button>
   </div>
 </form>
 
 <script>
 (function () {
-  var tbody    = document.getElementById('bulk-rows');
+  var rowsWrap = document.getElementById('bulk-rows');
   var addBtn   = document.getElementById('bulk-add-row');
   var form     = document.getElementById('bulk-add-form');
-  var userOpts = document.querySelector('select[name="assignee[]"]').innerHTML;
-  var typeOpts = document.querySelector('select[name="story_type[]"]').innerHTML;
-  var epicOpts = document.querySelector('select[name="epic_id[]"]').innerHTML;
 
+  function fieldsOf(row) {
+    return ['bulk-actor','bulk-verb','bulk-z','bulk-x','bulk-for','bulk-y']
+      .map(function(c){ return row.querySelector('.' + c); });
+  }
+  function updatePreview(row) {
+    var vals = fieldsOf(row).map(function(el){ return el ? el.value.trim() : ''; });
+    var joined = vals.filter(Boolean).join(' ');
+    var prev = row.querySelector('.bulk-preview');
+    prev.textContent = joined || 'Preview will appear here…';
+    var wc = joined.split(/\s+/).filter(Boolean).length;
+    var wcEl = row.querySelector('.bulk-wc');
+    wcEl.textContent = wc + ' / 19';
+    wcEl.style.color = wc > 19 ? 'var(--c-red)' : '';
+  }
   function wireRow(row) {
     var del = row.querySelector('.btn-row-del');
-    if (del) {
-      del.addEventListener('click', function () {
-        if (tbody.querySelectorAll('.bulk-row').length > 1) row.remove();
-      });
-    }
-    var titleInput = row.querySelector('.bulk-title');
-    if (titleInput) {
-      titleInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          var rows = Array.from(tbody.querySelectorAll('.bulk-row'));
-          var idx  = rows.indexOf(row);
-          if (idx === rows.length - 1) addNewRow();
-          else rows[idx + 1].querySelector('.bulk-title').focus();
-        }
-      });
-    }
+    if (del) del.addEventListener('click', function () {
+      if (rowsWrap.querySelectorAll('.bulk-row').length > 1) {
+        row.remove();
+        renumber();
+      }
+    });
+    fieldsOf(row).forEach(function(el){
+      if (el) el.addEventListener('input', function(){ updatePreview(row); });
+    });
+    updatePreview(row);
   }
-
+  function renumber() {
+    Array.from(rowsWrap.querySelectorAll('.bulk-row')).forEach(function(r, i){
+      var n = r.querySelector('.bulk-row-num'); if (n) n.textContent = (i + 1);
+    });
+  }
   function addNewRow() {
-    var template = tbody.querySelector('.bulk-row');
-    var clone    = template.cloneNode(true);
+    var template = rowsWrap.querySelector('.bulk-row');
+    var clone = template.cloneNode(true);
     clone.querySelectorAll('input').forEach(function (i) { i.value = ''; });
-    var sel = clone.querySelector('select[name="assignee[]"]');
-    if (sel) sel.innerHTML = userOpts;
-    var typ = clone.querySelector('select[name="story_type[]"]');
-    if (typ) typ.innerHTML = typeOpts;
-    var epi = clone.querySelector('select[name="epic_id[]"]');
-    if (epi) epi.innerHTML = epicOpts;
-    var pri = clone.querySelector('select[name="priority[]"]');
-    if (pri) pri.selectedIndex = 0;
+    clone.querySelectorAll('select').forEach(function (s) {
+      s.selectedIndex = 0;
+      for (var i = 0; i < s.options.length; i++) {
+        if (s.options[i].defaultSelected) { s.selectedIndex = i; break; }
+      }
+    });
+    rowsWrap.appendChild(clone);
     wireRow(clone);
-    tbody.appendChild(clone);
-    clone.querySelector('.bulk-title').focus();
+    renumber();
+    var z = clone.querySelector('.bulk-z'); if (z) z.focus();
   }
 
   addBtn.addEventListener('click', addNewRow);
-
-  Array.from(tbody.querySelectorAll('.bulk-row')).forEach(wireRow);
+  Array.from(rowsWrap.querySelectorAll('.bulk-row')).forEach(wireRow);
 
   form.addEventListener('submit', function () {
     document.getElementById('bulk-submit').disabled = true;

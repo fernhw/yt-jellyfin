@@ -3,11 +3,11 @@ import time
 
 from flask import abort, jsonify, request, session
 
-from auth import admin_required, enforce_csrf, login_required
+from auth import admin_required, enforce_csrf, login_required, super_user_required
 from db import (create_epic, delete_epic, get_db, get_epic,
                 get_epic_stories_full, get_epics, get_statuses,
                 get_stickers, get_story_thumbnails, get_story_previews,
-                move_epic,
+                move_epic, reorder_epics,
                 update_epic)
 from routes.helpers import bold_verb_in_title
 
@@ -31,6 +31,7 @@ def register(app) -> None:
         stories = conn.execute(
             """SELECT s.id, s.status_id, s.order_index, s.subcol_index,
                       s.title, s.description, s.acceptance_criteria, s.story_z, s.priority, s.story_points, s.updated_at,
+                      s.epic_id,
                       sty.name  AS story_type_name,
                       sty.color AS story_type_color
                FROM stories s
@@ -55,12 +56,12 @@ def register(app) -> None:
         if story_ids:
             ph = ",".join("?" * len(story_ids))
             for a in conn.execute(
-                f"SELECT su.story_id, u.display_name, u.avatar FROM story_users su"
+                f"SELECT su.story_id, u.id AS user_id, u.display_name, u.avatar FROM story_users su"
                 f" JOIN users u ON su.user_id=u.id WHERE su.story_id IN ({ph})",
                 story_ids,
             ).fetchall():
                 assignees_by_story.setdefault(a["story_id"], []).append(
-                    {"display_name": a["display_name"], "avatar": a["avatar"]}
+                    {"id": a["user_id"], "display_name": a["display_name"], "avatar": a["avatar"]}
                 )
             tasks_by_story: dict = {}
             for ad in conn.execute(
@@ -129,7 +130,7 @@ def register(app) -> None:
         return jsonify(id=epic_id, ok=True)
 
     @app.route("/api/epic/<int:epic_id>", methods=["DELETE"])
-    @admin_required
+    @super_user_required
     def api_delete_epic(epic_id):
         enforce_csrf()
         delete_epic(epic_id)
@@ -169,6 +170,17 @@ def register(app) -> None:
         if not ok:
             return jsonify(ok=False, error="cannot move"), 400
         return jsonify(ok=True, swapped_with=swapped_with)
+
+    @app.route("/api/project/<int:project_id>/epics/reorder", methods=["POST"])
+    @login_required
+    def api_reorder_epics(project_id):
+        enforce_csrf()
+        data = request.get_json(silent=True) or {}
+        ids  = data.get("order")
+        if not isinstance(ids, list):
+            return jsonify(ok=False, error="order must be a list of epic ids"), 400
+        reorder_epics(project_id, ids)
+        return jsonify(ok=True)
 
     @app.route("/api/epic/<int:epic_id>/full", methods=["GET"])
     @login_required

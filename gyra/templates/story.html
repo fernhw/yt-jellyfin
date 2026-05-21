@@ -71,6 +71,19 @@
       <input type="hidden" name="action" value="{{ 'update' if mode == 'view' else 'create' }}">
       {% if mode == 'new' %}
       <input type="hidden" name="project_id" value="{{ project_id }}">
+
+      <!-- ── Story template picker ──────────────────────── -->
+      <div class="story-template-card">
+        <label class="story-template-label" for="story-template-sel">
+          Start from a template <span class="story-template-hint">(optional — fills the form for you)</span>
+        </label>
+        <div class="story-template-row">
+          <select id="story-template-sel" class="form-input">
+            <option value="">— Blank story —</option>
+          </select>
+          <button type="button" id="story-template-apply" class="btn btn-secondary btn-sm" disabled>Use template</button>
+        </div>
+      </div>
       {% endif %}
 
       <!-- ── User-story builder ─────────────────────── -->
@@ -79,7 +92,7 @@
         <div class="story-builder-row">
 
           <select name="story_actor" class="sb-select" id="sb-actor">
-            {% for opt in ['User', 'Developer', 'Admin', 'Guest', 'Manager'] %}
+            {% for opt in story_actor_options %}
             <option value="{{ opt }}"
               {{ 'selected' if story and story.story_actor == opt
                  else ('selected' if not story and opt == 'User' else '') }}>
@@ -89,18 +102,15 @@
           </select>
 
           <div class="sb-field-wrap">
-            <input name="story_verb" type="text" class="sb-input sb-verb-input" id="sb-verb"
-                   placeholder="needs / wants / must…"
-                   list="verb-connector-suggestions"
-                   value="{{ story.story_verb if story and story.story_verb else 'needs' }}"
-                   required autocomplete="off">
-            <datalist id="verb-connector-suggestions">
-              {% for v in ['needs','wants','requires','must have','should be able to',
-                           'has to','would like to','expects to','can','wishes to',
-                           'needs to be able to','should','must be able to'] %}
-              <option value="{{ v }}">
+            <select name="story_verb" class="sb-select sb-verb-input" id="sb-verb" required>
+              {% for v in story_verb_options %}
+              <option value="{{ v }}"
+                {{ 'selected' if story and story.story_verb == v
+                   else ('selected' if (not story or not story.story_verb) and v == 'needs' else '') }}>
+                {{ v }}
+              </option>
               {% endfor %}
-            </datalist>
+            </select>
             <span class="sb-hint" id="sb-verb-hint"> </span>
           </div>
 
@@ -117,7 +127,7 @@
                  required>
 
           <select name="story_for" class="sb-select" id="sb-for">
-            {% for opt in ['to', 'because', 'so they'] %}
+            {% for opt in story_connector_options %}
             <option value="{{ opt }}"
               {{ 'selected' if story and story.story_for == opt
                  else ('selected' if not story and opt == 'to' else '') }}>
@@ -200,6 +210,16 @@
       <div class="tasks-header">
         <h3>Tasks</h3>
         <span class="tasks-progress" id="tasks-progress"></span>
+      </div>
+      <div class="binary-subtask-note">
+        <strong>Subtasks are BINARY.</strong> Done or not done — no “in review”, “testing”, or “blocked” states.
+        <ul>
+          <li>Must fit in <strong>&lt; 4 hours</strong>. If bigger, split it.</li>
+          <li>If it needs approval to be finished → it’s not binary. Break it down.</li>
+          <li>Missing a test? That’s its own subtask: yay or nay.</li>
+          <li>Examples: <em>“Add /health endpoint”</em>, <em>“Write unit test for parseDate()”</em>, <em>“Fix typo in README”</em>.</li>
+          <li>Bad examples: <em>“Refactor auth”</em>, <em>“Test the feature”</em>, <em>“Get sign-off from Amy”</em>.</li>
+        </ul>
       </div>
       <div id="tasks-list" class="tasks-list">
         {% for addon in addons %}
@@ -367,6 +387,19 @@
     </div>
 
     <div class="story-sidebar-field">
+      <label class="story-sidebar-label" for="sb-epic-sel">Epic</label>
+      <select name="epic_id" id="sb-epic-sel" class="story-sidebar-select" form="story-form">
+        <option value="">— None —</option>
+        {% for e in epics %}
+        <option value="{{ e.id }}"
+                {{ 'selected' if story and story.epic_id == e.id else '' }}>
+          {{ e.title }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="story-sidebar-field">
       <label class="story-sidebar-label">Status</label>
       <select name="status_id" class="story-sidebar-select" form="story-form">
         <option value="">— Backlog —</option>
@@ -394,6 +427,22 @@
         <option value="{{ pri }}" {{ 'selected' if story and story.priority == pri else '' }}>{{ pri }}</option>
         {% endfor %}
       </select>
+    </div>
+
+    <div class="story-sidebar-field">
+      <label class="story-sidebar-label" for="ss-software-version">Software Version</label>
+      <input type="text" name="software_version" id="ss-software-version"
+             class="story-sidebar-select" form="story-form"
+             placeholder="e.g. 0.8.2-rc3"
+             value="{{ story.software_version if story and story.software_version else '' }}">
+    </div>
+
+    <div class="story-sidebar-field">
+      <label class="story-sidebar-label" for="ss-os">OS / Platform</label>
+      <input type="text" name="os" id="ss-os"
+             class="story-sidebar-select" form="story-form"
+             placeholder="e.g. Windows 11, macOS 14.5, PS5"
+             value="{{ story.os if story and story.os else '' }}">
     </div>
 
     <div class="story-sidebar-field">
@@ -1023,4 +1072,218 @@
 }());
 </script>
 {% endif %}
+
+{% if mode == 'new' %}
+<!-- ── Story Template picker — question modal ──────────────────────────── -->
+<div id="tpl-modal" class="tpl-modal" style="display:none" role="dialog" aria-modal="true">
+  <div class="tpl-modal-dialog">
+    <div class="tpl-modal-hdr">
+      <strong id="tpl-modal-title">Template</strong>
+      <button type="button" class="tpl-modal-close" id="tpl-modal-close" aria-label="Close">×</button>
+    </div>
+    <div class="tpl-modal-body">
+      <p class="tpl-modal-hint" id="tpl-modal-hint"></p>
+      <div id="tpl-modal-questions"></div>
+    </div>
+    <div class="tpl-modal-footer">
+      <button type="button" class="btn btn-secondary btn-sm" id="tpl-modal-cancel">Cancel</button>
+      <button type="button" class="btn btn-primary btn-sm" id="tpl-modal-go">Fill story</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var sel       = document.getElementById('story-template-sel');
+  var applyBtn  = document.getElementById('story-template-apply');
+  var modal     = document.getElementById('tpl-modal');
+  var titleEl   = document.getElementById('tpl-modal-title');
+  var hintEl    = document.getElementById('tpl-modal-hint');
+  var qWrap     = document.getElementById('tpl-modal-questions');
+  var goBtn     = document.getElementById('tpl-modal-go');
+  var closeBtn  = document.getElementById('tpl-modal-close');
+  var cancelBtn = document.getElementById('tpl-modal-cancel');
+  if (!sel) return;
+
+  var TEMPLATES = [];
+  var TYPES = [
+    {% for t in story_types %}{ id: {{ t.id }}, name: {{ t.name|tojson }} },{% endfor %}
+  ];
+
+  fetch('/api/story-templates', { credentials: 'same-origin' })
+    .then(function (r) { return r.ok ? r.json() : { templates: [] }; })
+    .then(function (d) {
+      TEMPLATES = d.templates || [];
+      var byCat = {};
+      TEMPLATES.forEach(function (t) {
+        (byCat[t.category] = byCat[t.category] || []).push(t);
+      });
+      Object.keys(byCat).forEach(function (cat) {
+        var og = document.createElement('optgroup');
+        og.label = cat;
+        byCat[cat].forEach(function (t) {
+          var o = document.createElement('option');
+          o.value = t.id;
+          o.textContent = t.name;
+          og.appendChild(o);
+        });
+        sel.appendChild(og);
+      });
+    })
+    .catch(function () {});
+
+  sel.addEventListener('change', function () {
+    applyBtn.disabled = !sel.value;
+  });
+
+  function findTpl(id) {
+    for (var i = 0; i < TEMPLATES.length; i++) if (TEMPLATES[i].id === id) return TEMPLATES[i];
+    return null;
+  }
+
+  applyBtn.addEventListener('click', function () {
+    var tpl = findTpl(sel.value);
+    if (!tpl) return;
+    titleEl.textContent = tpl.name;
+    hintEl.textContent  = 'Answer these and GYRA will fill the whole story.';
+    qWrap.innerHTML = '';
+    (tpl.questions || []).forEach(function (q) {
+      var row = document.createElement('div');
+      row.className = 'tpl-q-row';
+      var lab = document.createElement('label');
+      lab.textContent = q.label;
+      lab.setAttribute('for', 'tplq-' + q.key);
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'form-input';
+      inp.id = 'tplq-' + q.key;
+      inp.dataset.key = q.key;
+      inp.placeholder = q.placeholder || '';
+      row.appendChild(lab); row.appendChild(inp);
+      qWrap.appendChild(row);
+    });
+    if (tpl.os_field) {
+      var row = document.createElement('div');
+      row.className = 'tpl-q-row';
+      row.innerHTML = '<label for="tplq-os">OS / Platform</label>' +
+        '<input type="text" id="tplq-os" data-key="__os" class="form-input" placeholder="e.g. Windows 11, macOS 14.5, PS5">';
+      qWrap.appendChild(row);
+    }
+    if (tpl.version_field) {
+      var row = document.createElement('div');
+      row.className = 'tpl-q-row';
+      row.innerHTML = '<label for="tplq-ver">Software Version</label>' +
+        '<input type="text" id="tplq-ver" data-key="__ver" class="form-input" placeholder="e.g. 0.8.2-rc3">';
+      qWrap.appendChild(row);
+    }
+    modal.style.display = 'flex';
+    var first = qWrap.querySelector('input'); if (first) first.focus();
+  });
+
+  function closeModal() { modal.style.display = 'none'; }
+  closeBtn.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
+  });
+
+  function fillPlaceholders(s, answers) {
+    if (!s) return '';
+    return String(s).replace(/\{(\w+)\}/g, function (m, k) {
+      var v = answers[k];
+      return (v && v.length) ? v : '[' + k + ']';
+    });
+  }
+
+  function setVal(id, v) {
+    var el = document.getElementById(id); if (el) { el.value = v; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); }
+  }
+
+  goBtn.addEventListener('click', function () {
+    var tpl = findTpl(sel.value);
+    if (!tpl) return;
+    var answers = {};
+    qWrap.querySelectorAll('input').forEach(function (i) {
+      answers[i.dataset.key] = i.value.trim();
+    });
+
+    // Grammar fields
+    setVal('sb-actor', tpl.actor || 'User');
+    setVal('sb-verb',  tpl.verb  || 'needs');
+    setVal('sb-z',     fillPlaceholders(tpl.z,        answers));
+    setVal('sb-x',     fillPlaceholders(tpl.x,        answers));
+    setVal('sb-for',   tpl.for_conn || 'to');
+    setVal('sb-y',     fillPlaceholders(tpl.y,        answers));
+
+    // Description
+    var descEl = document.querySelector('textarea[name="description"]');
+    if (descEl) descEl.value = fillPlaceholders(tpl.description || '', answers);
+
+    // Acceptance criteria — populate the AC list
+    var acList = (tpl.acceptance || []).map(function (a) { return fillPlaceholders(a, answers); });
+    var hidden = document.getElementById('ac-hidden');
+    if (hidden) hidden.value = acList.join('\n');
+    if (window.renderAcList) window.renderAcList(); // optional helper if defined
+
+    // Manually render AC items as inputs if list rendering helper isn't exposed
+    var listEl = document.getElementById('ac-list');
+    if (listEl && acList.length) {
+      listEl.innerHTML = '';
+      acList.forEach(function (txt) {
+        var row = document.createElement('div'); row.className = 'ac-item';
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.className = 'ac-item-input form-input'; inp.value = txt;
+        var del = document.createElement('button');
+        del.type = 'button'; del.className = 'ac-del-btn'; del.textContent = '✕';
+        del.addEventListener('click', function () { row.remove(); syncAc(); });
+        inp.addEventListener('input', syncAc);
+        row.appendChild(inp); row.appendChild(del);
+        listEl.appendChild(row);
+      });
+      syncAc();
+    }
+    function syncAc() {
+      if (!hidden) return;
+      hidden.value = Array.from(listEl.querySelectorAll('.ac-item-input'))
+        .map(function (i) { return i.value; }).filter(Boolean).join('\n');
+    }
+
+    // Tasks
+    var taskList = document.getElementById('new-tasks-list');
+    if (taskList) {
+      (tpl.subtasks || []).forEach(function (txt) {
+        var t = fillPlaceholders(txt, answers);
+        var wrap = document.createElement('div'); wrap.className = 'task-item';
+        var hid = document.createElement('input');
+        hid.type = 'hidden'; hid.name = 'new_task'; hid.value = t;
+        var span = document.createElement('span'); span.className = 'task-content'; span.textContent = t;
+        var del = document.createElement('button');
+        del.type = 'button'; del.className = 'task-del'; del.textContent = '✕';
+        del.addEventListener('click', function () { wrap.remove(); });
+        wrap.appendChild(span); wrap.appendChild(hid); wrap.appendChild(del);
+        taskList.appendChild(wrap);
+      });
+    }
+
+    // Story type — match by name
+    var typeSel = document.getElementById('sb-type-sel');
+    if (typeSel && tpl.type_hint) {
+      var hint = tpl.type_hint.toLowerCase();
+      var match = TYPES.find(function (t) { return t.name.toLowerCase() === hint; });
+      if (match) typeSel.value = match.id;
+    }
+
+    // OS / version
+    if (answers.__os && document.getElementById('ss-os'))
+      document.getElementById('ss-os').value = answers.__os;
+    if (answers.__ver && document.getElementById('ss-software-version'))
+      document.getElementById('ss-software-version').value = answers.__ver;
+
+    closeModal();
+  });
+}());
+</script>
+{% endif %}
+
 {% endblock %}

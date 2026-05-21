@@ -239,6 +239,8 @@ def _migrate_db() -> None:
         ("stories", "priority",    "TEXT DEFAULT NULL"),
         ("stories", "epic_id",     "INTEGER DEFAULT NULL"),
         ("stories", "is_archived", "INTEGER DEFAULT 0"),
+        ("stories", "software_version", "TEXT DEFAULT NULL"),
+        ("stories", "os",          "TEXT DEFAULT NULL"),
         ("epics",   "start_date",  "TEXT DEFAULT NULL"),
         ("epics",   "due_date",    "TEXT DEFAULT NULL"),
         ("epics",   "status",      "TEXT DEFAULT 'planning'"),
@@ -737,6 +739,31 @@ def move_epic(epic_id: int, direction: str):
     conn.commit()
     conn.close()
     return True, neighbor["id"]
+
+
+def reorder_epics(project_id: int, ordered_ids):
+    """Assign order_index = position for each id, scoped to project_id.
+    Silently ignores ids that don't belong to the project."""
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT id FROM epics WHERE project_id=?", (project_id,)
+    ).fetchall()
+    valid = {r["id"] for r in rows}
+    pos = 0
+    for eid in ordered_ids:
+        try:
+            eid_i = int(eid)
+        except (TypeError, ValueError):
+            continue
+        if eid_i not in valid:
+            continue
+        conn.execute(
+            "UPDATE epics SET order_index=? WHERE id=? AND project_id=?",
+            (pos, eid_i, project_id),
+        )
+        pos += 1
+    conn.commit()
+    conn.close()
 
 
 def get_epic(epic_id: int):

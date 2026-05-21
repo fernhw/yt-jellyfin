@@ -251,6 +251,8 @@
   refreshColWidths();
   // Expose so bulk-action scripts can trigger redistribution
   window._refreshColWidths = refreshColWidths;
+  // Expose so the realtime reconciler can wire drag on newly-inserted cards
+  window._initBoardCardDrag = initCard;
 
   // ── Shift multi-select ───────────────────────────────────────────────────
   let lastSelected = null;

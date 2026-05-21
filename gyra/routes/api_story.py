@@ -11,7 +11,7 @@ from werkzeug.utils import secure_filename
 from auth import enforce_csrf, login_required
 from config import Config
 from db import (create_addon, create_notification, delete_addon,
-                get_all_active_users, get_db, get_statuses,
+                get_all_active_users, get_db, get_epics, get_statuses,
                 get_story, get_story_addons, get_story_history,
                 get_story_images, get_story_thumbnails, get_story_previews, get_story_types,
                 get_story_users, log_story_change, toggle_addon,
@@ -42,10 +42,19 @@ def register(app) -> None:
         """Resolve the story_id that owns an addon (for B1 access checks)."""
         conn = get_db()
         row  = conn.execute(
-            "SELECT story_id FROM addons WHERE id=?", (addon_id,)
+            "SELECT story_id FROM story_addons WHERE id=?", (addon_id,)
         ).fetchone()
         conn.close()
         return row["story_id"] if row else None
+
+    # ── Story templates (catalogue used by the New-Story screen) ───────────
+
+    @app.route("/api/story-templates")
+    @login_required
+    def api_story_templates():
+        from story_templates import TEMPLATES
+        # Return public-safe copy. Strip nothing — these are static, no PII.
+        return jsonify(templates=TEMPLATES)
 
     # ── Single-story read ──────────────────────────────────────────────────────
 
@@ -147,6 +156,7 @@ def register(app) -> None:
             statuses=[dict(st) for st in statuses],
             all_users=[dict(u) for u in all_users],
             story_types=[dict(t) for t in story_types],
+            epics=[dict(e) for e in get_epics(s["project_id"])],
             creator_name=s["creator_name"] or "",
         )
 
@@ -348,6 +358,13 @@ def register(app) -> None:
         story_type = data.get("story_type") or None
         if story_type: story_type = int(story_type)
         priority   = (data.get("priority") or "").strip() or None
+        if "epic_id" in data:
+            ep_raw = data.get("epic_id")
+            epic_id = int(ep_raw) if ep_raw not in (None, "", 0, "0") else None
+            epic_id_provided = True
+        else:
+            epic_id = s["epic_id"] if "epic_id" in s.keys() else None
+            epic_id_provided = False
 
         old = dict(s)
         old_assignee_ids = {a["id"] for a in get_story_users(story_id)}
@@ -357,9 +374,9 @@ def register(app) -> None:
             """UPDATE stories SET title=?,description=?,acceptance_criteria=?,
                story_points=?,status_id=?,sprint=?,updated_at=?,
                story_actor=?,story_verb=?,story_z=?,story_x=?,story_for=?,story_y=?,
-               story_type=?,priority=? WHERE id=?""",
+               story_type=?,priority=?,epic_id=? WHERE id=?""",
             (title, desc, ac, points, status_id, sprint, int(time.time()),
-             actor, verb, z, x, for_conn, y, story_type, priority, story_id),
+             actor, verb, z, x, for_conn, y, story_type, priority, epic_id, story_id),
         )
         conn.execute("DELETE FROM story_users WHERE story_id=?", (story_id,))
         for uid in assignees:
@@ -379,10 +396,38 @@ def register(app) -> None:
                          old.get("priority"), priority)
         log_story_change(story_id, uid, "Points",
                          old.get("story_points"), points)
+        log_story_change(story_id, uid, "Description",
+                         old.get("description"), desc)
+        log_story_change(story_id, uid, "Acceptance Criteria",
+                         old.get("acceptance_criteria"), ac)
+        if old.get("story_type") != story_type:
+            log_story_change(story_id, uid, "Type",
+                             old.get("story_type"), story_type)
+        if epic_id_provided:
+            log_story_change(story_id, uid, "Epic",
+                             old.get("epic_id"), epic_id)
         if old.get("title") != title:
             log_story_change(story_id, uid, "Title", old.get("title"), title)
 
+        # Assignee deltas — one history row per add/remove, named.
         new_assignee_ids = set(assignees)
+        added_ids   = new_assignee_ids - old_assignee_ids
+        removed_ids = old_assignee_ids - new_assignee_ids
+        if added_ids or removed_ids:
+            name_conn = get_db()
+            id_to_name = {}
+            for r in name_conn.execute(
+                "SELECT id, display_name FROM users"
+            ).fetchall():
+                id_to_name[r["id"]] = r["display_name"]
+            name_conn.close()
+            for aid in added_ids:
+                log_story_change(story_id, uid, "Assigned",
+                                 None, id_to_name.get(aid, f"#{aid}"))
+            for aid in removed_ids:
+                log_story_change(story_id, uid, "Unassigned",
+                                 id_to_name.get(aid, f"#{aid}"), None)
+
         for newly_assigned_id in (new_assignee_ids - old_assignee_ids):
             if newly_assigned_id != uid:
                 create_notification(
@@ -421,7 +466,7 @@ def register(app) -> None:
         s = _require_story_access(story_id)
         if not s:
             return jsonify(ok=False), 404
-        if (session["role"] != "admin"
+        if (session["role"] not in ("admin", "super_user")
                 and s["created_by"] != session["user_id"]):
             return jsonify(ok=False, error="Not authorized"), 403
         conn = get_db()
@@ -755,6 +800,8 @@ def register(app) -> None:
             return jsonify(error="content required"), 400
         assigned = data.get("assigned_user_id") or None
         addon_id = create_addon(story_id, content, assigned, session["user_id"])
+        log_story_change(story_id, session["user_id"], "Subtask added",
+                         None, content)
         return jsonify(id=addon_id, ok=True)
 
     @app.route("/api/addon/<int:addon_id>", methods=["PATCH"])
@@ -765,8 +812,21 @@ def register(app) -> None:
         if not sid or not _require_story_access(sid):
             return jsonify(ok=False), 404
         data = request.get_json(silent=True) or {}
+        # Snapshot current addon (content + assignee) for history diff.
+        snap_conn = get_db()
+        snap = snap_conn.execute(
+            "SELECT content, assigned_user_id FROM story_addons WHERE id=?",
+            (addon_id,),
+        ).fetchone()
+        snap_conn.close()
+        uid = session["user_id"]
         if "is_done" in data:
-            toggle_addon(addon_id, session["user_id"], int(bool(data["is_done"])))
+            new_done = int(bool(data["is_done"]))
+            toggle_addon(addon_id, uid, new_done)
+            label = "Subtask done" if new_done else "Subtask reopened"
+            log_story_change(sid, uid, label,
+                             None if new_done else (snap["content"] if snap else None),
+                             (snap["content"] if snap else None) if new_done else None)
             return jsonify(ok=True)
         update_addon_content(
             addon_id,
@@ -774,6 +834,30 @@ def register(app) -> None:
             assigned_user_id=data.get("assigned_user_id"),
             order_index=data.get("order_index"),
         )
+        # Log content change
+        if "content" in data and snap is not None:
+            new_content = (data.get("content") or "").strip()
+            if new_content and new_content != (snap["content"] or ""):
+                log_story_change(sid, uid, "Subtask edited",
+                                 snap["content"], new_content)
+        # Log assignee change
+        if "assigned_user_id" in data and snap is not None:
+            new_aid = data.get("assigned_user_id") or None
+            old_aid = snap["assigned_user_id"]
+            if (new_aid or None) != (old_aid or None):
+                nm_conn = get_db()
+                id_to_name = {}
+                for r in nm_conn.execute(
+                    "SELECT id, display_name FROM users"
+                ).fetchall():
+                    id_to_name[r["id"]] = r["display_name"]
+                nm_conn.close()
+                tail = f" — {snap['content']}" if snap["content"] else ""
+                log_story_change(
+                    sid, uid, "Subtask assignee",
+                    (id_to_name.get(old_aid, f"#{old_aid}") + tail) if old_aid else tail.lstrip(" — ") or None,
+                    (id_to_name.get(new_aid, f"#{new_aid}") + tail) if new_aid else tail.lstrip(" — ") or None,
+                )
         return jsonify(ok=True)
 
     @app.route("/api/addon/<int:addon_id>", methods=["DELETE"])
@@ -783,5 +867,14 @@ def register(app) -> None:
         sid = _addon_story_id(addon_id)
         if not sid or not _require_story_access(sid):
             return jsonify(ok=False), 404
+        # Capture content for history before delete.
+        snap_conn = get_db()
+        snap = snap_conn.execute(
+            "SELECT content FROM story_addons WHERE id=?", (addon_id,),
+        ).fetchone()
+        snap_conn.close()
         delete_addon(addon_id)
+        if snap:
+            log_story_change(sid, session["user_id"], "Subtask removed",
+                             snap["content"], None)
         return jsonify(ok=True)

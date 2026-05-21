@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="GYRA">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}?v={{ range(1,99999) | random }}">
   {% block head %}{% endblock %}
 </head>
 <body{% if request.args.get('modal') %} class="modal-iframe"{% endif %}>
@@ -44,51 +44,66 @@
 
     <nav class="sidebar-nav">
       {% for p in projects %}
-      <div class="sidebar-section">
-        <span class="sidebar-proj-key">{{ p.key }}</span>
-        <span class="sidebar-proj-name">{{ p.name }}</span>
-        <a class="sidebar-link{% if request.endpoint == 'board' and project is defined and project and project.id == p.id %} active{% endif %}"
+      {% set is_current = project is defined and project and project.id == p.id %}
+      {% set sub_endpoints = ['backlog','grooming','standup','dailies','retro','archive','bulk_add'] %}
+      {% set more_open = is_current and request.endpoint in sub_endpoints %}
+      <div class="sidebar-section{% if is_current %} is-current{% endif %}" data-proj-id="{{ p.id }}">
+        <div class="sidebar-proj-head">
+          <span class="sidebar-proj-key">{{ p.key }}</span>
+          <span class="sidebar-proj-name">{{ p.name }}</span>
+        </div>
+        <a class="sidebar-link{% if request.endpoint == 'board' and is_current %} active{% endif %}"
            href="{{ url_for('board', project_id=p.id) }}">
           <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="3" width="4" height="14" rx="1"/><rect x="8" y="3" width="4" height="10" rx="1"/><rect x="14" y="3" width="4" height="6" rx="1"/></svg>
           Board
         </a>
-        <a class="sidebar-link{% if request.endpoint == 'backlog' and project is defined and project and project.id == p.id %} active{% endif %}"
-           href="{{ url_for('backlog', project_id=p.id) }}">
-          <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="4" width="16" height="2" rx="1"/><rect x="2" y="9" width="16" height="2" rx="1"/><rect x="2" y="14" width="10" height="2" rx="1"/></svg>
-          Backlog
-        </a>
-        <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'grooming' and project is defined and project and project.id == p.id %} active{% endif %}"
-           href="{{ url_for('grooming', project_id=p.id) }}">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
-          Grooming
-        </a>
-        <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'standup' and project is defined and project and project.id == p.id %} active{% endif %}"
-           href="{{ url_for('standup', project_id=p.id) }}">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
-          Daily Standup
-        </a>
-        <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'dailies' and project is defined and project and project.id == p.id %} active{% endif %}"
-           href="{{ url_for('dailies', project_id=p.id) }}">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
-          Dailies
-        </a>
-        <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'retro' and project is defined and project and project.id == p.id %} active{% endif %}"
-           href="{{ url_for('retro', project_id=p.id) }}">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"/></svg>
-          Retro
-        </a>
-        <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'archive' and project is defined and project and project.id == p.id %} active{% endif %}"
-           href="{{ url_for('archive', project_id=p.id) }}">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 3h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm1 5h10v8H5V8zm3 2a1 1 0 000 2h4a1 1 0 000-2H8z"/></svg>
-          Archive
-        </a>
-        {% if session.role in ('admin', 'super_user') %}
-        <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'bulk_add' and project is defined and project and project.id == p.id %} active{% endif %}"
-           href="{{ url_for('bulk_add', project_id=p.id) }}">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
-          Bulk Add
-        </a>
-        {% endif %}
+        <div class="sidebar-more{% if more_open %} is-open{% endif %}">
+          <button type="button" class="sidebar-more-toggle" aria-expanded="{{ 'true' if more_open else 'false' }}">
+            <span>More</span>
+            <svg class="sidebar-proj-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+          <div class="sidebar-more-menu">
+            <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'backlog' and is_current %} active{% endif %}"
+               href="{{ url_for('backlog', project_id=p.id) }}">
+              <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="4" width="16" height="2" rx="1"/><rect x="2" y="9" width="16" height="2" rx="1"/><rect x="2" y="14" width="10" height="2" rx="1"/></svg>
+              Backlog
+            </a>
+            <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'grooming' and is_current %} active{% endif %}"
+               href="{{ url_for('grooming', project_id=p.id) }}">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+              Grooming
+            </a>
+            <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'standup' and is_current %} active{% endif %}"
+               href="{{ url_for('standup', project_id=p.id) }}">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+              Daily Standup
+            </a>
+            <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'dailies' and is_current %} active{% endif %}"
+               href="{{ url_for('dailies', project_id=p.id) }}">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+              Dailies
+            </a>
+            <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'retro' and is_current %} active{% endif %}"
+               href="{{ url_for('retro', project_id=p.id) }}">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"/></svg>
+              Retro
+            </a>
+            <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'archive' and is_current %} active{% endif %}"
+               href="{{ url_for('archive', project_id=p.id) }}">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 3h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm1 5h10v8H5V8zm3 2a1 1 0 000 2h4a1 1 0 000-2H8z"/></svg>
+              Archive
+            </a>
+            {% if session.role in ('admin', 'super_user') %}
+            <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'bulk_add' and is_current %} active{% endif %}"
+               href="{{ url_for('bulk_add', project_id=p.id) }}">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+              Bulk Add
+            </a>
+            {% endif %}
+          </div>
+        </div>
       </div>
       {% endfor %}
     </nav>
@@ -432,6 +447,20 @@
       e.preventDefault();
       var target = article.querySelector(a.getAttribute('href'));
       if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+}());
+</script>
+
+<script>
+/* Sidebar project dropdown toggle */
+(function () {
+  document.querySelectorAll('.sidebar-more-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var sec = btn.closest('.sidebar-more');
+      if (!sec) return;
+      var open = sec.classList.toggle('is-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
   });
 }());

@@ -85,7 +85,8 @@
   {# Sticker icon map — available inside cards AND the free layer #}
   {% set _sicon = {'exclamation':'!','arrow':'→','question':'?','star':'★','fire':'🔥','eyes':'👀','check':'✓','blocked':'✕','up':'↑','note':'#'} %}
   <div class="board" id="board" data-sprint="1"
-       data-project="{{ project.id }}">
+       data-project="{{ project.id }}"
+       data-project-key="{{ project.key }}">
     {% for status in statuses %}
     <div class="board-column"
          data-status-id="{{ status.id }}"
@@ -342,6 +343,10 @@
 <div id="card-ctx-menu" class="card-ctx-menu" style="display:none">
   <button class="ctx-item" data-action="split">✂ Split Story</button>
   <button class="ctx-item" data-action="open">↗ Open in new tab</button>
+  <div class="ctx-tasks-section" id="ctx-tasks-section" style="display:none">
+    <div class="ctx-tasks-header" id="ctx-tasks-header">Subtasks</div>
+    <div class="ctx-tasks-list" id="ctx-tasks-list"></div>
+  </div>
 </div>
 
 {# ── Split Story modal ────────────────────────────────────────────────────── #}
@@ -469,7 +474,7 @@
           <div class="story-builder-row">
             <select id="sm-actor" class="sb-select"></select>
             <div class="sb-field-wrap">
-              <input id="sm-verb" class="sb-input" placeholder="needs / wants / must…" autocomplete="off">
+              <select id="sm-verb" class="sb-select"></select>
             </div>
             <div class="sb-field-wrap">
               <input id="sm-z" class="sb-input sb-verb-input" placeholder="Verb (e.g. Walking)" autocomplete="off">
@@ -496,6 +501,16 @@
           <div class="tasks-header">
             <h3>Tasks</h3>
             <span class="tasks-progress" id="sm-tasks-progress"></span>
+          </div>
+          <div class="binary-subtask-note">
+            <strong>Subtasks are BINARY.</strong> Done or not done — no “in review”, “testing”, or “blocked” states.
+            <ul>
+              <li>Must fit in <strong>&lt; 4 hours</strong>. If bigger, split it.</li>
+              <li>If it needs approval to be finished → it’s not binary. Break it down.</li>
+              <li>Missing a test? That’s its own subtask: yay or nay.</li>
+              <li>Examples: <em>“Add /health endpoint”</em>, <em>“Write unit test for parseDate()”</em>, <em>“Fix typo in README”</em>.</li>
+              <li>Bad examples: <em>“Refactor auth”</em>, <em>“Test the feature”</em>, <em>“Get sign-off from Amy”</em>.</li>
+            </ul>
           </div>
           <div id="sm-tasks-list" class="tasks-list"></div>
           <div class="task-add-row">
@@ -536,6 +551,10 @@
         <div class="story-sidebar-field">
           <label class="story-sidebar-label">Type</label>
           <select id="sm-type" class="story-sidebar-select"></select>
+        </div>
+        <div class="story-sidebar-field">
+          <label class="story-sidebar-label">Epic</label>
+          <select id="sm-epic" class="story-sidebar-select"></select>
         </div>
         <div class="story-sidebar-field">
           <label class="story-sidebar-label">Status</label>
@@ -737,8 +756,8 @@
     border-radius:5px; background:#fff; font-size:13px; resize:vertical; min-height:90px;
     font-family:inherit;
   }
-  .em-side-row { display:flex; gap:8px; }
-  .em-side-row > * { flex:1; }
+  .em-side-row { display:flex; flex-direction:column; gap:6px; }
+  .em-side-row > * { flex:1; min-width:0; width:100%; }
   .em-color-picker {
     display:flex; gap:6px; flex-wrap:wrap;
   }
@@ -850,6 +869,9 @@
         </div>
         <div class="em-btn-row">
           <button type="button" id="em-save"  class="btn btn-primary btn-full">Save</button>
+        </div>
+        <div class="em-btn-row" style="margin-top:8px">
+          <button type="button" id="em-delete" class="btn btn-full" style="background:#fee;color:#a02020;border:1px solid #f3c0c0">Delete epic</button>
         </div>
         <div style="margin-top:14px;font-size:11px;color:var(--c-gray-500,#7A6A52)">
           <div>Created by <span id="em-creator">—</span></div>
@@ -1042,6 +1064,8 @@
   }
 
   document.querySelectorAll('.board-card').forEach(wireCard);
+  // Expose so the realtime reconciler can wire click/select on newly-inserted cards
+  window._wireBoardCard = wireCard;
 
   function bulkFetch(url, body, onOk) {
     fetch(url, {
@@ -1232,12 +1256,87 @@
       var x = e.clientX, y = e.clientY;
       // Keep inside viewport
       ctxMenu.style.display = 'block';
+      loadCtxTasks(card.dataset.storyId);
       if (x + ctxMenu.offsetWidth  + 4 > window.innerWidth)  x = x - ctxMenu.offsetWidth;
       if (y + ctxMenu.offsetHeight + 4 > window.innerHeight) y = y - ctxMenu.offsetHeight;
       ctxMenu.style.left = Math.max(4, x) + 'px';
       ctxMenu.style.top  = Math.max(4, y) + 'px';
     });
   });
+
+  // ── Subtasks inside context menu: fetch + render + toggle ───────────────
+  function escCtx(s){ return String(s||'').replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });}
+  function loadCtxTasks(storyId){
+    var section = document.getElementById('ctx-tasks-section');
+    var listEl  = document.getElementById('ctx-tasks-list');
+    var hdrEl   = document.getElementById('ctx-tasks-header');
+    section.style.display = 'block';
+    hdrEl.textContent = 'Subtasks';
+    listEl.innerHTML = '<div class="ctx-tasks-empty">Loading…</div>';
+    fetch(appRoot + '/api/story/' + storyId + '/addons', {
+      credentials: 'same-origin', headers: { 'X-CSRF-Token': csrf }
+    }).then(function(r){ return r.ok ? r.json() : []; }).then(function(addons){
+      if (!Array.isArray(addons) || !addons.length) {
+        hdrEl.textContent = 'Subtasks';
+        listEl.innerHTML = '<div class="ctx-tasks-empty">No subtasks yet.</div>';
+        // Reposition since menu height changed
+        repositionCtx();
+        return;
+      }
+      var done = addons.filter(function(a){ return a.is_done_by_me; }).length;
+      hdrEl.textContent = 'Subtasks (' + done + '/' + addons.length + ' done by me)';
+      listEl.innerHTML = addons.map(function(a){
+        var d = a.is_done_by_me ? ' is-done' : '';
+        var ck = a.is_done_by_me ? ' checked' : '';
+        return '<label class="ctx-task-row' + d + '" data-addon-id="' + a.id + '">'
+             + '<input type="checkbox"' + ck + '>'
+             + '<span class="ctx-task-text">' + escCtx(a.content) + '</span>'
+             + '</label>';
+      }).join('');
+      Array.from(listEl.querySelectorAll('.ctx-task-row')).forEach(function(row){
+        var aid = row.getAttribute('data-addon-id');
+        var cb  = row.querySelector('input[type="checkbox"]');
+        // Prevent the document click handler from closing the menu
+        row.addEventListener('click', function(e){ e.stopPropagation(); });
+        cb.addEventListener('change', function(e){
+          e.stopPropagation();
+          var isDone = cb.checked;
+          row.classList.toggle('is-done', isDone);
+          fetch(appRoot + '/api/addon/' + aid, {
+            method: 'PATCH', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+            body: JSON.stringify({ is_done: isDone })
+          }).then(function(r){
+            if (!r.ok) {
+              cb.checked = !isDone;
+              row.classList.toggle('is-done', !isDone);
+              return;
+            }
+            // Update header counter
+            var rows = listEl.querySelectorAll('.ctx-task-row');
+            var doneN = listEl.querySelectorAll('.ctx-task-row.is-done').length;
+            hdrEl.textContent = 'Subtasks (' + doneN + '/' + rows.length + ' done by me)';
+          }).catch(function(){
+            cb.checked = !isDone;
+            row.classList.toggle('is-done', !isDone);
+          });
+        });
+      });
+      repositionCtx();
+    }).catch(function(){
+      listEl.innerHTML = '<div class="ctx-tasks-empty">Error loading.</div>';
+    });
+  }
+  function repositionCtx(){
+    var x = parseInt(ctxMenu.style.left, 10) || 0;
+    var y = parseInt(ctxMenu.style.top, 10)  || 0;
+    if (x + ctxMenu.offsetWidth  + 4 > window.innerWidth)  x = Math.max(4, window.innerWidth  - ctxMenu.offsetWidth  - 4);
+    if (y + ctxMenu.offsetHeight + 4 > window.innerHeight) y = Math.max(4, window.innerHeight - ctxMenu.offsetHeight - 4);
+    ctxMenu.style.left = x + 'px';
+    ctxMenu.style.top  = y + 'px';
+  }
 
   document.addEventListener('click', function () { ctxMenu.style.display = 'none'; });
   document.addEventListener('contextmenu', function (e) {
@@ -1400,6 +1499,10 @@
   function esc(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
+  /* render **bold** after escaping so no XSS risk */
+  function md(s) {
+    return esc(s).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  }
 
   function positionAt(mx, my) {
     var pw = popup.offsetWidth  || 260;
@@ -1427,7 +1530,7 @@
       var html = '';
 
       if (d.desc && d.desc.trim()) {
-        html += '<div class="cp-desc">' + esc(d.desc.trim()) + '</div>';
+        html += '<div class="cp-desc">' + md(d.desc.trim()) + '</div>';
       }
 
       if (d.ac && d.ac.trim()) {
@@ -1435,7 +1538,7 @@
         html += '<div class="cp-tasks-head">Acceptance Criteria</div>';
         html += '<ul class="cp-ac-list">';
         d.ac.trim().split('\n').forEach(function(line) {
-          var l = line.trim(); if (l) html += '<li>' + esc(l) + '</li>';
+          var l = line.trim(); if (l) html += '<li>' + md(l) + '</li>';
         });
         html += '</ul>';
       }
@@ -1448,7 +1551,7 @@
         d.tasks.forEach(function (t) {
           var isDone = t.done;
           html += '<div class="cp-task' + (isDone ? ' cp-task--done' : '') + '">';
-          html += '<span class="cp-check">' + (isDone ? '✓' : '□') + '</span> ' + esc(t.c);
+          html += '<span class="cp-check">' + (isDone ? '✓' : '□') + '</span> ' + md(t.c);
           if (t.a) html += ' <span class="cp-task-who">' + esc(t.a) + '</span>';
           html += '</div>';
         });
@@ -1481,12 +1584,79 @@
 // while they're dragging.  After 8 s (or after a reconnect) the server is
 // always the single source of truth.
 (function () {
-  var appRoot   = (document.querySelector('meta[name="app-root"]') || {}).getAttribute('content') || '';
-  var csrf      = (document.querySelector('meta[name="csrf-token"]') || {}).getAttribute('content') || '';
-  var boardEl   = document.getElementById('board');
-  var projectId = boardEl ? boardEl.dataset.project : null;
-  var syncDot   = document.getElementById('board-sync-dot');
+  var appRoot    = (document.querySelector('meta[name="app-root"]') || {}).getAttribute('content') || '';
+  var csrf       = (document.querySelector('meta[name="csrf-token"]') || {}).getAttribute('content') || '';
+  var boardEl    = document.getElementById('board');
+  var projectId  = boardEl ? boardEl.dataset.project    : null;
+  var projectKey = boardEl ? (boardEl.dataset.projectKey || '') : '';
+  var syncDot    = document.getElementById('board-sync-dot');
   if (!projectId) return;
+
+  function _escHtml(t) {
+    return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+
+  function _buildCardEl(s) {
+    var rot    = ((s.id * 7) % 5) - 2;
+    var accent = s.story_type_color || '#B45309';
+    var bg     = s.story_type_color
+                 ? 'color-mix(in srgb, ' + accent + ' 22%, white)'
+                 : '#FFF9C4';
+    var card = document.createElement('div');
+    card.className = 'board-card' + (s.story_type_name === 'Epic' ? ' is-epic-type' : '');
+    card.setAttribute('draggable', 'true');
+    card.dataset.storyId     = s.id;
+    card.dataset.orderIndex  = s.order_index;
+    card.dataset.subcolIndex = s.subcol_index || 0;
+    card.dataset.href        = appRoot + '/story/' + s.id;
+    card.dataset.assigneeIds = (s.assignees || []).map(function (a) { return a.id || ''; }).join(',');
+    card.dataset.epicId      = s.epic_id || '';
+    card.dataset.syncedAt    = String(s.updated_at || '');
+    card.style.setProperty('--rot',         rot + 'deg');
+    card.style.setProperty('--card-bg',     bg);
+    card.style.setProperty('--card-accent', accent);
+
+    var html = '';
+    html += '<label class="card-sel" onclick="event.stopPropagation()" title="Select">'
+         +    '<input type="checkbox" class="card-sel-cb"><span class="card-sel-mark"></span>'
+         +  '</label>';
+    if (s.priority) {
+      html += '<div class="card-tape card-tape-' + s.priority.toLowerCase() + '">' + _escHtml(s.priority) + '</div>';
+    }
+    if (s.story_type_name) {
+      html += '<span class="card-type-badge">' + _escHtml(s.story_type_name) + '</span>';
+    }
+    html += '<span class="card-id">' + _escHtml(projectKey ? projectKey + '-' : '') + s.id + '</span>';
+    html += '<div class="card-title">' + (s.html_title || _escHtml(s.title || '')) + '</div>';
+    if (s.images && s.images.length) {
+      html += '<div class="card-images">' + s.images.slice(0, 5).map(function (fn) {
+        return '<div class="card-image-item"><img src="' + appRoot + '/story-images/thumb_' + fn + '" alt="" loading="lazy"></div>';
+      }).join('') + '</div>';
+    }
+    html += '<div class="card-footer">';
+    if (s.story_points) html += '<span class="card-points">' + s.story_points + 'pt</span>';
+    if (s.tasks && s.tasks.length) html += '<span class="card-task-prog">\u2610 ' + s.tasks.length + '</span>';
+    if (s.assignees && s.assignees.length) {
+      html += '<div class="card-assignees">' + s.assignees.map(function (a) {
+        var dn = (a.display_name || '').replace(/"/g, '&quot;');
+        if (a.avatar) return '<img src="' + appRoot + '/avatars/' + a.avatar + '" class="avatar-xs" title="' + dn + '" alt="">';
+        var ini = (a.display_name || '?').charAt(0).toUpperCase();
+        return '<span class="avatar-initial-xs" title="' + dn + '">' + ini + '</span>';
+      }).join('') + '</div>';
+    }
+    html += '</div>';
+    var dataJson = JSON.stringify({
+      desc:  s.description         || '',
+      ac:    s.acceptance_criteria || '',
+      tasks: s.tasks               || [],
+    }).replace(/<\/script/gi, '<\\/script');
+    html += '<script type="application/json" class="card-data">' + dataJson + '<\/script>';
+
+    card.innerHTML = html;
+    return card;
+  }
 
   var ICON_MAP = {exclamation:'!',arrow:'→',question:'?',star:'★',fire:'🔥',eyes:'👀',check:'✓',blocked:'✕',up:'↑',note:'#'};
 
@@ -1603,6 +1773,45 @@
     });
 
     var changedCols = {};
+
+    // Step 0a: insert any server stories that aren't in the DOM yet (created
+    //          by another tab / user). Build the markup from the same data the
+    //          server template uses, then wire drag + click handlers.
+    serverStories.forEach(function (s) {
+      if (document.querySelector('.board-card[data-story-id="' + s.id + '"]')) return;
+      var col = document.querySelector('.board-column[data-status-id="' + s.status_id + '"]');
+      if (!col) return;
+      var outer = col.querySelector('.board-cards');
+      if (!outer) return;
+      var newCard = _buildCardEl(s);
+      // Drop INTO the correct subcol if one exists, otherwise straight onto outer
+      var targetSub = outer.querySelector(':scope > .board-subcol:nth-child(' + ((s.subcol_index || 0) + 1) + ')');
+      (targetSub || outer).appendChild(newCard);
+      if (window._initBoardCardDrag) window._initBoardCardDrag(newCard);
+      if (window._wireBoardCard)     window._wireBoardCard(newCard);
+      newCard.classList.add('card-sync-highlight');
+      clearTimeout(newCard._syncHT);
+      newCard._syncHT = setTimeout(function () { newCard.classList.remove('card-sync-highlight'); }, 1500);
+      changedCols[String(s.status_id)] = col;
+      var badge = col.querySelector('.col-count');
+      if (badge) badge.textContent = col.querySelectorAll('.board-card').length;
+    });
+
+    // Step 0b: remove DOM cards that no longer exist on the server (deleted or
+    //          moved out of this sprint by another client).
+    document.querySelectorAll('.board-card').forEach(function (card) {
+      var id = String(card.dataset.storyId || '');
+      if (!id || recentMoves[id]) return;
+      if (!serverById[id]) {
+        var c = card.closest('.board-column');
+        card.remove();
+        if (c) {
+          changedCols[String(c.dataset.statusId)] = c;
+          var b = c.querySelector('.col-count');
+          if (b) b.textContent = c.querySelectorAll('.board-card').length;
+        }
+      }
+    });
 
     // Step 1: fix cross-column placements
     serverStories.forEach(function (s) {
@@ -1813,14 +2022,17 @@
   }
 
   // ── Poll ────────────────────────────────────────────────────────────────
+  var pollBusy = false;
   function poll() {
-    if (isDragging) return;
+    if (isDragging || pollBusy) return;
     purge();
+    pollBusy = true;
     fetch(appRoot + '/api/project/' + projectId + '/board-full-state', {
       headers: { 'X-CSRF-Token': csrf },
     })
     .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
     .then(function (data) {
+      pollBusy = false;
       if (isDragging) return;
       var sc = reconcileStories (data.stories  || []);
       var sk = reconcileStickers(data.stickers || []);
@@ -1830,7 +2042,7 @@
         syncDot._pt = setTimeout(function () { syncDot.classList.remove('sync-dot-pulse'); }, 1400);
       }
     })
-    .catch(function () {});
+    .catch(function () { pollBusy = false; });
   }
 
   if (syncDot) syncDot.style.display = 'inline-block';
@@ -1944,9 +2156,9 @@
     smKey.textContent = (s.project_key || '') + '-' + s.id;
 
     // Story builder
-    setOpts('sm-actor', ['User','Developer','Admin','Guest','Manager'], s.story_actor);
-    setOpts('sm-for',   ['to','because','so they'], s.story_for);
-    setVal('sm-verb', s.story_verb || 'needs');
+    setOpts('sm-actor', {{ story_actor_options|tojson }}, s.story_actor);
+    setOpts('sm-verb',  {{ story_verb_options|tojson }}, s.story_verb || 'needs');
+    setOpts('sm-for',   {{ story_connector_options|tojson }}, s.story_for);
     setVal('sm-z',    s.story_z    || '');
     setVal('sm-x',    s.story_x    || '');
     setVal('sm-y',    s.story_y    || '');
@@ -1960,6 +2172,7 @@
     setVal('sm-sprint',   s.sprint       || '');
     setVal('sm-priority', s.priority     || '');
     dynOpts('sm-type',   d.story_types, 'id', 'name',  s.story_type, '— None —');
+    dynOpts('sm-epic',   d.epics || [], 'id', 'title', s.epic_id,    '— None —');
     dynOpts('sm-status', d.statuses,    'id', 'name',  s.status_id,  '— Backlog —');
 
     renderAssignees(d.assignees, d.all_users);
@@ -2225,6 +2438,7 @@
       acceptance_criteria:  serializeAcList('sm-ac-list'),
       story_points:  parseInt(document.getElementById('sm-points').value)   || 0,
       story_type:    document.getElementById('sm-type').value     || null,
+      epic_id:       parseInt(document.getElementById('sm-epic').value) || null,
       status_id:     document.getElementById('sm-status').value   || null,
       sprint:        document.getElementById('sm-sprint').value   || null,
       priority:      document.getElementById('sm-priority').value || null,
@@ -2499,13 +2713,12 @@
       } else {
         storiesHtml = '<p class="epics-empty" style="margin:4px 0 8px 20px">No stories in sprint.</p>';
       }
-      return '<div class="epic-item" id="epic-item-' + e.id + '">' +
+      return '<div class="epic-item" id="epic-item-' + e.id + '" draggable="true" data-epic-id="' + e.id + '">' +
         '<div class="epic-item-head" data-epic-modal-id="' + e.id + '" style="cursor:pointer">' +
+          '<span class="epic-drag-handle" title="Drag to reorder">⋮⋮</span>' +
           '<span class="epic-dot" style="background:' + esc(e.color) + '"></span>' +
           '<span class="epic-title" id="epic-title-' + e.id + '">' + esc(e.title) + '</span>' +
           '<span class="epic-story-count">' + (e.stories ? e.stories.length : 0) + '</span>' +
-          '<button class="epic-move-btn" onclick="event.stopPropagation();moveEpic(' + e.id + ',\'up\')" title="Move up">▲</button>' +
-          '<button class="epic-move-btn" onclick="event.stopPropagation();moveEpic(' + e.id + ',\'down\')" title="Move down">▼</button>' +
           '<span class="epic-chevron" onclick="event.stopPropagation();toggleEpicItem(' + e.id + ')" title="Show stories">▾</span>' +
           '<button class="epic-edit-btn" data-epic-modal-id="' + e.id + '" title="Open epic">✏</button>' +
         '</div>' +
@@ -2515,6 +2728,67 @@
       '</div>';
     }).join('');
     panelBody.innerHTML = html;
+    wireDragAndDrop();
+  }
+
+  /* ── Drag-and-drop reorder ─────────────────────────────────────── */
+  var dragSrcId = null;
+
+  function wireDragAndDrop() {
+    var items = panelBody.querySelectorAll('.epic-item');
+    items.forEach(function(item) {
+      item.addEventListener('dragstart', onDragStart);
+      item.addEventListener('dragend',   onDragEnd);
+      item.addEventListener('dragover',  onDragOver);
+      item.addEventListener('dragleave', onDragLeave);
+      item.addEventListener('drop',      onDrop);
+    });
+  }
+
+  function onDragStart(e) {
+    dragSrcId = this.getAttribute('data-epic-id');
+    this.classList.add('epic-dragging');
+    try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragSrcId); } catch (_) {}
+  }
+  function onDragEnd() {
+    this.classList.remove('epic-dragging');
+    panelBody.querySelectorAll('.epic-drop-target').forEach(function(el){ el.classList.remove('epic-drop-target'); });
+    dragSrcId = null;
+  }
+  function onDragOver(e) {
+    if (!dragSrcId) return;
+    e.preventDefault();
+    try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
+    this.classList.add('epic-drop-target');
+    return false;
+  }
+  function onDragLeave() { this.classList.remove('epic-drop-target'); }
+  function onDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.classList.remove('epic-drop-target');
+    var targetId = this.getAttribute('data-epic-id');
+    if (!dragSrcId || dragSrcId === targetId) return false;
+    var srcIdx = -1, tgtIdx = -1;
+    for (var i = 0; i < epicsData.length; i++) {
+      if (String(epicsData[i].id) === String(dragSrcId)) srcIdx = i;
+      if (String(epicsData[i].id) === String(targetId))  tgtIdx = i;
+    }
+    if (srcIdx < 0 || tgtIdx < 0) return false;
+    var moved = epicsData.splice(srcIdx, 1)[0];
+    epicsData.splice(tgtIdx, 0, moved);
+    renderPanel();
+    var pid   = panel.getAttribute('data-pid');
+    var order = epicsData.map(function(e){ return e.id; });
+    fetch('/api/project/' + pid + '/epics/reorder', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRF-Token': csrf},
+      body: JSON.stringify({order: order})
+    }).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).catch(function(err) { console.error('reorder failed:', err); });
+    return false;
   }
 
   window.toggleEpicItem = function(id) {
@@ -2524,30 +2798,6 @@
     var open = body.style.display === 'none';
     body.style.display    = open ? 'block' : 'none';
     if (chevron) chevron.textContent = open ? '▴' : '▾';
-  };
-
-  window.moveEpic = function(id, direction) {
-    var idx = -1;
-    for (var i = 0; i < epicsData.length; i++) {
-      if (epicsData[i].id === id) { idx = i; break; }
-    }
-    if (idx < 0) return;
-    var swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= epicsData.length) return;
-    fetch('/api/epic/' + id + '/move', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json','X-CSRF-Token': csrf},
-      body: JSON.stringify({direction: direction})
-    }).then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    }).then(function(d) {
-      if (!d || !d.ok) return;
-      var tmp = epicsData[idx];
-      epicsData[idx] = epicsData[swapIdx];
-      epicsData[swapIdx] = tmp;
-      renderPanel();
-    }).catch(function(err) { console.error('moveEpic failed:', err); });
   };
 
   window.openEpicEdit = function(id, title, color, desc) {
@@ -2896,6 +3146,32 @@
       } else {
         alert('Save failed' + (r && r.error ? ': ' + r.error : ''));
       }
+    });
+  });
+
+  document.getElementById('em-delete').addEventListener('click', function(){
+    if (!currentEpic) return;
+    var id    = currentEpic.id;
+    var title = currentEpic.title || ('epic #' + id);
+    if (!confirm('Delete "' + title + '"?\n\nStories will NOT be deleted, but they will no longer belong to this epic.')) return;
+    var btn = this;
+    btn.disabled = true; btn.textContent = 'Deleting…';
+    fetch(ROOT + '/api/epic/' + id, {
+      method: 'DELETE', credentials: 'same-origin',
+      headers: {'X-CSRF-Token': CSRF}
+    }).then(function(r){
+      btn.disabled = false; btn.textContent = 'Delete epic';
+      if (!r.ok) {
+        return r.json().catch(function(){ return {}; }).then(function(d){
+          alert('Delete failed (HTTP ' + r.status + ')' + (d && d.error ? ': ' + d.error : ''));
+        });
+      }
+      closeEpicModal();
+      // Reload the board so the panel + columns update
+      window.location.reload();
+    }).catch(function(err){
+      btn.disabled = false; btn.textContent = 'Delete epic';
+      alert('Delete failed: ' + err);
     });
   });
 
