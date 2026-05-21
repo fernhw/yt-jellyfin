@@ -364,9 +364,10 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 
 /* ── Fullscreen overlay pills ── */
 .fs-pill { display: none; }
-:fullscreen     .fs-pill { display: flex; }
+:fullscreen           .fs-pill { display: flex; }
 :-moz-full-screen     .fs-pill { display: flex; }
 :-webkit-full-screen  .fs-pill { display: flex; }
+body.is-fullscreen    .fs-pill { display: flex; }  /* JS-class fallback */
 
 /* Sticker pill — bottom-right, above zoom controls */
 #fs-sticker-pill {
@@ -399,6 +400,14 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 #fs-controls-pill .zoom-btn:hover:not(:disabled) { background: rgba(255,255,255,.18); }
 #fs-controls-pill .zoom-label { color: rgba(255,255,255,.85); }
 #fs-controls-pill #fs-exit-btn { color: #fff; }
+#fs-controls-pill .ss-trigger-btn {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+}
+#fs-controls-pill .ss-trigger-btn:hover {
+  background: rgba(255,255,255,.25);
+  color: #fff;
+}
 
 /* ── Board layout ── */
 .board {
@@ -1299,7 +1308,18 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
 .cp-task {
   font-size: 10px; color: #D4B896; display: flex; align-items: baseline; gap: 5px;
 }
+.cp-desc {
+  font-size: 11px; color: #C4956A; line-height: 1.55;
+  white-space: pre-wrap; margin-bottom: 2px;
+}
+.cp-ac {
+  font-size: 10px; color: #D4B896; line-height: 1.5;
+  white-space: pre-wrap; margin-top: 2px;
+}
+.cp-tasks-divider { border-top: 1px solid #4A2D12; margin: 6px 0; }
 .cp-check { color: #7C4A1E; flex-shrink: 0; }
+.cp-task--done { opacity: 0.55; }
+.cp-task--done .cp-check { color: #34C759; }
 .cp-task-who {
   font-size: 9px; color: #A0632A; margin-left: auto; flex-shrink: 0;
   white-space: nowrap;

@@ -292,7 +292,7 @@ def register(app) -> None:
                 return redirect(url_for("story_view", story_id=story_id))
 
             if action == "delete":
-                if session["role"] != "admin" and s["created_by"] != session["user_id"]:
+                if session["role"] not in ("admin", "super_user") and s["created_by"] != session["user_id"]:
                     abort(403)
                 project_id = s["project_id"]
                 conn = get_db()

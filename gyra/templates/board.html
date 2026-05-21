@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ project.name }} — Board — Gyra{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/screensaver.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
   <div class="page-header-left">
@@ -16,6 +20,11 @@
     </div>
     <!-- Live sync indicator -->
     <span id="board-sync-dot" class="board-sync-dot" title="Live sync active" style="display:none"></span>
+    <!-- Screensaver -->
+    <button class="ss-trigger-btn" id="board-screensaver-btn-header" title="Screensaver mode — cycles team stories full-screen">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.22 3.22l1.42 1.42M11.36 11.36l1.42 1.42M3.22 12.78l1.42-1.42M11.36 4.64l1.42-1.42"/></svg>
+      Screensaver
+    </button>
     <!-- Fullscreen -->
     <button class="zoom-btn" id="board-fullscreen-btn" title="Full screen" style="width:32px">⛶</button>
     <!-- Sticker dropdown -->
@@ -25,7 +34,9 @@
         <button class="sticker-btn" data-type="exclamation"><span class="sm-icon" style="background:#FF3B30">!</span> Alert</button>
         <button class="sticker-btn" data-type="arrow"><span class="sm-icon" style="background:#FF9F0A">→</span> Arrow</button>
         <button class="sticker-btn" data-type="question"><span class="sm-icon" style="background:#007AFF">?</span> Question</button>
+        {% if session.role in ('admin', 'super_user') %}
         <button class="sticker-btn" data-type="star"><span class="sm-icon" style="background:#FFD60A;color:#000">★</span> Star</button>
+        {% endif %}
         <button class="sticker-btn" data-type="fire"><span class="sm-icon" style="background:#FF9500">🔥</span> Fire</button>
         <button class="sticker-btn" data-type="eyes"><span class="sm-icon" style="background:#636366">👀</span> Review</button>
         <button class="sticker-btn" data-type="check"><span class="sm-icon" style="background:#34C759">✓</span> Done</button>
@@ -144,7 +155,7 @@
             {% endif %}
           </div>
           {# ── embedded data for hover tooltip ── #}
-          <script type="application/json" class="card-data">{"key":"{{ project.key }}-{{ story.id }}","title":{{ story.title | tojson }},"priority":{{ (story.priority or '') | tojson }},"points":{{ story.story_points or 0 }},"type":{{ (story.story_type_name or '') | tojson }},"assignees":[{% for a in story.assignees %}{{ a.display_name | tojson }}{% if not loop.last %},{% endif %}{% endfor %}],"tasks":[{% for t in story.tasks %}{"c":{{ t.content | tojson }},"a":{{ (t.assigned_name or '') | tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]}</script>
+          <script type="application/json" class="card-data">{"desc":{{ (story.description or '') | tojson }},"ac":{{ (story.acceptance_criteria or '') | tojson }},"tasks":[{% for t in story.tasks %}{"c":{{ t.content | tojson }},"a":{{ (t.assigned_name or '') | tojson }},"done":{{ 'true' if t.is_done_by_me else 'false' }}}{% if not loop.last %},{% endif %}{% endfor %}]}</script>
           {# ── stickers pinned to this card (move with it) ── #}
           {% for sk in card_stickers_map.get(story.id, []) %}
           <div class="board-sticker sticker-{{ sk.type }} sticker-on-card{% if sk.label %} has-label{% endif %}"
@@ -249,7 +260,9 @@
       <button class="sticker-btn" data-type="exclamation"><span class="sm-icon" style="background:#FF3B30">!</span> Alert</button>
       <button class="sticker-btn" data-type="arrow"><span class="sm-icon" style="background:#FF9F0A">→</span> Arrow</button>
       <button class="sticker-btn" data-type="question"><span class="sm-icon" style="background:#007AFF">?</span> Question</button>
+      {% if session.role in ('admin', 'super_user') %}
       <button class="sticker-btn" data-type="star"><span class="sm-icon" style="background:#FFD60A;color:#000">★</span> Star</button>
+      {% endif %}
       <button class="sticker-btn" data-type="fire"><span class="sm-icon" style="background:#FF9500">🔥</span> Fire</button>
       <button class="sticker-btn" data-type="eyes"><span class="sm-icon" style="background:#636366">👀</span> Review</button>
       <button class="sticker-btn" data-type="check"><span class="sm-icon" style="background:#34C759">✓</span> Done</button>
@@ -261,7 +274,11 @@
 </div>
 <!-- Bottom-right: zoom + exit fullscreen -->
 <div id="fs-controls-pill" class="fs-pill">
-  <div class="board-zoom-ctrl">
+  <button class="ss-trigger-btn" id="board-screensaver-btn" title="Screensaver mode — cycles team stories full-screen">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.22 3.22l1.42 1.42M11.36 11.36l1.42 1.42M3.22 12.78l1.42-1.42M11.36 4.64l1.42-1.42"/></svg>
+    Screensaver
+  </button>
+  <div class="board-zoom-ctrl" style="margin-left:6px">
     <button class="zoom-btn" id="fs-zoom-out" title="Zoom out">−</button>
     <span class="zoom-label" id="fs-zoom-label">100%</span>
     <button class="zoom-btn" id="fs-zoom-in" title="Zoom in">+</button>
@@ -512,6 +529,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/screensaver.js') }}"></script>
 <script src="{{ url_for('static', filename='js/board.js') }}"></script>
 <script src="{{ url_for('static', filename='js/stickers.js') }}"></script>
 <script>
@@ -560,7 +578,14 @@
     }
   });
   document.addEventListener('fullscreenchange', function () {
-    btn.title = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
+    var isFs = !!document.fullscreenElement;
+    btn.title = isFs ? 'Exit full screen' : 'Full screen';
+    /* JS-class fallback so .fs-pill shows regardless of :fullscreen CSS support */
+    document.body.classList.toggle('is-fullscreen', isFs);
+  });
+  document.addEventListener('webkitfullscreenchange', function () {
+    var isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    document.body.classList.toggle('is-fullscreen', isFs);
   });
 }());
 
@@ -981,30 +1006,35 @@
       var d;
       try { d = JSON.parse(dataEl.textContent); } catch (ex) { return; }
 
-      var html = '<div class="cp-key">' + esc(d.key) + '</div>';
-      html += '<div class="cp-title">' + esc(d.title) + '</div>';
+      /* Only reveal info NOT visible on the card face */
+      var html = '';
 
-      var meta = [];
-      if (d.priority) meta.push('<span class="cp-pri cp-pri-' + d.priority.toLowerCase() + '">' + esc(d.priority) + '</span>');
-      if (d.points)   meta.push(d.points + 'pt');
-      if (d.type)     meta.push(esc(d.type));
-      if (meta.length) html += '<div class="cp-meta">' + meta.join(' &middot; ') + '</div>';
+      if (d.desc && d.desc.trim()) {
+        html += '<div class="cp-desc">' + esc(d.desc.trim()) + '</div>';
+      }
 
-      if (d.assignees && d.assignees.length) {
-        html += '<div class="cp-section"><b>Assigned:</b> ' + d.assignees.map(esc).join(', ') + '</div>';
+      if (d.ac && d.ac.trim()) {
+        if (html) html += '<div class="cp-tasks-divider"></div>';
+        html += '<div class="cp-tasks-head">Acceptance Criteria</div>';
+        html += '<div class="cp-ac">' + esc(d.ac.trim()) + '</div>';
       }
 
       if (d.tasks && d.tasks.length) {
-        html += '<div class="cp-tasks-head">Tasks (' + d.tasks.length + ')</div>';
+        if (html) html += '<div class="cp-tasks-divider"></div>';
+        var doneCount = d.tasks.filter(function(t){ return t.done; }).length;
+        html += '<div class="cp-tasks-head">Tasks (' + doneCount + '/' + d.tasks.length + ' done)</div>';
         html += '<div class="cp-tasks">';
         d.tasks.forEach(function (t) {
-          html += '<div class="cp-task"><span class="cp-check">□</span> ' + esc(t.c);
+          var isDone = t.done;
+          html += '<div class="cp-task' + (isDone ? ' cp-task--done' : '') + '">';
+          html += '<span class="cp-check">' + (isDone ? '✓' : '□') + '</span> ' + esc(t.c);
           if (t.a) html += ' <span class="cp-task-who">' + esc(t.a) + '</span>';
           html += '</div>';
         });
         html += '</div>';
       }
 
+      if (!html) return; /* nothing hidden to show — skip tooltip */
       popup.innerHTML = html;
       popup.style.display = 'block';
       positionAt(e.clientX, e.clientY);
@@ -1142,6 +1172,15 @@
         if (!img) { img = document.createElement('img'); img.alt = ''; thumbWrap.appendChild(img); }
         img.src = appRoot + '/story-images/' + s.thumbnail;
       } else if (thumbWrap) { thumbWrap.remove(); }
+      // Hover tooltip data — keep in sync so tooltip reflects latest changes
+      var cdEl = card.querySelector('.card-data');
+      if (cdEl) {
+        cdEl.textContent = JSON.stringify({
+          desc:  s.description          || '',
+          ac:    s.acceptance_criteria  || '',
+          tasks: s.tasks                || [],
+        });
+      }
     });
 
     var changedCols = {};
@@ -1886,6 +1925,21 @@
       activeUid = btn.dataset.uid || '';
       applyFilter();
     });
+  });
+}());
+</script>
+
+<script>
+(function () {
+  function startSS() {
+    var pid = document.getElementById('board').dataset.project;
+    if (!pid) return;
+    new window.Gyra.Screensaver(parseInt(pid, 10)).start();
+  }
+  ['board-screensaver-btn', 'board-screensaver-btn-header'].forEach(function (id) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener('click', function (e) { e.stopPropagation(); startSS(); });
   });
 }());
 </script>

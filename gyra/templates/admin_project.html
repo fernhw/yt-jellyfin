@@ -41,12 +41,8 @@
     <div class="action-group">
       <a href="{{ url_for('board',   project_id=p.id) }}" class="btn btn-xs btn-secondary">Board</a>
       <a href="{{ url_for('backlog', project_id=p.id) }}" class="btn btn-xs btn-secondary">Backlog</a>
-      <form method="post" action="{{ url_for('admin_delete_project', project_id=p.id) }}"
-            style="display:inline"
-            onsubmit="return confirm('Delete project «{{ p.name }}» and ALL its stories, columns and data? This cannot be undone.')">
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-        <button type="submit" class="btn btn-xs btn-danger">🗑 Delete project</button>
-      </form>
+      <button type="button" class="btn btn-xs btn-danger"
+              onclick="openDeleteModal({{ p.id }}, {{ p.name|tojson }})">🗑 Delete project</button>
     </div>
   </div>
   <div class="card-body">
@@ -130,6 +126,35 @@
 {% else %}
 <div class="empty-state"><p>No projects yet. Create one above.</p></div>
 {% endfor %}
+
+{# ── Delete project confirmation modal ── #}
+<div id="delete-project-overlay" class="modal-overlay" style="display:none"
+     onclick="if(event.target===this)closeDeleteModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 style="color:#f87171">⚠ Delete project</h3>
+      <button class="modal-close" onclick="closeDeleteModal()">&#x2715;</button>
+    </div>
+    <form id="delete-project-form" method="post" action="" class="modal-body">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <p style="margin-bottom:12px">
+        This will permanently delete the project and <strong>all its stories, columns and data</strong>.
+        A backup JSON will be saved on the server before deletion.
+        All project members will be notified.
+      </p>
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Type the project name to confirm:</label>
+        <input id="dp-confirm-name" name="confirm_name" type="text" class="form-input"
+               required autocomplete="off" placeholder="">
+        <small id="dp-name-hint" style="color:var(--c-purple-400);font-size:11px"></small>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+        <button type="submit" id="dp-submit" class="btn btn-danger">Delete permanently</button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -234,6 +259,25 @@
     });
   });
 }());
+</script>
+<script>
+// ── Delete project modal ──────────────────────────────────────────────────────
+var _deleteProjectName = '';
+function openDeleteModal(projectId, projectName) {
+  if (!confirm('Are you sure you want to delete project «' + projectName + '»?\nThis will remove ALL stories and data.')) return;
+  _deleteProjectName = projectName;
+  document.getElementById('delete-project-form').action = '/admin/projects/' + projectId + '/delete';
+  document.getElementById('dp-confirm-name').value      = '';
+  document.getElementById('dp-name-hint').textContent   = 'Expected: ' + projectName;
+  document.getElementById('delete-project-overlay').style.display = 'flex';
+  setTimeout(function () { document.getElementById('dp-confirm-name').focus(); }, 50);
+}
+function closeDeleteModal() {
+  document.getElementById('delete-project-overlay').style.display = 'none';
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') closeDeleteModal();
+});
 </script>
 {% endblock %}
 

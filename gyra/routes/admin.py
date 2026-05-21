@@ -1,5 +1,6 @@
 """routes/admin.py — Admin views for users, projects, statuses and backup."""
 import datetime
+import json
 import os
 import time
 
@@ -9,7 +10,7 @@ from flask import (abort, flash, jsonify, redirect,
 
 from auth import admin_required, enforce_csrf, generate_setup_token
 from config import Config
-from db import (get_all_active_users, get_db, get_project,
+from db import (create_notification, get_all_active_users, get_db, get_project,
                 get_project_members, get_statuses)
 
 
@@ -39,7 +40,7 @@ def register(app) -> None:
         if not all([username, email, display_name]):
             flash("All fields are required.", "error")
             return redirect(url_for("admin_users"))
-        if role not in ("admin", "user"):
+        if role not in ("admin", "user", "super_user"):
             role = "user"
 
         raw_token, token_hash = generate_setup_token()
@@ -129,7 +130,7 @@ def register(app) -> None:
             flash("Username, email and display name are required.", "error")
             conn.close()
             return redirect(url_for("admin_users"))
-        if role not in ("admin", "user"):
+        if role not in ("admin", "user", "super_user"):
             role = "user"
         if user_id == session["user_id"] and role != "admin":
             flash("You cannot remove your own admin role.", "error")
@@ -265,6 +266,7 @@ def register(app) -> None:
     @admin_required
     def admin_delete_project(project_id):
         enforce_csrf()
+        confirm_name = request.form.get("confirm_name", "").strip()
         conn    = get_db()
         project = conn.execute(
             "SELECT * FROM projects WHERE id=?", (project_id,)
@@ -273,9 +275,57 @@ def register(app) -> None:
             conn.close()
             flash("Project not found.", "error")
             return redirect(url_for("admin_projects"))
+
+        if confirm_name != project["name"]:
+            conn.close()
+            flash("Project name did not match — deletion cancelled.", "error")
+            return redirect(url_for("admin_projects"))
+
+        # ── Internal backup ──────────────────────────────────────────────────
+        try:
+            stories = conn.execute(
+                "SELECT * FROM stories WHERE project_id=?", (project_id,)
+            ).fetchall()
+            statuses = conn.execute(
+                "SELECT * FROM statuses WHERE project_id=?", (project_id,)
+            ).fetchall()
+            members = conn.execute(
+                "SELECT u.id, u.username, u.display_name FROM users u "
+                "JOIN project_members pm ON pm.user_id = u.id "
+                "WHERE pm.project_id=?", (project_id,)
+            ).fetchall()
+            backup_data = {
+                "project":  dict(project),
+                "statuses": [dict(s) for s in statuses],
+                "stories":  [dict(s) for s in stories],
+                "members":  [dict(m) for m in members],
+                "deleted_at": int(time.time()),
+                "deleted_by": session["user_id"],
+            }
+            backup_dir = os.path.join(os.path.dirname(Config.DATABASE), "project_backups")
+            os.makedirs(backup_dir, exist_ok=True)
+            stamp     = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+            bak_path  = os.path.join(backup_dir, f"{project['key']}_{stamp}.json")
+            with open(bak_path, "w") as fh:
+                json.dump(backup_data, fh, indent=2, default=str)
+        except Exception as exc:
+            app.logger.error("Project backup failed: %s", exc)
+
+        # ── Notify all project members ────────────────────────────────────────
+        member_rows = conn.execute(
+            "SELECT user_id FROM project_members WHERE project_id=?", (project_id,)
+        ).fetchall()
         conn.execute("DELETE FROM projects WHERE id=?", (project_id,))
         conn.commit()
         conn.close()
+        for row in member_rows:
+            if row["user_id"] != session["user_id"]:
+                create_notification(
+                    user_id=row["user_id"],
+                    type_="system",
+                    message=f"Project '{project['name']}' ({project['key']}) was deleted by an admin.",
+                    from_user=session["user_id"],
+                )
         flash(f"Project '{project['name']}' deleted.", "success")
         return redirect(url_for("admin_projects"))
 

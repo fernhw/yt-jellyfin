@@ -148,3 +148,15 @@ def admin_required(f):
             abort(403)
         return f(*args, **kwargs)
     return wrapper
+
+
+def super_user_required(f):
+    """Allows super_user and admin roles."""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user_id" not in session:
+            return redirect(url_for("login", next=request.path))
+        if session.get("role") not in ("admin", "super_user"):
+            abort(403)
+        return f(*args, **kwargs)
+    return wrapper

@@ -260,6 +260,41 @@ def _migrate_db() -> None:
             (now,),
         )
 
+    # Migrate users: add super_user to role CHECK constraint.
+    # Idempotent: only runs if the current CHECK still excludes 'super_user'.
+    user_cols = conn.execute("PRAGMA table_info(users)").fetchall()
+    role_col  = next((r for r in user_cols if r[1] == 'role'), None)
+    # We detect a need to migrate by trying an INSERT with super_user and catching
+    # a constraint error — but that's too invasive. Instead we check the sqlite_master.
+    schema_row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='users'"
+    ).fetchone()
+    if schema_row and "'super_user'" not in schema_row[0]:
+        conn.execute("PRAGMA foreign_keys = OFF")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users_v2 (
+                id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+                username            TEXT    UNIQUE NOT NULL COLLATE NOCASE,
+                email               TEXT    UNIQUE NOT NULL COLLATE NOCASE,
+                display_name        TEXT    NOT NULL,
+                avatar              TEXT    DEFAULT NULL,
+                totp_secret_enc     TEXT    DEFAULT NULL,
+                totp_confirmed      INTEGER DEFAULT 0,
+                setup_token_hash    TEXT    DEFAULT NULL,
+                setup_token_expires INTEGER DEFAULT NULL,
+                role                TEXT    DEFAULT 'user' CHECK(role IN ('admin','user','super_user')),
+                is_active           INTEGER DEFAULT 1,
+                created_at          INTEGER NOT NULL,
+                created_by          INTEGER REFERENCES users_v2(id)
+            )
+        """)
+        conn.execute(
+            "INSERT INTO users_v2 SELECT * FROM users"
+        )
+        conn.execute("DROP TABLE users")
+        conn.execute("ALTER TABLE users_v2 RENAME TO users")
+        conn.execute("PRAGMA foreign_keys = ON")
+
     conn.commit()
     conn.close()
 

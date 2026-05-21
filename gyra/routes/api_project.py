@@ -27,7 +27,7 @@ def register(app) -> None:
         conn = get_db()
         stories = conn.execute(
             """SELECT s.id, s.status_id, s.order_index, s.subcol_index,
-                      s.title, s.story_z, s.priority, s.story_points, s.updated_at,
+                      s.title, s.description, s.acceptance_criteria, s.story_z, s.priority, s.story_points, s.updated_at,
                       sty.name  AS story_type_name,
                       sty.color AS story_type_color,
                       (SELECT si.filename FROM story_images si
@@ -49,6 +49,7 @@ def register(app) -> None:
         ).fetchall()
         story_ids = [r["id"] for r in stories]
         assignees_by_story: dict = {}
+        addons_by_story: dict = {}
         if story_ids:
             ph = ",".join("?" * len(story_ids))
             for a in conn.execute(
@@ -59,6 +60,21 @@ def register(app) -> None:
                 assignees_by_story.setdefault(a["story_id"], []).append(
                     {"display_name": a["display_name"], "avatar": a["avatar"]}
                 )
+            tasks_by_story: dict = {}
+            for ad in conn.execute(
+                f"SELECT sa.story_id, sa.id AS addon_id, sa.content,"
+                f" u.display_name AS assigned_name,"
+                f" (SELECT COUNT(*) FROM addon_statuses aus"
+                f"  WHERE aus.addon_id = sa.id AND aus.is_done = 1) AS done_count"
+                f" FROM story_addons sa"
+                f" LEFT JOIN users u ON sa.assigned_user_id = u.id"
+                f" WHERE sa.story_id IN ({ph}) ORDER BY sa.order_index, sa.id",
+                story_ids,
+            ).fetchall():
+                addons_by_story.setdefault(ad["story_id"], []).append(ad["content"])
+                tasks_by_story.setdefault(ad["story_id"], []).append(
+                    {"c": ad["content"], "a": ad["assigned_name"] or "", "done": ad["done_count"] > 0}
+                )
         conn.close()
         result = []
         for r in stories:
@@ -66,6 +82,8 @@ def register(app) -> None:
             d["html_title"] = str(bold_verb_in_title(
                 r["title"], r["story_z"] or ""))
             d["assignees"]  = assignees_by_story.get(r["id"], [])
+            d["addons"]     = addons_by_story.get(r["id"], [])
+            d["tasks"]      = tasks_by_story.get(r["id"], [])
             result.append(d)
         return jsonify(
             stories=result,
@@ -137,6 +155,9 @@ def register(app) -> None:
 
         if not project_id or not stype:
             abort(400)
+
+        if stype == "star" and session.get("role") not in ("admin", "super_user"):
+            abort(403)
 
         conn = get_db()
         cur  = conn.execute(

@@ -531,11 +531,20 @@ def register(app) -> None:
             return jsonify(ok=False, error="invalid ids"), 400
         ph   = ",".join("?" * len(story_ids))
         conn = get_db()
-        conn.execute(
-            f"UPDATE stories SET status_id=?,sprint=?,updated_at=? "
-            f"WHERE id IN ({ph})",
-            [int(status_id), sprint, int(time.time())] + story_ids,
-        )
+        # Only update sprint if explicitly provided — omitting it must NOT null it out
+        # (stories with sprint=NULL are hidden from the board entirely)
+        if "sprint" in data:
+            conn.execute(
+                f"UPDATE stories SET status_id=?,sprint=?,updated_at=? "
+                f"WHERE id IN ({ph})",
+                [int(status_id), sprint, int(time.time())] + story_ids,
+            )
+        else:
+            conn.execute(
+                f"UPDATE stories SET status_id=?,updated_at=? "
+                f"WHERE id IN ({ph})",
+                [int(status_id), int(time.time())] + story_ids,
+            )
         conn.commit()
         conn.close()
         return jsonify(ok=True)
