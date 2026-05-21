@@ -143,10 +143,11 @@
 
           <div class="card-title">{{ story.html_title }}</div>
 
-          {% if story.thumbnail %}
-          {% set trot = (story.id * 3 % 7) - 3 %}
-          <div class="card-thumb-wrap" style="--trot:{{ trot }}deg">
-            <img src="{{ url_for('story_image', filename=story.thumbnail) }}" alt="">
+          {% if story.images %}
+          <div class="card-images">
+            {% for fname in story.images[:5] %}
+            <div class="card-image-item"><img src="{{ url_for('story_image', filename='thumb_' + fname) }}" alt="" loading="lazy"></div>
+            {% endfor %}
           </div>
           {% endif %}
 
@@ -465,6 +466,14 @@
             <span class="story-wc" id="sm-wc">0 / 19</span>
           </div>
         </div>
+        <div class="story-images-section mb-4">
+          <h3>Images</h3>
+          <div class="story-images-grid" id="sm-images-grid"></div>
+          <label class="img-upload-label">
+            <input type="file" id="sm-img-input" accept=".png,.jpg,.jpeg,.webp" style="display:none" multiple>
+            + Attach image
+          </label>
+        </div>
         <div class="form-group mt-4">
           <label class="form-label">Description</label>
           <textarea id="sm-desc" rows="4" class="form-input" placeholder="More context…"></textarea>
@@ -473,14 +482,6 @@
           <label class="form-label">Acceptance Criteria</label>
           <div id="sm-ac-list" class="ac-list"></div>
           <button type="button" id="sm-ac-add" class="ac-add-btn">+ Add criterion</button>
-        </div>
-        <div class="story-images-section mb-4">
-          <h3>Images</h3>
-          <div class="story-images-grid" id="sm-images-grid"></div>
-          <label class="img-upload-label">
-            <input type="file" id="sm-img-input" accept=".png,.jpg,.jpeg,.webp" style="display:none" multiple>
-            + Attach image
-          </label>
         </div>
         <div class="story-tasks-section mt-4">
           <div class="tasks-header">
@@ -1291,23 +1292,21 @@
           }).join('');
         } else if (aEl) { aEl.innerHTML = ''; }
       }
-      // Thumbnail
-      var thumbWrap = card.querySelector('.card-thumb-wrap');
-      if (s.thumbnail) {
-        var trot = ((s.id * 3 % 7) - 3);
-        if (!thumbWrap) {
-          thumbWrap = document.createElement('div');
-          thumbWrap.className = 'card-thumb-wrap';
+      // Images strip
+      var imagesWrap = card.querySelector('.card-images');
+      if (s.images && s.images.length) {
+        if (!imagesWrap) {
+          imagesWrap = document.createElement('div');
+          imagesWrap.className = 'card-images';
           var titleEl = card.querySelector('.card-title');
-          if (titleEl && titleEl.nextSibling) card.insertBefore(thumbWrap, titleEl.nextSibling);
-          else if (card.querySelector('.card-footer')) card.insertBefore(thumbWrap, card.querySelector('.card-footer'));
-          else card.appendChild(thumbWrap);
+          if (titleEl && titleEl.nextSibling) card.insertBefore(imagesWrap, titleEl.nextSibling);
+          else if (card.querySelector('.card-footer')) card.insertBefore(imagesWrap, card.querySelector('.card-footer'));
+          else card.appendChild(imagesWrap);
         }
-        thumbWrap.style.setProperty('--trot', trot + 'deg');
-        var img = thumbWrap.querySelector('img');
-        if (!img) { img = document.createElement('img'); img.alt = ''; thumbWrap.appendChild(img); }
-        img.src = appRoot + '/story-images/' + s.thumbnail;
-      } else if (thumbWrap) { thumbWrap.remove(); }
+        imagesWrap.innerHTML = s.images.slice(0, 5).map(function(fn) {
+          return '<div class="card-image-item"><img src="' + appRoot + '/story-images/thumb_' + fn + '" alt="" loading="lazy"></div>';
+        }).join('');
+      } else if (imagesWrap) { imagesWrap.remove(); }
       // Hover tooltip data — keep in sync so tooltip reflects latest changes
       var cdEl = card.querySelector('.card-data');
       if (cdEl) {
@@ -1747,7 +1746,7 @@
     Array.from(inp.files).forEach(function(file){
       var fd = new FormData(); fd.append('image', file);
       apiUpload('/api/story/'+curId+'/image', fd).then(function(d){
-        if (d.ok) appendImage(d.id, d.url);
+        if (d.ok) appendImage(d.id, d.med_url || d.url, d.url);
       });
     });
     inp.value = '';
@@ -1987,23 +1986,21 @@
         return '<span class="avatar-initial-xs" title="'+esc(a.display_name)+'">'+esc(a.display_name[0].toUpperCase())+'</span>';
       }).join('');
     } else if (aEl) { aEl.innerHTML = ''; }
-    // Thumbnail
-    var thumbWrap = card.querySelector('.card-thumb-wrap');
-    if (d.thumbnail) {
-      var trot = ((parseInt(sid, 10) * 3 % 7) - 3);
-      if (!thumbWrap) {
-        thumbWrap = document.createElement('div');
-        thumbWrap.className = 'card-thumb-wrap';
+    // Images strip
+    var imagesWrap = card.querySelector('.card-images');
+    if (d.images && d.images.length) {
+      if (!imagesWrap) {
+        imagesWrap = document.createElement('div');
+        imagesWrap.className = 'card-images';
         var titleEl = card.querySelector('.card-title');
-        if (titleEl && titleEl.nextSibling) card.insertBefore(thumbWrap, titleEl.nextSibling);
-        else if (footer) card.insertBefore(thumbWrap, footer);
-        else card.appendChild(thumbWrap);
+        if (titleEl && titleEl.nextSibling) card.insertBefore(imagesWrap, titleEl.nextSibling);
+        else if (footer) card.insertBefore(imagesWrap, footer);
+        else card.appendChild(imagesWrap);
       }
-      thumbWrap.style.setProperty('--trot', trot + 'deg');
-      var img = thumbWrap.querySelector('img');
-      if (!img) { img = document.createElement('img'); img.alt = ''; thumbWrap.appendChild(img); }
-      img.src = ROOT + '/story-images/' + d.thumbnail;
-    } else if (thumbWrap) { thumbWrap.remove(); }
+      imagesWrap.innerHTML = d.images.slice(0, 5).map(function(fn) {
+        return '<div class="card-image-item"><img src="' + ROOT + '/story-images/thumb_' + fn + '" alt="" loading="lazy"></div>';
+      }).join('');
+    } else if (imagesWrap) { imagesWrap.remove(); }
     if (d.status_id) {
       var newCol = document.querySelector('.board-column[data-status-id="' + d.status_id + '"]');
       var curCol = card.closest('.board-column');
@@ -2026,6 +2023,78 @@
 
   window.openStoryModal  = openStoryModal;
   window.closeStoryModal = closeStoryModal;
+}());
+
+<script>
+// ── Story modal image lightbox ───────────────────────────────────────────────
+(function () {
+  var lbBg, lbImg, lbPrev, lbNext;
+  var curIdx = 0;
+
+  function getImgs() {
+    return Array.from(document.querySelectorAll('#sm-images-grid .story-zoomable'));
+  }
+
+  function openLB(idx) {
+    curIdx = idx;
+    if (!lbBg) {
+      lbBg = document.createElement('div');
+      lbBg.className = 'img-lightbox-bg';
+      var closeBtn = document.createElement('button');
+      closeBtn.className = 'img-lightbox-close'; closeBtn.innerHTML = '&times;';
+      closeBtn.addEventListener('click', closeLB);
+      lbPrev = document.createElement('button');
+      lbPrev.className = 'img-lightbox-prev'; lbPrev.innerHTML = '&#8249;';
+      lbPrev.addEventListener('click', function(e){ e.stopPropagation(); nav(-1); });
+      lbNext = document.createElement('button');
+      lbNext.className = 'img-lightbox-next'; lbNext.innerHTML = '&#8250;';
+      lbNext.addEventListener('click', function(e){ e.stopPropagation(); nav(1); });
+      lbImg = document.createElement('img');
+      lbBg.appendChild(closeBtn); lbBg.appendChild(lbPrev);
+      lbBg.appendChild(lbNext); lbBg.appendChild(lbImg);
+      document.body.appendChild(lbBg);
+      lbBg.addEventListener('click', function(e){ if (e.target === lbBg) closeLB(); });
+    }
+    updateLB();
+    lbBg.style.display = 'flex';
+    document.addEventListener('keydown', onKey);
+  }
+
+  function updateLB() {
+    var imgs = getImgs();
+    if (!imgs[curIdx]) return;
+    lbImg.src = imgs[curIdx].dataset.orig || imgs[curIdx].src;
+    var multi = imgs.length > 1;
+    lbPrev.style.display = multi ? '' : 'none';
+    lbNext.style.display = multi ? '' : 'none';
+    lbPrev.style.opacity = curIdx === 0 ? '0.3' : '';
+    lbNext.style.opacity = curIdx === imgs.length - 1 ? '0.3' : '';
+  }
+
+  function nav(dir) {
+    var imgs = getImgs();
+    curIdx = (curIdx + dir + imgs.length) % imgs.length;
+    updateLB();
+  }
+
+  function closeLB() {
+    if (lbBg) lbBg.style.display = 'none';
+    document.removeEventListener('keydown', onKey);
+  }
+
+  function onKey(e) {
+    if (e.key === 'Escape') closeLB();
+    if (e.key === 'ArrowLeft') nav(-1);
+    if (e.key === 'ArrowRight') nav(1);
+  }
+
+  document.addEventListener('click', function(e) {
+    var img = e.target.closest('#sm-images-grid .story-zoomable');
+    if (!img) return;
+    var imgs = getImgs();
+    var idx = imgs.indexOf(img);
+    openLB(idx >= 0 ? idx : 0);
+  });
 }());
 </script>
 

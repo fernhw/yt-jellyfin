@@ -5,7 +5,7 @@ from flask import abort, jsonify, request, session
 
 from auth import admin_required, enforce_csrf, login_required
 from db import (create_epic, delete_epic, get_db, get_epics, get_statuses,
-                get_stickers, get_story_thumbnails)
+                get_stickers, get_story_thumbnails, get_story_previews)
 from routes.helpers import bold_verb_in_title
 
 
@@ -29,9 +29,7 @@ def register(app) -> None:
             """SELECT s.id, s.status_id, s.order_index, s.subcol_index,
                       s.title, s.description, s.acceptance_criteria, s.story_z, s.priority, s.story_points, s.updated_at,
                       sty.name  AS story_type_name,
-                      sty.color AS story_type_color,
-                      (SELECT si.filename FROM story_images si
-                       WHERE si.story_id = s.id ORDER BY si.id LIMIT 1) AS thumbnail
+                      sty.color AS story_type_color
                FROM stories s
                LEFT JOIN story_types sty ON s.story_type = sty.id
                WHERE s.project_id=? AND s.sprint IS NOT NULL
@@ -48,6 +46,7 @@ def register(app) -> None:
             (project_id,),
         ).fetchall()
         story_ids = [r["id"] for r in stories]
+        previews: dict = get_story_previews(story_ids) if story_ids else {}
         assignees_by_story: dict = {}
         addons_by_story: dict = {}
         if story_ids:
@@ -84,6 +83,7 @@ def register(app) -> None:
             d["assignees"]  = assignees_by_story.get(r["id"], [])
             d["addons"]     = addons_by_story.get(r["id"], [])
             d["tasks"]      = tasks_by_story.get(r["id"], [])
+            d["images"]     = previews.get(r["id"], [])
             result.append(d)
         return jsonify(
             stories=result,

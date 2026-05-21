@@ -581,6 +581,30 @@ def get_story_thumbnails(story_ids: list) -> dict:
     return {r["story_id"]: r["filename"] for r in rows}
 
 
+def get_story_previews(story_ids: list, limit: int = 5) -> dict:
+    """Return {story_id: [filename, ...]} with up to `limit` images per story."""
+    if not story_ids:
+        return {}
+    placeholders = ",".join("?" * len(story_ids))
+    conn = get_db()
+    rows = conn.execute(
+        f"""SELECT story_id, filename
+            FROM story_images
+            WHERE story_id IN ({placeholders})
+            ORDER BY story_id, id""",
+        story_ids,
+    ).fetchall()
+    conn.close()
+    result: dict = {}
+    for r in rows:
+        sid = r["story_id"]
+        if sid not in result:
+            result[sid] = []
+        if len(result[sid]) < limit:
+            result[sid].append(r["filename"])
+    return result
+
+
 # ── Stickers ──────────────────────────────────────────────────────────────────
 
 def get_stickers(project_id: int):

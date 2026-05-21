@@ -93,10 +93,16 @@ def register(app) -> None:
                 if f and f.filename and allowed_image(f.filename):
                     ext      = secure_filename(f.filename).rsplit(".", 1)[1].lower()
                     filename = f"{uuid.uuid4().hex}.{ext}"
-                    filepath = os.path.join(Config.STORY_IMAGES_FOLDER, filename)
-                    img = Image.open(f.stream)
-                    img.thumbnail((900, 900), Image.LANCZOS)
-                    img.save(filepath, quality=88)
+                    folder   = Config.STORY_IMAGES_FOLDER
+                    base = Image.open(f.stream)
+                    if base.mode not in ("RGB", "RGBA"):
+                        base = base.convert("RGB")
+                    orig = base.copy(); orig.thumbnail((900, 900), Image.LANCZOS)
+                    orig.save(os.path.join(folder, filename), quality=88)
+                    med  = base.copy(); med.thumbnail((700, 700), Image.LANCZOS)
+                    med.save(os.path.join(folder, "med_" + filename), quality=82)
+                    thumb = base.copy(); thumb.thumbnail((200, 200), Image.LANCZOS)
+                    thumb.save(os.path.join(folder, "thumb_" + filename), quality=75)
                     conn2 = get_db()
                     conn2.execute(
                         "INSERT INTO story_images (story_id,filename,created_at) "
@@ -303,10 +309,16 @@ def register(app) -> None:
                 if f and f.filename and allowed_image(f.filename):
                     ext      = secure_filename(f.filename).rsplit(".", 1)[1].lower()
                     filename = f"{uuid.uuid4().hex}.{ext}"
-                    filepath = os.path.join(Config.STORY_IMAGES_FOLDER, filename)
-                    img = Image.open(f.stream)
-                    img.thumbnail((900, 900), Image.LANCZOS)
-                    img.save(filepath, quality=88)
+                    folder   = Config.STORY_IMAGES_FOLDER
+                    base = Image.open(f.stream)
+                    if base.mode not in ("RGB", "RGBA"):
+                        base = base.convert("RGB")
+                    orig = base.copy(); orig.thumbnail((900, 900), Image.LANCZOS)
+                    orig.save(os.path.join(folder, filename), quality=88)
+                    med  = base.copy(); med.thumbnail((700, 700), Image.LANCZOS)
+                    med.save(os.path.join(folder, "med_" + filename), quality=82)
+                    thumb = base.copy(); thumb.thumbnail((200, 200), Image.LANCZOS)
+                    thumb.save(os.path.join(folder, "thumb_" + filename), quality=75)
                     conn = get_db()
                     conn.execute(
                         "INSERT INTO story_images (story_id,filename,created_at) "
@@ -326,9 +338,10 @@ def register(app) -> None:
                         (image_id, story_id),
                     ).fetchone()
                     if row:
-                        fp = os.path.join(Config.STORY_IMAGES_FOLDER, row["filename"])
-                        if os.path.isfile(fp):
-                            os.remove(fp)
+                        for prefix in ("", "med_", "thumb_"):
+                            fp = os.path.join(Config.STORY_IMAGES_FOLDER, prefix + row["filename"])
+                            if os.path.isfile(fp):
+                                os.remove(fp)
                         conn.execute("DELETE FROM story_images WHERE id=?",
                                      (image_id,))
                     conn.commit()

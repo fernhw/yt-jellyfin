@@ -13,7 +13,7 @@ from config import Config
 from db import (create_addon, create_notification, delete_addon,
                 get_all_active_users, get_db, get_statuses,
                 get_story, get_story_addons, get_story_history,
-                get_story_images, get_story_thumbnails, get_story_types,
+                get_story_images, get_story_thumbnails, get_story_previews, get_story_types,
                 get_story_users, log_story_change, toggle_addon,
                 update_addon_content)
 from routes.helpers import (allowed_image, bold_verb_in_title,
@@ -62,6 +62,7 @@ def register(app) -> None:
         if not s:
             return jsonify(ok=False), 404
         assignees  = get_story_users(story_id)
+        _previews  = get_story_previews([story_id])
         html_title = str(bold_verb_in_title(s["title"], s["story_z"] or ""))
         return jsonify(
             ok=True,
@@ -72,6 +73,7 @@ def register(app) -> None:
             priority=s["priority"] or "",
             story_points=s["story_points"] or 0,
             status_id=s["status_id"],
+            images=_previews.get(story_id, []),
             assignees=[
                 {"id": a["id"], "display_name": a["display_name"],
                  "avatar": a["avatar"]}
@@ -107,7 +109,9 @@ def register(app) -> None:
             assignees=[dict(a) for a in assignees],
             images=[
                 {"id": img["id"],
-                 "url": url_for("story_image", filename=img["filename"])}
+                 "url":       url_for("story_image", filename=img["filename"]),
+                 "med_url":   url_for("story_image", filename="med_" + img["filename"]),
+                 "thumb_url": url_for("story_image", filename="thumb_" + img["filename"])}
                 for img in images
             ],
             addons=[dict(a) for a in addons],
@@ -357,7 +361,7 @@ def register(app) -> None:
 
         updated_s         = get_story(story_id)
         updated_assignees = get_story_users(story_id)
-        _thumbs           = get_story_thumbnails([story_id])
+        _previews         = get_story_previews([story_id])
         return jsonify(
             ok=True,
             story_id=story_id,
@@ -369,7 +373,7 @@ def register(app) -> None:
             priority=updated_s["priority"] or "",
             story_points=updated_s["story_points"] or 0,
             status_id=updated_s["status_id"],
-            thumbnail=_thumbs.get(story_id),
+            images=_previews.get(story_id, []),
             assignees=[
                 {"id": a["id"], "display_name": a["display_name"],
                  "avatar": a["avatar"]}
@@ -407,10 +411,22 @@ def register(app) -> None:
             return jsonify(ok=False, error="Invalid file"), 400
         ext      = secure_filename(f.filename).rsplit(".", 1)[1].lower()
         filename = f"{uuid.uuid4().hex}.{ext}"
-        filepath = os.path.join(Config.STORY_IMAGES_FOLDER, filename)
+        folder   = Config.STORY_IMAGES_FOLDER
         img = Image.open(f.stream)
-        img.thumbnail((900, 900), Image.LANCZOS)
-        img.save(filepath, quality=88)
+        if img.mode not in ("RGB", "RGBA"):
+            img = img.convert("RGB")
+        # Original (lightbox)
+        orig = img.copy()
+        orig.thumbnail((900, 900), Image.LANCZOS)
+        orig.save(os.path.join(folder, filename), quality=88)
+        # Medium (story grid)
+        med = img.copy()
+        med.thumbnail((700, 700), Image.LANCZOS)
+        med.save(os.path.join(folder, "med_" + filename), quality=82)
+        # Thumbnail (post-it card)
+        thumb = img.copy()
+        thumb.thumbnail((200, 200), Image.LANCZOS)
+        thumb.save(os.path.join(folder, "thumb_" + filename), quality=75)
         conn = get_db()
         cur = conn.execute(
             "INSERT INTO story_images (story_id, filename, created_at) "
@@ -421,7 +437,9 @@ def register(app) -> None:
         conn.commit()
         conn.close()
         return jsonify(ok=True, id=image_id,
-                       url=url_for("story_image", filename=filename))
+                       url=url_for("story_image", filename=filename),
+                       med_url=url_for("story_image", filename="med_" + filename),
+                       thumb_url=url_for("story_image", filename="thumb_" + filename))
 
     @app.route("/api/story/<int:story_id>/image/<int:image_id>",
                methods=["DELETE"])
@@ -434,9 +452,11 @@ def register(app) -> None:
             (image_id, story_id),
         ).fetchone()
         if row:
-            fp = os.path.join(Config.STORY_IMAGES_FOLDER, row["filename"])
-            if os.path.isfile(fp):
-                os.remove(fp)
+            folder = Config.STORY_IMAGES_FOLDER
+            for prefix in ("", "med_", "thumb_"):
+                fp = os.path.join(folder, prefix + row["filename"])
+                if os.path.isfile(fp):
+                    os.remove(fp)
             conn.execute("DELETE FROM story_images WHERE id=?", (image_id,))
             conn.commit()
         conn.close()

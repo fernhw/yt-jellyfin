@@ -7,6 +7,7 @@ from db import (ensure_story_types, get_all_active_users, get_all_sprints,
                 get_backlog_stories, get_board_stories, get_db, get_epics,
                 get_project, get_projects, get_statuses, get_stickers,
                 get_stories_tasks_batch, get_story_thumbnails,
+                get_story_previews,
                 get_story_types, get_story_users, get_user_projects,
                 user_in_project)
 from routes.helpers import bold_verb_in_title
@@ -48,11 +49,11 @@ def register(app) -> None:
             stories.append(d)
 
         story_ids  = [s["id"] for s in stories]
-        thumbnails = get_story_thumbnails(story_ids)
+        previews   = get_story_previews(story_ids)
         tasks_map  = get_stories_tasks_batch(story_ids)
         for s in stories:
-            s["thumbnail"] = thumbnails.get(s["id"])
-            s["tasks"]     = tasks_map.get(s["id"], [])
+            s["images"] = previews.get(s["id"], [])
+            s["tasks"]  = tasks_map.get(s["id"], [])
 
         board_map: dict = {st["id"]: [] for st in statuses}
         first_status_id = statuses[0]["id"] if statuses else None
