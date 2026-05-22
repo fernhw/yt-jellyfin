@@ -2,11 +2,12 @@
 
 ## What to Watch — 2026-05-22
 
-> *Good afternoon! Here's what landed on Friday, May 22, 2026 at 03:16 PM.*
-> **YT Mirror:** 532.38 GB used · 1.18 TB free
+> *Good evening! Here's what landed on Friday, May 22, 2026 at 05:09 PM.*
+> **YT Mirror:** 533.45 GB used · 1.18 TB free
 
 ### Priority Videos
 
+- **Collecting Doesn't Feel the Same Anymore | Trash Taste #309** — *Trash Taste* · downloaded 05:06 PM · podcastable
 - **The Mandalorian and Grogu is a "movie" that exists** — *Schaffrillas Productions* · downloaded 03:06 PM · podcastable
 - **Kit has a Surprise** — *GLITCH* · downloaded 03:05 PM · not podcastable
 - **Google’s AI endgame is here… everything you missed at Google I/O 2026** — *Fireship* · downloaded 03:04 PM · podcastable
@@ -15,6 +16,7 @@
 
 ### Non-Priority Videos
 
+- **STARSEEKER – Release Date Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:07 PM · not podcastable
 - **Microsoft Reacts to the Googlebook** — *SAMTIME* · downloaded 03:13 PM · not podcastable
 - **The Numbers Are In: Subnautica 2 Will Make Krafton Pay** — *Bellular News* · downloaded 03:12 PM · podcastable
 - **The Splatoon 3 North American League Show 2026 – Episode 8** — *Nintendo of America* · downloaded 03:09 PM · not podcastable
