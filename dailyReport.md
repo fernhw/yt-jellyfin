@@ -2,17 +2,24 @@
 
 ## What to Watch — 2026-05-22
 
-> *Good morning! Here's what landed on Friday, May 22, 2026 at 11:38 AM.*
-> **YT Mirror:** 529.77 GB used · 1.19 TB free
+> *Good afternoon! Here's what landed on Friday, May 22, 2026 at 03:16 PM.*
+> **YT Mirror:** 532.38 GB used · 1.18 TB free
 
 ### Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **The Mandalorian and Grogu is a "movie" that exists** — *Schaffrillas Productions* · downloaded 03:06 PM · podcastable
+- **Kit has a Surprise** — *GLITCH* · downloaded 03:05 PM · not podcastable
+- **Google’s AI endgame is here… everything you missed at Google I/O 2026** — *Fireship* · downloaded 03:04 PM · podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **Microsoft Reacts to the Googlebook** — *SAMTIME* · downloaded 03:13 PM · not podcastable
+- **The Numbers Are In: Subnautica 2 Will Make Krafton Pay** — *Bellular News* · downloaded 03:12 PM · podcastable
+- **The Splatoon 3 North American League Show 2026 – Episode 8** — *Nintendo of America* · downloaded 03:09 PM · not podcastable
+- **Tales of Arise – Launch Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:08 PM · not podcastable
+- **I Reviewed Unhinged Streamer Rooms** — *ConnorDawg* · downloaded 03:07 PM · not podcastable
 - **Directive 8020 - PS5/PS5 Pro/Xbox Series X|S + Pro Ray Tracing Upgrades vs PC Path Tracing!** — *Digital Foundry* · downloaded 11:36 AM · not podcastable
 - **Are the "Console Wars" About to Kick Off Again? | Unpacked** — *Second Wind* · downloaded 11:35 AM · podcastable
 - **This woman is out of her mind..** — *Asmongold TV* · downloaded 11:34 AM · not podcastable
