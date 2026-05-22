@@ -24,17 +24,28 @@
         class="bulk-csv-form">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     <div class="bulk-csv-head">
-      <strong>📂 Import from CSV</strong>
-      <a class="bulk-csv-template" href="{{ url_for('bulk_add_csv_template', project_id=project.id) }}">⬇ Download template</a>
+      <strong>📂 Import from CSV or XLSX</strong>
+      <span class="bulk-csv-templates" style="display:inline-flex;gap:.75rem;">
+        <a class="bulk-csv-template" href="{{ url_for('bulk_add_csv_template', project_id=project.id) }}">⬇ CSV template</a>
+        <a class="bulk-csv-template" href="{{ url_for('bulk_add_xlsx_template', project_id=project.id) }}">⬇ XLSX template</a>
+      </span>
     </div>
     <div class="bulk-csv-row">
-      <input type="file" name="csv_file" accept=".csv,text/csv" required class="form-input">
-      <button type="submit" class="btn btn-primary btn-sm">Import CSV</button>
+      <input type="file" name="import_file"
+             accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+             required class="form-input">
+      <label class="bulk-csv-dryrun" style="display:inline-flex;align-items:center;gap:.35rem;">
+        <input type="checkbox" name="dry_run" value="1"> Dry run (validate, don't import)
+      </label>
+      <button type="submit" class="btn btn-primary btn-sm">Import</button>
     </div>
     <div class="bulk-csv-hint">
+      Accepts <code>.csv</code> or <code>.xlsx</code> (first sheet is read).
       Columns (any order, case-insensitive):
       <code>actor, verb, z, x, for, y, points, priority, type, epic, assignee, description, os, software_version</code>.
       Each row is validated against GYRA grammar — invalid rows are reported and skipped.
+      <code>points</code> must be Fibonacci: <code>0, 1, 2, 3, 5, 8, 13, 21</code> (blank = 0).
+      Tick <strong>Dry run</strong> to preview validation without writing anything.
     </div>
   </form>
 </div>
@@ -85,7 +96,10 @@
       </div>
 
       <div class="bulk-meta">
-        <input type="number" name="points[]" class="form-input" min="0" max="999" placeholder="Pts">
+        <select name="points[]" class="form-input" title="Story points (Fibonacci)">
+          <option value="">Pts</option>
+          {% for pt in [0,1,2,3,5,8,13,21] %}<option value="{{ pt }}">{{ pt }}</option>{% endfor %}
+        </select>
         <select name="priority[]" class="form-input">
           <option value="">Prio</option>
           <option value="VH">VH</option>

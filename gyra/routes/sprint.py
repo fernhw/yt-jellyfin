@@ -13,6 +13,26 @@ from db import (get_all_active_users, get_current_sprint, get_db,
 from routes.helpers import bold_verb_in_title, build_story_title, validate_story_parts
 from db import get_story_previews
 
+# Allowed story-point values (modified Fibonacci). 0 is allowed and means
+# "no estimate yet"; anything else outside this set is rejected by the
+# bulk-add UI and the CSV importer.
+FIB_POINTS = {0, 1, 2, 3, 5, 8, 13, 21}
+
+
+def _parse_points(raw: str):
+    """Return (points:int, error:str|None). Empty → (0, None)."""
+    s = (raw or "").strip()
+    if not s:
+        return 0, None
+    try:
+        v = int(s)
+    except ValueError:
+        return 0, "Story points must be a number ({} not valid).".format(s)
+    if v not in FIB_POINTS:
+        return 0, "Story points must be Fibonacci: {} (got {}).".format(
+            ", ".join(str(n) for n in sorted(FIB_POINTS)), v)
+    return v, None
+
 
 def _check_project_access(project_id: int):
     """Return project or abort; also 403 if user not in project."""
@@ -90,7 +110,11 @@ def register(app) -> None:
                 title = build_story_title(actor, verb, z, x, for_conn, y)
 
                 pts_raw = at(points_list, i)
-                pts     = int(pts_raw) if pts_raw.isdigit() else 0
+                pts, pts_err = _parse_points(pts_raw)
+                if pts_err:
+                    row_errors.append((row_num, [pts_err]))
+                    skipped += 1
+                    continue
                 prio    = at(priorities, i) or None
                 desc    = at(descs, i)
                 a_raw   = at(assignees, i)
@@ -168,31 +192,55 @@ def register(app) -> None:
         project = _check_project_access(project_id)
         enforce_csrf()
 
-        f = request.files.get("csv_file")
+        f = request.files.get("import_file") or request.files.get("csv_file")
         if not f or not f.filename:
-            flash("No CSV file selected.", "error")
+            flash("No file selected.", "error")
             return redirect(url_for("bulk_add", project_id=project_id))
 
-        try:
-            raw = f.read().decode("utf-8-sig", errors="replace")
-        except Exception as e:
-            flash(f"Could not read CSV: {escape(str(e))}", "error")
-            return redirect(url_for("bulk_add", project_id=project_id))
+        dry_run = bool(request.form.get("dry_run"))
+        fname_lower = f.filename.lower()
+        is_xlsx = fname_lower.endswith(".xlsx")
 
-        try:
-            reader = csv.DictReader(io.StringIO(raw))
-        except Exception as e:
-            flash(f"Invalid CSV: {escape(str(e))}", "error")
-            return redirect(url_for("bulk_add", project_id=project_id))
-
-        # Normalise header keys → lower-case, stripped.
         def norm(s): return (s or "").strip().lower()
+
         rows = []
-        for r in reader:
-            rows.append({norm(k): (v or "").strip() for k, v in r.items()})
+        try:
+            if is_xlsx:
+                from openpyxl import load_workbook
+                wb = load_workbook(filename=io.BytesIO(f.read()),
+                                   read_only=True, data_only=True)
+                ws = wb.worksheets[0]
+                it = ws.iter_rows(values_only=True)
+                header = None
+                for raw_row in it:
+                    if raw_row is None:
+                        continue
+                    if not any(c not in (None, "") for c in raw_row):
+                        continue
+                    header = [norm(str(c) if c is not None else "") for c in raw_row]
+                    break
+                if not header:
+                    flash("XLSX has no header row.", "warning")
+                    return redirect(url_for("bulk_add", project_id=project_id))
+                for raw_row in it:
+                    if raw_row is None:
+                        continue
+                    vals = ["" if c is None else str(c).strip() for c in raw_row]
+                    if not any(vals):
+                        continue
+                    rows.append({header[i]: (vals[i] if i < len(vals) else "")
+                                 for i in range(len(header))})
+            else:
+                raw = f.read().decode("utf-8-sig", errors="replace")
+                reader = csv.DictReader(io.StringIO(raw))
+                for r in reader:
+                    rows.append({norm(k): (v or "").strip() for k, v in r.items()})
+        except Exception as e:
+            flash(f"Could not read file: {escape(str(e))}", "error")
+            return redirect(url_for("bulk_add", project_id=project_id))
 
         if not rows:
-            flash("CSV had no data rows.", "warning")
+            flash("File had no data rows.", "warning")
             return redirect(url_for("bulk_add", project_id=project_id))
 
         # Lookup maps for human-friendly columns (assignee/type/epic by name).
@@ -237,7 +285,11 @@ def register(app) -> None:
 
             title = build_story_title(actor, verb, z, x, for_conn, y)
             pts_raw = r.get("points", "")
-            pts     = int(pts_raw) if pts_raw.isdigit() else 0
+            pts, pts_err = _parse_points(pts_raw)
+            if pts_err:
+                row_errors.append((idx, [pts_err]))
+                skipped += 1
+                continue
             prio    = (r.get("priority", "") or "").upper() or None
             desc    = r.get("description", "")
             os_val  = r.get("os", "") or None
@@ -249,6 +301,10 @@ def register(app) -> None:
             st_id = types_map.get(t_raw) if t_raw else None
             e_raw = r.get("epic", "").lower()
             ep_id = epics_map.get(e_raw) if e_raw else None
+
+            if dry_run:
+                created += 1
+                continue
 
             max_idx = conn.execute(
                 "SELECT COALESCE(MAX(order_index), 0) + 1 FROM stories WHERE project_id=?",
@@ -275,29 +331,38 @@ def register(app) -> None:
                 )
             created += 1
 
-        conn.commit()
+        if dry_run:
+            conn.rollback()
+        else:
+            conn.commit()
         conn.close()
 
+        kind_label = "XLSX" if is_xlsx else "CSV"
+        prefix = "DRY RUN — " if dry_run else ""
+
         if row_errors:
-            lines = ["<strong>{} CSV row(s) rejected.</strong>".format(skipped)]
+            lines = ["<strong>{}{} row(s) rejected: {}.</strong>".format(
+                prefix, kind_label, skipped)]
             for n, errs in row_errors:
                 lines.append("<br><strong>Row {}:</strong>".format(n))
                 for e in errs:
                     lines.append("<br>&nbsp;&nbsp;• " + str(escape(e)))
             flash(Markup("".join(lines)), "error")
         if row_warnings:
-            wlines = ["<strong>CSV warnings:</strong>"]
+            wlines = ["<strong>{}{} warnings:</strong>".format(prefix, kind_label)]
             for n, ws in row_warnings:
                 wlines.append("<br><strong>Row {}:</strong>".format(n))
                 for w in ws:
                     wlines.append("<br>&nbsp;&nbsp;• " + str(escape(w)))
             flash(Markup("".join(wlines)), "warning")
         if created:
-            flash(f"{created} {'story' if created == 1 else 'stories'} imported from CSV.", "success")
+            verb_label = "would import" if dry_run else "imported"
+            flash(f"{prefix}{created} {'story' if created == 1 else 'stories'} {verb_label} from {kind_label}.",
+                  "success" if not dry_run else "info")
         elif not row_errors:
-            flash("CSV had no valid rows.", "warning")
+            flash(f"{prefix}{kind_label} had no valid rows.", "warning")
 
-        if created and not row_errors:
+        if created and not row_errors and not dry_run:
             return redirect(url_for("backlog", project_id=project_id))
         return redirect(url_for("bulk_add", project_id=project_id))
 
@@ -310,11 +375,82 @@ def register(app) -> None:
             "Player,needs,Saving,their progress,to,avoid losing game state,3,H,Feature,,,Add a manual save button to the pause menu.,,\n"
             "Designer,needs,Tuning,enemy damage curves,to,balance combat pacing,2,M,Task,,,,,\n"
         )
+        # Note: `points` must be a Fibonacci value (0,1,2,3,5,8,13,21).
         from flask import Response
         return Response(
             sample,
             mimetype="text/csv",
             headers={"Content-Disposition": "attachment; filename=gyra-bulk-template.csv"},
+        )
+
+    @app.route("/project/<int:project_id>/bulk-add/xlsx-template")
+    @super_user_required
+    def bulk_add_xlsx_template(project_id):
+        _check_project_access(project_id)
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment
+        from openpyxl.comments import Comment
+        from flask import Response
+
+        header = ["actor","verb","z","x","for","y","points","priority","type",
+                  "epic","assignee","description","os","software_version"]
+        sample_rows = [
+            ["Player","needs","Saving","their progress","to",
+             "avoid losing game state",3,"H","Feature","","",
+             "Add a manual save button to the pause menu.","",""],
+            ["Designer","needs","Tuning","enemy damage curves","to",
+             "balance combat pacing",2,"M","Task","","","","",""],
+        ]
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Stories"
+        ws.append(header)
+
+        head_font = Font(bold=True, color="FFFFFF")
+        head_fill = PatternFill("solid", fgColor="2A2A2A")
+        for col_idx, name in enumerate(header, start=1):
+            c = ws.cell(row=1, column=col_idx)
+            c.font = head_font
+            c.fill = head_fill
+            c.alignment = Alignment(horizontal="center")
+        ws.cell(row=1, column=header.index("points") + 1).comment = Comment(
+            "Story points must be Fibonacci: 0, 1, 2, 3, 5, 8, 13, 21", "GYRA")
+
+        for r in sample_rows:
+            ws.append(r)
+
+        widths = {"actor":12,"verb":10,"z":14,"x":28,"for":6,"y":34,
+                  "points":8,"priority":9,"type":12,"epic":16,"assignee":16,
+                  "description":40,"os":10,"software_version":16}
+        for i, name in enumerate(header, start=1):
+            ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = widths.get(name, 14)
+        ws.freeze_panes = "A2"
+
+        # Fibonacci data validation on the "points" column (rows 2..1000).
+        try:
+            from openpyxl.worksheet.datavalidation import DataValidation
+            pts_col = ws.cell(row=1, column=header.index("points") + 1).column_letter
+            dv = DataValidation(
+                type="list",
+                formula1='"0,1,2,3,5,8,13,21"',
+                allow_blank=True,
+                showErrorMessage=True,
+                errorTitle="Invalid points",
+                error="Story points must be Fibonacci: 0,1,2,3,5,8,13,21",
+            )
+            ws.add_data_validation(dv)
+            dv.add(f"{pts_col}2:{pts_col}1000")
+        except Exception:
+            pass
+
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return Response(
+            buf.read(),
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=gyra-bulk-template.xlsx"},
         )
 
     # ── Bulk send to sprint ───────────────────────────────────────────────────
