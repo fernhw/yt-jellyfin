@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-21
 
-> *Good evening! Here's what landed on Thursday, May 21, 2026 at 09:04 PM.*
-> **YT Mirror:** 533.28 GB used · 1.18 TB free
+> *Good evening! Here's what landed on Thursday, May 21, 2026 at 10:06 PM.*
+> **YT Mirror:** 533.50 GB used · 1.18 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@
 
 ## Non-Priority Videos
 
+- **Yields Are Starting to Break** — *Big A* · downloaded 10:05 PM · not podcastable
 - **Apple Can’t Stop Fortnite** — *GameLinked* · downloaded 08:06 PM · podcastable
 - **It's all crashing down..** — *Asmongold TV* · downloaded 08:04 PM · not podcastable
 - **DOA: Cyberpower Pre-Built Gaming PC Doesn't Even Turn On | Review, Thermals, & Benchmarks** — *Gamers Nexus* · downloaded 03:11 PM · not podcastable
