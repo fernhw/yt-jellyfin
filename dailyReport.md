@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-21
 
-> *Good evening! Here's what landed on Thursday, May 21, 2026 at 07:05 PM.*
-> **YT Mirror:** 532.78 GB used · 1.18 TB free
+> *Good evening! Here's what landed on Thursday, May 21, 2026 at 08:08 PM.*
+> **YT Mirror:** 533.28 GB used · 1.18 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@
 
 ### Non-Priority Videos
 
+- **Apple Can’t Stop Fortnite** — *GameLinked* · downloaded 08:06 PM · podcastable
+- **It's all crashing down..** — *Asmongold TV* · downloaded 08:04 PM · not podcastable
 - **DOA: Cyberpower Pre-Built Gaming PC Doesn't Even Turn On | Review, Thermals, & Benchmarks** — *Gamers Nexus* · downloaded 03:11 PM · not podcastable
 - **He called me out. It instantly backfired..** — *Asmongold TV* · downloaded 03:08 PM · not podcastable
 - **Can We Actually Make Exotic Weapons... Exotic? | Semi-Ramblomatic** — *Second Wind* · downloaded 11:38 AM · podcastable
