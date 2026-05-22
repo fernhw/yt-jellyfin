@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-22
 
-> *Good evening! Here's what landed on Friday, May 22, 2026 at 05:09 PM.*
-> **YT Mirror:** 533.45 GB used · 1.18 TB free
+> *Good evening! Here's what landed on Friday, May 22, 2026 at 06:08 PM.*
+> **YT Mirror:** 533.59 GB used · 1.18 TB free
 
 ### Priority Videos
 
@@ -16,6 +16,7 @@
 
 ### Non-Priority Videos
 
+- **The PlayStation Hacking Situation Is Actually Insane** — *Spawn Wave* · downloaded 06:07 PM · not podcastable
 - **STARSEEKER – Release Date Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:07 PM · not podcastable
 - **Microsoft Reacts to the Googlebook** — *SAMTIME* · downloaded 03:13 PM · not podcastable
 - **The Numbers Are In: Subnautica 2 Will Make Krafton Pay** — *Bellular News* · downloaded 03:12 PM · podcastable
