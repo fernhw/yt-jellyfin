@@ -14,8 +14,8 @@
 
 <div class="bulk-help">
   <strong>GYRA grammar.</strong> Every story is six fields:
-  <code>[Actor] [verb] <strong>[Action&nbsp;Word]</strong> [what] [connector] [outcome]</code>.
-  The Action Word is one gerund — <em>Walking</em>, <em>Saving</em>, <em>Banning</em>. Invalid rows are rejected with a reason. Valid rows are created.
+  <code>[Actor] [want] <strong>[Verb]</strong> [what] [connector] [outcome]</code>.
+  The Verb is one gerund — <em>Walking</em>, <em>Saving</em>, <em>Banning</em>. Invalid rows are rejected with a reason. Valid rows are created.
 </div>
 
 <div class="bulk-csv-card">
@@ -34,18 +34,14 @@
       <input type="file" name="import_file"
              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
              required class="form-input">
-      <label class="bulk-csv-dryrun" style="display:inline-flex;align-items:center;gap:.35rem;">
-        <input type="checkbox" name="dry_run" value="1"> Dry run (validate, don't import)
-      </label>
-      <button type="submit" class="btn btn-primary btn-sm">Import</button>
+      <button type="submit" class="btn btn-primary btn-sm">Load for review</button>
     </div>
     <div class="bulk-csv-hint">
       Accepts <code>.csv</code> or <code>.xlsx</code> (first sheet is read).
       Columns (any order, case-insensitive):
-      <code>actor, verb, z, x, for, y, points, priority, type, epic, assignee, description, os, software_version</code>.
-      Each row is validated against GYRA grammar — invalid rows are reported and skipped.
+      <code>actor, want, verb, x, for, y, points, priority, type, epic, assignee, description, os, software_version</code>.
+      Rows are loaded into the editor below — review and fix anything, then click <strong>Create all valid stories</strong>.
       <code>points</code> must be Fibonacci: <code>0, 1, 2, 3, 5, 8, 13, 21</code> (blank = 0).
-      Tick <strong>Dry run</strong> to preview validation without writing anything.
     </div>
   </form>
 </div>
@@ -59,7 +55,7 @@
 <form method="post" action="{{ url_for('bulk_add', project_id=project.id) }}" id="bulk-add-form" class="bulk-add-form">
   <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
-  <div class="bulk-rows" id="bulk-rows">
+  {% macro render_row(r) %}
     <div class="bulk-card bulk-row">
       <div class="bulk-row-head">
         <span class="bulk-row-num">1</span>
@@ -69,25 +65,31 @@
       <div class="bulk-grammar">
         <select name="story_actor[]" class="form-input bulk-actor" required>
           {% for opt in story_actor_options %}
-          <option value="{{ opt }}" {% if opt == 'User' %}selected{% endif %}>{{ opt }}</option>
+          <option value="{{ opt }}"
+            {% if r.actor %}{% if opt == r.actor %}selected{% endif %}
+            {% elif opt == 'User' %}selected{% endif %}>{{ opt }}</option>
           {% endfor %}
         </select>
         <select name="story_verb[]" class="form-input bulk-verb" required>
           {% for v in story_verb_options %}
-          <option value="{{ v }}" {% if v == 'needs' %}selected{% endif %}>{{ v }}</option>
+          <option value="{{ v }}"
+            {% if r.verb %}{% if v == r.verb %}selected{% endif %}
+            {% elif v == 'needs' %}selected{% endif %}>{{ v }}</option>
           {% endfor %}
         </select>
         <input type="text" name="story_z[]" class="form-input bulk-z"
-               placeholder="Action Word (gerund — Walking)" required>
+               placeholder="Verb (gerund — Walking)" value="{{ r.z or '' }}" required>
         <input type="text" name="story_x[]" class="form-input bulk-x"
-               placeholder="what / the feature" required>
+               placeholder="what / the feature" value="{{ r.x or '' }}" required>
         <select name="story_for[]" class="form-input bulk-for" required>
           {% for c in story_connector_options %}
-          <option value="{{ c }}" {% if c == 'to' %}selected{% endif %}>{{ c }}</option>
+          <option value="{{ c }}"
+            {% if r.for_conn %}{% if c == r.for_conn %}selected{% endif %}
+            {% elif c == 'to' %}selected{% endif %}>{{ c }}</option>
           {% endfor %}
         </select>
         <input type="text" name="story_y[]" class="form-input bulk-y"
-               placeholder="outcome / why" required>
+               placeholder="outcome / why" value="{{ r.y or '' }}" required>
       </div>
 
       <div class="bulk-preview-bar">
@@ -98,31 +100,39 @@
       <div class="bulk-meta">
         <select name="points[]" class="form-input" title="Story points (Fibonacci)">
           <option value="">Pts</option>
-          {% for pt in [0,1,2,3,5,8,13,21] %}<option value="{{ pt }}">{{ pt }}</option>{% endfor %}
+          {% for pt in [0,1,2,3,5,8,13,21] %}<option value="{{ pt }}"
+            {% if r.points is not none and r.points == pt %}selected{% endif %}>{{ pt }}</option>{% endfor %}
         </select>
         <select name="priority[]" class="form-input">
           <option value="">Prio</option>
-          <option value="VH">VH</option>
-          <option value="H">H</option>
-          <option value="M">M</option>
-          <option value="L">L</option>
-          <option value="VL">VL</option>
+          {% for p in ['VH','H','M','L','VL'] %}<option value="{{ p }}"
+            {% if r.priority == p %}selected{% endif %}>{{ p }}</option>{% endfor %}
         </select>
         <select name="story_type[]" class="form-input">
           <option value="">— Type —</option>
-          {% for t in story_types %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
+          {% for t in story_types %}<option value="{{ t.id }}"
+            {% if r.story_type_id == t.id %}selected{% endif %}>{{ t.name }}</option>{% endfor %}
         </select>
         <select name="epic_id[]" class="form-input">
           <option value="">— Epic —</option>
-          {% for e in epics %}<option value="{{ e.id }}">{{ e.title }}</option>{% endfor %}
+          {% for e in epics %}<option value="{{ e.id }}"
+            {% if r.epic_id == e.id %}selected{% endif %}>{{ e.title }}</option>{% endfor %}
         </select>
         <select name="assignee[]" class="form-input">
           <option value="">— Assignee —</option>
-          {% for u in users %}<option value="{{ u.id }}">{{ u.display_name }}</option>{% endfor %}
+          {% for u in users %}<option value="{{ u.id }}"
+            {% if r.assignee_id == u.id %}selected{% endif %}>{{ u.display_name }}</option>{% endfor %}
         </select>
-        <input type="text" name="description[]" class="form-input bulk-desc" placeholder="Description (optional)">
+        <input type="text" name="description[]" class="form-input bulk-desc"
+               placeholder="Description (optional)" value="{{ r.description or '' }}">
       </div>
     </div>
+  {% endmacro %}
+
+  <div class="bulk-rows" id="bulk-rows">
+    {% for r in (prefill_rows or [{}]) %}
+      {{ render_row(r) }}
+    {% endfor %}
   </div>
 
   <div class="bulk-actions">

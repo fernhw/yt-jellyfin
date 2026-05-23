@@ -10,7 +10,9 @@ from markupsafe import Markup, escape
 from auth import enforce_csrf, login_required, super_user_required
 from db import (get_all_active_users, get_current_sprint, get_db,
                 get_epics, get_project, get_story_types, user_in_project)
-from routes.helpers import bold_verb_in_title, build_story_title, validate_story_parts
+from routes.helpers import (ACTOR_OPTIONS, CONNECTOR_OPTIONS, VERB_OPTIONS,
+                            bold_verb_in_title, build_story_title,
+                            validate_story_parts)
 from db import get_story_previews
 
 # Allowed story-point values (modified Fibonacci). 0 is allowed and means
@@ -181,10 +183,12 @@ def register(app) -> None:
         users       = get_all_active_users()
         story_types = get_story_types(project_id)
         epics       = get_epics(project_id)
+        prefill_rows = session.pop("bulk_prefill", None)
         return render_template("bulk_add.html", project=project, users=users,
-                               story_types=story_types, epics=epics)
+                               story_types=story_types, epics=epics,
+                               prefill_rows=prefill_rows)
 
-    # ── Bulk story add (CSV import) ───────────────────────────────────────────
+    # ── Bulk story add (CSV/XLSX import → review prefill) ────────────────────
 
     @app.route("/project/<int:project_id>/bulk-add/csv", methods=["POST"])
     @super_user_required
@@ -197,13 +201,13 @@ def register(app) -> None:
             flash("No file selected.", "error")
             return redirect(url_for("bulk_add", project_id=project_id))
 
-        dry_run = bool(request.form.get("dry_run"))
         fname_lower = f.filename.lower()
         is_xlsx = fname_lower.endswith(".xlsx")
 
         def norm(s): return (s or "").strip().lower()
 
-        rows = []
+        raw_rows = []
+        header_keys = set()
         try:
             if is_xlsx:
                 from openpyxl import load_workbook
@@ -222,28 +226,49 @@ def register(app) -> None:
                 if not header:
                     flash("XLSX has no header row.", "warning")
                     return redirect(url_for("bulk_add", project_id=project_id))
+                header_keys = set(header)
                 for raw_row in it:
                     if raw_row is None:
                         continue
                     vals = ["" if c is None else str(c).strip() for c in raw_row]
                     if not any(vals):
                         continue
-                    rows.append({header[i]: (vals[i] if i < len(vals) else "")
-                                 for i in range(len(header))})
+                    raw_rows.append({header[i]: (vals[i] if i < len(vals) else "")
+                                     for i in range(len(header))})
             else:
                 raw = f.read().decode("utf-8-sig", errors="replace")
                 reader = csv.DictReader(io.StringIO(raw))
+                header_keys = set(norm(k) for k in (reader.fieldnames or []))
                 for r in reader:
-                    rows.append({norm(k): (v or "").strip() for k, v in r.items()})
+                    raw_rows.append({norm(k): (v or "").strip() for k, v in r.items()})
         except Exception as e:
             flash(f"Could not read file: {escape(str(e))}", "error")
             return redirect(url_for("bulk_add", project_id=project_id))
 
-        if not rows:
+        if not raw_rows:
             flash("File had no data rows.", "warning")
             return redirect(url_for("bulk_add", project_id=project_id))
 
-        # Lookup maps for human-friendly columns (assignee/type/epic by name).
+        # Header format: new canonical uses `want` (col 2) and `verb` (col 3).
+        # Legacy templates used `verb` (col 2) and `z` (col 3) — still accepted.
+        use_new_grammar = "want" in header_keys
+
+        # Header sanity — report missing required columns and unknown extras.
+        known_cols = {
+            "actor", "want", "verb", "z", "action", "action_word",
+            "x", "what", "for", "connector", "y", "outcome", "why",
+            "points", "priority", "type", "story_type", "epic",
+            "assignee", "description", "os", "software_version", "version",
+        }
+        required_cols = (
+            ["actor", "want", "verb", "x", "for", "y"]
+            if use_new_grammar
+            else ["actor", "verb", "z", "x", "for", "y"]
+        )
+        missing_required = [c for c in required_cols if c not in header_keys]
+        unknown_cols = sorted(h for h in header_keys if h and h not in known_cols)
+
+        # Resolve human-friendly columns to ids for the prefilled selects.
         users_map = {u["display_name"].lower(): u["id"]
                      for u in get_all_active_users()}
         types_map = {t["name"].lower(): t["id"]
@@ -251,119 +276,180 @@ def register(app) -> None:
         epics_map = {e["title"].lower(): e["id"]
                      for e in get_epics(project_id)}
 
-        conn = get_db()
-        first_status = conn.execute(
-            "SELECT id FROM statuses WHERE project_id=? ORDER BY order_index LIMIT 1",
-            (project_id,),
-        ).fetchone()
-        status_id = first_status["id"] if first_status else None
-        now = int(time.time())
+        valid_verbs  = {v.lower(): v for v in VERB_OPTIONS}
+        valid_conns  = {c.lower(): c for c in CONNECTOR_OPTIONS}
+        valid_actors = {a.lower(): a for a in ACTOR_OPTIONS}
 
-        created = 0
-        skipped = 0
-        row_errors = []
-        row_warnings = []
+        FIB = {0, 1, 2, 3, 5, 8, 13, 21}
 
-        for idx, r in enumerate(rows, start=1):
+        prefill = []
+        unresolved_notes = []  # list[(row_num, [messages])]
+        blank_skipped = 0
+        # Per-column "rescue" counters for the summary report.
+        rescued = {
+            "want": 0, "for": 0, "points": 0, "priority": 0,
+            "type": 0, "epic": 0, "assignee": 0,
+        }
+        explicit_none = {"type": 0, "epic": 0, "assignee": 0}
+
+        for idx, r in enumerate(raw_rows, start=1):
             actor    = r.get("actor", "")
-            verb     = r.get("verb", "")
-            z        = r.get("z", "") or r.get("action", "") or r.get("action_word", "")
+            if use_new_grammar:
+                verb = r.get("want", "")
+                z    = r.get("verb", "") or r.get("action_word", "")
+            else:
+                verb = r.get("verb", "")
+                z    = r.get("z", "") or r.get("action", "") or r.get("action_word", "")
             x        = r.get("x", "") or r.get("what", "")
             for_conn = r.get("for", "") or r.get("connector", "")
             y        = r.get("y", "") or r.get("outcome", "") or r.get("why", "")
 
-            if not (z or x or y):
-                continue  # blank row
-
-            errors, warnings = validate_story_parts(actor, verb, z, x, for_conn, y)
-            if errors:
-                row_errors.append((idx, errors))
-                skipped += 1
-                continue
-            if warnings:
-                row_warnings.append((idx, warnings))
-
-            title = build_story_title(actor, verb, z, x, for_conn, y)
-            pts_raw = r.get("points", "")
-            pts, pts_err = _parse_points(pts_raw)
-            if pts_err:
-                row_errors.append((idx, [pts_err]))
-                skipped += 1
-                continue
-            prio    = (r.get("priority", "") or "").upper() or None
-            desc    = r.get("description", "")
-            os_val  = r.get("os", "") or None
-            ver_val = r.get("software_version", "") or r.get("version", "") or None
-
-            a_raw = r.get("assignee", "").lower()
-            a_id  = users_map.get(a_raw) if a_raw else None
-            t_raw = r.get("type", "").lower() or r.get("story_type", "").lower()
-            st_id = types_map.get(t_raw) if t_raw else None
-            e_raw = r.get("epic", "").lower()
-            ep_id = epics_map.get(e_raw) if e_raw else None
-
-            if dry_run:
-                created += 1
+            if not any((actor, verb, z, x, for_conn, y)):
+                blank_skipped += 1
                 continue
 
-            max_idx = conn.execute(
-                "SELECT COALESCE(MAX(order_index), 0) + 1 FROM stories WHERE project_id=?",
-                (project_id,),
-            ).fetchone()[0]
-            cur = conn.execute(
-                """INSERT INTO stories
-                   (project_id, title, description, story_points, priority,
-                    story_type, epic_id,
-                    status_id, created_at, created_by, order_index, is_archived,
-                    story_actor, story_verb, story_z, story_x, story_for, story_y,
-                    software_version, os)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?,?)""",
-                (project_id, title, desc, pts, prio,
-                 st_id, ep_id,
-                 status_id, now, session["user_id"], max_idx,
-                 actor, verb, z, x, for_conn, y,
-                 ver_val, os_val),
-            )
-            if a_id:
-                conn.execute(
-                    "INSERT OR IGNORE INTO story_users (story_id, user_id, role) VALUES (?,?,'assignee')",
-                    (cur.lastrowid, a_id),
-                )
-            created += 1
+            notes = []
 
-        if dry_run:
-            conn.rollback()
-        else:
-            conn.commit()
-        conn.close()
+            # Snap dropdown values to canonical casing where we can.
+            if actor and actor.lower() in valid_actors:
+                actor = valid_actors[actor.lower()]
+            if verb and verb.lower() in valid_verbs:
+                verb = valid_verbs[verb.lower()]
+            elif verb:
+                notes.append(f"want \"{verb}\" not in allowed list — please pick one.")
+                verb = ""
+                rescued["want"] += 1
+            if for_conn and for_conn.lower() in valid_conns:
+                for_conn = valid_conns[for_conn.lower()]
+            elif for_conn:
+                notes.append(f"for \"{for_conn}\" not in allowed list — please pick one.")
+                for_conn = ""
+                rescued["for"] += 1
 
+            # Points → keep only if Fibonacci, else clear with a note.
+            pts_raw = (r.get("points", "") or "").strip()
+            pts = None
+            if pts_raw:
+                try:
+                    pv = int(pts_raw)
+                    if pv in FIB:
+                        pts = pv
+                    else:
+                        notes.append(
+                            f"points \"{pts_raw}\" is not Fibonacci — cleared.")
+                        rescued["points"] += 1
+                except ValueError:
+                    notes.append(f"points \"{pts_raw}\" is not a number — cleared.")
+                    rescued["points"] += 1
+
+            # Priority → uppercase if valid, else clear with a note.
+            prio_raw = (r.get("priority", "") or "").strip().upper()
+            prio = prio_raw if prio_raw in ("VH","H","M","L","VL") else ""
+            if prio_raw and not prio:
+                notes.append(f"priority \"{prio_raw}\" not allowed — cleared.")
+                rescued["priority"] += 1
+
+            # Type / epic / assignee → resolve names to ids; note misses.
+            # Literal "(none)" (from the XLSX dropdown) is an intentional blank.
+            def _is_none_marker(s):
+                return (s or "").strip().lower() in ("(none)", "none", "-", "—")
+
+            t_raw_disp = r.get("type", "") or r.get("story_type", "")
+            if _is_none_marker(t_raw_disp):
+                t_raw_disp, st_id = "", None
+                explicit_none["type"] += 1
+            else:
+                st_id = types_map.get(t_raw_disp.lower()) if t_raw_disp else None
+                if t_raw_disp and st_id is None:
+                    notes.append(f"type \"{t_raw_disp}\" not found — please pick one.")
+                    rescued["type"] += 1
+            e_raw_disp = r.get("epic", "")
+            if _is_none_marker(e_raw_disp):
+                e_raw_disp, ep_id = "", None
+                explicit_none["epic"] += 1
+            else:
+                ep_id = epics_map.get(e_raw_disp.lower()) if e_raw_disp else None
+                if e_raw_disp and ep_id is None:
+                    notes.append(f"epic \"{e_raw_disp}\" not found — please pick one.")
+                    rescued["epic"] += 1
+            a_raw_disp = r.get("assignee", "")
+            if _is_none_marker(a_raw_disp):
+                a_raw_disp, a_id = "", None
+                explicit_none["assignee"] += 1
+            else:
+                a_id = users_map.get(a_raw_disp.lower()) if a_raw_disp else None
+                if a_raw_disp and a_id is None:
+                    notes.append(f"assignee \"{a_raw_disp}\" not found — please pick one.")
+                    rescued["assignee"] += 1
+
+            prefill.append({
+                "actor":        actor,
+                "verb":         verb,        # want (column 2 select)
+                "z":            z,           # gerund (column 3 input)
+                "x":            x,
+                "for_conn":     for_conn,
+                "y":            y,
+                "points":       pts,
+                "priority":     prio,
+                "story_type_id": st_id,
+                "epic_id":      ep_id,
+                "assignee_id":  a_id,
+                "description":  r.get("description", ""),
+            })
+            if notes:
+                unresolved_notes.append((idx, notes))
+
+        if not prefill:
+            flash("File had no usable rows.", "warning")
+            return redirect(url_for("bulk_add", project_id=project_id))
+
+        session["bulk_prefill"] = prefill
         kind_label = "XLSX" if is_xlsx else "CSV"
-        prefix = "DRY RUN — " if dry_run else ""
 
-        if row_errors:
-            lines = ["<strong>{}{} row(s) rejected: {}.</strong>".format(
-                prefix, kind_label, skipped)]
-            for n, errs in row_errors:
+        # ── Always-on import report ────────────────────────────────────────
+        total = len(raw_rows)
+        loaded = len(prefill)
+        flagged = len(unresolved_notes)
+        clean = loaded - flagged
+
+        summary = [
+            "<strong>📋 {} import report — {} of {} row{} loaded.</strong>"
+            .format(kind_label, loaded, total, "" if total == 1 else "s"),
+            "<br>• {} clean • {} flagged • {} blank skipped"
+            .format(clean, flagged, blank_skipped),
+        ]
+        if missing_required:
+            summary.append(
+                "<br>⚠ Missing required column{}: <code>{}</code> — those fields will be blank."
+                .format("" if len(missing_required) == 1 else "s",
+                        str(escape(", ".join(missing_required)))))
+        if unknown_cols:
+            summary.append(
+                "<br>ℹ Ignored unknown column{}: <code>{}</code>"
+                .format("" if len(unknown_cols) == 1 else "s",
+                        str(escape(", ".join(unknown_cols)))))
+        rescue_bits = [f"{k}: {v}" for k, v in rescued.items() if v]
+        if rescue_bits:
+            summary.append("<br>🔧 Cleared invalid values — "
+                           + str(escape(", ".join(rescue_bits))))
+        none_bits = [f"{k}: {v}" for k, v in explicit_none.items() if v]
+        if none_bits:
+            summary.append("<br>∅ Explicit (none) — "
+                           + str(escape(", ".join(none_bits))))
+        summary.append(
+            "<br>Review the rows below, fix anything flagged, then click "
+            "<strong>Create all valid stories</strong>.")
+        flash(Markup("".join(summary)),
+              "warning" if (flagged or missing_required) else "success")
+
+        if unresolved_notes:
+            lines = ["<strong>Rows needing attention:</strong>"]
+            for n, msgs in unresolved_notes:
                 lines.append("<br><strong>Row {}:</strong>".format(n))
-                for e in errs:
-                    lines.append("<br>&nbsp;&nbsp;• " + str(escape(e)))
-            flash(Markup("".join(lines)), "error")
-        if row_warnings:
-            wlines = ["<strong>{}{} warnings:</strong>".format(prefix, kind_label)]
-            for n, ws in row_warnings:
-                wlines.append("<br><strong>Row {}:</strong>".format(n))
-                for w in ws:
-                    wlines.append("<br>&nbsp;&nbsp;• " + str(escape(w)))
-            flash(Markup("".join(wlines)), "warning")
-        if created:
-            verb_label = "would import" if dry_run else "imported"
-            flash(f"{prefix}{created} {'story' if created == 1 else 'stories'} {verb_label} from {kind_label}.",
-                  "success" if not dry_run else "info")
-        elif not row_errors:
-            flash(f"{prefix}{kind_label} had no valid rows.", "warning")
+                for m in msgs:
+                    lines.append("<br>&nbsp;&nbsp;• " + str(escape(m)))
+            flash(Markup("".join(lines)), "warning")
 
-        if created and not row_errors and not dry_run:
-            return redirect(url_for("backlog", project_id=project_id))
         return redirect(url_for("bulk_add", project_id=project_id))
 
     @app.route("/project/<int:project_id>/bulk-add/csv-template")
@@ -371,7 +457,7 @@ def register(app) -> None:
     def bulk_add_csv_template(project_id):
         _check_project_access(project_id)
         sample = (
-            "actor,verb,z,x,for,y,points,priority,type,epic,assignee,description,os,software_version\n"
+            "actor,want,verb,x,for,y,points,priority,type,epic,assignee,description,os,software_version\n"
             "Player,needs,Saving,their progress,to,avoid losing game state,3,H,Feature,,,Add a manual save button to the pause menu.,,\n"
             "Designer,needs,Tuning,enemy damage curves,to,balance combat pacing,2,M,Task,,,,,\n"
         )
@@ -388,11 +474,15 @@ def register(app) -> None:
     def bulk_add_xlsx_template(project_id):
         _check_project_access(project_id)
         from openpyxl import Workbook
-        from openpyxl.styles import Font, PatternFill, Alignment
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
         from openpyxl.comments import Comment
+        from openpyxl.worksheet.datavalidation import DataValidation
+        from openpyxl.formatting.rule import CellIsRule, FormulaRule
+        from openpyxl.utils import get_column_letter
+        from routes.helpers import ACTOR_OPTIONS, VERB_OPTIONS, CONNECTOR_OPTIONS
         from flask import Response
 
-        header = ["actor","verb","z","x","for","y","points","priority","type",
+        header = ["actor","want","verb","x","for","y","points","priority","type",
                   "epic","assignee","description","os","software_version"]
         sample_rows = [
             ["Player","needs","Saving","their progress","to",
@@ -407,42 +497,325 @@ def register(app) -> None:
         ws.title = "Stories"
         ws.append(header)
 
-        head_font = Font(bold=True, color="FFFFFF")
-        head_fill = PatternFill("solid", fgColor="2A2A2A")
+        # ── Group-coloured headers (grammar / estimation / classification / meta)
+        GROUP = {
+            "actor":"grammar","want":"grammar","verb":"grammar",
+            "x":"grammar","for":"grammar","y":"grammar",
+            "points":"est","priority":"est",
+            "type":"class","epic":"class","assignee":"class",
+            "description":"meta","os":"meta","software_version":"meta",
+        }
+        GROUP_FILL = {
+            "grammar":   PatternFill("solid", fgColor="1E3A8A"),  # indigo
+            "est":       PatternFill("solid", fgColor="B45309"),  # amber-700
+            "class":     PatternFill("solid", fgColor="6D28D9"),  # violet-700
+            "meta":      PatternFill("solid", fgColor="334155"),  # slate-700
+        }
+        REQUIRED = {"actor","want","verb","x","for","y"}
+
+        head_font_req = Font(bold=True, color="FFFFFF", size=12)
+        head_font_opt = Font(bold=True, color="E5E7EB", italic=True, size=11)
+        thin = Side(style="thin", color="111111")
+        border = Border(top=thin, bottom=thin, left=thin, right=thin)
+
         for col_idx, name in enumerate(header, start=1):
             c = ws.cell(row=1, column=col_idx)
-            c.font = head_font
-            c.fill = head_fill
-            c.alignment = Alignment(horizontal="center")
+            c.fill = GROUP_FILL[GROUP[name]]
+            c.font = head_font_req if name in REQUIRED else head_font_opt
+            c.alignment = Alignment(horizontal="center", vertical="center")
+            c.border = border
+        ws.row_dimensions[1].height = 26
+
+        # ── Header comments to disambiguate and teach
+        ws.cell(row=1, column=header.index("want") + 1).comment = Comment(
+            "Auxiliary: " + ", ".join(VERB_OPTIONS), "GYRA")
+        ws.cell(row=1, column=header.index("verb") + 1).comment = Comment(
+            "Gerund action word — one word ending in -ing (Walking, Saving, Tuning).",
+            "GYRA")
+        ws.cell(row=1, column=header.index("for") + 1).comment = Comment(
+            "Connector: " + ", ".join(CONNECTOR_OPTIONS), "GYRA")
         ws.cell(row=1, column=header.index("points") + 1).comment = Comment(
             "Story points must be Fibonacci: 0, 1, 2, 3, 5, 8, 13, 21", "GYRA")
+        ws.cell(row=1, column=header.index("priority") + 1).comment = Comment(
+            "Priority: VH, H, M, L, VL", "GYRA")
+        ws.cell(row=1, column=header.index("y") + 1).comment = Comment(
+            "Outcome / why: what does the Actor get out of this?", "GYRA")
 
+        # ── Sample rows
         for r in sample_rows:
             ws.append(r)
 
-        widths = {"actor":12,"verb":10,"z":14,"x":28,"for":6,"y":34,
-                  "points":8,"priority":9,"type":12,"epic":16,"assignee":16,
-                  "description":40,"os":10,"software_version":16}
+        # ── Column widths + frozen header
+        widths = {"actor":13,"want":12,"verb":15,"x":30,"for":12,"y":36,
+                  "points":8,"priority":10,"type":15,"epic":20,"assignee":18,
+                  "description":42,"os":12,"software_version":18}
         for i, name in enumerate(header, start=1):
-            ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = widths.get(name, 14)
+            ws.column_dimensions[get_column_letter(i)].width = widths.get(name, 14)
         ws.freeze_panes = "A2"
 
-        # Fibonacci data validation on the "points" column (rows 2..1000).
-        try:
-            from openpyxl.worksheet.datavalidation import DataValidation
-            pts_col = ws.cell(row=1, column=header.index("points") + 1).column_letter
+        DATA_ROWS = 1000
+        last_row = DATA_ROWS + 1  # incl. header
+
+        # ── Default wrap-text on every data cell so nothing overflows
+        wrap_align = Alignment(wrap_text=True, vertical="top", horizontal="left")
+        for row_i in range(2, last_row + 1):
+            for col_i in range(1, len(header) + 1):
+                ws.cell(row=row_i, column=col_i).alignment = wrap_align
+        # Header keeps centered alignment but also wraps long labels
+        for col_i in range(1, len(header) + 1):
+            cell = ws.cell(row=1, column=col_i)
+            cell.alignment = Alignment(
+                wrap_text=True, vertical="center", horizontal="center")
+
+        # ── Lists sheet (kept visible — OnlyOffice refuses DV refs to hidden sheets)
+        lists_ws = wb.create_sheet(title="Lists")
+
+        priorities  = ["VH","H","M","L","VL"]
+        points_vals = [0,1,2,3,5,8,13,21]
+        types_rows  = list(get_story_types(project_id))
+        types_list  = ["(none)"] + [t["name"] for t in types_rows]
+        epics_list  = ["(none)"] + [e["title"] for e in get_epics(project_id)]
+        users_list  = ["(none)"] + [u["display_name"] for u in get_all_active_users()]
+
+        list_specs = [
+            ("actor",     list(ACTOR_OPTIONS)),
+            ("want",      list(VERB_OPTIONS)),
+            ("for",       list(CONNECTOR_OPTIONS)),
+            ("points",    points_vals),
+            ("priority",  priorities),
+            ("type",      types_list),
+            ("epic",      epics_list),
+            ("assignee",  users_list),
+        ]
+
+        col_ranges = {}
+        for ci, (col_name, values) in enumerate(list_specs, start=1):
+            letter = get_column_letter(ci)
+            lists_ws.cell(row=1, column=ci, value=col_name).font = Font(bold=True)
+            for ri, v in enumerate(values, start=2):
+                lists_ws.cell(row=ri, column=ci, value=v)
+            if values:
+                col_ranges[col_name] = f"Lists!${letter}$2:${letter}${len(values)+1}"
+
+        # ── Strict DataValidations on the main sheet
+        for col_name, formula in col_ranges.items():
+            try:
+                idx = header.index(col_name) + 1
+            except ValueError:
+                continue
+            target_letter = get_column_letter(idx)
+            # epic/assignee can be blank (optional + may be empty list);
+            # everything else: strict allow_blank for skipped rows but
+            # rejects free text via showErrorMessage.
             dv = DataValidation(
                 type="list",
-                formula1='"0,1,2,3,5,8,13,21"',
+                formula1=formula,
                 allow_blank=True,
                 showErrorMessage=True,
-                errorTitle="Invalid points",
-                error="Story points must be Fibonacci: 0,1,2,3,5,8,13,21",
+                errorTitle=f"Invalid {col_name}",
+                error=f"Pick a value from the {col_name} dropdown.",
+                promptTitle=col_name.upper(),
+                prompt=f"Pick a {col_name} from the list.",
+                showInputMessage=False,
             )
             ws.add_data_validation(dv)
-            dv.add(f"{pts_col}2:{pts_col}1000")
-        except Exception:
-            pass
+            dv.add(f"{target_letter}2:{target_letter}{last_row}")
+
+        # ── Conditional formatting: priority colour-codes the row
+        PRIO_FILLS = {
+            "VH": ("DC2626", "FFFFFF"),
+            "H":  ("EA580C", "FFFFFF"),
+            "M":  ("CA8A04", "111111"),
+            "L":  ("16A34A", "FFFFFF"),
+            "VL": ("64748B", "FFFFFF"),
+        }
+        prio_letter = get_column_letter(header.index("priority") + 1)
+        prio_cell_range = f"{prio_letter}2:{prio_letter}{last_row}"
+        for level, (bg, fg) in PRIO_FILLS.items():
+            ws.conditional_formatting.add(
+                prio_cell_range,
+                CellIsRule(
+                    operator="equal",
+                    formula=[f'"{level}"'],
+                    fill=PatternFill("solid", fgColor=bg),
+                    font=Font(color=fg, bold=True),
+                ),
+            )
+        # Row-level tint for priority: paint the y/outcome cell so the row
+        # glances coloured without overpowering the cells.
+        y_letter = get_column_letter(header.index("y") + 1)
+        y_range = f"{y_letter}2:{y_letter}{last_row}"
+        for level, (bg, _fg) in PRIO_FILLS.items():
+            ws.conditional_formatting.add(
+                y_range,
+                FormulaRule(
+                    formula=[f'=UPPER(${prio_letter}2)="{level}"'],
+                    fill=PatternFill("solid", fgColor=bg),
+                    font=Font(color="FFFFFF" if level != "M" else "111111"),
+                ),
+            )
+
+        # ── Conditional formatting: type cell takes the type's own colour
+        type_letter = get_column_letter(header.index("type") + 1)
+        type_range = f"{type_letter}2:{type_letter}{last_row}"
+        for t in types_rows:
+            color = (t["color"] or "").lstrip("#").upper() or "9CA3AF"
+            if len(color) == 3:
+                color = "".join(ch * 2 for ch in color)
+            if len(color) != 6:
+                color = "9CA3AF"
+            ws.conditional_formatting.add(
+                type_range,
+                CellIsRule(
+                    operator="equal",
+                    formula=[f'"{t["name"]}"'],
+                    fill=PatternFill("solid", fgColor=color),
+                    font=Font(color="FFFFFF", bold=True),
+                ),
+            )
+
+        # ── Conditional formatting: points heat
+        POINTS_HEAT = {
+            0:  ("E5E7EB", "111111"),
+            1:  ("DCFCE7", "111111"),
+            2:  ("BBF7D0", "111111"),
+            3:  ("86EFAC", "111111"),
+            5:  ("FDE68A", "111111"),
+            8:  ("FCA5A5", "111111"),
+            13: ("F87171", "FFFFFF"),
+            21: ("DC2626", "FFFFFF"),
+        }
+        pts_letter = get_column_letter(header.index("points") + 1)
+        pts_range = f"{pts_letter}2:{pts_letter}{last_row}"
+        for v, (bg, fg) in POINTS_HEAT.items():
+            ws.conditional_formatting.add(
+                pts_range,
+                CellIsRule(
+                    operator="equal",
+                    formula=[str(v)],
+                    fill=PatternFill("solid", fgColor=bg),
+                    font=Font(color=fg, bold=True),
+                ),
+            )
+
+        # ── Highlight missing required cells (red tint)
+        for col_name in REQUIRED:
+            letter = get_column_letter(header.index(col_name) + 1)
+            rng = f"{letter}2:{letter}{last_row}"
+            ws.conditional_formatting.add(
+                rng,
+                FormulaRule(
+                    formula=[
+                        f'=AND(COUNTA($A2:$N2)>0,TRIM({letter}2)="")'
+                    ],
+                    fill=PatternFill("solid", fgColor="FEE2E2"),
+                    font=Font(color="991B1B", bold=True),
+                ),
+            )
+
+        # ── Word-count guard (> 19 words anywhere in actor..y → red)
+        wc_formula = (
+            '=SUMPRODUCT('
+            'IF(TRIM($A2:$F2)="",0,'
+            'LEN(TRIM($A2:$F2))-LEN(SUBSTITUTE(TRIM($A2:$F2)," ",""))+1'
+            '))>19'
+        )
+        for letter in ["A","B","C","D","E","F"]:
+            ws.conditional_formatting.add(
+                f"{letter}2:{letter}{last_row}",
+                FormulaRule(
+                    formula=[wc_formula],
+                    fill=PatternFill("solid", fgColor="FECACA"),
+                ),
+            )
+
+        # ── Alternating zebra striping on non-grammar columns
+        zebra_fill = PatternFill("solid", fgColor="F8FAFC")
+        for letter in ["G","H","I","J","K","L","M","N"]:
+            ws.conditional_formatting.add(
+                f"{letter}2:{letter}{last_row}",
+                FormulaRule(
+                    formula=[f"=MOD(ROW(),2)=0"],
+                    fill=zebra_fill,
+                ),
+            )
+
+        # ── Visible Help sheet
+        help_ws = wb.create_sheet(title="Help", index=1)
+        help_ws.sheet_view.showGridLines = False
+        help_ws.column_dimensions["A"].width = 22
+        help_ws.column_dimensions["B"].width = 90
+
+        def H(row, label, value, label_fill="0F172A", value_fill=None):
+            a = help_ws.cell(row=row, column=1, value=label)
+            a.font = Font(bold=True, color="FFFFFF")
+            a.fill = PatternFill("solid", fgColor=label_fill)
+            a.alignment = Alignment(vertical="center", horizontal="right")
+            b = help_ws.cell(row=row, column=2, value=value)
+            b.alignment = Alignment(wrap_text=True, vertical="center")
+            if value_fill:
+                b.fill = PatternFill("solid", fgColor=value_fill)
+                b.font = Font(color="FFFFFF", bold=True)
+            help_ws.row_dimensions[row].height = 22
+
+        help_ws.cell(row=1, column=1, value="GYRA Bulk-Add Template").font = Font(
+            bold=True, size=16, color="0F172A")
+        help_ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=2)
+        help_ws.row_dimensions[1].height = 30
+
+        H(3, "Grammar",
+          "[actor] [want] [verb-ing] [x] [for] [y]   —   e.g.  "
+          "Player needs Saving their progress to avoid losing game state.")
+        H(4, "Required",
+          ", ".join(sorted(REQUIRED)) + "  (every row must fill these)")
+        H(5, "Max words", "19 words total across actor..y. Overflow rows are rejected.")
+        H(6, "actor", ", ".join(ACTOR_OPTIONS))
+        H(7, "want",  ", ".join(VERB_OPTIONS))
+        H(8, "verb",  "One gerund — Walking, Saving, Banning, Tuning. Single word, letters only.")
+        H(9, "for",   ", ".join(CONNECTOR_OPTIONS))
+        H(10,"points","Fibonacci only: 0, 1, 2, 3, 5, 8, 13, 21. Blank = 0.")
+        H(11,"priority","VH = critical, H = high, M = medium, L = low, VL = very low.")
+        H(12,"type",  ", ".join(types_list) if types_list else "(no types defined for this project)")
+        H(13,"epic",  ", ".join(epics_list) if epics_list else "(no epics defined yet — leave blank)")
+        H(14,"assignee", ", ".join(users_list) if users_list else "(no active users)")
+
+        # Priority colour legend
+        help_ws.cell(row=16, column=1, value="Priority legend").font = Font(
+            bold=True, size=12)
+        for off, (level, (bg, fg)) in enumerate(PRIO_FILLS.items()):
+            cell = help_ws.cell(row=17 + off, column=2, value=f"{level}")
+            cell.fill = PatternFill("solid", fgColor=bg)
+            cell.font = Font(color=fg, bold=True)
+            cell.alignment = Alignment(horizontal="center")
+            help_ws.cell(row=17 + off, column=1, value="").alignment = Alignment(horizontal="right")
+
+        # Type colour legend
+        type_start = 17 + len(PRIO_FILLS) + 1
+        help_ws.cell(row=type_start, column=1, value="Type legend").font = Font(
+            bold=True, size=12)
+        for off, t in enumerate(types_rows):
+            color = (t["color"] or "").lstrip("#").upper() or "9CA3AF"
+            if len(color) == 3:
+                color = "".join(ch * 2 for ch in color)
+            if len(color) != 6:
+                color = "9CA3AF"
+            cell = help_ws.cell(row=type_start + 1 + off, column=2, value=t["name"])
+            cell.fill = PatternFill("solid", fgColor=color)
+            cell.font = Font(color="FFFFFF", bold=True)
+            cell.alignment = Alignment(horizontal="center")
+
+        # Points heat legend
+        pts_start = type_start + 1 + max(len(types_rows), 1) + 1
+        help_ws.cell(row=pts_start, column=1, value="Points heat").font = Font(
+            bold=True, size=12)
+        for off, (v, (bg, fg)) in enumerate(POINTS_HEAT.items()):
+            cell = help_ws.cell(row=pts_start + 1 + off, column=2, value=v)
+            cell.fill = PatternFill("solid", fgColor=bg)
+            cell.font = Font(color=fg, bold=True)
+            cell.alignment = Alignment(horizontal="center")
+
+        # ── Move Stories tab to be the active one on open
+        wb.active = wb.index(ws)
 
         buf = io.BytesIO()
         wb.save(buf)
