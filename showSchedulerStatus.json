@@ -1,5 +1,5 @@
 {
-  "updated": "2026-05-22",
+  "updated": "2026-05-23",
   "shows": [
     {
       "show": "The Boys",
@@ -10,7 +10,7 @@
       "week": "W8 due",
       "status": "complete",
       "release_days": "wed",
-      "days_until": 5,
+      "days_until": 4,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-the-boys.jpg"
     },
@@ -23,7 +23,7 @@
       "week": "W10 \u2713",
       "status": "pending",
       "release_days": "wed",
-      "days_until": 5,
+      "days_until": 4,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-dorohedoro.jpg"
     },
@@ -34,9 +34,9 @@
       "next_ep": 8,
       "total": 12,
       "week": "W8 due",
-      "status": "pending",
+      "status": "searching",
       "release_days": "sat",
-      "days_until": 1,
+      "days_until": 0,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-mistress-kanan-is-devilishly-easy.jpg"
     },
@@ -49,7 +49,7 @@
       "week": "W8 \u2713",
       "status": "pending",
       "release_days": "mon",
-      "days_until": 3,
+      "days_until": 2,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-hat-witch-atelier.jpg"
     },
@@ -62,7 +62,7 @@
       "week": "?",
       "status": "searching",
       "release_days": "wed",
-      "days_until": 5,
+      "days_until": 4,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-re-zero-kara-hajimeru-isekai-seikatsu.jpg"
     },
@@ -75,7 +75,7 @@
       "week": "?",
       "status": "searching",
       "release_days": "sat",
-      "days_until": 1,
+      "days_until": 0,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-agents-of-the-four-seasons-dance-of-spring.jpg"
     }
