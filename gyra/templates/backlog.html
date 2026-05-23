@@ -9,6 +9,7 @@
   </div>
   <div class="page-header-right" style="display:flex;gap:8px;align-items:center">
     {% if session.role in ('admin', 'super_user') %}
+    <a class="btn btn-sm btn-secondary" href="{{ url_for('prioritizer', project_id=project.id, scope='backlog') }}" title="Drag-and-drop priority balancer (Pareto 20% per bucket)">🎯 Prioritize</a>
     <form method="post" action="{{ url_for('end_sprint', project_id=project.id) }}" style="display:inline">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
       <button type="submit" class="btn btn-sm btn-warning"

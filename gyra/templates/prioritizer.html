@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — Prioritizer — Gyra{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <span class="project-key-badge">{{ project.key }}</span>
+    <h2>🎯 Prioritizer
+      <span class="prio-scope-tag prio-scope-{{ scope }}">{{ scope }}</span>
+    </h2>
+  </div>
+  <div class="page-header-right" style="display:flex;gap:8px;align-items:center">
+    <a class="btn btn-sm btn-secondary"
+       href="{% if scope == 'board' %}{{ url_for('board', project_id=project.id) }}{% else %}{{ url_for('backlog', project_id=project.id) }}{% endif %}">← Back</a>
+    <a class="btn btn-sm btn-ghost"
+       href="{{ url_for('prioritizer', project_id=project.id, scope='board' if scope == 'backlog' else 'backlog') }}">
+      Switch to {{ 'backlog' if scope == 'board' else 'board' }}
+    </a>
+  </div>
+</div>
+
+<div class="prio-intro">
+  <strong>Pareto rule:</strong> aim for roughly <strong>20% of stories in each
+  bucket</strong>. In practice that's the smallest slice that delivers the most
+  value — focus only on what truly matters.
+  Drag cards up and down between buckets. Counts and ideal ranges update live.
+  Nothing is saved until you click <strong>Apply changes</strong>.
+</div>
+
+<div class="prio-stats" id="prio-stats">
+  Total stories: <strong>{{ total }}</strong> · Ideal per bucket:
+  <strong>{{ ideal_lo }}–{{ ideal_hi }}</strong>
+  <span class="prio-pending" id="prio-pending-tag" hidden>·
+    <span id="prio-pending-count">0</span> pending change(s)</span>
+</div>
+
+<div class="prioritizer" id="prioritizer"
+     data-project-id="{{ project.id }}"
+     data-ideal-lo="{{ ideal_lo }}"
+     data-ideal-hi="{{ ideal_hi }}"
+     data-csrf="{{ csrf_token() }}">
+  {% for key, label, sub in [
+      ('VH', 'Very High',   'P0 — drop everything'),
+      ('H',  'High',        'P1 — this sprint'),
+      ('M',  'Medium',      'P2 — soon'),
+      ('L',  'Low',         'P3 — nice to have'),
+      ('VL', 'Very Low',    'P4 — maybe someday'),
+      ('UN', 'Unset',       'no priority yet — please rank') ] %}
+  <section class="prio-bucket prio-bucket-{{ key|lower }}"
+           data-priority="{{ key if key != 'UN' else '' }}">
+    <header class="prio-bucket-head">
+      <div class="prio-bucket-title">
+        <span class="prio-bucket-key">{{ key }}</span>
+        <span class="prio-bucket-name">{{ label }}</span>
+        <small class="prio-bucket-sub">{{ sub }}</small>
+      </div>
+      <div class="prio-bucket-meta">
+        <span class="prio-count" data-count>{{ buckets[key]|length }}</span>
+        {% if key != 'UN' %}
+        <span class="prio-ideal">ideal {{ ideal_lo }}–{{ ideal_hi }}</span>
+        <span class="prio-status" data-status>—</span>
+        {% else %}
+        <span class="prio-ideal">target 0</span>
+        <span class="prio-status" data-status>—</span>
+        {% endif %}
+      </div>
+    </header>
+    <ul class="prio-list" data-list>
+      {% for s in buckets[key] %}
+      <li class="prio-card"
+          draggable="true"
+          data-story-id="{{ s.id }}"
+          data-origin="{{ s.priority }}">
+        <span class="prio-card-handle">⠿</span>
+        <span class="prio-card-id">{{ project.key }}-{{ s.id }}</span>
+        <span class="prio-card-title">{{ s.title }}</span>
+        {% if s.points %}<span class="prio-card-pts">{{ s.points }}pt</span>{% endif %}
+        <span class="prio-card-changed" hidden>changed</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+</div>
+
+<div class="prio-actionbar" id="prio-actionbar">
+  <button type="button" class="btn btn-sm btn-secondary" id="prio-reset">Reset</button>
+  <button type="button" class="btn btn-primary" id="prio-apply" disabled>
+    Apply changes (<span id="prio-apply-count">0</span>)
+  </button>
+</div>
+
+<script>
+(function () {
+  var root    = document.getElementById('prioritizer');
+  if (!root) return;
+  var pid     = root.dataset.projectId;
+  var csrf    = root.dataset.csrf;
+  var idealLo = parseInt(root.dataset.idealLo, 10) || 0;
+  var idealHi = parseInt(root.dataset.idealHi, 10) || 0;
+
+  var buckets = Array.from(root.querySelectorAll('.prio-bucket'));
+  var applyBtn   = document.getElementById('prio-apply');
+  var applyCount = document.getElementById('prio-apply-count');
+  var resetBtn   = document.getElementById('prio-reset');
+  var pendingTag = document.getElementById('prio-pending-tag');
+  var pendingCnt = document.getElementById('prio-pending-count');
+
+  // Snapshot initial DOM order so Reset can restore it.
+  var initialState = buckets.map(function (b) {
+    return {
+      el: b,
+      list: b.querySelector('[data-list]'),
+      cards: Array.from(b.querySelectorAll('.prio-card'))
+    };
+  });
+
+  function recompute() {
+    var pending = 0;
+    buckets.forEach(function (b) {
+      var list = b.querySelector('[data-list]');
+      var cards = list.querySelectorAll('.prio-card');
+      var count = cards.length;
+      var key = b.dataset.priority || '';
+      b.querySelector('[data-count]').textContent = count;
+      var statusEl = b.querySelector('[data-status]');
+      if (!key) {
+        // Unset bucket: target 0.
+        if (count === 0) { statusEl.textContent = '✓ ideal'; statusEl.className = 'prio-status prio-ok'; }
+        else { statusEl.textContent = 'rank these'; statusEl.className = 'prio-status prio-warn'; }
+      } else if (count < idealLo) {
+        statusEl.textContent = 'low';
+        statusEl.className = 'prio-status prio-warn';
+      } else if (count > idealHi) {
+        statusEl.textContent = 'too many';
+        statusEl.className = 'prio-status prio-bad';
+      } else {
+        statusEl.textContent = '✓ ideal';
+        statusEl.className = 'prio-status prio-ok';
+      }
+      // Mark changed cards.
+      cards.forEach(function (c) {
+        var origin = c.dataset.origin || '';
+        var changed = origin !== key;
+        c.classList.toggle('prio-card-dirty', changed);
+        var tag = c.querySelector('.prio-card-changed');
+        if (tag) tag.hidden = !changed;
+        if (changed) pending += 1;
+      });
+    });
+    applyCount.textContent = pending;
+    applyBtn.disabled = pending === 0;
+    pendingTag.hidden = pending === 0;
+    pendingCnt.textContent = pending;
+  }
+
+  // ── HTML5 drag-and-drop ───────────────────────────────────────────
+  var dragged = null;
+
+  function onDragStart(e) {
+    dragged = this;
+    this.classList.add('prio-dragging');
+    try { e.dataTransfer.effectAllowed = 'move'; } catch (_) {}
+  }
+  function onDragEnd() {
+    if (dragged) dragged.classList.remove('prio-dragging');
+    dragged = null;
+    buckets.forEach(function (b) { b.classList.remove('prio-drop-target'); });
+  }
+
+  function wireCard(card) {
+    card.addEventListener('dragstart', onDragStart);
+    card.addEventListener('dragend', onDragEnd);
+  }
+
+  function placeRelativeTo(targetList, clientY) {
+    // Find the card we should insert before based on Y coordinate.
+    var items = Array.from(targetList.querySelectorAll('.prio-card:not(.prio-dragging)'));
+    for (var i = 0; i < items.length; i++) {
+      var box = items[i].getBoundingClientRect();
+      if (clientY < box.top + box.height / 2) return items[i];
+    }
+    return null;
+  }
+
+  buckets.forEach(function (b) {
+    var list = b.querySelector('[data-list]');
+    b.addEventListener('dragover', function (e) {
+      if (!dragged) return;
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = 'move'; } catch (_) {}
+      b.classList.add('prio-drop-target');
+      var before = placeRelativeTo(list, e.clientY);
+      if (before) list.insertBefore(dragged, before);
+      else list.appendChild(dragged);
+    });
+    b.addEventListener('dragleave', function (e) {
+      // Only clear when we're actually leaving the bucket box.
+      if (!b.contains(e.relatedTarget)) b.classList.remove('prio-drop-target');
+    });
+    b.addEventListener('drop', function (e) {
+      e.preventDefault();
+      b.classList.remove('prio-drop-target');
+      recompute();
+    });
+    Array.from(list.querySelectorAll('.prio-card')).forEach(wireCard);
+  });
+
+  // ── Reset ────────────────────────────────────────────────────────
+  resetBtn.addEventListener('click', function () {
+    initialState.forEach(function (snap) {
+      snap.list.innerHTML = '';
+      snap.cards.forEach(function (c) { snap.list.appendChild(c); });
+    });
+    recompute();
+  });
+
+  // ── Apply ────────────────────────────────────────────────────────
+  applyBtn.addEventListener('click', function () {
+    var updates = [];
+    buckets.forEach(function (b) {
+      var key = b.dataset.priority || '';
+      Array.from(b.querySelectorAll('.prio-card')).forEach(function (c) {
+        if ((c.dataset.origin || '') !== key) {
+          updates.push({ id: parseInt(c.dataset.storyId, 10), priority: key });
+        }
+      });
+    });
+    if (!updates.length) return;
+    applyBtn.disabled = true;
+    applyBtn.textContent = 'Applying…';
+    fetch('/api/project/' + pid + '/prioritizer/apply', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({ updates: updates })
+    })
+    .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+    .then(function (res) {
+      if (!res.ok || !res.j.ok) {
+        alert('Could not apply: ' + (res.j && res.j.error || 'unknown error'));
+        applyBtn.disabled = false;
+        applyBtn.innerHTML = 'Apply changes (<span id="prio-apply-count">' + updates.length + '</span>)';
+        return;
+      }
+      // Lock in the new "origin" on every card and refresh counts.
+      buckets.forEach(function (b) {
+        var key = b.dataset.priority || '';
+        Array.from(b.querySelectorAll('.prio-card')).forEach(function (c) {
+          c.dataset.origin = key;
+        });
+      });
+      // Reset snapshot so further changes are diffed from the new state.
+      initialState = buckets.map(function (b) {
+        return {
+          el: b,
+          list: b.querySelector('[data-list]'),
+          cards: Array.from(b.querySelectorAll('.prio-card'))
+        };
+      });
+      applyBtn.innerHTML = 'Apply changes (<span id="prio-apply-count">0</span>)';
+      applyCount = document.getElementById('prio-apply-count');
+      recompute();
+      // Tiny inline confirmation banner.
+      var bar = document.getElementById('prio-actionbar');
+      var ok = document.createElement('span');
+      ok.className = 'prio-saved-tag';
+      ok.textContent = '✓ Saved ' + res.j.updated + ' update(s)';
+      bar.appendChild(ok);
+      setTimeout(function () { ok.remove(); }, 2500);
+    })
+    .catch(function (err) {
+      alert('Network error: ' + err);
+      applyBtn.disabled = false;
+    });
+  });
+
+  recompute();
+})();
+</script>
+{% endblock %}
