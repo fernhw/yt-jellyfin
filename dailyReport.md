@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-23
 
-> *Good morning! Here's what landed on Saturday, May 23, 2026 at 11:35 AM.*
-> **YT Mirror:** 532.71 GB used · 1.18 TB free
+> *Good afternoon! Here's what landed on Saturday, May 23, 2026 at 03:14 PM.*
+> **YT Mirror:** 534.61 GB used · 1.18 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,12 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **The Bungie Situation Is Worse Than We Thought...** — *Spawn Wave* · downloaded 03:11 PM · not podcastable
+- **The biggest conspiracy on the internet right now..** — *Asmongold TV* · downloaded 03:11 PM · not podcastable
+- **This is actually insane..** — *Asmongold TV* · downloaded 03:09 PM · not podcastable
+- **The Best Mechanics From "Bad" Games** — *Razbuten* · downloaded 03:08 PM · podcastable · *84 days since their last upload*
+- **Door To Door Salesmen Are The Worst...** — *Papa Meat* · downloaded 03:05 PM · not podcastable
+- **VFX Artists React to Bad & Great CGi 226** — *Corridor Crew* · downloaded 03:04 PM · not podcastable
 - **VFX Artists React to Bad & Great CGi 226** — *Corridor Crew* · downloaded 11:34 AM · not podcastable
 - **This game is REALLY GOOD..** — *Asmongold TV* · downloaded 09:44 AM · not podcastable
 - **NIKKE ANIME?! YES PLEASE! ANIMATED SHORT REACTION! | Goddess of Victory: NIKKE VOD** — *Yessenia* · downloaded 09:36 AM · not podcastable
