@@ -185,19 +185,29 @@
             </div>
             {% endif %}
           </div>
-          {# ── Container / Attachment badge ── #}
+          {# ── Container / Attachment badges ── #}
+          {# A story can be BOTH a container AND an attachment. Container badge always first. #}
+          {% set _box_labels = {'whitebox':'WhiteBox','greybox':'GreyBox','blackbox':'BlackBox','featurebox':'FeatureBox'} %}
           {% if story.box_type and not story.status_is_done %}
-            {% set _box_labels = {'whitebox':'WhiteBox','greybox':'GreyBox','blackbox':'BlackBox','featurebox':'FeatureBox'} %}
-            <div class="card-box-badge box-{{ story.box_type }} is-container"
-                 title="This story is a {{ _box_labels.get(story.box_type, story.box_type) }} container">
-              {{ _box_labels.get(story.box_type, story.box_type) }}
+            <div class="card-box-badge is-container"
+                 title="This story contains other stories (dynamic container)">
+              (Container)
             </div>
-          {% elif story.attached_to %}
-            <div class="card-box-badge is-attached"
-                 style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa"
-                 title="Attached to story #{{ story.attached_to }}">
-              Attached
-            </div>
+          {% endif %}
+          {% if story.attached_to and not story.status_is_done %}
+            {% if story.parent_is_done %}
+              {# Parent container already done → this dependent needs integration #}
+              <div class="card-box-badge is-integrate"
+                   title="The container is already done — this story needs to be integrated">
+                (Integrate)
+              </div>
+            {% elif story.box_type %}
+              {# Show this attachment's own box-type so the worker knows HOW to build it #}
+              <div class="card-box-badge box-{{ story.box_type }} is-attached-box"
+                   title="Build this as a {{ _box_labels.get(story.box_type, story.box_type) }}">
+                {{ _box_labels.get(story.box_type, story.box_type) }}
+              </div>
+            {% endif %}
           {% endif %}
           {# ── embedded data for hover tooltip ── #}
           <script type="application/json" class="card-data">{"desc":{{ (story.description or '') | tojson }},"ac":{{ (story.acceptance_criteria or '') | tojson }},"tasks":[{% for t in story.tasks %}{"c":{{ t.content | tojson }},"a":{{ (t.assigned_name or '') | tojson }},"done":{{ 'true' if t.is_done_by_me else 'false' }}}{% if not loop.last %},{% endif %}{% endfor %}]}</script>
@@ -876,37 +886,48 @@
   .story-link:hover { text-decoration-color:currentColor; }
 
   .sm-attach-banner {
-    background:#fffbeb; border:none; border-left:6px solid #f59e0b;
-    padding:14px 18px; margin:0 0 16px;
-    display:flex; flex-direction:column; gap:5px;
-    border-radius:0 6px 6px 0;
+    background:transparent; border:none;
+    padding:18px 0 14px; margin:0 0 18px;
+    display:flex; flex-direction:column; gap:6px;
+    border-bottom:2px solid rgba(0,0,0,.08);
   }
   .sm-attach-headline {
-    font-size:28px; font-weight:900; letter-spacing:1.5px;
-    color:#1f2937; line-height:1; text-transform:uppercase;
+    font-size:44px; font-weight:900; letter-spacing:2px;
+    line-height:1; text-transform:uppercase; color:#0f172a;
   }
-  .sm-attach-sub {
-    font-size:12px; color:#475569; font-style:italic; margin-bottom:6px;
+  .sm-attach-tip {
+    font-size:15px; font-weight:600; color:#334155;
   }
-  .sm-attach-target { font-size:14px; color:#334155; font-weight:600; }
-  .sm-attach-action {
-    font-size:14px; font-weight:600; color:#78350f;
-    background:#fef3c7; padding:8px 12px; border-radius:4px; margin-top:4px;
-    border-left:3px solid #f59e0b;
+  .sm-attach-detail {
+    font-size:13px; color:#475569; line-height:1.45; max-width:62ch;
   }
-  .sm-attach-banner.box-whitebox   { background:#f0fdf4; border-left-color:#16a34a; }
-  .sm-attach-banner.box-whitebox   .sm-attach-headline { color:#14532d; }
-  .sm-attach-banner.box-greybox    { background:#f1f5f9; border-left-color:#64748b; }
-  .sm-attach-banner.box-greybox    .sm-attach-headline { color:#334155; }
-  .sm-attach-banner.box-blackbox   { background:#0f172a; border-left-color:#000; }
-  .sm-attach-banner.box-blackbox   .sm-attach-headline { color:#f9fafb; }
-  .sm-attach-banner.box-blackbox   .sm-attach-sub,
-  .sm-attach-banner.box-blackbox   .sm-attach-target { color:#cbd5e1; }
-  .sm-attach-banner.box-blackbox   .story-link       { color:#fbbf24; }
-  .sm-attach-banner.box-featurebox { background:#f5f3ff; border-left-color:#7c3aed; }
-  .sm-attach-banner.box-featurebox .sm-attach-headline { color:#4c1d95; }
-  .sm-attach-banner.is-resolved    { border-left-color:#16a34a; }
-  .sm-attach-banner.is-resolved    .sm-attach-headline { color:#14532d; }
+  .sm-attach-target {
+    font-size:13px; color:#475569; font-weight:600; margin-top:4px;
+  }
+  .sm-attach-do {
+    font-size:14px; font-weight:700; color:#0f172a; margin-top:6px;
+  }
+
+  /* ── Whole-modal tint by box type ── */
+  /* Each tint colors the FULL inside of the modal, not just a banner. */
+  #sm-content.sm-tint-whitebox   .story-main { background:#fefce8; }
+  #sm-content.sm-tint-whitebox   .sm-attach-headline { color:#854d0e; }
+
+  #sm-content.sm-tint-greybox    .story-main { background:#f1f5f9; }
+  #sm-content.sm-tint-greybox    .sm-attach-headline { color:#334155; }
+
+  #sm-content.sm-tint-blackbox   .story-main { background:#e5e7eb; }
+  #sm-content.sm-tint-blackbox   .sm-attach-headline { color:#0f172a; }
+  #sm-content.sm-tint-blackbox   .sm-attach-tip,
+  #sm-content.sm-tint-blackbox   .sm-attach-detail,
+  #sm-content.sm-tint-blackbox   .sm-attach-target { color:#334155; }
+  #sm-content.sm-tint-blackbox   .sm-attach-do     { color:#0f172a; }
+
+  #sm-content.sm-tint-featurebox .story-main { background:#f5f3ff; }
+  #sm-content.sm-tint-featurebox .sm-attach-headline { color:#5b21b6; }
+
+  #sm-content.sm-tint-integrate  .story-main { background:#f0fdf4; }
+  #sm-content.sm-tint-integrate  .sm-attach-headline { color:#15803d; }
 
   .sm-container-summary {
     background:transparent; border:none; padding:6px 14px; margin:14px 0;
@@ -966,8 +987,16 @@
     letter-spacing:.4px; padding:2px 6px; border-radius:8px;
     margin-top:4px; line-height:1.3;
   }
-  .card-box-badge.is-container::before { content:'📦 '; }
-  .card-box-badge.is-attached::before  { content:'📎 '; }
+  .card-box-badge.is-container {
+    background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd;
+  }
+  .card-box-badge.is-integrate {
+    background:#fef9c3; color:#854d0e; border:1px solid #fde047;
+  }
+  .card-box-badge.box-whitebox  { background:#f8fafc; color:#0f172a; border:1px solid #cbd5e1; }
+  .card-box-badge.box-greybox   { background:#f1f5f9; color:#334155; border:1px solid #94a3b8; }
+  .card-box-badge.box-blackbox  { background:#1e293b; color:#f1f5f9; border:1px solid #0f172a; }
+  .card-box-badge.box-featurebox{ background:#dbeafe; color:#1e3a8a; border:1px solid #93c5fd; }
 
 </style>
 
@@ -2588,10 +2617,26 @@
 
   // ── Container/Attachment UI ──
   var BOX_INFO = {
-    whitebox:   { label:'WhiteBox',   tip:"Built & live. Wire in now — it's real." },
-    greybox:    { label:'GreyBox',    tip:'Stub with sketched hooks. Dry-run only.' },
-    blackbox:   { label:'BlackBox',   tip:"Not yet built. Build standalone — don't reference it." },
-    featurebox: { label:'FeatureBox', tip:"Container absorbs integration. Just finish and signal." }
+    whitebox: {
+      label: 'WhiteBox',
+      tip:   'Build this on its own. No container, no surroundings, no integration.',
+      detail:'Make it work alone — a button with no menu, a screen with no game, an animation with no world, a Feature with no character. Get it right in isolation. Wiring it in comes later.'
+    },
+    greybox: {
+      label: 'GreyBox',
+      tip:   'Build a rough draft that lives inside its container — stubs and sketches.',
+      detail:'Place it where it belongs, but keep it low-fidelity. Dummy data, placeholder art, stubbed logic. The point is to feel the shape inside the container, not to ship.'
+    },
+    blackbox: {
+      label: 'BlackBox',
+      tip:   'Build it as a sealed unit inside its container. Container does not look in.',
+      detail:'Wrap up the behavior so the rest of the system just calls it. No leaking internals, no special hooks. When you are done, the container only knows it works.'
+    },
+    featurebox: {
+      label: 'FeatureBox',
+      tip:   'Build the full polished feature, drop it into its container, done.',
+      detail:'End-to-end: art, logic, copy, edge cases. When you hand it off, no further work is needed in the container — it just slots in and ships.'
+    }
   };
   function boxBadge(box, withTip) {
     if (!box) return '';
@@ -2616,31 +2661,51 @@
     });
   }
 
+  function clearStoryTint() {
+    var content = document.getElementById('sm-content');
+    if (!content) return;
+    content.classList.remove(
+      'sm-tint-whitebox','sm-tint-greybox','sm-tint-blackbox',
+      'sm-tint-featurebox','sm-tint-integrate'
+    );
+  }
+
   function renderContainerUI(d) {
     var s     = d.story;
     var c     = d.container || {};
     var boxEl = document.getElementById('sm-box-type');
     boxEl.value = c.box_type || '';
 
+    clearStoryTint();
+
     // ── Attachment banner (this story is attached to a container) ──
-    var banner = document.getElementById('sm-attach-banner');
+    var banner  = document.getElementById('sm-attach-banner');
+    var content = document.getElementById('sm-content');
     if (c.container) {
       var box   = c.container.box_type || 'whitebox';
       var done  = !!c.container.is_done;
-      var info  = BOX_INFO[box] || { label: box, tip: '' };
-      banner.className = 'sm-attach-banner box-' + box + (done ? ' is-resolved' : '');
+      var info  = BOX_INFO[box] || { label: box, tip: '', detail: '' };
+      var tintClass = done ? 'sm-tint-integrate' : ('sm-tint-' + box);
+      content.classList.add(tintClass);
+
+      banner.className = 'sm-attach-banner' + (done ? ' is-integrate' : (' box-' + box));
       var html = '';
       if (done) {
-        html += '<div class="sm-attach-headline">✓ READY TO INTEGRATE</div>'
-              + '<div class="sm-attach-sub">Container resolved \u2014 wire into '
-              + storyLink(c.container.id, c.container.title) + '</div>';
+        html += '<div class="sm-attach-headline">INTEGRATE</div>'
+              + '<div class="sm-attach-detail">The container is finished. Wire this story into '
+              + storyLink(c.container.id, c.container.title)
+              + ' and confirm it works in place.</div>';
+        if (c.dependent_action) {
+          html += '<div class="sm-attach-do">→ ' + esc(c.dependent_action) + '</div>';
+        }
       } else {
         html += '<div class="sm-attach-headline">' + esc(info.label.toUpperCase()) + '</div>'
-              + '<div class="sm-attach-sub">' + esc(info.tip) + '</div>'
+              + '<div class="sm-attach-tip">' + esc(info.tip) + '</div>'
+              + '<div class="sm-attach-detail">' + esc(info.detail) + '</div>'
               + '<div class="sm-attach-target">Lives inside: '
               + storyLink(c.container.id, c.container.title) + '</div>';
         if (c.dependent_action) {
-          html += '<div class="sm-attach-action">' + esc(c.dependent_action) + '</div>';
+          html += '<div class="sm-attach-do">→ ' + esc(c.dependent_action) + '</div>';
         }
       }
       banner.innerHTML = html;

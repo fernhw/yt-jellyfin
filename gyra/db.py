@@ -743,11 +743,15 @@ def get_board_stories(project_id: int):
         """SELECT s.*, st.name AS status_name, st.color AS status_color,
                   COALESCE(st.is_done,0) AS status_is_done,
                   sty.name AS story_type_name, sty.color AS story_type_color,
-                  e.title AS epic_title, e.color AS epic_color
+                  e.title AS epic_title, e.color AS epic_color,
+                  COALESCE(pst.is_done,0) AS parent_is_done,
+                  p.box_type AS parent_box_type
            FROM stories s
            LEFT JOIN statuses st   ON s.status_id = st.id
            LEFT JOIN story_types sty ON s.story_type = sty.id
            LEFT JOIN epics e ON s.epic_id = e.id
+           LEFT JOIN stories p ON s.attached_to = p.id
+           LEFT JOIN statuses pst ON p.status_id = pst.id
            WHERE s.project_id = ? AND s.sprint IS NOT NULL AND s.is_archived = 0
            ORDER BY s.order_index""",
         (project_id,),
