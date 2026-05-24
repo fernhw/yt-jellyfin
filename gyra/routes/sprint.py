@@ -848,9 +848,9 @@ def register(app) -> None:
         # All Epics for this project (ignored by importer)
         # Minimal view: column C only, one coloured cell per epic title.
         epics_ws = wb.create_sheet(title="All Epics")
-        epics_ws.column_dimensions[get_column_letter(1)].width = 3
-        epics_ws.column_dimensions[get_column_letter(2)].width = 3
-        epics_ws.column_dimensions[get_column_letter(3)].width = 40
+        epics_ws.column_dimensions[get_column_letter(1)].width = 35
+        epics_ws.column_dimensions[get_column_letter(2)].width = 35
+        epics_ws.column_dimensions[get_column_letter(3)].width = 52
 
         def _hex_to_text_color(hexv):
             # YIQ luminance pick: dark bg → white text, light bg → near-black.
@@ -939,10 +939,12 @@ def register(app) -> None:
         inits_ws.cell(row=1, column=1).comment = Comment(
             "Reference only. This sheet is IGNORED by the importer.", "GYRA")
 
-        # ── Reorder: push Lists to the end (it's only there because OnlyOffice
-        #            won't follow DV refs into hidden sheets).
+        # ── Sheet order: Stories | All Epics | All Initiatives | Help | Lists
+        _order = ["Stories", "All Epics", "All Initiatives", "Help", "Lists"]
         try:
-            wb.move_sheet(lists_ws, offset=len(wb.sheetnames) - wb.index(lists_ws) - 1)
+            wb._sheets.sort(
+                key=lambda s: _order.index(s.title) if s.title in _order else len(_order)
+            )
         except Exception:
             pass
 
