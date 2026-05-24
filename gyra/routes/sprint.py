@@ -9,7 +9,7 @@ from markupsafe import Markup, escape
 
 from auth import enforce_csrf, login_required, super_user_required
 from db import (get_all_active_users, get_current_sprint, get_db,
-                get_epics, get_project, get_story_types, user_in_project)
+                get_epics, get_initiatives, get_project, get_story_types, user_in_project)
 from routes.helpers import (ACTOR_OPTIONS, CONNECTOR_OPTIONS, VERB_OPTIONS,
                             bold_verb_in_title, build_story_title,
                             validate_story_parts)
@@ -813,6 +813,138 @@ def register(app) -> None:
             cell.fill = PatternFill("solid", fgColor=bg)
             cell.font = Font(color=fg, bold=True)
             cell.alignment = Alignment(horizontal="center")
+
+        # ── Reference sheets (ignored by the importer; for human reference) ──
+        # Helpers for safe row appending: convert sqlite Row to a plain list
+        def _row_get(r, key, default=""):
+            try:
+                v = r[key]
+            except (IndexError, KeyError):
+                return default
+            return default if v is None else v
+
+        def _fmt_ts(ts):
+            if not ts:
+                return ""
+            try:
+                from datetime import datetime
+                return datetime.fromtimestamp(int(ts)).strftime("%Y-%m-%d %H:%M")
+            except Exception:
+                return str(ts)
+
+        def _style_ref_header(sheet, headers, fill_hex):
+            sheet.append(headers)
+            fill = PatternFill("solid", fgColor=fill_hex)
+            font = Font(bold=True, color="FFFFFF", size=12)
+            for col_i in range(1, len(headers) + 1):
+                cc = sheet.cell(row=1, column=col_i)
+                cc.fill = fill
+                cc.font = font
+                cc.alignment = Alignment(
+                    horizontal="center", vertical="center", wrap_text=True)
+            sheet.row_dimensions[1].height = 24
+            sheet.freeze_panes = "A2"
+
+        # All Epics for this project (ignored by importer)
+        # Minimal view: column C only, one coloured cell per epic title.
+        epics_ws = wb.create_sheet(title="All Epics")
+        epics_ws.column_dimensions[get_column_letter(1)].width = 3
+        epics_ws.column_dimensions[get_column_letter(2)].width = 3
+        epics_ws.column_dimensions[get_column_letter(3)].width = 40
+
+        def _hex_to_text_color(hexv):
+            # YIQ luminance pick: dark bg → white text, light bg → near-black.
+            try:
+                r = int(hexv[0:2], 16)
+                g = int(hexv[2:4], 16)
+                b = int(hexv[4:6], 16)
+                yiq = (r * 299 + g * 587 + b * 114) / 1000
+                return "1A1208" if yiq >= 160 else "FFFFFF"
+            except Exception:
+                return "FFFFFF"
+
+        all_epics = get_epics(project_id, include_archived=True)
+        for idx, e in enumerate(all_epics, start=1):
+            cell = epics_ws.cell(row=idx, column=3, value=_row_get(e, "title"))
+            cval = _row_get(e, "color") or ""
+            hexv = str(cval).lstrip("#").upper()
+            if len(hexv) == 3:
+                hexv = "".join(ch * 2 for ch in hexv)
+            if len(hexv) == 6 and all(c in "0123456789ABCDEF" for c in hexv):
+                cell.fill = PatternFill("solid", fgColor=hexv)
+                cell.font = Font(color=_hex_to_text_color(hexv), bold=True)
+            cell.alignment = Alignment(
+                horizontal="left", vertical="center", indent=1)
+            epics_ws.row_dimensions[idx].height = 22
+        # Note as a comment on the first epic cell (if any)
+        if epics_ws.max_row >= 1:
+            epics_ws.cell(row=1, column=3).comment = Comment(
+                "Reference only. This sheet is IGNORED by the importer.", "GYRA")
+
+        # All Initiatives for this project (ignored by importer)
+        inits_ws = wb.create_sheet(title="All Initiatives")
+        init_headers = ["id", "name", "description", "status", "rule_type",
+                        "color", "epic_count", "milestone_count",
+                        "created_at", "updated_at"]
+        _style_ref_header(inits_ws, init_headers, "059669")
+        all_inits = get_initiatives(project_id)
+        for it in all_inits:
+            inits_ws.append([
+                _row_get(it, "id"),
+                _row_get(it, "name"),
+                _row_get(it, "description"),
+                _row_get(it, "status"),
+                _row_get(it, "rule_type"),
+                _row_get(it, "color"),
+                _row_get(it, "epic_count", 0),
+                _row_get(it, "milestone_count", 0),
+                _fmt_ts(_row_get(it, "created_at", 0)),
+                _fmt_ts(_row_get(it, "updated_at", 0)),
+            ])
+        init_widths = [6, 28, 60, 12, 14, 10, 10, 12, 18, 18]
+        for i, w in enumerate(init_widths, start=1):
+            inits_ws.column_dimensions[get_column_letter(i)].width = w
+        for row_i in range(2, inits_ws.max_row + 1):
+            for col_i in range(1, len(init_headers) + 1):
+                inits_ws.cell(row=row_i, column=col_i).alignment = Alignment(
+                    wrap_text=True, vertical="top")
+        # Colour the color column
+        col_color_idx = init_headers.index("color") + 1
+        for row_i in range(2, inits_ws.max_row + 1):
+            cval = inits_ws.cell(row=row_i, column=col_color_idx).value or ""
+            hexv = str(cval).lstrip("#").upper()
+            if len(hexv) == 3:
+                hexv = "".join(ch * 2 for ch in hexv)
+            if len(hexv) == 6 and all(c in "0123456789ABCDEF" for c in hexv):
+                inits_ws.cell(row=row_i, column=col_color_idx).fill = PatternFill(
+                    "solid", fgColor=hexv)
+                inits_ws.cell(row=row_i, column=col_color_idx).font = Font(
+                    color="FFFFFF", bold=True)
+        # Status colour-code
+        INIT_STATUS_FILL = {
+            "active":   ("D1FAE5", "065F46"),
+            "draft":    ("E5E7EB", "374151"),
+            "shipped":  ("DBEAFE", "1E40AF"),
+            "archived": ("E5E7EB", "6B7280"),
+        }
+        status_idx = init_headers.index("status") + 1
+        for row_i in range(2, inits_ws.max_row + 1):
+            sval = (inits_ws.cell(row=row_i, column=status_idx).value or "").lower()
+            if sval in INIT_STATUS_FILL:
+                bg, fg = INIT_STATUS_FILL[sval]
+                cc = inits_ws.cell(row=row_i, column=status_idx)
+                cc.fill = PatternFill("solid", fgColor=bg)
+                cc.font = Font(color=fg, bold=True)
+                cc.alignment = Alignment(horizontal="center")
+        inits_ws.cell(row=1, column=1).comment = Comment(
+            "Reference only. This sheet is IGNORED by the importer.", "GYRA")
+
+        # ── Reorder: push Lists to the end (it's only there because OnlyOffice
+        #            won't follow DV refs into hidden sheets).
+        try:
+            wb.move_sheet(lists_ws, offset=len(wb.sheetnames) - wb.index(lists_ws) - 1)
+        except Exception:
+            pass
 
         # ── Move Stories tab to be the active one on open
         wb.active = wb.index(ws)
