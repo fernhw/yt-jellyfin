@@ -100,7 +100,12 @@ def register(app) -> None:
                 if not (z or x or y):
                     continue
 
-                errors, warnings = validate_story_parts(actor, verb, z, x, for_conn, y)
+                errors, warnings = validate_story_parts(
+                    actor, verb, z, x, for_conn, y,
+                    points=(_parse_points(at(points_list, i))[0]
+                            if at(points_list, i) else None),
+                    description=at(descs, i),
+                )
                 row_num = i + 1
                 if errors:
                     row_errors.append((row_num, errors))
@@ -249,22 +254,30 @@ def register(app) -> None:
             flash("File had no data rows.", "warning")
             return redirect(url_for("bulk_add", project_id=project_id))
 
-        # Header format: new canonical uses `want` (col 2) and `verb` (col 3).
-        # Legacy templates used `verb` (col 2) and `z` (col 3) — still accepted.
-        use_new_grammar = "want" in header_keys
+        # Header formats supported:
+        # v2 canonical: actor,needs,this,where,to,what
+        # v1 canonical: actor,want,verb,x,for,y
+        # legacy:       actor,verb,z,x,for,y
+        if any(k in header_keys for k in ("needs", "this", "where", "to", "what")):
+            grammar_mode = "v2"
+        elif "want" in header_keys:
+            grammar_mode = "v1"
+        else:
+            grammar_mode = "legacy"
 
         # Header sanity — report missing required columns and unknown extras.
         known_cols = {
-            "actor", "want", "verb", "z", "action", "action_word",
-            "x", "what", "for", "connector", "y", "outcome", "why",
+            "actor", "needs", "want", "verb", "this", "z", "action", "action_word",
+            "where", "x", "to", "for", "connector", "what", "y", "outcome", "why",
             "points", "priority", "type", "story_type", "epic",
             "assignee", "description", "os", "software_version", "version",
         }
-        required_cols = (
-            ["actor", "want", "verb", "x", "for", "y"]
-            if use_new_grammar
-            else ["actor", "verb", "z", "x", "for", "y"]
-        )
+        if grammar_mode == "v2":
+            required_cols = ["actor", "needs", "this", "where", "to", "what"]
+        elif grammar_mode == "v1":
+            required_cols = ["actor", "want", "verb", "x", "for", "y"]
+        else:
+            required_cols = ["actor", "verb", "z", "x", "for", "y"]
         missing_required = [c for c in required_cols if c not in header_keys]
         unknown_cols = sorted(h for h in header_keys if h and h not in known_cols)
 
@@ -287,22 +300,31 @@ def register(app) -> None:
         blank_skipped = 0
         # Per-column "rescue" counters for the summary report.
         rescued = {
-            "want": 0, "for": 0, "points": 0, "priority": 0,
+            "needs": 0, "to": 0, "points": 0, "priority": 0,
             "type": 0, "epic": 0, "assignee": 0,
         }
         explicit_none = {"type": 0, "epic": 0, "assignee": 0}
 
         for idx, r in enumerate(raw_rows, start=1):
             actor    = r.get("actor", "")
-            if use_new_grammar:
+            if grammar_mode == "v2":
+                verb = r.get("needs", "") or r.get("want", "") or r.get("verb", "")
+                z    = r.get("this", "") or r.get("action_word", "") or r.get("action", "")
+                x    = r.get("where", "") or r.get("x", "")
+                for_conn = r.get("to", "") or r.get("for", "") or r.get("connector", "")
+                y    = r.get("what", "") or r.get("y", "") or r.get("outcome", "") or r.get("why", "")
+            elif grammar_mode == "v1":
                 verb = r.get("want", "")
                 z    = r.get("verb", "") or r.get("action_word", "")
+                x    = r.get("x", "") or r.get("where", "")
+                for_conn = r.get("for", "") or r.get("to", "") or r.get("connector", "")
+                y        = r.get("y", "") or r.get("what", "") or r.get("outcome", "") or r.get("why", "")
             else:
                 verb = r.get("verb", "")
                 z    = r.get("z", "") or r.get("action", "") or r.get("action_word", "")
-            x        = r.get("x", "") or r.get("what", "")
-            for_conn = r.get("for", "") or r.get("connector", "")
-            y        = r.get("y", "") or r.get("outcome", "") or r.get("why", "")
+                x    = r.get("x", "") or r.get("where", "") or r.get("what", "")
+                for_conn = r.get("for", "") or r.get("to", "") or r.get("connector", "")
+                y        = r.get("y", "") or r.get("outcome", "") or r.get("why", "")
 
             if not any((actor, verb, z, x, for_conn, y)):
                 blank_skipped += 1
@@ -316,15 +338,15 @@ def register(app) -> None:
             if verb and verb.lower() in valid_verbs:
                 verb = valid_verbs[verb.lower()]
             elif verb:
-                notes.append(f"want \"{verb}\" not in allowed list — please pick one.")
+                notes.append(f"needs \"{verb}\" not in allowed list — please pick one.")
                 verb = ""
-                rescued["want"] += 1
+                rescued["needs"] += 1
             if for_conn and for_conn.lower() in valid_conns:
                 for_conn = valid_conns[for_conn.lower()]
             elif for_conn:
-                notes.append(f"for \"{for_conn}\" not in allowed list — please pick one.")
+                notes.append(f"to \"{for_conn}\" not in allowed list — please pick one.")
                 for_conn = ""
-                rescued["for"] += 1
+                rescued["to"] += 1
 
             # Points → keep only if Fibonacci, else clear with a note.
             pts_raw = (r.get("points", "") or "").strip()
@@ -384,8 +406,8 @@ def register(app) -> None:
 
             prefill.append({
                 "actor":        actor,
-                "verb":         verb,        # want (column 2 select)
-                "z":            z,           # gerund (column 3 input)
+                "verb":         verb,        # needs (column 2 select)
+                "z":            z,           # this (column 3 input)
                 "x":            x,
                 "for_conn":     for_conn,
                 "y":            y,
@@ -457,11 +479,14 @@ def register(app) -> None:
     def bulk_add_csv_template(project_id):
         _check_project_access(project_id)
         sample = (
-            "actor,want,verb,x,for,y,points,priority,type,epic,assignee,description,os,software_version\n"
-            "Player,needs,Saving,their progress,to,avoid losing game state,3,H,Feature,,,Add a manual save button to the pause menu.,,\n"
-            "Designer,needs,Tuning,enemy damage curves,to,balance combat pacing,2,M,Task,,,,,\n"
+            "actor,needs,this,where,to,what,points,priority,type,epic,assignee,description,os,software_version\n"
+            "User,needs,save progress,Main Menu Demo Version,to,choose what to do later,,,Feature,,,Add a manual save button to the pause menu.,,\n"
+            "User,needs,fight tuned enemies,Combat Sandbox,for,balanced game combat,,,Task,,,,,\n"
         )
-        # Note: `points` must be a Fibonacci value (0,1,2,3,5,8,13,21).
+        # Note: leave points & priority BLANK on bulk import — the team
+        # sizes and prioritises stories together inside Grooming
+        # (collaborative real-time refinement). Importing guesses
+        # poisons the conversation before it starts.
         from flask import Response
         return Response(
             sample,
@@ -482,14 +507,14 @@ def register(app) -> None:
         from routes.helpers import ACTOR_OPTIONS, VERB_OPTIONS, CONNECTOR_OPTIONS
         from flask import Response
 
-        header = ["actor","want","verb","x","for","y","points","priority","type",
+        header = ["actor","needs","this","where","to","what","points","priority","type",
                   "epic","assignee","description","os","software_version"]
         sample_rows = [
-            ["Player","needs","Saving","their progress","to",
-             "avoid losing game state",3,"H","Feature","","",
+            ["User","needs","save progress","Main Menu Demo Version","to",
+             "choose what to do later","","","Feature","","",
              "Add a manual save button to the pause menu.","",""],
-            ["Designer","needs","Tuning","enemy damage curves","to",
-             "balance combat pacing",2,"M","Task","","","","",""],
+            ["User","needs","fight tuned enemies","Combat Sandbox","for",
+             "balanced game combat","","","Task","","","","",""],
         ]
 
         wb = Workbook()
@@ -499,8 +524,8 @@ def register(app) -> None:
 
         # ── Group-coloured headers (grammar / estimation / classification / meta)
         GROUP = {
-            "actor":"grammar","want":"grammar","verb":"grammar",
-            "x":"grammar","for":"grammar","y":"grammar",
+            "actor":"grammar","needs":"grammar","this":"grammar",
+            "where":"grammar","to":"grammar","what":"grammar",
             "points":"est","priority":"est",
             "type":"class","epic":"class","assignee":"class",
             "description":"meta","os":"meta","software_version":"meta",
@@ -511,7 +536,7 @@ def register(app) -> None:
             "class":     PatternFill("solid", fgColor="6D28D9"),  # violet-700
             "meta":      PatternFill("solid", fgColor="334155"),  # slate-700
         }
-        REQUIRED = {"actor","want","verb","x","for","y"}
+        REQUIRED = {"actor","needs","this","where","to","what"}
 
         head_font_req = Font(bold=True, color="FFFFFF", size=12)
         head_font_opt = Font(bold=True, color="E5E7EB", italic=True, size=11)
@@ -527,26 +552,40 @@ def register(app) -> None:
         ws.row_dimensions[1].height = 26
 
         # ── Header comments to disambiguate and teach
-        ws.cell(row=1, column=header.index("want") + 1).comment = Comment(
-            "Auxiliary: " + ", ".join(VERB_OPTIONS), "GYRA")
-        ws.cell(row=1, column=header.index("verb") + 1).comment = Comment(
-            "Gerund action word — one word ending in -ing (Walking, Saving, Tuning).",
+        ws.cell(row=1, column=header.index("needs") + 1).comment = Comment(
+            "Need phrase: " + ", ".join(VERB_OPTIONS), "GYRA")
+        ws.cell(row=1, column=header.index("this") + 1).comment = Comment(
+            "A single observable action (verb): crawl, press button, save, "
+            "jump. Start with the verb, not a noun phrase.",
             "GYRA")
-        ws.cell(row=1, column=header.index("for") + 1).comment = Comment(
+        ws.cell(row=1, column=header.index("to") + 1).comment = Comment(
             "Connector: " + ", ".join(CONNECTOR_OPTIONS), "GYRA")
         ws.cell(row=1, column=header.index("points") + 1).comment = Comment(
-            "Story points must be Fibonacci: 0, 1, 2, 3, 5, 8, 13, 21", "GYRA")
+            "LEAVE BLANK on import.\n\n"
+            "Story points are SIZES (compared to each other), not hours. "
+            "The team sizes stories TOGETHER inside GYRA's Grooming view "
+            "— our real-time collaborative refinement tool. Everyone votes "
+            "at the same time, disagreements surface hidden assumptions, "
+            "and the number comes out honest.\n\n"
+            "If you must fill it: Fibonacci only (0, 1, 2, 3, 5, 8, 13, 21). "
+            "Anything over 8 will be flagged as too big.",
+            "GYRA")
         ws.cell(row=1, column=header.index("priority") + 1).comment = Comment(
-            "Priority: VH, H, M, L, VL", "GYRA")
-        ws.cell(row=1, column=header.index("y") + 1).comment = Comment(
-            "Outcome / why: what does the Actor get out of this?", "GYRA")
+            "LEAVE BLANK on import.\n\n"
+            "Priority is set during Grooming — the Product Owner decides "
+            "the order, the team sees the trade-offs together. Importing "
+            "a guess just creates noise you have to undo later.\n\n"
+            "If you must fill it: VH, H, M, L, VL.",
+            "GYRA")
+        ws.cell(row=1, column=header.index("what") + 1).comment = Comment(
+            "Outcome: what result does the Actor need?", "GYRA")
 
         # ── Sample rows
         for r in sample_rows:
             ws.append(r)
 
         # ── Column widths + frozen header
-        widths = {"actor":13,"want":12,"verb":15,"x":30,"for":12,"y":36,
+        widths = {"actor":13,"needs":16,"this":26,"where":30,"to":12,"what":36,
                   "points":8,"priority":10,"type":15,"epic":20,"assignee":18,
                   "description":42,"os":12,"software_version":18}
         for i, name in enumerate(header, start=1):
@@ -574,13 +613,14 @@ def register(app) -> None:
         points_vals = [0,1,2,3,5,8,13,21]
         types_rows  = list(get_story_types(project_id))
         types_list  = ["(none)"] + [t["name"] for t in types_rows]
-        epics_list  = ["(none)"] + [e["title"] for e in get_epics(project_id)]
+        epics_rows  = list(get_epics(project_id))
+        epics_list  = ["(none)"] + [e["title"] for e in epics_rows]
         users_list  = ["(none)"] + [u["display_name"] for u in get_all_active_users()]
 
         list_specs = [
             ("actor",     list(ACTOR_OPTIONS)),
-            ("want",      list(VERB_OPTIONS)),
-            ("for",       list(CONNECTOR_OPTIONS)),
+            ("needs",     list(VERB_OPTIONS)),
+            ("to",        list(CONNECTOR_OPTIONS)),
             ("points",    points_vals),
             ("priority",  priorities),
             ("type",      types_list),
@@ -641,9 +681,9 @@ def register(app) -> None:
                     font=Font(color=fg, bold=True),
                 ),
             )
-        # Row-level tint for priority: paint the y/outcome cell so the row
+        # Row-level tint for priority: paint the what/outcome cell so the row
         # glances coloured without overpowering the cells.
-        y_letter = get_column_letter(header.index("y") + 1)
+        y_letter = get_column_letter(header.index("what") + 1)
         y_range = f"{y_letter}2:{y_letter}{last_row}"
         for level, (bg, _fg) in PRIO_FILLS.items():
             ws.conditional_formatting.add(
@@ -671,6 +711,34 @@ def register(app) -> None:
                     formula=[f'"{t["name"]}"'],
                     fill=PatternFill("solid", fgColor=color),
                     font=Font(color="FFFFFF", bold=True),
+                ),
+            )
+
+        # ── Conditional formatting: epic cell takes the epic's own colour
+        epic_letter = get_column_letter(header.index("epic") + 1)
+        epic_range = f"{epic_letter}2:{epic_letter}{last_row}"
+        for e in epics_rows:
+            ecolor = (e["color"] or "").lstrip("#").upper() or "6B7280"
+            if len(ecolor) == 3:
+                ecolor = "".join(ch * 2 for ch in ecolor)
+            if len(ecolor) != 6 or not all(c in "0123456789ABCDEF" for c in ecolor):
+                ecolor = "6B7280"
+            # YIQ luminance pick: dark bg → white text, light bg → near-black.
+            try:
+                r_ = int(ecolor[0:2], 16); g_ = int(ecolor[2:4], 16); b_ = int(ecolor[4:6], 16)
+                yiq = (r_ * 299 + g_ * 587 + b_ * 114) / 1000
+                fg_color = "1A1208" if yiq >= 160 else "FFFFFF"
+            except Exception:
+                fg_color = "FFFFFF"
+            # Escape any double quotes in the epic title for the formula literal.
+            title_lit = (e["title"] or "").replace('"', '""')
+            ws.conditional_formatting.add(
+                epic_range,
+                CellIsRule(
+                    operator="equal",
+                    formula=[f'"{title_lit}"'],
+                    fill=PatternFill("solid", fgColor=ecolor),
+                    font=Font(color=fg_color, bold=True),
                 ),
             )
 
@@ -713,7 +781,7 @@ def register(app) -> None:
                 ),
             )
 
-        # ── Word-count guard (> 19 words anywhere in actor..y → red)
+        # ── Word-count guard (> 19 words anywhere in actor..what → red)
         wc_formula = (
             '=SUMPRODUCT('
             'IF(TRIM($A2:$F2)="",0,'
@@ -764,17 +832,24 @@ def register(app) -> None:
         help_ws.row_dimensions[1].height = 30
 
         H(3, "Grammar",
-          "[actor] [want] [verb-ing] [x] [for] [y]   —   e.g.  "
-          "Player needs Saving their progress to avoid losing game state.")
+            "[actor] [needs] [this] [where] [to/for] [what]   —   e.g.  "
+            "User needs press button Main Menu Demo Version to choose what to do.")
         H(4, "Required",
-          ", ".join(sorted(REQUIRED)) + "  (every row must fill these)")
-        H(5, "Max words", "19 words total across actor..y. Overflow rows are rejected.")
-        H(6, "actor", ", ".join(ACTOR_OPTIONS))
-        H(7, "want",  ", ".join(VERB_OPTIONS))
-        H(8, "verb",  "One gerund — Walking, Saving, Banning, Tuning. Single word, letters only.")
-        H(9, "for",   ", ".join(CONNECTOR_OPTIONS))
-        H(10,"points","Fibonacci only: 0, 1, 2, 3, 5, 8, 13, 21. Blank = 0.")
-        H(11,"priority","VH = critical, H = high, M = medium, L = low, VL = very low.")
+            ", ".join(sorted(REQUIRED)) + "  (every row must fill these)")
+        H(5, "Max words", "19 words total across actor..what. Overflow rows are rejected.")
+        H(6, "actor", ", ".join(ACTOR_OPTIONS)
+            + "   — actors RECEIVE value. Never write from staff POV "
+            "(Designer/Developer/Artist/QA) unless the story IS a tool for them.")
+        H(7, "needs",  ", ".join(VERB_OPTIONS))
+        H(8, "this",  "A single observable action (verb): crawl, press button, "
+            "save, jump. ❌ 'tuning enemy damage'  ✅ 'fight tuned enemies'.")
+        H(9, "to",   ", ".join(CONNECTOR_OPTIONS)
+            + "   — use 'to' for outcomes, 'for' for purposes/recipients.")
+        H(10,"points","LEAVE BLANK — sized together in Grooming (real-time "
+            "collaborative refinement). Fibonacci only if you insist: "
+            "0, 1, 2, 3, 5, 8, 13, 21.")
+        H(11,"priority","LEAVE BLANK — set during Grooming by the Product Owner "
+            "with the team. Allowed if you insist: VH, H, M, L, VL.")
         H(12,"type",  ", ".join(types_list) if types_list else "(no types defined for this project)")
         H(13,"epic",  ", ".join(epics_list) if epics_list else "(no epics defined yet — leave blank)")
         H(14,"assignee", ", ".join(users_list) if users_list else "(no active users)")
@@ -848,8 +923,8 @@ def register(app) -> None:
         # All Epics for this project (ignored by importer)
         # Minimal view: column C only, one coloured cell per epic title.
         epics_ws = wb.create_sheet(title="All Epics")
-        epics_ws.column_dimensions[get_column_letter(1)].width = 35
-        epics_ws.column_dimensions[get_column_letter(2)].width = 35
+        epics_ws.column_dimensions[get_column_letter(1)].width = 70
+        epics_ws.column_dimensions[get_column_letter(2)].width = 5
         epics_ws.column_dimensions[get_column_letter(3)].width = 52
 
         def _hex_to_text_color(hexv):
@@ -863,8 +938,14 @@ def register(app) -> None:
             except Exception:
                 return "FFFFFF"
 
-        all_epics = get_epics(project_id, include_archived=True)
+        all_epics = [e for e in get_epics(project_id, include_archived=False)
+                     if not _row_get(e, "is_archived", 0)]
         for idx, e in enumerate(all_epics, start=1):
+            # Column B: checkbox (Unicode ballot box, toggleable via DV dropdown)
+            cb = epics_ws.cell(row=idx, column=2, value="☐")
+            cb.alignment = Alignment(horizontal="center", vertical="center")
+            cb.font = Font(name="Arial Unicode MS", size=14, bold=True)
+
             cell = epics_ws.cell(row=idx, column=3, value=_row_get(e, "title"))
             cval = _row_get(e, "color") or ""
             hexv = str(cval).lstrip("#").upper()
@@ -876,6 +957,14 @@ def register(app) -> None:
             cell.alignment = Alignment(
                 horizontal="left", vertical="center", indent=1)
             epics_ws.row_dimensions[idx].height = 22
+        # Data validation: clickable dropdown ☐ / ☒ in column B
+        if all_epics:
+            dv = DataValidation(
+                type="list", formula1='"☐,☒"', allow_blank=True)
+            dv.error = "Pick ☐ or ☒"
+            dv.errorTitle = "Invalid"
+            dv.add(f"B1:B{len(all_epics)}")
+            epics_ws.add_data_validation(dv)
         # Note as a comment on the first epic cell (if any)
         if epics_ws.max_row >= 1:
             epics_ws.cell(row=1, column=3).comment = Comment(
@@ -950,6 +1039,16 @@ def register(app) -> None:
 
         # ── Move Stories tab to be the active one on open
         wb.active = wb.index(ws)
+
+        # ── Force vertical-center on every cell across every sheet,
+        #    while preserving each cell's existing alignment attributes.
+        from copy import copy as _copy
+        for _sh in wb.worksheets:
+            for _row in _sh.iter_rows():
+                for _c in _row:
+                    _al = _copy(_c.alignment) if _c.alignment else Alignment()
+                    _al.vertical = "center"
+                    _c.alignment = _al
 
         buf = io.BytesIO()
         wb.save(buf)

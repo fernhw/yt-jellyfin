@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-24
 
-> *Good morning! Here's what landed on Sunday, May 24, 2026 at 09:42 AM.*
-> **YT Mirror:** 535.82 GB used · 1.18 TB free
+> *Good morning! Here's what landed on Sunday, May 24, 2026 at 11:44 AM.*
+> **YT Mirror:** 536.33 GB used · 1.18 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,9 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **DF Direct Weekly #265: The End of Destiny 2, Lego Batman Tested, Yoshi Switch 2** — *Digital Foundry* · downloaded 11:42 AM · not podcastable
+- **PS3 Emulation On PS5 Linux Tested: Killzone, MotorStorm, MGS 4, Ridge Racer 7 + Many More** — *Digital Foundry* · downloaded 11:39 AM · not podcastable
+- **We Remade the ALIEN Chestburster with OLD and NEW VFX** — *Corridor Crew* · downloaded 11:36 AM · not podcastable
 - **Tiki Tiki Phonk Has Unmatched Aura** — *Lessons in Meme Culture* · downloaded 09:40 AM · not podcastable
 - **Recovering from AI Psychosis | TheStandup** — *The PrimeTime* · downloaded 09:40 AM · podcastable
 - **This is the funniest video I've seen today..** — *Asmongold TV* · downloaded 09:39 AM · not podcastable

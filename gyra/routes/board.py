@@ -36,8 +36,15 @@ def register(app) -> None:
 
         statuses = get_statuses(project_id)
 
-        with get_db() as _conn:
+        # NOTE: sqlite3.Connection's context manager commits/rollbacks but
+        # does NOT close — using try/finally here to release the file handle
+        # and the WAL reader slot promptly.
+        _conn = get_db()
+        try:
             ensure_story_types(project_id, _conn)
+            _conn.commit()
+        finally:
+            _conn.close()
 
         raw_stories = get_board_stories(project_id)
 

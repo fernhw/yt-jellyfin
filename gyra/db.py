@@ -2,9 +2,21 @@
 db.py — SQLite schema + thin data-access helpers.
 All queries use parameterised statements; no string interpolation in SQL.
 """
+import os
 import sqlite3
+import threading
 import time
 from config import Config
+
+# ── Init guard ────────────────────────────────────────────────────────────────
+# init_db() may be invoked from multiple entry points (app startup, helper
+# scripts, ad-hoc imports). The migration block in _migrate_db() performs
+# destructive table swaps (DROP/RENAME); running them concurrently from two
+# threads would race and could leave half-renamed tables behind. We gate the
+# whole flow on a process-wide lock + "done once" flag so it is safe to call
+# init_db() repeatedly without risking corruption.
+_INIT_LOCK = threading.Lock()
+_INITIALIZED = False
 
 # ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -247,18 +259,68 @@ CREATE TABLE IF NOT EXISTS initiative_history (
 # ── Connection ────────────────────────────────────────────────────────────────
 
 def get_db() -> sqlite3.Connection:
-    conn = sqlite3.connect(Config.DATABASE)
+    # timeout=30 → if another writer holds the lock, wait up to 30s rather than
+    # failing instantly with "database is locked". Combined with PRAGMA
+    # busy_timeout (set below) for belt-and-braces.
+    conn = sqlite3.connect(Config.DATABASE, timeout=30.0)
     conn.row_factory = sqlite3.Row
+    # WAL + NORMAL is the SQLite-recommended combo for durability vs throughput
+    # on a single host. journal_mode is persistent on the DB file; the rest are
+    # per-connection so we set them every time.
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA synchronous = NORMAL")
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 10000")  # 10s
     return conn
 
 
-def init_db() -> None:
+def db_integrity_check() -> dict:
+    """Run SQLite's integrity + FK checks. Returns a summary dict — empty
+    'errors' and 'fk_violations' lists mean the DB is healthy."""
     conn = get_db()
-    conn.executescript(SCHEMA)
-    conn.commit()
-    conn.close()
-    _migrate_db()
+    try:
+        integ = [r[0] for r in conn.execute("PRAGMA integrity_check").fetchall()]
+        fkv   = conn.execute("PRAGMA foreign_key_check").fetchall()
+        return {
+            "ok":             integ == ["ok"] and not fkv,
+            "errors":         [] if integ == ["ok"] else integ,
+            "fk_violations":  [tuple(r) for r in fkv],
+        }
+    finally:
+        conn.close()
+
+
+def db_backup(dest_path: str) -> None:
+    """Make a consistent online backup of the DB to dest_path, safe to call
+    while the app is running (uses SQLite's backup API)."""
+    os.makedirs(os.path.dirname(dest_path) or ".", exist_ok=True)
+    src = sqlite3.connect(Config.DATABASE)
+    dst = sqlite3.connect(dest_path)
+    try:
+        with dst:
+            src.backup(dst)
+    finally:
+        dst.close()
+        src.close()
+
+
+def init_db() -> None:
+    """Apply schema + migrations. Safe to call repeatedly; the heavy lifting
+    only runs once per process."""
+    global _INITIALIZED
+    if _INITIALIZED:
+        return
+    with _INIT_LOCK:
+        if _INITIALIZED:
+            return
+        conn = get_db()
+        try:
+            conn.executescript(SCHEMA)
+            conn.commit()
+        finally:
+            conn.close()
+        _migrate_db()
+        _INITIALIZED = True
 
 
 def _migrate_db() -> None:
@@ -329,31 +391,40 @@ def _migrate_db() -> None:
     # Idempotent: only runs if card_story_id column is missing.
     sticker_cols = [r[1] for r in conn.execute("PRAGMA table_info(stickers)").fetchall()]
     if 'card_story_id' not in sticker_cols:
+        # Wrap the table-swap in a transaction so a crash mid-migration cannot
+        # leave behind a half-renamed table.
         conn.execute("PRAGMA foreign_keys = OFF")
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS stickers_v2 (
-                id            INTEGER PRIMARY KEY AUTOINCREMENT,
-                project_id    INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-                sprint        INTEGER DEFAULT NULL,
-                type          TEXT    NOT NULL,
-                x             REAL    DEFAULT 0,
-                y             REAL    DEFAULT 0,
-                rotation      REAL    DEFAULT 0,
-                label         TEXT    DEFAULT NULL,
-                created_by    INTEGER REFERENCES users(id),
-                created_at    INTEGER NOT NULL,
-                card_story_id INTEGER DEFAULT NULL REFERENCES stories(id) ON DELETE SET NULL,
-                card_x        REAL    DEFAULT NULL,
-                card_y        REAL    DEFAULT NULL
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS stickers_v2 (
+                    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                    project_id    INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                    sprint        INTEGER DEFAULT NULL,
+                    type          TEXT    NOT NULL,
+                    x             REAL    DEFAULT 0,
+                    y             REAL    DEFAULT 0,
+                    rotation      REAL    DEFAULT 0,
+                    label         TEXT    DEFAULT NULL,
+                    created_by    INTEGER REFERENCES users(id),
+                    created_at    INTEGER NOT NULL,
+                    card_story_id INTEGER DEFAULT NULL REFERENCES stories(id) ON DELETE SET NULL,
+                    card_x        REAL    DEFAULT NULL,
+                    card_y        REAL    DEFAULT NULL
+                )
+            """)
+            conn.execute(
+                "INSERT INTO stickers_v2 "
+                "SELECT id,project_id,sprint,type,x,y,rotation,label,created_by,created_at,"
+                "NULL,NULL,NULL FROM stickers"
             )
-        """)
-        conn.execute(
-            "INSERT INTO stickers_v2 "
-            "SELECT id,project_id,sprint,type,x,y,rotation,label,created_by,created_at,"
-            "NULL,NULL,NULL FROM stickers"
-        )
-        conn.execute("DROP TABLE stickers")
-        conn.execute("ALTER TABLE stickers_v2 RENAME TO stickers")
+            conn.execute("DROP TABLE stickers")
+            conn.execute("ALTER TABLE stickers_v2 RENAME TO stickers")
+            conn.execute("COMMIT")
+        except Exception:
+            conn.execute("ROLLBACK")
+            conn.execute("PRAGMA foreign_keys = ON")
+            raise
         conn.execute("PRAGMA foreign_keys = ON")
 
     # Seed project_members: add all active users to all projects (backward compat)
@@ -377,28 +448,33 @@ def _migrate_db() -> None:
     ).fetchone()
     if schema_row and "'super_user'" not in schema_row[0]:
         conn.execute("PRAGMA foreign_keys = OFF")
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS users_v2 (
-                id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-                username            TEXT    UNIQUE NOT NULL COLLATE NOCASE,
-                email               TEXT    UNIQUE NOT NULL COLLATE NOCASE,
-                display_name        TEXT    NOT NULL,
-                avatar              TEXT    DEFAULT NULL,
-                totp_secret_enc     TEXT    DEFAULT NULL,
-                totp_confirmed      INTEGER DEFAULT 0,
-                setup_token_hash    TEXT    DEFAULT NULL,
-                setup_token_expires INTEGER DEFAULT NULL,
-                role                TEXT    DEFAULT 'user' CHECK(role IN ('admin','user','super_user')),
-                is_active           INTEGER DEFAULT 1,
-                created_at          INTEGER NOT NULL,
-                created_by          INTEGER REFERENCES users_v2(id)
-            )
-        """)
-        conn.execute(
-            "INSERT INTO users_v2 SELECT * FROM users"
-        )
-        conn.execute("DROP TABLE users")
-        conn.execute("ALTER TABLE users_v2 RENAME TO users")
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS users_v2 (
+                    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username            TEXT    UNIQUE NOT NULL COLLATE NOCASE,
+                    email               TEXT    UNIQUE NOT NULL COLLATE NOCASE,
+                    display_name        TEXT    NOT NULL,
+                    avatar              TEXT    DEFAULT NULL,
+                    totp_secret_enc     TEXT    DEFAULT NULL,
+                    totp_confirmed      INTEGER DEFAULT 0,
+                    setup_token_hash    TEXT    DEFAULT NULL,
+                    setup_token_expires INTEGER DEFAULT NULL,
+                    role                TEXT    DEFAULT 'user' CHECK(role IN ('admin','user','super_user')),
+                    is_active           INTEGER DEFAULT 1,
+                    created_at          INTEGER NOT NULL,
+                    created_by          INTEGER REFERENCES users_v2(id)
+                )
+            """)
+            conn.execute("INSERT INTO users_v2 SELECT * FROM users")
+            conn.execute("DROP TABLE users")
+            conn.execute("ALTER TABLE users_v2 RENAME TO users")
+            conn.execute("COMMIT")
+        except Exception:
+            conn.execute("ROLLBACK")
+            conn.execute("PRAGMA foreign_keys = ON")
+            raise
         conn.execute("PRAGMA foreign_keys = ON")
 
     # Migrate users: add viewer to role CHECK constraint.
@@ -408,29 +484,80 @@ def _migrate_db() -> None:
     ).fetchone()
     if schema_row and "'viewer'" not in schema_row[0]:
         conn.execute("PRAGMA foreign_keys = OFF")
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS users_v3 (
-                id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-                username            TEXT    UNIQUE NOT NULL COLLATE NOCASE,
-                email               TEXT    UNIQUE NOT NULL COLLATE NOCASE,
-                display_name        TEXT    NOT NULL,
-                avatar              TEXT    DEFAULT NULL,
-                totp_secret_enc     TEXT    DEFAULT NULL,
-                totp_confirmed      INTEGER DEFAULT 0,
-                setup_token_hash    TEXT    DEFAULT NULL,
-                setup_token_expires INTEGER DEFAULT NULL,
-                role                TEXT    DEFAULT 'user' CHECK(role IN ('admin','user','super_user','viewer')),
-                is_active           INTEGER DEFAULT 1,
-                created_at          INTEGER NOT NULL,
-                created_by          INTEGER REFERENCES users_v3(id)
-            )
-        """)
-        conn.execute("INSERT INTO users_v3 SELECT * FROM users")
-        conn.execute("DROP TABLE users")
-        conn.execute("ALTER TABLE users_v3 RENAME TO users")
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS users_v3 (
+                    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username            TEXT    UNIQUE NOT NULL COLLATE NOCASE,
+                    email               TEXT    UNIQUE NOT NULL COLLATE NOCASE,
+                    display_name        TEXT    NOT NULL,
+                    avatar              TEXT    DEFAULT NULL,
+                    totp_secret_enc     TEXT    DEFAULT NULL,
+                    totp_confirmed      INTEGER DEFAULT 0,
+                    setup_token_hash    TEXT    DEFAULT NULL,
+                    setup_token_expires INTEGER DEFAULT NULL,
+                    role                TEXT    DEFAULT 'user' CHECK(role IN ('admin','user','super_user','viewer')),
+                    is_active           INTEGER DEFAULT 1,
+                    created_at          INTEGER NOT NULL,
+                    created_by          INTEGER REFERENCES users_v3(id)
+                )
+            """)
+            conn.execute("INSERT INTO users_v3 SELECT * FROM users")
+            conn.execute("DROP TABLE users")
+            conn.execute("ALTER TABLE users_v3 RENAME TO users")
+            conn.execute("COMMIT")
+        except Exception:
+            conn.execute("ROLLBACK")
+            conn.execute("PRAGMA foreign_keys = ON")
+            raise
+        conn.execute("PRAGMA foreign_keys = ON")
+
+    # Repair stale self-FK on users.created_by → users_v3(id) left behind by an
+    # earlier in-place rename. SQLite's ALTER TABLE ... RENAME does not always
+    # rewrite self-references embedded in the CREATE statement. We detect the
+    # condition by inspecting sqlite_master and rebuild the table with the
+    # correct REFERENCES users(id) clause. Idempotent.
+    schema_row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='users'"
+    ).fetchone()
+    if schema_row and "REFERENCES users_v" in schema_row[0]:
+        conn.execute("PRAGMA foreign_keys = OFF")
+        conn.execute("BEGIN IMMEDIATE")
+        try:
+            conn.execute("""
+                CREATE TABLE users_fix (
+                    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username            TEXT    UNIQUE NOT NULL COLLATE NOCASE,
+                    email               TEXT    UNIQUE NOT NULL COLLATE NOCASE,
+                    display_name        TEXT    NOT NULL,
+                    avatar              TEXT    DEFAULT NULL,
+                    totp_secret_enc     TEXT    DEFAULT NULL,
+                    totp_confirmed      INTEGER DEFAULT 0,
+                    setup_token_hash    TEXT    DEFAULT NULL,
+                    setup_token_expires INTEGER DEFAULT NULL,
+                    role                TEXT    DEFAULT 'user' CHECK(role IN ('admin','user','super_user','viewer')),
+                    is_active           INTEGER DEFAULT 1,
+                    created_at          INTEGER NOT NULL,
+                    created_by          INTEGER REFERENCES users(id)
+                )
+            """)
+            conn.execute("INSERT INTO users_fix SELECT * FROM users")
+            conn.execute("DROP TABLE users")
+            conn.execute("ALTER TABLE users_fix RENAME TO users")
+            conn.execute("COMMIT")
+        except Exception:
+            conn.execute("ROLLBACK")
+            conn.execute("PRAGMA foreign_keys = ON")
+            raise
         conn.execute("PRAGMA foreign_keys = ON")
 
     conn.commit()
+    # WAL truncate: keep wal file from growing forever during long-lived runs.
+    try:
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    except Exception:
+        pass
     conn.close()
 
 

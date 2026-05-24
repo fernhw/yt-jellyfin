@@ -60,17 +60,27 @@ def inject_globals():
     return dict(base, projects=projects, notif_count=notif_count)
 
 # ── DB initialisation ─────────────────────────────────────────────────────────
+# init_db() is idempotent and process-guarded inside db.py, so calling it at
+# import time covers both `python app.py` and WSGI servers that import this
+# module. Running it inside before_request would re-acquire the migration lock
+# on every single HTTP hit (cheap but pointless) and historically risked racy
+# table swaps on first boot.
+init_db()
+
 
 @app.before_request
 def bootstrap():
-    init_db()
     # Refresh session role from DB on every request so admin-changed roles
     # take effect immediately without requiring the user to log out.
     uid = session.get("user_id")
     if uid:
-        row = get_db().execute(
-            "SELECT role, is_active FROM users WHERE id = ?", (uid,)
-        ).fetchone()
+        conn = get_db()
+        try:
+            row = conn.execute(
+                "SELECT role, is_active FROM users WHERE id = ?", (uid,)
+            ).fetchone()
+        finally:
+            conn.close()
         if not row or not row["is_active"]:
             session.clear()
         elif row["role"] != session.get("role"):

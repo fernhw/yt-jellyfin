@@ -55,7 +55,11 @@ def register(app) -> None:
                 flash("Project is required.", "error")
                 return redirect(request.url)
 
-            errors, warnings = validate_story_parts(actor, verb, z, x, for_conn, y)
+            errors, warnings = validate_story_parts(
+                actor, verb, z, x, for_conn, y,
+                points=points,
+                description=(description + "\n" + ac).strip(),
+            )
             if errors:
                 for e in errors:
                     flash(e, "error")
@@ -131,8 +135,12 @@ def register(app) -> None:
         all_users  = get_all_active_users()
         default_sprint = request.args.get("sprint", type=int)
         if project_id:
-            with get_db() as _c:
+            _c = get_db()
+            try:
                 ensure_story_types(project_id, _c)
+                _c.commit()
+            finally:
+                _c.close()
         story_types = get_story_types(project_id) if project_id else []
         epics       = get_epics(project_id) if project_id else []
         return render_template(
@@ -176,9 +184,16 @@ def register(app) -> None:
                 x        = request.form.get("story_x", "").strip()
                 for_conn = request.form.get("story_for", "to").strip()
                 y        = request.form.get("story_y", "").strip()
+                desc       = request.form.get("description", "").strip()
+                ac         = request.form.get("acceptance_criteria", "").strip()
+                points     = request.form.get("story_points", 0, type=int)
                 title    = build_story_title(actor, verb, z, x, for_conn, y)
 
-                errors, warnings = validate_story_parts(actor, verb, z, x, for_conn, y)
+                errors, warnings = validate_story_parts(
+                    actor, verb, z, x, for_conn, y,
+                    points=points,
+                    description=(desc + "\n" + ac).strip(),
+                )
                 if errors:
                     if is_modal:
                         return jsonify(ok=False, error=" ".join(errors))
@@ -188,9 +203,6 @@ def register(app) -> None:
                 for w in warnings:
                     flash(w, "warning")
 
-                desc       = request.form.get("description", "").strip()
-                ac         = request.form.get("acceptance_criteria", "").strip()
-                points     = request.form.get("story_points", 0, type=int)
                 status_id  = request.form.get("status_id", type=int) or None
                 sprint     = request.form.get("sprint", type=int) or None
                 assignees  = request.form.getlist("assignee_ids", type=int)
