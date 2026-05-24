@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-24
 
-> *Good morning! Here's what landed on Sunday, May 24, 2026 at 11:44 AM.*
-> **YT Mirror:** 536.33 GB used · 1.18 TB free
+> *Good afternoon! Here's what landed on Sunday, May 24, 2026 at 03:30 PM.*
+> **YT Mirror:** 541.34 GB used · 1.19 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,11 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **My farm internet is a disaster** — *jakkuh* · downloaded 03:27 PM · not podcastable
+- **What Game is That?** — *TechDweeb* · downloaded 03:26 PM · podcastable
+- **I can't believe this is real..** — *Asmongold TV* · downloaded 03:24 PM · not podcastable
+- **I Spent a Day with a Former Nintendo Employee** — *The Anime Man* · downloaded 03:24 PM · not podcastable · *170 days since their last upload*
+- **How Long Could We Survive in the Amazon Jungle?** — *ConnorDawg* · downloaded 03:11 PM · not podcastable
 - **DF Direct Weekly #265: The End of Destiny 2, Lego Batman Tested, Yoshi Switch 2** — *Digital Foundry* · downloaded 11:42 AM · not podcastable
 - **PS3 Emulation On PS5 Linux Tested: Killzone, MotorStorm, MGS 4, Ridge Racer 7 + Many More** — *Digital Foundry* · downloaded 11:39 AM · not podcastable
 - **We Remade the ALIEN Chestburster with OLD and NEW VFX** — *Corridor Crew* · downloaded 11:36 AM · not podcastable
