@@ -99,6 +99,7 @@
         <span class="col-name">{{ status.name }}</span>
         <span class="col-count">{{ board_map.get(status.id, []) | list | length }}</span>
         {% set _col_eps = column_epics.get(status.id, []) %}
+        <button type="button" class="col-sort-btn" title="Sort by priority" data-sorted="0">⇅</button>
         {% if _col_eps %}
         <span class="col-epics" title="Epics with stories in this column">
           {% for ep in _col_eps %}
@@ -184,6 +185,20 @@
             </div>
             {% endif %}
           </div>
+          {# ── Container / Attachment badge ── #}
+          {% if story.box_type and not story.status_is_done %}
+            {% set _box_labels = {'whitebox':'WhiteBox','greybox':'GreyBox','blackbox':'BlackBox','featurebox':'FeatureBox'} %}
+            <div class="card-box-badge box-{{ story.box_type }} is-container"
+                 title="This story is a {{ _box_labels.get(story.box_type, story.box_type) }} container">
+              {{ _box_labels.get(story.box_type, story.box_type) }}
+            </div>
+          {% elif story.attached_to %}
+            <div class="card-box-badge is-attached"
+                 style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa"
+                 title="Attached to story #{{ story.attached_to }}">
+              Attached
+            </div>
+          {% endif %}
           {# ── embedded data for hover tooltip ── #}
           <script type="application/json" class="card-data">{"desc":{{ (story.description or '') | tojson }},"ac":{{ (story.acceptance_criteria or '') | tojson }},"tasks":[{% for t in story.tasks %}{"c":{{ t.content | tojson }},"a":{{ (t.assigned_name or '') | tojson }},"done":{{ 'true' if t.is_done_by_me else 'false' }}}{% if not loop.last %},{% endif %}{% endfor %}]}</script>
           {# ── stickers pinned to this card (move with it) ── #}
@@ -538,6 +553,7 @@
 <div id="sm-bg" class="story-modal-bg" role="dialog" aria-modal="true" aria-label="Edit story" style="display:none">
   <div id="sm-wrap" class="story-modal-wrap">
     <div class="sm-header">
+      <button id="sm-back" class="story-modal-back" aria-label="Back" title="Back" style="display:none">←</button>
       <span id="sm-key" class="story-key"></span>
       <span style="flex:1"></span>
       <button id="sm-close" class="story-modal-close" aria-label="Close">✕</button>
@@ -546,6 +562,8 @@
     <div id="sm-content" class="sm-content-body story-layout" style="display:none">
       {# ── Main area ── #}
       <div class="story-main sm-scrollable">
+        {# Container/Attachment banner — TOP PRIORITY when this story is attached #}
+        <div id="sm-attach-banner" class="sm-attach-banner" style="display:none"></div>
         <div class="story-images-section mb-4">
           <h3>Images</h3>
           <div class="story-images-grid" id="sm-images-grid"></div>
@@ -577,17 +595,14 @@
           <label class="form-label">Description</label>
           <textarea id="sm-desc" rows="4" class="form-input" placeholder="More context…"></textarea>
         </div>
-        <div class="form-group">
-          <label class="form-label">Acceptance Criteria</label>
-          <div id="sm-ac-list" class="ac-list"></div>
-          <button type="button" id="sm-ac-add" class="ac-add-btn">+ Add criterion</button>
-        </div>
         <div class="story-tasks-section mt-4">
           <div class="tasks-header">
-            <h3>Tasks</h3>
+            <h3>Tasks
+              <button type="button" id="sm-tasks-help-btn" class="sm-help-btn" title="What counts as a task?">?</button>
+            </h3>
             <span class="tasks-progress" id="sm-tasks-progress"></span>
           </div>
-          <div class="binary-subtask-note">
+          <div class="binary-subtask-note" id="sm-binary-note" style="display:none">
             <strong>Subtasks are BINARY.</strong> Done or not done — no “in review”, “testing”, or “blocked” states.
             <ul>
               <li>Must fit in <strong>&lt; 4 hours</strong>. If bigger, split it.</li>
@@ -602,6 +617,13 @@
             <input type="text" id="sm-task-input" class="form-input" placeholder="Add a task…" style="flex:1;font-size:12px" autocomplete="off">
             <button type="button" id="sm-task-add-btn" class="btn btn-secondary btn-sm">Add</button>
           </div>
+        </div>
+        {# Container summary (small detail when this story IS a container) #}
+        <div id="sm-container-summary" class="sm-container-summary" style="display:none"></div>
+        <div class="form-group">
+          <label class="form-label">Acceptance Criteria</label>
+          <div id="sm-ac-list" class="ac-list"></div>
+          <button type="button" id="sm-ac-add" class="ac-add-btn">+ Add criterion</button>
         </div>
         <section class="comments-section">
           <div class="activity-tabs">
@@ -640,6 +662,40 @@
         <div class="story-sidebar-field">
           <label class="story-sidebar-label">Epic</label>
           <select id="sm-epic" class="story-sidebar-select"></select>
+        </div>
+        {# ── Container box type ── #}
+        <div class="story-sidebar-field">
+          <label class="story-sidebar-label">
+            Container box
+            <button type="button" id="sm-box-help" class="sm-help-btn" title="What are these?">?</button>
+          </label>
+          <select id="sm-box-type" class="story-sidebar-select">
+            <option value="">— Not a container —</option>
+            <option value="whitebox">Whitebox — built &amp; live</option>
+            <option value="greybox">Greybox — stub, hooks sketched</option>
+            <option value="blackbox">Blackbox — opaque future promise</option>
+            <option value="featurebox">Featurebox — I'll absorb on integrate</option>
+          </select>
+          <div id="sm-box-help-panel" class="sm-box-help-panel" style="display:none">
+            <p><strong>Boxes</strong> let a story declare how attachments should treat it. Authority flows host → guest only; no story ever blocks another's "Done".</p>
+            <ul>
+              <li><strong>Whitebox</strong> — I'm built &amp; inspectable. Wire in now.</li>
+              <li><strong>Greybox</strong> — I'm a stub, hooks sketched. Dry-run only.</li>
+              <li><strong>Blackbox</strong> — I don't exist yet. Build standalone, integration deferred.</li>
+              <li><strong>Featurebox</strong> — I own integration. Just signal complete; I'll absorb.</li>
+            </ul>
+          </div>
+        </div>
+        {# ── Attachments list (only when this story is a Container) ── #}
+        <div id="sm-attachments-wrap" class="story-sidebar-field" style="display:none">
+          <label class="story-sidebar-label">Attachments</label>
+          <div id="sm-attachments-list" class="sm-attachments-list"></div>
+          <div class="sm-attach-add-row">
+            <button type="button" id="sm-attach-open-picker"
+                    class="btn btn-secondary btn-sm" style="width:100%">
+              + Attach a story…
+            </button>
+          </div>
         </div>
         <div class="story-sidebar-field">
           <label class="story-sidebar-label">Status</label>
@@ -686,6 +742,87 @@
   </div>
 </div>
 
+{# ──────────────────── ATTACH-STORY PICKER OVERLAY ──────────────────── #}
+<div id="attach-picker-bg" class="attach-picker-bg" role="dialog" aria-modal="true" style="display:none">
+  <div class="attach-picker-wrap">
+    <div class="attach-picker-header">
+      <strong>Attach a story</strong>
+      <button type="button" id="attach-picker-close" class="attach-picker-close" aria-label="Close">✕</button>
+    </div>
+    <div class="attach-picker-search-row">
+      <input id="attach-picker-q" type="text" autocomplete="off"
+             placeholder="Search by title or #id…" class="attach-picker-input">
+    </div>
+    <div id="attach-picker-list" class="attach-picker-list"></div>
+    <div class="attach-picker-action-row">
+      <input id="attach-picker-action" type="text" autocomplete="off"
+             placeholder="Dependent action (optional) — what does this story need to do?"
+             class="attach-picker-input">
+      <button type="button" id="attach-picker-confirm"
+              class="btn btn-primary btn-sm" disabled>Attach</button>
+    </div>
+    <div id="attach-picker-selected" class="attach-picker-selected" style="display:none"></div>
+  </div>
+</div>
+
+<style>
+  .attach-picker-bg {
+    position:fixed; inset:0; background:rgba(0,0,0,.55);
+    z-index:40000; display:flex; align-items:center; justify-content:center;
+  }
+  .attach-picker-wrap {
+    background:#fff; border-radius:10px; width:92vw; max-width:560px;
+    max-height:80vh; display:flex; flex-direction:column;
+    box-shadow:0 12px 40px rgba(0,0,0,.35);
+  }
+  .attach-picker-header {
+    display:flex; align-items:center; padding:12px 16px;
+    border-bottom:1px solid #e5e7eb; font-size:14px;
+  }
+  .attach-picker-header strong { flex:1; }
+  .attach-picker-close {
+    background:none; border:none; cursor:pointer; font-size:16px;
+    color:#64748b; padding:4px 8px; border-radius:4px;
+  }
+  .attach-picker-close:hover { background:#f1f5f9; color:#000; }
+  .attach-picker-search-row { padding:10px 14px; border-bottom:1px solid #f1f5f9; }
+  .attach-picker-input {
+    width:100%; padding:8px 10px; font-size:13px;
+    border:1px solid #cbd5e1; border-radius:5px; outline:none;
+  }
+  .attach-picker-input:focus { border-color:#6366f1; }
+  .attach-picker-list {
+    flex:1; overflow-y:auto; padding:6px 0; min-height:200px;
+  }
+  .attach-picker-row {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 16px; cursor:pointer; font-size:13px;
+    border-bottom:1px solid #f8fafc;
+  }
+  .attach-picker-row:hover { background:#eef2ff; }
+  .attach-picker-row.is-selected { background:#e0e7ff; }
+  .attach-picker-row .ap-id {
+    font-family:monospace; color:#64748b; font-size:11px; min-width:38px;
+  }
+  .attach-picker-row .ap-title { flex:1; color:#1f2937; }
+  .attach-picker-row .ap-status {
+    font-size:10px; padding:2px 6px; border-radius:3px;
+    background:#f1f5f9; color:#475569;
+  }
+  .attach-picker-empty, .attach-picker-loading {
+    padding:20px; text-align:center; color:#94a3b8; font-size:12px; font-style:italic;
+  }
+  .attach-picker-action-row {
+    padding:10px 14px; border-top:1px solid #e5e7eb;
+    display:flex; gap:8px; align-items:center;
+  }
+  .attach-picker-action-row .attach-picker-input { flex:1; }
+  .attach-picker-selected {
+    padding:6px 14px; background:#fef3c7; font-size:11px; color:#78350f;
+    border-top:1px solid #fde68a;
+  }
+</style>
+
 {# ──────────────────────── EPIC MODAL ─────────────────────────── #}
 <style>
   /* Column-header epic chips */
@@ -703,6 +840,134 @@
     text-shadow:0 1px 1px rgba(0,0,0,.55);
     line-height:1; pointer-events:none;
   }
+  .col-sort-btn {
+    margin-left:auto; background:none; border:1px solid transparent;
+    color:var(--c-gray-400,#9ca3af); cursor:pointer;
+    font-size:13px; line-height:1; padding:2px 4px; border-radius:4px;
+    transition:background .1s, color .1s, border-color .1s;
+    flex-shrink:0;
+  }
+  .col-sort-btn:hover          { background:#fff; color:var(--c-gray-700,#374151); border-color:var(--c-gray-300,#d1d5db); }
+  .col-sort-btn[data-sorted="1"] { background:var(--c-purple-500,#7c3aed); color:#fff; border-color:transparent; }
+
+  /* ── Container/Attachment ── */
+  .box-badge {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:3px 9px; border-radius:12px; font-size:11px;
+    letter-spacing:.3px; line-height:1.4;
+  }
+  .box-badge strong { font-weight:800; }
+  .box-badge .box-help {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:13px; height:13px; border-radius:50%;
+    background:rgba(255,255,255,.55); color:inherit;
+    font-size:9px; font-weight:800; cursor:help;
+  }
+  .box-whitebox   { background:#dcfce7; color:#14532d; }
+  .box-greybox    { background:#e2e8f0; color:#334155; }
+  .box-blackbox   { background:#1f2937; color:#f9fafb; }
+  .box-featurebox { background:#ede9fe; color:#4c1d95; }
+
+  .story-link {
+    color:inherit; font-weight:700; text-decoration:underline;
+    text-decoration-color:rgba(0,0,0,.25); text-underline-offset:2px;
+    cursor:pointer;
+  }
+  .story-link:hover { text-decoration-color:currentColor; }
+
+  .sm-attach-banner {
+    background:#fffbeb; border:none; border-left:6px solid #f59e0b;
+    padding:14px 18px; margin:0 0 16px;
+    display:flex; flex-direction:column; gap:5px;
+    border-radius:0 6px 6px 0;
+  }
+  .sm-attach-headline {
+    font-size:28px; font-weight:900; letter-spacing:1.5px;
+    color:#1f2937; line-height:1; text-transform:uppercase;
+  }
+  .sm-attach-sub {
+    font-size:12px; color:#475569; font-style:italic; margin-bottom:6px;
+  }
+  .sm-attach-target { font-size:14px; color:#334155; font-weight:600; }
+  .sm-attach-action {
+    font-size:14px; font-weight:600; color:#78350f;
+    background:#fef3c7; padding:8px 12px; border-radius:4px; margin-top:4px;
+    border-left:3px solid #f59e0b;
+  }
+  .sm-attach-banner.box-whitebox   { background:#f0fdf4; border-left-color:#16a34a; }
+  .sm-attach-banner.box-whitebox   .sm-attach-headline { color:#14532d; }
+  .sm-attach-banner.box-greybox    { background:#f1f5f9; border-left-color:#64748b; }
+  .sm-attach-banner.box-greybox    .sm-attach-headline { color:#334155; }
+  .sm-attach-banner.box-blackbox   { background:#0f172a; border-left-color:#000; }
+  .sm-attach-banner.box-blackbox   .sm-attach-headline { color:#f9fafb; }
+  .sm-attach-banner.box-blackbox   .sm-attach-sub,
+  .sm-attach-banner.box-blackbox   .sm-attach-target { color:#cbd5e1; }
+  .sm-attach-banner.box-blackbox   .story-link       { color:#fbbf24; }
+  .sm-attach-banner.box-featurebox { background:#f5f3ff; border-left-color:#7c3aed; }
+  .sm-attach-banner.box-featurebox .sm-attach-headline { color:#4c1d95; }
+  .sm-attach-banner.is-resolved    { border-left-color:#16a34a; }
+  .sm-attach-banner.is-resolved    .sm-attach-headline { color:#14532d; }
+
+  .sm-container-summary {
+    background:transparent; border:none; padding:6px 14px; margin:14px 0;
+  }
+  .sm-cs-heading {
+    font-size:18px; font-weight:900; letter-spacing:.5px; margin:10px 0 4px;
+  }
+  .sm-cs-heading.sm-cs-go { color:#15803d; }
+  .sm-cs-heading.sm-cs-no { color:#b91c1c; }
+  .sm-cs-ul { margin:0 0 8px; padding-left:22px; font-size:14px; }
+  .sm-cs-ul li { margin:3px 0; color:#1f2937; line-height:1.4; }
+  .sm-cs-date { color:#64748b; font-size:11px; font-weight:500; }
+  .sm-cs-status {
+    font-size:10px; color:#64748b; background:#f1f5f9;
+    padding:1px 5px; border-radius:3px; margin-left:4px;
+  }
+  .sm-cs-empty { color:#94a3b8; font-style:italic; font-size:12px; }
+
+  .sm-attachments-list {
+    display:flex; flex-direction:column; gap:4px; margin-bottom:6px;
+  }
+  .sm-attachment-row {
+    display:flex; align-items:center; gap:6px; padding:4px 6px;
+    background:#fff; border:1px solid #e5e7eb; border-radius:4px;
+    font-size:11px;
+  }
+  .sm-attachment-row.done { background:#f0fdf4; border-color:#86efac; }
+  .sm-attachment-row .sm-att-title {
+    flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .sm-attachment-row .sm-att-status {
+    font-size:10px; color:#64748b; padding:1px 4px;
+    background:#f1f5f9; border-radius:3px;
+  }
+  .sm-attachment-row .sm-att-detach {
+    background:none; border:none; color:#dc2626; cursor:pointer;
+    padding:0 4px; font-size:14px; line-height:1;
+  }
+  .sm-attach-add-row { margin-top:6px; }
+
+  .sm-help-btn {
+    background:#e0e7ff; border:none; color:#4338ca; cursor:pointer;
+    width:16px; height:16px; border-radius:50%; font-size:10px;
+    font-weight:700; padding:0; margin-left:4px; line-height:16px;
+  }
+  .sm-box-help-panel {
+    background:#f1f5f9; border-left:3px solid #6366f1;
+    padding:8px 10px; margin-top:6px; font-size:11px; border-radius:3px;
+  }
+  .sm-box-help-panel ul { margin:4px 0 0; padding-left:16px; }
+  .sm-box-help-panel li { margin:2px 0; }
+
+  /* ── Card-level box / container badges (postit footer) ── */
+  .card-box-badge {
+    display:inline-flex; align-items:center; gap:3px;
+    font-size:9px; font-weight:800; text-transform:uppercase;
+    letter-spacing:.4px; padding:2px 6px; border-radius:8px;
+    margin-top:4px; line-height:1.3;
+  }
+  .card-box-badge.is-container::before { content:'📦 '; }
+  .card-box-badge.is-attached::before  { content:'📎 '; }
 
 </style>
 
@@ -890,6 +1155,48 @@
   document.querySelectorAll('.board-card').forEach(wireCard);
   // Expose so the realtime reconciler can wire click/select on newly-inserted cards
   window._wireBoardCard = wireCard;
+
+  // ── Column sort-by-priority ──────────────────────────────────────────────
+  var PRIO_RANK = { VH: 0, H: 1, M: 2, L: 3, VL: 4 };
+  function cardPriority(card) {
+    var tape = card.querySelector('.card-tape');
+    return tape ? (tape.textContent.trim()) : null;
+  }
+  function sortColByPriority(cards) {
+    var items  = Array.from(cards.querySelectorAll(':scope > .board-card'));
+    items.sort(function (a, b) {
+      var pa = PRIO_RANK[cardPriority(a)];
+      var pb = PRIO_RANK[cardPriority(b)];
+      if (pa === undefined) pa = 99;
+      if (pb === undefined) pb = 99;
+      return pa - pb;
+    });
+    items.forEach(function (c) { cards.appendChild(c); });
+  }
+  function restoreColOrder(cards) {
+    var items  = Array.from(cards.querySelectorAll(':scope > .board-card'));
+    items.sort(function (a, b) {
+      return parseInt(a.dataset.orderIndex || 0) - parseInt(b.dataset.orderIndex || 0);
+    });
+    items.forEach(function (c) { cards.appendChild(c); });
+  }
+  document.querySelectorAll('.col-sort-btn').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var col    = btn.closest('.board-column');
+      var cards  = col.querySelector('.board-cards');
+      var sorted = btn.dataset.sorted === '1';
+      if (sorted) {
+        restoreColOrder(cards);
+        btn.dataset.sorted = '0';
+        btn.title = 'Sort by priority';
+      } else {
+        sortColByPriority(cards);
+        btn.dataset.sorted = '1';
+        btn.title = 'Restore original order';
+      }
+    });
+  });
 
   function bulkFetch(url, body, onOk) {
     fetch(url, {
@@ -2179,6 +2486,11 @@
     // Accept either a URL like /story/123 or a numeric ID
     var id = typeof href === 'number' ? href : parseInt((href.match(/\/story\/(\d+)/) || [])[1] || '0');
     if (!id) return;
+    // Push current story onto history stack (skip first open or re-open of same)
+    if (curId && curId !== id) {
+      _navStack.push(curId);
+    }
+    _renderBackBtn();
     curId = id;
     document.getElementById('sm-loading').style.display = 'block';
     document.getElementById('sm-content').style.display = 'none';
@@ -2193,11 +2505,33 @@
     });
   }
 
+  // ── Modal navigation history ──
+  var _navStack = [];
+  function _renderBackBtn() {
+    var btn = document.getElementById('sm-back');
+    if (btn) btn.style.display = _navStack.length ? '' : 'none';
+  }
+  function navBack() {
+    if (!_navStack.length) return;
+    var prev = _navStack.pop();
+    // Pop without re-pushing current
+    var saved = curId;
+    curId = null;
+    openStoryModal(prev);
+    // openStoryModal pushed nothing because curId was null
+    _renderBackBtn();
+  }
+  var _backBtn = document.getElementById('sm-back');
+  if (_backBtn) _backBtn.addEventListener('click', navBack);
+
   var _savedData = null;
 
   function closeStoryModal(data) {
     bg.style.display = 'none';
     document.body.style.overflow = '';
+    _navStack = [];
+    curId = null;
+    _renderBackBtn();
     var d = data !== undefined ? data : _savedData;
     _savedData = null;
     if (!d) return;
@@ -2248,6 +2582,275 @@
     document.getElementById('sm-reporter').textContent = d.creator_name || '—';
     document.getElementById('sm-created').textContent  = fmtDate(s.created_at);
     document.getElementById('sm-updated').textContent  = fmtDate(s.updated_at);
+
+    renderContainerUI(d);
+  }
+
+  // ── Container/Attachment UI ──
+  var BOX_INFO = {
+    whitebox:   { label:'WhiteBox',   tip:"Built & live. Wire in now — it's real." },
+    greybox:    { label:'GreyBox',    tip:'Stub with sketched hooks. Dry-run only.' },
+    blackbox:   { label:'BlackBox',   tip:"Not yet built. Build standalone — don't reference it." },
+    featurebox: { label:'FeatureBox', tip:"Container absorbs integration. Just finish and signal." }
+  };
+  function boxBadge(box, withTip) {
+    if (!box) return '';
+    var info = BOX_INFO[box] || { label: box, tip: '' };
+    var tipAttr = withTip ? ' title="' + esc(info.tip) + '"' : '';
+    return '<span class="box-badge box-' + box + '"' + tipAttr + '>'
+         + '<strong>' + esc(info.label) + '</strong>'
+         + (withTip ? '<span class="box-help">?</span>' : '')
+         + '</span>';
+  }
+  function storyLink(id, title) {
+    return '<a href="#" class="story-link" data-story-id="' + id + '">'
+         + esc(title) + '</a>';
+  }
+  function wireStoryLinks(container) {
+    container.querySelectorAll('.story-link').forEach(function(a){
+      a.addEventListener('click', function(e){
+        e.preventDefault();
+        var id = parseInt(a.dataset.storyId);
+        if (id) openStoryModal(id);
+      });
+    });
+  }
+
+  function renderContainerUI(d) {
+    var s     = d.story;
+    var c     = d.container || {};
+    var boxEl = document.getElementById('sm-box-type');
+    boxEl.value = c.box_type || '';
+
+    // ── Attachment banner (this story is attached to a container) ──
+    var banner = document.getElementById('sm-attach-banner');
+    if (c.container) {
+      var box   = c.container.box_type || 'whitebox';
+      var done  = !!c.container.is_done;
+      var info  = BOX_INFO[box] || { label: box, tip: '' };
+      banner.className = 'sm-attach-banner box-' + box + (done ? ' is-resolved' : '');
+      var html = '';
+      if (done) {
+        html += '<div class="sm-attach-headline">✓ READY TO INTEGRATE</div>'
+              + '<div class="sm-attach-sub">Container resolved \u2014 wire into '
+              + storyLink(c.container.id, c.container.title) + '</div>';
+      } else {
+        html += '<div class="sm-attach-headline">' + esc(info.label.toUpperCase()) + '</div>'
+              + '<div class="sm-attach-sub">' + esc(info.tip) + '</div>'
+              + '<div class="sm-attach-target">Lives inside: '
+              + storyLink(c.container.id, c.container.title) + '</div>';
+        if (c.dependent_action) {
+          html += '<div class="sm-attach-action">' + esc(c.dependent_action) + '</div>';
+        }
+      }
+      banner.innerHTML = html;
+      banner.style.display = '';
+      wireStoryLinks(banner);
+    } else {
+      banner.style.display = 'none';
+    }
+
+    // ── Container summary (this story IS a container) ──
+    var summary = document.getElementById('sm-container-summary');
+    var wrap    = document.getElementById('sm-attachments-wrap');
+    if (c.box_type) {
+      wrap.style.display = '';
+      var atts    = c.attachments || [];
+      var ready   = atts.filter(function(a){ return a.is_done; });
+      var pending = atts.filter(function(a){ return !a.is_done; });
+      var html    = '';
+      if (ready.length) {
+        html += '<div class="sm-cs-heading sm-cs-go">INTEGRATE</div><ul class="sm-cs-ul">'
+              + ready.map(function(a){
+                  var when = a.updated_at ? ' <span class="sm-cs-date">('
+                           + new Date(a.updated_at * 1000).toLocaleDateString() + ')</span>' : '';
+                  return '<li>' + storyLink(a.id, a.title) + when + '</li>';
+                }).join('')
+              + '</ul>';
+      }
+      if (pending.length) {
+        html += '<div class="sm-cs-heading sm-cs-no">DO NOT do the following</div><ul class="sm-cs-ul">'
+              + pending.map(function(a){
+                  return '<li>' + storyLink(a.id, a.title)
+                       + ' <span class="sm-cs-status">' + esc(a.status_name) + '</span></li>';
+                }).join('')
+              + '</ul>';
+      }
+      if (!atts.length) {
+        html += '<div class="sm-cs-empty">No attachments yet. Use the sidebar to attach stories.</div>';
+      }
+      summary.innerHTML = html;
+      summary.style.display = '';
+      wireStoryLinks(summary);
+      renderAttachmentsList(s.id, atts);
+      loadAttachCandidates(s.id);
+    } else {
+      summary.style.display = 'none';
+      wrap.style.display = 'none';
+    }
+  }
+
+  function renderAttachmentsList(containerId, atts) {
+    var list = document.getElementById('sm-attachments-list');
+    list.innerHTML = '';
+    if (!atts || !atts.length) {
+      list.innerHTML = '<div class="form-hint" style="font-size:11px">No attachments.</div>';
+      return;
+    }
+    atts.forEach(function(a){
+      var row = document.createElement('div');
+      row.className = 'sm-attachment-row' + (a.is_done ? ' done' : '');
+      row.innerHTML =
+          '<span class="sm-att-title" title="'+esc(a.title)+'">' + esc(a.title) + '</span>'
+        + '<span class="sm-att-status">' + esc(a.status_name || '—') + '</span>'
+        + '<button type="button" class="sm-att-detach" title="Detach">×</button>';
+      row.querySelector('.sm-att-detach').addEventListener('click', function(){
+        if (!confirm('Detach "' + a.title + '" from this container?')) return;
+        apiDelete('/api/story/'+containerId+'/attach/'+a.id).then(function(r){
+          if (r.ok) renderAttachmentsList(containerId, r.attachments);
+        });
+      });
+      list.appendChild(row);
+    });
+  }
+
+  function loadAttachCandidates(containerId) {
+    // No-op: candidates are now fetched on-demand by the picker overlay.
+  }
+
+  // ── Attach-story picker overlay ──
+  var _apBg       = document.getElementById('attach-picker-bg');
+  var _apList     = document.getElementById('attach-picker-list');
+  var _apQ        = document.getElementById('attach-picker-q');
+  var _apAction   = document.getElementById('attach-picker-action');
+  var _apConfirm  = document.getElementById('attach-picker-confirm');
+  var _apSelected = document.getElementById('attach-picker-selected');
+  var _apSelectedId    = null;
+  var _apSelectedTitle = '';
+  var _apOffset   = 0;
+  var _apHasMore  = false;
+  var _apLoading  = false;
+  var _apSearchT  = null;
+
+  function openAttachPicker() {
+    if (!curId) return;
+    _apSelectedId = null;
+    _apSelectedTitle = '';
+    _apConfirm.disabled = true;
+    _apSelected.style.display = 'none';
+    _apAction.value = '';
+    _apQ.value = '';
+    _apBg.style.display = 'flex';
+    _apQ.focus();
+    fetchAttachCandidates(true);
+  }
+  function closeAttachPicker() {
+    _apBg.style.display = 'none';
+  }
+  function fetchAttachCandidates(reset) {
+    if (_apLoading) return;
+    if (reset) { _apOffset = 0; _apList.innerHTML = '<div class="attach-picker-loading">Searching…</div>'; }
+    _apLoading = true;
+    var q = encodeURIComponent(_apQ.value.trim());
+    apiGet('/api/story/'+curId+'/attach-search?q='+q+'&limit=30&offset='+_apOffset).then(function(d){
+      _apLoading = false;
+      if (!d || !d.ok) { _apList.innerHTML = '<div class="attach-picker-empty">Search failed.</div>'; return; }
+      _apHasMore = !!d.has_more;
+      if (reset) _apList.innerHTML = '';
+      if (!d.items.length && reset) {
+        _apList.innerHTML = '<div class="attach-picker-empty">No matches.</div>';
+        return;
+      }
+      d.items.forEach(function(it){
+        var row = document.createElement('div');
+        row.className = 'attach-picker-row';
+        row.dataset.id = it.id;
+        row.dataset.title = it.title;
+        row.innerHTML = '<span class="ap-id">#'+it.id+'</span>'
+                      + '<span class="ap-title">'+esc(it.title)+'</span>'
+                      + '<span class="ap-status" style="background:'+esc(it.status_color)+'22;color:'+esc(it.status_color)+'">'+esc(it.status_name)+'</span>';
+        row.addEventListener('click', function(){
+          _apList.querySelectorAll('.is-selected').forEach(function(n){ n.classList.remove('is-selected'); });
+          row.classList.add('is-selected');
+          _apSelectedId = it.id;
+          _apSelectedTitle = it.title;
+          _apConfirm.disabled = false;
+          _apSelected.style.display = '';
+          _apSelected.textContent = 'Selected: #' + it.id + ' ' + it.title;
+        });
+        _apList.appendChild(row);
+      });
+      _apOffset += d.items.length;
+    });
+  }
+  _apQ.addEventListener('input', function(){
+    clearTimeout(_apSearchT);
+    _apSearchT = setTimeout(function(){ fetchAttachCandidates(true); }, 180);
+  });
+  _apList.addEventListener('scroll', function(){
+    if (!_apHasMore || _apLoading) return;
+    if (_apList.scrollTop + _apList.clientHeight >= _apList.scrollHeight - 40) {
+      fetchAttachCandidates(false);
+    }
+  });
+  document.getElementById('attach-picker-close').addEventListener('click', closeAttachPicker);
+  _apBg.addEventListener('click', function(e){ if (e.target === _apBg) closeAttachPicker(); });
+  _apConfirm.addEventListener('click', function(){
+    if (!_apSelectedId) return;
+    doAttach(_apSelectedId, _apAction.value.trim(), false);
+    closeAttachPicker();
+  });
+  var _apOpenBtn = document.getElementById('sm-attach-open-picker');
+  if (_apOpenBtn) _apOpenBtn.addEventListener('click', openAttachPicker);
+
+  document.getElementById('sm-box-help').addEventListener('click', function(){
+    var p = document.getElementById('sm-box-help-panel');
+    p.style.display = p.style.display === 'none' ? '' : 'none';
+  });
+
+  var _tasksHelpBtn = document.getElementById('sm-tasks-help-btn');
+  if (_tasksHelpBtn) _tasksHelpBtn.addEventListener('click', function(){
+    var n = document.getElementById('sm-binary-note');
+    n.style.display = n.style.display === 'none' ? '' : 'none';
+  });
+
+  document.getElementById('sm-box-type').addEventListener('change', function(){
+    var v = this.value || null;
+    apiJson('/api/story/'+curId+'/box', 'POST', {box_type: v}).then(function(r){
+      if (!r.ok) {
+        alert(r.error || 'Failed to set box type');
+        // revert
+        return;
+      }
+      // Re-open: simplest way to refresh container UI fully
+      var wrap = document.getElementById('sm-attachments-wrap');
+      var summary = document.getElementById('sm-container-summary');
+      if (v) {
+        wrap.style.display = '';
+        summary.style.display = '';
+        renderAttachmentsList(curId, []);
+        summary.innerHTML = '<div class="sm-cs-empty">No attachments yet. Use “+ Attach a story…” in the sidebar.</div>';
+      } else {
+        wrap.style.display = 'none';
+        summary.style.display = 'none';
+      }
+    });
+  });
+
+  function doAttach(childId, action, force) {
+    apiJson('/api/story/'+curId+'/attach', 'POST',
+            {child_id: childId, dependent_action: action || null, force: !!force})
+      .then(function(r){
+        if (r.ok) {
+          renderAttachmentsList(curId, r.attachments);
+        } else if (r.error === 'already_attached') {
+          if (confirm('That story is already attached to another container (#'+r.current_container_id+'). Move it here?')) {
+            doAttach(childId, action, true);
+          }
+        } else {
+          alert(r.error || 'Attach failed');
+        }
+      });
   }
 
   function setVal(id, v) { var e = document.getElementById(id); if (e) e.value = v; }

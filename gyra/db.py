@@ -338,6 +338,16 @@ def _migrate_db() -> None:
         ("stories", "is_archived", "INTEGER DEFAULT 0"),
         ("stories", "software_version", "TEXT DEFAULT NULL"),
         ("stories", "os",          "TEXT DEFAULT NULL"),
+        # ── Container/Attachment model (sovereign-story system) ─────────────
+        # box_type:        only set on Container stories. One of
+        #                  'whitebox' | 'blackbox' | 'greybox' | 'featurebox'.
+        # attached_to:     only set on Attachment stories — points at the
+        #                  Container story that hosts this one. Strict 1:1.
+        # dependent_action:short string the Container declares onto the
+        #                  Attachment ("DO NOT integrate yet", "Wire to slot 3"…).
+        ("stories", "box_type",          "TEXT DEFAULT NULL"),
+        ("stories", "attached_to",       "INTEGER DEFAULT NULL"),
+        ("stories", "dependent_action",  "TEXT DEFAULT NULL"),
         ("epics",   "start_date",  "TEXT DEFAULT NULL"),
         ("epics",   "due_date",    "TEXT DEFAULT NULL"),
         ("epics",   "status",      "TEXT DEFAULT 'planning'"),
@@ -731,6 +741,7 @@ def get_board_stories(project_id: int):
     conn = get_db()
     rows = conn.execute(
         """SELECT s.*, st.name AS status_name, st.color AS status_color,
+                  COALESCE(st.is_done,0) AS status_is_done,
                   sty.name AS story_type_name, sty.color AS story_type_color,
                   e.title AS epic_title, e.color AS epic_color
            FROM stories s

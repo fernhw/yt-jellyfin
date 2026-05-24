@@ -987,6 +987,15 @@ body.is-fullscreen    .fs-pill { display: flex; }  /* JS-class fallback */
   transition: background .15s;
 }
 .story-modal-close:hover { background: rgba(0,0,0,.4); color: #fff; }
+.story-modal-back {
+  background: rgba(0,0,0,.08); border: none;
+  color: var(--c-gray-700); font-size: 18px; cursor: pointer;
+  border-radius: 50%; width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1; font-weight: 700; flex-shrink: 0;
+  transition: background .15s; margin-right: 4px;
+}
+.story-modal-back:hover { background: rgba(0,0,0,.25); color: #000; }
 /* inner two-column layout fills remaining modal height */
 .sm-content-body {
   flex: 1; min-height: 0; max-width: none; padding: 0;

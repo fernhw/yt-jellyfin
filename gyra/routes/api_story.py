@@ -18,6 +18,7 @@ from db import (create_addon, create_notification, delete_addon,
                 update_addon_content, user_in_project)
 from routes.helpers import (allowed_image, bold_verb_in_title,
                              build_story_title, count_words)
+from routes.api_container import container_payload
 
 
 def register(app) -> None:
@@ -158,6 +159,7 @@ def register(app) -> None:
             story_types=[dict(t) for t in story_types],
             epics=[dict(e) for e in get_epics(s["project_id"])],
             creator_name=s["creator_name"] or "",
+            container=container_payload(s),
         )
 
     # ── Story mutation ──────────────────────────────────────────────────────────
