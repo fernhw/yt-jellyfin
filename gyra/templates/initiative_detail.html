@@ -53,11 +53,49 @@
       </div>
     </section>
 
-    {# Basics + rule edit form #}
+    {# Basics + rule edit form (read-only by default, pencil to edit) #}
     {% if session.role in ('admin', 'super_user') %}
-    <section class="init-block">
-      <h3>Basics</h3>
-      <form method="post"
+    <section class="init-block" id="init-basics-block">
+      <div class="init-basics-head">
+        <h3>Basics</h3>
+        <button type="button" class="init-edit-pencil" id="init-edit-toggle"
+                title="Edit basics" aria-label="Edit basics">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          <span class="iep-edit-text">Edit</span>
+        </button>
+      </div>
+
+      <div class="init-basics-view" id="init-basics-view">
+        <div class="init-basics-row">
+          <span class="init-basics-k">Name</span>
+          <span class="init-basics-v">{{ initiative.name }}</span>
+        </div>
+        <div class="init-basics-row">
+          <span class="init-basics-k">Description</span>
+          <span class="init-basics-v init-basics-desc">{{ initiative.description or '(none)' }}</span>
+        </div>
+        <div class="init-basics-row">
+          <span class="init-basics-k">Color</span>
+          <span class="init-basics-v">
+            <span class="init-color-chip" style="background: {{ initiative.color }}"></span>
+            <code>{{ initiative.color }}</code>
+          </span>
+        </div>
+        <div class="init-basics-row">
+          <span class="init-basics-k">Rule type</span>
+          <span class="init-basics-v">
+            <code>{{ initiative.rule_type }}</code> — {{ RULE_LABELS[initiative.rule_type] }}
+            {% if rule_locked %}<span class="init-rule-lock">🔒 Locked</span>{% endif %}
+          </span>
+        </div>
+      </div>
+
+      <form method="post" id="init-basics-form" style="display:none"
             action="{{ url_for('initiative_update', project_id=project.id, initiative_id=initiative.id) }}"
             class="init-form">
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
@@ -99,8 +137,33 @@
 
         <div class="init-form-actions">
           <button class="btn btn-primary" type="submit">Save changes</button>
+          <button class="btn btn-secondary" type="button" id="init-edit-cancel">Cancel</button>
         </div>
       </form>
+
+      <script>
+      (function(){
+        var view = document.getElementById('init-basics-view');
+        var form = document.getElementById('init-basics-form');
+        var pencil = document.getElementById('init-edit-toggle');
+        var cancel = document.getElementById('init-edit-cancel');
+        function enter(){
+          view.style.display='none'; form.style.display='';
+          pencil.classList.add('is-editing');
+          pencil.querySelector('.iep-edit-text').textContent='Editing…';
+        }
+        function leave(){
+          form.style.display='none'; view.style.display='';
+          pencil.classList.remove('is-editing');
+          pencil.querySelector('.iep-edit-text').textContent='Edit';
+        }
+        pencil.addEventListener('click', function(){
+          if (form.style.display==='none') enter(); else leave();
+        });
+        cancel.addEventListener('click', leave);
+        if (/[?&]edit=1\b/.test(location.search)) enter();
+      })();
+      </script>
     </section>
     {% else %}
     <section class="init-block">

@@ -3540,3 +3540,106 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
 .ipc-M  { background:#FEF3C7; color:#92400E; border-color:#FCD34D; }
 .ipc-L  { background:#DBEAFE; color:#1E40AF; border-color:#93C5FD; }
 .ipc-VL { background:#E0E7FF; color:#3730A3; border-color:#A5B4FC; }
+
+/* ── Initiative basics · read-only view + pencil-to-edit toggle ────── */
+.init-basics-head {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:10px;
+}
+.init-basics-head h3 { margin:0 !important; }
+.init-edit-pencil {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 10px; border-radius:6px;
+  background:#FFFFFF;
+  border:1.5px solid var(--c-gray-200, #DDD0B8);
+  color:var(--c-gray-700, #3D2E1A);
+  font-size:12px; font-weight:700; cursor:pointer;
+  transition:border-color .12s, color .12s, background .12s;
+}
+.init-edit-pencil:hover {
+  border-color:#6D28D9; color:#6D28D9;
+}
+.init-edit-pencil.is-editing {
+  background:#6D28D9; border-color:#6D28D9; color:#FFFFFF;
+}
+.init-edit-pencil svg { display:block; }
+
+.init-basics-view {
+  display:flex; flex-direction:column; gap:8px;
+}
+.init-basics-row {
+  display:grid;
+  grid-template-columns: 110px 1fr;
+  gap:12px; align-items:start;
+  padding:8px 10px;
+  background:var(--c-gray-50, #F9F5EE);
+  border:1px solid var(--c-gray-200, #DDD0B8);
+  border-radius:6px;
+}
+.init-basics-k {
+  font-size:10px; font-weight:800; text-transform:uppercase;
+  letter-spacing:.6px; color:var(--c-gray-500, #7A6A52);
+  padding-top:2px;
+}
+.init-basics-v {
+  font-size:13.5px; color:var(--c-gray-900, #1A1208);
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+}
+.init-basics-v code {
+  font-family:ui-monospace,Menlo,monospace; font-size:12px;
+  background:var(--c-gray-100, #EDE4D0);
+  padding:2px 6px; border-radius:4px;
+  color:var(--c-gray-900, #1A1208);
+}
+.init-basics-desc { white-space:pre-wrap; }
+
+/* ── Initiative card · pencil overlay on list grid ─────────────────── */
+.init-card-wrap { position: relative; display: block; }
+.init-card-pencil {
+  position: absolute; top: 10px; right: 10px; z-index: 5;
+  width: 30px; height: 30px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.92);
+  border: 1.5px solid var(--c-gray-200, #DDD0B8);
+  color: var(--c-gray-700, #3D2E1A);
+  text-decoration: none;
+  opacity: 0; transform: translateY(-2px);
+  transition: opacity .15s, transform .15s, background .15s, border-color .15s, color .15s;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+.init-card-wrap:hover .init-card-pencil,
+.init-card-pencil:focus-visible {
+  opacity: 1; transform: translateY(0);
+}
+.init-card-pencil:hover {
+  background: #6D28D9; border-color: #6D28D9; color: #FFFFFF;
+}
+.init-card-pencil svg { display: block; }
+/* nudge the rule pill so it doesn't sit under the pencil */
+.init-card-wrap .init-card-head { padding-right: 36px; }
+
+/* ── Initiative card · disable hover lift; pencil is the only edit ── */
+.init-card,
+.init-card:hover {
+  transform: none !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.04) !important;
+  transition: border-color .15s !important;
+}
+.init-card:hover { border-color: var(--c-gray-200, #DDD0B8) !important; }
+/* always show the pencil so it's clearly the edit affordance */
+.init-card-pencil { opacity: 1 !important; transform: none !important; }
+
+/* ── Initiative card · zero hover, zero click. Pencil is the only edit ── */
+.init-card,
+.init-card:hover,
+.init-card:focus,
+.init-card:active {
+  cursor: default !important;
+  transform: none !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.04) !important;
+  border-color: var(--c-gray-200, #DDD0B8) !important;
+  transition: none !important;
+  text-decoration: none !important;
+}
+.init-card::before { display: none !important; }
+.init-card-pencil { opacity: 1 !important; transform: none !important; cursor: pointer !important; }

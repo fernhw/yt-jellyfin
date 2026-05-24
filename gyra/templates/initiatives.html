@@ -48,9 +48,19 @@
 {% else %}
 <div class="init-grid">
   {% for it in initiatives %}
-  <a class="init-card init-card-{{ it.status }}"
-     href="{{ url_for('initiative_detail', project_id=project.id, initiative_id=it.id) }}"
-     style="--init-color: {{ it.color }}">
+  <div class="init-card-wrap" style="--init-color: {{ it.color }}">
+    {% if session.role in ('admin','super_user') %}
+    <a class="init-card-pencil"
+       href="{{ url_for('initiative_detail', project_id=project.id, initiative_id=it.id) }}?edit=1"
+       title="Edit initiative" aria-label="Edit initiative">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"></path>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+      </svg>
+    </a>
+    {% endif %}
+    <div class="init-card init-card-{{ it.status }}">
     <div class="init-card-head">
       <span class="init-status-pill init-status-{{ it.status }}">
         {% if it.status == 'active' %}<span class="init-pulse-dot"></span>{% endif %}
@@ -129,7 +139,8 @@
       <time class="init-card-updated" datetime="{{ it.updated_at }}"
             data-ts="{{ it.updated_at }}">updated {{ it.updated_at }}</time>
     </div>
-  </a>
+    </div>
+  </div>
   {% endfor %}
 </div>
 {% endif %}
