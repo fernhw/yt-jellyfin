@@ -206,6 +206,41 @@ CREATE TABLE IF NOT EXISTS grooming_votes (
     created_at INTEGER NOT NULL,
     PRIMARY KEY (project_id, story_id, user_id)
 );
+
+-- Initiatives ("Grand Epics"): roll up multiple epics under one strategic goal
+CREATE TABLE IF NOT EXISTS initiatives (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    name        TEXT    NOT NULL,
+    description TEXT    DEFAULT '',
+    color       TEXT    NOT NULL DEFAULT '#6D28D9',
+    rule_type   TEXT    NOT NULL DEFAULT 'priority'
+                CHECK (rule_type IN ('priority','pct_stories','pct_points','count_stories','count_points')),
+    status      TEXT    NOT NULL DEFAULT 'draft'
+                CHECK (status IN ('draft','active','shipped','archived')),
+    created_by  INTEGER REFERENCES users(id),
+    created_at  INTEGER NOT NULL,
+    updated_at  INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS initiative_milestones (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    initiative_id INTEGER NOT NULL REFERENCES initiatives(id) ON DELETE CASCADE,
+    name          TEXT    NOT NULL,
+    threshold     TEXT    NOT NULL,
+    order_index   INTEGER DEFAULT 0,
+    created_at    INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS initiative_history (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    initiative_id INTEGER NOT NULL REFERENCES initiatives(id) ON DELETE CASCADE,
+    user_id       INTEGER NOT NULL REFERENCES users(id),
+    field_name    TEXT    NOT NULL,
+    old_value     TEXT    DEFAULT NULL,
+    new_value     TEXT    DEFAULT NULL,
+    created_at    INTEGER NOT NULL
+);
 """
 
 
@@ -246,6 +281,7 @@ def _migrate_db() -> None:
         ("epics",   "status",      "TEXT DEFAULT 'planning'"),
         ("epics",   "updated_at",  "INTEGER DEFAULT NULL"),
         ("epics",   "order_index", "INTEGER DEFAULT 0"),
+        ("epics",   "initiative_id", "INTEGER DEFAULT NULL"),
     ]
     conn = get_db()
     for table, col, col_def in new_cols:
@@ -253,6 +289,40 @@ def _migrate_db() -> None:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_def}")
         except Exception:
             pass  # Column already exists
+
+    # Ensure initiative tables exist on already-migrated DBs.
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS initiatives (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            name        TEXT    NOT NULL,
+            description TEXT    DEFAULT '',
+            color       TEXT    NOT NULL DEFAULT '#6D28D9',
+            rule_type   TEXT    NOT NULL DEFAULT 'priority',
+            status      TEXT    NOT NULL DEFAULT 'draft',
+            created_by  INTEGER REFERENCES users(id),
+            created_at  INTEGER NOT NULL,
+            updated_at  INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS initiative_milestones (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            initiative_id INTEGER NOT NULL REFERENCES initiatives(id) ON DELETE CASCADE,
+            name          TEXT    NOT NULL,
+            threshold     TEXT    NOT NULL,
+            order_index   INTEGER DEFAULT 0,
+            created_at    INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS initiative_history (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            initiative_id INTEGER NOT NULL REFERENCES initiatives(id) ON DELETE CASCADE,
+            user_id       INTEGER NOT NULL REFERENCES users(id),
+            field_name    TEXT    NOT NULL,
+            old_value     TEXT    DEFAULT NULL,
+            new_value     TEXT    DEFAULT NULL,
+            created_at    INTEGER NOT NULL
+        );
+    """)
+    conn.commit()
 
     # Migrate stickers: drop obsolete CHECK constraint, add card-attachment columns.
     # Idempotent: only runs if card_story_id column is missing.
@@ -1012,3 +1082,314 @@ def mark_notifications_read(user_id: int) -> None:
     conn.execute("UPDATE notifications SET is_read=1 WHERE user_id=?", (user_id,))
     conn.commit()
     conn.close()
+
+
+# ── Initiatives ───────────────────────────────────────────────────────────────
+
+RULE_TYPES = ("priority", "pct_stories", "pct_points",
+              "count_stories", "count_points")
+INIT_STATUSES = ("draft", "active", "shipped", "archived")
+
+
+def get_initiatives(project_id, status_filter=None):
+    conn = get_db()
+    q = ("SELECT i.*, "
+         "  (SELECT COUNT(*) FROM epics e WHERE e.initiative_id = i.id) "
+         "    AS epic_count, "
+         "  (SELECT COUNT(*) FROM initiative_milestones m WHERE m.initiative_id = i.id) "
+         "    AS milestone_count "
+         "FROM initiatives i WHERE i.project_id = ?")
+    args = [project_id]
+    if status_filter and status_filter in INIT_STATUSES:
+        q += " AND i.status = ?"
+        args.append(status_filter)
+    q += " ORDER BY CASE i.status WHEN 'active' THEN 0 WHEN 'draft' THEN 1 " \
+         " WHEN 'shipped' THEN 2 WHEN 'archived' THEN 3 END, i.updated_at DESC"
+    rows = conn.execute(q, args).fetchall()
+    conn.close()
+    return rows
+
+
+def get_initiative(initiative_id):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT * FROM initiatives WHERE id=?", (initiative_id,)).fetchone()
+    conn.close()
+    return row
+
+
+def create_initiative(project_id, name, description, color, rule_type,
+                      created_by):
+    if rule_type not in RULE_TYPES:
+        rule_type = "priority"
+    now = int(time.time())
+    conn = get_db()
+    cur = conn.execute(
+        "INSERT INTO initiatives (project_id,name,description,color,rule_type,"
+        " status,created_by,created_at,updated_at) "
+        "VALUES (?,?,?,?,?,?,?,?,?)",
+        (project_id, name, description or "", color or "#6D28D9",
+         rule_type, "draft", created_by, now, now),
+    )
+    iid = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return iid
+
+
+def update_initiative(initiative_id, fields):
+    """fields: dict of column→value. Only updates whitelisted columns."""
+    allowed = {"name", "description", "color", "rule_type", "status"}
+    sets, args = [], []
+    for k, v in fields.items():
+        if k not in allowed:
+            continue
+        sets.append(f"{k}=?")
+        args.append(v)
+    if not sets:
+        return
+    sets.append("updated_at=?")
+    args.append(int(time.time()))
+    args.append(initiative_id)
+    conn = get_db()
+    conn.execute(
+        f"UPDATE initiatives SET {','.join(sets)} WHERE id=?", args)
+    conn.commit()
+    conn.close()
+
+
+def delete_initiative(initiative_id):
+    conn = get_db()
+    # Detach epics first (don't delete them — they live on)
+    conn.execute(
+        "UPDATE epics SET initiative_id=NULL WHERE initiative_id=?",
+        (initiative_id,))
+    conn.execute("DELETE FROM initiatives WHERE id=?", (initiative_id,))
+    conn.commit()
+    conn.close()
+
+
+def list_initiative_milestones(initiative_id):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM initiative_milestones WHERE initiative_id=? "
+        "ORDER BY order_index, id", (initiative_id,)).fetchall()
+    conn.close()
+    return rows
+
+
+def add_initiative_milestone(initiative_id, name, threshold, order_index=0):
+    conn = get_db()
+    cur = conn.execute(
+        "INSERT INTO initiative_milestones (initiative_id,name,threshold,"
+        " order_index,created_at) VALUES (?,?,?,?,?)",
+        (initiative_id, name, str(threshold), order_index, int(time.time())))
+    mid = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return mid
+
+
+def delete_initiative_milestone(milestone_id):
+    conn = get_db()
+    conn.execute(
+        "DELETE FROM initiative_milestones WHERE id=?", (milestone_id,))
+    conn.commit()
+    conn.close()
+
+
+def list_initiative_epics(initiative_id):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM epics WHERE initiative_id=? ORDER BY order_index, id",
+        (initiative_id,)).fetchall()
+    conn.close()
+    return rows
+
+
+def list_unattached_epics(project_id):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM epics WHERE project_id=? AND initiative_id IS NULL "
+        "ORDER BY title", (project_id,)).fetchall()
+    conn.close()
+    return rows
+
+
+def set_epic_initiative(epic_id, initiative_id):
+    conn = get_db()
+    conn.execute(
+        "UPDATE epics SET initiative_id=?, updated_at=? WHERE id=?",
+        (initiative_id, int(time.time()), epic_id))
+    conn.commit()
+    conn.close()
+
+
+def log_initiative_change(initiative_id, user_id, field_name,
+                          old_value, new_value):
+    if str(old_value or '') == str(new_value or ''):
+        return
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO initiative_history (initiative_id,user_id,field_name,"
+        " old_value,new_value,created_at) VALUES (?,?,?,?,?,?)",
+        (initiative_id, user_id, field_name,
+         str(old_value) if old_value is not None else None,
+         str(new_value) if new_value is not None else None,
+         int(time.time())))
+    conn.commit()
+    conn.close()
+
+
+def get_initiative_history(initiative_id):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT h.*, u.display_name, u.avatar FROM initiative_history h "
+        "JOIN users u ON h.user_id = u.id "
+        "WHERE h.initiative_id=? ORDER BY h.created_at DESC",
+        (initiative_id,)).fetchall()
+    conn.close()
+    return rows
+
+
+def compute_initiative_rollup(initiative_id):
+    """Return a dict with aggregate counts across all stories under all
+    epics linked to this initiative.
+
+    Keys: total_stories, done_stories, total_points, done_points,
+          by_priority -> { 'VH': {'total': n, 'done': n, 'points': n,
+                                  'done_points': n}, ... }
+    """
+    conn = get_db()
+    rows = conn.execute(
+        """
+        SELECT s.priority, s.story_points, st.is_done
+        FROM stories s
+        JOIN epics e ON s.epic_id = e.id
+        LEFT JOIN statuses st ON s.status_id = st.id
+        WHERE e.initiative_id = ? AND s.is_archived = 0
+        """, (initiative_id,)).fetchall()
+    conn.close()
+
+    out = {
+        "total_stories": 0, "done_stories": 0,
+        "total_points":  0, "done_points":  0,
+        "by_priority": {p: {"total": 0, "done": 0,
+                            "points": 0, "done_points": 0}
+                        for p in ("VH", "H", "M", "L", "VL", "")},
+    }
+    for r in rows:
+        pri = (r["priority"] or "").upper()
+        if pri not in out["by_priority"]:
+            pri = ""
+        pts = r["story_points"] or 0
+        done = 1 if r["is_done"] else 0
+        out["total_stories"] += 1
+        out["total_points"] += pts
+        out["done_stories"] += done
+        out["done_points"]  += pts if done else 0
+        bp = out["by_priority"][pri]
+        bp["total"] += 1
+        bp["points"] += pts
+        if done:
+            bp["done"] += 1
+            bp["done_points"] += pts
+    return out
+
+
+def evaluate_initiative_progress(initiative_id):
+    """Returns (overall_pct, milestones) where milestones is a list of
+    {id, name, threshold, achieved (bool), progress_pct (0-100), label}."""
+    init = get_initiative(initiative_id)
+    if not init:
+        return 0.0, []
+    rule = init["rule_type"]
+    rollup = compute_initiative_rollup(initiative_id)
+    milestones = list_initiative_milestones(initiative_id)
+
+    # Overall pct under the rule.
+    overall = _overall_for_rule(rule, rollup)
+
+    out = []
+    PRI_ORDER = ["VH", "H", "M", "L", "VL"]
+    for m in milestones:
+        thr_raw = (m["threshold"] or "").strip()
+        progress, achieved, label = 0.0, False, thr_raw
+        if rule == "pct_stories":
+            try:
+                target = float(thr_raw)
+            except ValueError:
+                target = 0.0
+            achieved_pct = (100.0 * rollup["done_stories"]
+                            / rollup["total_stories"]) \
+                if rollup["total_stories"] else 0.0
+            progress = (achieved_pct / target * 100.0) if target else 0.0
+            achieved = achieved_pct >= target
+            label = f"{target:g}% of stories done"
+        elif rule == "pct_points":
+            try:
+                target = float(thr_raw)
+            except ValueError:
+                target = 0.0
+            achieved_pct = (100.0 * rollup["done_points"]
+                            / rollup["total_points"]) \
+                if rollup["total_points"] else 0.0
+            progress = (achieved_pct / target * 100.0) if target else 0.0
+            achieved = achieved_pct >= target
+            label = f"{target:g}% of points done"
+        elif rule == "count_stories":
+            try:
+                target = int(float(thr_raw))
+            except ValueError:
+                target = 0
+            progress = (100.0 * rollup["done_stories"] / target) \
+                if target else 0.0
+            achieved = rollup["done_stories"] >= target
+            label = f"{target} stories done"
+        elif rule == "count_points":
+            try:
+                target = int(float(thr_raw))
+            except ValueError:
+                target = 0
+            progress = (100.0 * rollup["done_points"] / target) \
+                if target else 0.0
+            achieved = rollup["done_points"] >= target
+            label = f"{target} points done"
+        else:  # priority
+            # threshold is a priority letter; achieved when 100% of that
+            # tier and all higher tiers are done.
+            thr = thr_raw.upper()
+            if thr not in PRI_ORDER:
+                achieved = False
+                progress = 0.0
+                label = "Invalid priority"
+            else:
+                idx = PRI_ORDER.index(thr)
+                tiers = PRI_ORDER[:idx + 1]
+                tot = sum(rollup["by_priority"][p]["total"] for p in tiers)
+                don = sum(rollup["by_priority"][p]["done"]  for p in tiers)
+                progress = (100.0 * don / tot) if tot else 0.0
+                achieved = tot > 0 and don >= tot
+                label = (f"All {'+'.join(tiers)} done "
+                         f"({don}/{tot})")
+        out.append({
+            "id": m["id"],
+            "name": m["name"],
+            "threshold": thr_raw,
+            "label": label,
+            "progress_pct": max(0.0, min(100.0, progress)),
+            "achieved": achieved,
+        })
+    return overall, out
+
+
+def _overall_for_rule(rule, rollup):
+    if rule == "pct_stories" or rule == "count_stories":
+        return (100.0 * rollup["done_stories"] / rollup["total_stories"]) \
+            if rollup["total_stories"] else 0.0
+    if rule == "pct_points" or rule == "count_points":
+        return (100.0 * rollup["done_points"] / rollup["total_points"]) \
+            if rollup["total_points"] else 0.0
+    # priority: simple done/total of all linked stories
+    return (100.0 * rollup["done_stories"] / rollup["total_stories"]) \
+        if rollup["total_stories"] else 0.0

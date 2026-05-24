@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — Initiatives — Gyra{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <span class="project-key-badge">{{ project.key }}</span>
+    <h2>🌟 Initiatives</h2>
+  </div>
+  <div class="page-header-right" style="display:flex;gap:8px;align-items:center">
+    {% if session.role in ('admin', 'super_user') %}
+    <a class="btn btn-sm btn-primary"
+       href="{{ url_for('initiative_new', project_id=project.id) }}">+ New Initiative</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="init-intro">
+  <strong>Initiatives</strong> (a.k.a. <em>Grand Epics</em>) sit above your
+  epics. They group multiple epics under one strategic goal and track progress
+  against <strong>milestones</strong> like MVP, Beta, Full, Master.
+  <br>Each initiative has a single rule type (priority, % stories, % points,
+  or absolute counts) that's locked once it leaves draft — so milestones stay
+  honest.
+</div>
+
+<div class="init-filter-bar">
+  <a class="init-filter-btn {% if not status_filter %}is-active{% endif %}"
+     href="{{ url_for('initiatives_index', project_id=project.id) }}">All</a>
+  {% for s in INIT_STATUSES %}
+  <a class="init-filter-btn init-filter-{{ s }} {% if status_filter == s %}is-active{% endif %}"
+     href="{{ url_for('initiatives_index', project_id=project.id, status=s) }}">
+    {{ STATUS_LABELS[s] }}
+  </a>
+  {% endfor %}
+</div>
+
+{% if not initiatives %}
+<div class="init-empty">
+  No initiatives yet.
+  {% if session.role in ('admin', 'super_user') %}
+  <a href="{{ url_for('initiative_new', project_id=project.id) }}">Create the first one →</a>
+  {% endif %}
+</div>
+{% else %}
+<div class="init-grid">
+  {% for it in initiatives %}
+  <a class="init-card init-card-{{ it.status }}"
+     href="{{ url_for('initiative_detail', project_id=project.id, initiative_id=it.id) }}"
+     style="--init-color: {{ it.color }}">
+    <div class="init-card-head">
+      <span class="init-status-pill init-status-{{ it.status }}">{{ STATUS_LABELS[it.status] }}</span>
+      <span class="init-rule-pill" title="{{ RULE_LABELS[it.rule_type] }}">{{ it.rule_type }}</span>
+    </div>
+    <div class="init-card-name">{{ it.name }}</div>
+    {% if it.description %}
+    <div class="init-card-desc">{{ it.description[:140] }}{% if it.description|length > 140 %}…{% endif %}</div>
+    {% endif %}
+    <div class="init-card-meta">
+      <span>{{ it.epic_count }} epic{{ '' if it.epic_count == 1 else 's' }}</span>
+      <span>·</span>
+      <span>{{ it.milestone_count }} milestone{{ '' if it.milestone_count == 1 else 's' }}</span>
+    </div>
+    <div class="init-card-bar">
+      <div class="init-card-bar-fill" style="width: {{ it.overall_pct|round(1) }}%"></div>
+    </div>
+    <div class="init-card-pct">{{ it.overall_pct|round(1) }}% overall</div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

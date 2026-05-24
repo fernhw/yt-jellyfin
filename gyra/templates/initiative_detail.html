@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}{{ initiative.name }} — Initiatives — Gyra{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <span class="project-key-badge">{{ project.key }}</span>
+    <h2 style="display:flex;align-items:center;gap:10px">
+      <span class="init-color-chip" style="background: {{ initiative.color }}"></span>
+      {{ initiative.name }}
+      <span class="init-status-pill init-status-{{ initiative.status }}">{{ STATUS_LABELS[initiative.status] }}</span>
+    </h2>
+  </div>
+  <div class="page-header-right" style="display:flex;gap:8px;align-items:center">
+    <a class="btn btn-sm btn-secondary"
+       href="{{ url_for('initiatives_index', project_id=project.id) }}">← All Initiatives</a>
+    {% if session.role in ('admin', 'super_user') %}
+    <form method="post" style="display:inline"
+          action="{{ url_for('initiative_set_status', project_id=project.id, initiative_id=initiative.id) }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <select name="status" onchange="this.form.submit()" class="init-status-select">
+        {% for s in INIT_STATUSES %}
+        <option value="{{ s }}" {% if s == initiative.status %}selected{% endif %}>{{ STATUS_LABELS[s] }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    <form method="post" style="display:inline"
+          action="{{ url_for('initiative_delete', project_id=project.id, initiative_id=initiative.id) }}"
+          onsubmit="return confirm('Delete this initiative? Linked epics will be detached but not deleted.')">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="init-detail-grid">
+
+  {# ── Left column: editable basics + rule + milestones + epics ── #}
+  <div class="init-detail-main">
+
+    {# Overall progress bar #}
+    <section class="init-block">
+      <div class="init-overall-head">
+        <span class="init-overall-label">Overall progress</span>
+        <span class="init-overall-pct">{{ overall_pct|round(1) }}%</span>
+      </div>
+      <div class="init-bar init-bar-lg">
+        <div class="init-bar-fill" style="width: {{ overall_pct|round(1) }}%"></div>
+      </div>
+      <div class="init-rule-summary">
+        Rule: <strong>{{ initiative.rule_type }}</strong> — {{ RULE_LABELS[initiative.rule_type] }}
+      </div>
+    </section>
+
+    {# Basics + rule edit form #}
+    {% if session.role in ('admin', 'super_user') %}
+    <section class="init-block">
+      <h3>Basics</h3>
+      <form method="post"
+            action="{{ url_for('initiative_update', project_id=project.id, initiative_id=initiative.id) }}"
+            class="init-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+        <label class="init-field">
+          <span>Name</span>
+          <input type="text" name="name" required maxlength="120"
+                 value="{{ initiative.name }}">
+        </label>
+
+        <label class="init-field">
+          <span>Description — the deep-down goal</span>
+          <textarea name="description" rows="5">{{ initiative.description or '' }}</textarea>
+        </label>
+
+        <label class="init-field init-field-row">
+          <span>Color</span>
+          <input type="color" name="color" value="{{ initiative.color }}">
+        </label>
+
+        <div class="init-rule-block">
+          <h4>Rule type
+            {% if rule_locked %}
+            <span class="init-rule-lock">🔒 Locked — initiative is {{ STATUS_LABELS[initiative.status] }}</span>
+            {% else %}
+            <span class="init-rule-lock-note">(editable while in Draft)</span>
+            {% endif %}
+          </h4>
+          {% for rt in RULE_TYPES %}
+          <label class="init-rule-radio {% if rule_locked %}is-disabled{% endif %}">
+            <input type="radio" name="rule_type" value="{{ rt }}"
+                   {% if rt == initiative.rule_type %}checked{% endif %}
+                   {% if rule_locked %}disabled{% endif %}>
+            <strong>{{ rt }}</strong>
+            <span>{{ RULE_LABELS[rt] }}</span>
+          </label>
+          {% endfor %}
+        </div>
+
+        <div class="init-form-actions">
+          <button class="btn btn-primary" type="submit">Save changes</button>
+        </div>
+      </form>
+    </section>
+    {% else %}
+    <section class="init-block">
+      <h3>Description</h3>
+      <p class="init-readonly-desc">{{ initiative.description or '(none)' }}</p>
+    </section>
+    {% endif %}
+
+    {# Milestones #}
+    <section class="init-block">
+      <h3>🎯 Milestones</h3>
+      {% if not milestones %}
+      <div class="init-empty-mini">No milestones yet. Add one below.</div>
+      {% else %}
+      <ul class="init-milestone-list">
+        {% for m in milestones %}
+        <li class="init-milestone {% if m.achieved %}is-achieved{% endif %}">
+          <div class="init-milestone-head">
+            <span class="init-milestone-name">{{ m.name }}</span>
+            <span class="init-milestone-thr">{{ m.label }}</span>
+            {% if m.achieved %}<span class="init-milestone-check">✓ achieved</span>{% endif %}
+            {% if session.role in ('admin', 'super_user') %}
+            <form method="post" style="display:inline"
+                  action="{{ url_for('initiative_milestone_delete', project_id=project.id, initiative_id=initiative.id, milestone_id=m.id) }}"
+                  onsubmit="return confirm('Delete milestone “{{ m.name }}”?')">
+              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+              <button class="init-milestone-x" type="submit" title="Delete">×</button>
+            </form>
+            {% endif %}
+          </div>
+          <div class="init-bar">
+            <div class="init-bar-fill" style="width: {{ m.progress_pct|round(1) }}%"></div>
+          </div>
+          <div class="init-milestone-pct">{{ m.progress_pct|round(1) }}%</div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if session.role in ('admin', 'super_user') %}
+      <form method="post" class="init-add-milestone-form"
+            action="{{ url_for('initiative_milestone_add', project_id=project.id, initiative_id=initiative.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="text" name="name" required maxlength="60"
+               placeholder="Milestone name (e.g. MVP)">
+        {% if initiative.rule_type == 'priority' %}
+        <select name="threshold" required>
+          <option value="VH">VH — MVP (just the must-haves)</option>
+          <option value="H">H — Polish</option>
+          <option value="M">M — Stable</option>
+          <option value="L">L — Full</option>
+          <option value="VL">VL — Master / everything</option>
+        </select>
+        {% elif initiative.rule_type in ('pct_stories', 'pct_points') %}
+        <input type="number" name="threshold" required min="1" max="100" step="1"
+               placeholder="% target (1–100)">
+        {% else %}
+        <input type="number" name="threshold" required min="1" step="1"
+               placeholder="Count target">
+        {% endif %}
+        <button class="btn btn-sm btn-primary" type="submit">+ Add milestone</button>
+      </form>
+      {% endif %}
+    </section>
+
+    {# Linked epics #}
+    <section class="init-block">
+      <h3>📚 Linked epics</h3>
+      {% if not epics %}
+      <div class="init-empty-mini">No epics attached yet.</div>
+      {% else %}
+      <ul class="init-epic-list">
+        {% for e in epics %}
+        <li class="init-epic-row" style="--epic-color: {{ e.color }}">
+          <span class="init-epic-dot"></span>
+          <span class="init-epic-title">{{ e.title }}</span>
+          <span class="init-epic-stat">{{ e.done }}/{{ e.total }} stories</span>
+          <span class="init-epic-stat">{{ e.done_points }}/{{ e.points }} pts</span>
+          <div class="init-bar init-bar-sm">
+            <div class="init-bar-fill"
+                 style="width: {% if e.total %}{{ (100 * e.done / e.total)|round(1) }}{% else %}0{% endif %}%"></div>
+          </div>
+          {% if session.role in ('admin', 'super_user') %}
+          <form method="post" style="display:inline"
+                action="{{ url_for('initiative_detach_epic', project_id=project.id, initiative_id=initiative.id, epic_id=e.id) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button class="init-epic-x" type="submit" title="Detach">×</button>
+          </form>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if session.role in ('admin', 'super_user') and available_epics %}
+      <form method="post" class="init-attach-epic-form"
+            action="{{ url_for('initiative_attach_epic', project_id=project.id, initiative_id=initiative.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <select name="epic_id" required>
+          <option value="">— pick an unattached epic —</option>
+          {% for e in available_epics %}
+          <option value="{{ e.id }}">{{ e.title }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-sm btn-primary" type="submit">+ Attach</button>
+      </form>
+      {% elif session.role in ('admin', 'super_user') %}
+      <div class="init-empty-mini">All epics in this project are already attached somewhere.</div>
+      {% endif %}
+    </section>
+  </div>
+
+  {# ── Right column: history ── #}
+  <aside class="init-detail-side">
+    <section class="init-block">
+      <h3>📜 History</h3>
+      {% if not history %}
+      <div class="init-empty-mini">No changes yet.</div>
+      {% else %}
+      <ul class="init-history-list">
+        {% for h in history %}
+        <li class="init-history-item">
+          <div class="init-history-line">
+            <strong>{{ h.display_name }}</strong>
+            <span class="init-history-field">{{ h.field_name }}</span>
+          </div>
+          <div class="init-history-vals">
+            {% if h.old_value %}<span class="init-history-old">{{ h.old_value[:80] }}</span> →{% endif %}
+            <span class="init-history-new">{{ (h.new_value or '∅')[:80] }}</span>
+          </div>
+          <div class="init-history-time">{{ h.created_at|datetimeformat if h.created_at else '' }}</div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </section>
+  </aside>
+</div>
+{% endblock %}

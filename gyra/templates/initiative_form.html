@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}New Initiative — {{ project.name }} — Gyra{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <span class="project-key-badge">{{ project.key }}</span>
+    <h2>🌟 New Initiative</h2>
+  </div>
+  <div class="page-header-right">
+    <a class="btn btn-sm btn-secondary"
+       href="{{ url_for('initiatives_index', project_id=project.id) }}">← Cancel</a>
+  </div>
+</div>
+
+<form method="post"
+      action="{{ url_for('initiative_create', project_id=project.id) }}"
+      class="init-form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+  <label class="init-field">
+    <span>Name</span>
+    <input type="text" name="name" required maxlength="120"
+           placeholder="e.g. v1 Launch · Mobile App · Q3 Demo">
+  </label>
+
+  <label class="init-field">
+    <span>Description — the deep-down goal</span>
+    <textarea name="description" rows="5"
+              placeholder="What does success look like? Who benefits? What's the wasted-work risk?"></textarea>
+  </label>
+
+  <label class="init-field init-field-row">
+    <span>Color</span>
+    <input type="color" name="color" value="#6D28D9">
+  </label>
+
+  <div class="init-rule-block">
+    <h3>📏 Rule type <span class="init-rule-lock-note">(locked once status leaves Draft)</span></h3>
+    <p class="init-rule-help">
+      Pick how progress is measured. Each milestone you add later will use
+      this same rule. Default <strong>priority</strong> matches the Pareto
+      MVP playbook: finish VH first = MVP, then H, M, L, VL.
+    </p>
+    {% for rt in RULE_TYPES %}
+    <label class="init-rule-radio">
+      <input type="radio" name="rule_type" value="{{ rt }}"
+             {% if rt == 'priority' %}checked{% endif %}>
+      <strong>{{ rt }}</strong>
+      <span>{{ RULE_LABELS[rt] }}</span>
+    </label>
+    {% endfor %}
+  </div>
+
+  <div class="init-form-actions">
+    <button class="btn btn-primary" type="submit">Create Initiative</button>
+    <a class="btn btn-secondary"
+       href="{{ url_for('initiatives_index', project_id=project.id) }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

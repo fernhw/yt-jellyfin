@@ -48,7 +48,7 @@
     <nav class="sidebar-nav">
       {% for p in projects %}
       {% set is_current = project is defined and project and project.id == p.id %}
-      {% set sub_endpoints = ['backlog','grooming','standup','dailies','retro','archive','bulk_add'] %}
+      {% set sub_endpoints = ['backlog','grooming','standup','dailies','retro','archive','bulk_add','prioritizer','initiatives_index','initiative_new','initiative_detail'] %}
       {% set more_open = is_current and request.endpoint in sub_endpoints %}
       <div class="sidebar-section{% if is_current %} is-current{% endif %}" data-proj-id="{{ p.id }}">
         <div class="sidebar-proj-head">
@@ -105,6 +105,11 @@
               Bulk Add
             </a>
             {% endif %}
+            <a class="sidebar-link sidebar-link-sm{% if request.endpoint in ('initiatives_index','initiative_new','initiative_detail') and is_current %} active{% endif %}"
+               href="{{ url_for('initiatives_index', project_id=p.id) }}">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.5l2.6 5.3 5.9.86-4.25 4.14 1 5.86L10 14.9l-5.27 2.77 1-5.86L1.5 7.66l5.9-.86L10 1.5z"/></svg>
+              Initiatives
+            </a>
           </div>
         </div>
       </div>
