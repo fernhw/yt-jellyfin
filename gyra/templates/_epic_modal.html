@@ -1,0 +1,116 @@
+{# Global epic edit modal — included from base.html so any page can call window.openEpicModal(id). #}
+<div id="em-bg" class="epic-modal-bg" role="dialog" aria-modal="true" aria-label="Edit epic">
+  <div class="epic-modal-wrap">
+    <div class="em-header">
+      <span id="em-color-dot" class="em-color-dot" style="background:#6B7280" title="Change color"></span>
+      <input id="em-title" class="em-title-input" placeholder="Epic title">
+      <span id="em-status-badge" class="em-status-badge s-planning">Planning</span>
+      <button type="button" class="em-close" id="em-close" aria-label="Close">×</button>
+    </div>
+    <div class="em-body">
+      <div class="em-main">
+        <div id="em-loading" style="padding:40px;text-align:center;color:var(--c-gray-500,#7A6A52)">Loading…</div>
+        <div id="em-content" style="display:none">
+
+          <div class="em-progress-section">
+            <div class="em-progress-row">
+              <span class="em-progress-label">Stories complete</span>
+              <span id="em-pct-count" class="em-progress-pct">0%</span>
+            </div>
+            <div class="em-progress-bar">
+              <div id="em-fill-count" class="em-progress-fill" style="width:0%"></div>
+              <div id="em-today-marker" class="em-progress-marker" style="display:none"></div>
+            </div>
+            <div id="em-progress-meta" class="em-progress-meta"></div>
+          </div>
+
+          <div class="em-progress-section">
+            <div class="em-progress-row">
+              <span class="em-progress-label">Story points complete</span>
+              <span id="em-pct-points" class="em-progress-pct">0%</span>
+            </div>
+            <div class="em-progress-bar">
+              <div id="em-fill-points" class="em-progress-fill is-points" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div class="em-stats-grid">
+            <div class="em-stat-card">
+              <div id="em-stat-stories" class="em-stat-value">0</div>
+              <div class="em-stat-label">Stories</div>
+            </div>
+            <div class="em-stat-card">
+              <div id="em-stat-points"  class="em-stat-value">0</div>
+              <div class="em-stat-label">Points</div>
+            </div>
+            <div class="em-stat-card">
+              <div id="em-stat-done"    class="em-stat-value">0</div>
+              <div class="em-stat-label">Done</div>
+            </div>
+            <div class="em-stat-card">
+              <div id="em-stat-days"    class="em-stat-value">—</div>
+              <div class="em-stat-label">Days left</div>
+            </div>
+          </div>
+
+          <div class="em-section-title">Status breakdown</div>
+          <div id="em-status-bar"    class="em-status-bar"></div>
+          <div id="em-status-legend" class="em-status-legend"></div>
+
+          <div class="em-section-title">Stories <span id="em-story-total" style="color:var(--c-gray-500,#7A6A52);font-weight:600">(0)</span></div>
+          <div id="em-story-list" class="em-story-list">
+            <div style="padding:14px;text-align:center;color:var(--c-gray-500,#7A6A52);font-size:13px">No stories assigned yet.</div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="em-side">
+        <div class="em-side-field">
+          <label class="em-side-label">Status</label>
+          <select id="em-status" class="em-side-select">
+            <option value="planning">Planning</option>
+            <option value="active">Active</option>
+            <option value="on_hold">On hold</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="em-side-field">
+          <label class="em-side-label">Timeline</label>
+          <div class="em-side-row">
+            <input type="date" id="em-start" class="em-side-input" title="Start date">
+            <input type="date" id="em-due"   class="em-side-input" title="Due date">
+          </div>
+          <div id="em-days-badge-wrap" style="margin-top:6px"></div>
+        </div>
+        <div class="em-side-field">
+          <label class="em-side-label">Color</label>
+          <div id="em-color-picker" class="em-color-picker"></div>
+          <div style="display:flex;gap:6px;margin-top:8px;align-items:center">
+            <input type="color" id="em-color-input"
+                   style="width:42px;height:30px;padding:0;border:1.5px solid var(--c-gray-200,#DDD0B8);border-radius:5px;background:#fff;cursor:pointer"
+                   title="Pick a custom color">
+            <button type="button" id="em-autocolor"
+                    class="btn btn-xs btn-secondary"
+                    style="flex:1"
+                    title="Pick the color most different from all active epics in this project">🎨 Auto-color</button>
+          </div>
+        </div>
+        <div class="em-side-field">
+          <label class="em-side-label">Description</label>
+          <textarea id="em-desc" class="em-side-textarea" placeholder="What's this epic about?"></textarea>
+        </div>
+        <div class="em-btn-row">
+          <button type="button" id="em-save"  class="btn btn-primary btn-full">Save</button>
+        </div>
+        <div class="em-btn-row" style="margin-top:8px">
+          <button type="button" id="em-delete" class="btn btn-full" style="background:#fee;color:#a02020;border:1px solid #f3c0c0">Delete epic</button>
+        </div>
+        <div style="margin-top:14px;font-size:11px;color:var(--c-gray-500,#7A6A52)">
+          <div>Created by <span id="em-creator">—</span></div>
+          <div>Created <span id="em-created">—</span></div>
+          <div>Updated <span id="em-updated">—</span></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>

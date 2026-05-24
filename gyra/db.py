@@ -282,6 +282,7 @@ def _migrate_db() -> None:
         ("epics",   "updated_at",  "INTEGER DEFAULT NULL"),
         ("epics",   "order_index", "INTEGER DEFAULT 0"),
         ("epics",   "initiative_id", "INTEGER DEFAULT NULL"),
+        ("epics",   "is_archived", "INTEGER DEFAULT 0"),
     ]
     conn = get_db()
     for table, col, col_def in new_cols:
@@ -725,12 +726,19 @@ def get_stickers(project_id: int):
 
 # ── Epics ─────────────────────────────────────────────────────────────────────
 
-def get_epics(project_id: int):
+def get_epics(project_id: int, include_archived: bool = False):
     conn = get_db()
-    rows = conn.execute(
-        "SELECT * FROM epics WHERE project_id=? ORDER BY order_index, id",
-        (project_id,),
-    ).fetchall()
+    if include_archived:
+        rows = conn.execute(
+            "SELECT * FROM epics WHERE project_id=? ORDER BY order_index, id",
+            (project_id,),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM epics WHERE project_id=? AND COALESCE(is_archived,0)=0 "
+            "ORDER BY order_index, id",
+            (project_id,),
+        ).fetchall()
     conn.close()
     return rows
 
@@ -1393,3 +1401,111 @@ def _overall_for_rule(rule, rollup):
     # priority: simple done/total of all linked stories
     return (100.0 * rollup["done_stories"] / rollup["total_stories"]) \
         if rollup["total_stories"] else 0.0
+
+
+# ── Epic stats / archive (added for Epics management page) ───────────────────
+
+EPIC_SORTS = ("newest", "oldest", "name_asc", "name_desc",
+              "pct_done_desc", "pct_done_asc", "stories_desc", "order")
+
+
+def get_epic_stats(project_id: int, include_archived: bool = False,
+                   archived_only: bool = False, sort: str = "newest",
+                   offset: int = 0, limit: int = 20, q: str = ""):
+    """Return a page of epics with rollup stats.
+    Each row has all epic columns plus:
+      total_stories, done_stories, total_points, done_points,
+      pct_done (float 0..100),
+      pri_vh, pri_h, pri_m, pri_l, pri_vl, pri_unset (counts),
+      initiative_name (str|None)
+    """
+    if sort not in EPIC_SORTS:
+        sort = "newest"
+    conn = get_db()
+
+    where = ["e.project_id = ?"]
+    params = [project_id]
+    if archived_only:
+        where.append("COALESCE(e.is_archived,0) = 1")
+    elif not include_archived:
+        where.append("COALESCE(e.is_archived,0) = 0")
+    q = (q or "").strip()
+    if q:
+        like = "%" + q.replace("%", "\\%").replace("_", "\\_") + "%"
+        where.append("(LOWER(e.title) LIKE LOWER(?) ESCAPE '\\' "
+                     "OR LOWER(COALESCE(e.description,'')) LIKE LOWER(?) ESCAPE '\\' "
+                     "OR LOWER(COALESCE(i.name,'')) LIKE LOWER(?) ESCAPE '\\')")
+        params.extend([like, like, like])
+    where_sql = " AND ".join(where)
+
+    order_sql = {
+        "newest":         "e.created_at DESC, e.id DESC",
+        "oldest":         "e.created_at ASC, e.id ASC",
+        "name_asc":       "LOWER(e.title) ASC",
+        "name_desc":      "LOWER(e.title) DESC",
+        "order":          "e.order_index ASC, e.id ASC",
+        "stories_desc":   "total_stories DESC, e.id DESC",
+        "pct_done_desc":  "pct_done DESC, e.id DESC",
+        "pct_done_asc":   "pct_done ASC, e.id DESC",
+    }[sort]
+
+    sql = f"""
+        SELECT e.*,
+               i.name AS initiative_name,
+               COUNT(s.id) AS total_stories,
+               COALESCE(SUM(CASE WHEN st.is_done THEN 1 ELSE 0 END),0) AS done_stories,
+               COALESCE(SUM(COALESCE(s.story_points,0)),0) AS total_points,
+               COALESCE(SUM(CASE WHEN st.is_done THEN COALESCE(s.story_points,0) ELSE 0 END),0) AS done_points,
+               COALESCE(SUM(CASE WHEN s.priority='VH' THEN 1 ELSE 0 END),0) AS pri_vh,
+               COALESCE(SUM(CASE WHEN s.priority='H'  THEN 1 ELSE 0 END),0) AS pri_h,
+               COALESCE(SUM(CASE WHEN s.priority='M'  THEN 1 ELSE 0 END),0) AS pri_m,
+               COALESCE(SUM(CASE WHEN s.priority='L'  THEN 1 ELSE 0 END),0) AS pri_l,
+               COALESCE(SUM(CASE WHEN s.priority='VL' THEN 1 ELSE 0 END),0) AS pri_vl,
+               COALESCE(SUM(CASE WHEN s.priority IS NULL OR s.priority='' THEN 1 ELSE 0 END),0) AS pri_unset,
+               CASE WHEN COUNT(s.id)=0 THEN 0.0
+                    ELSE 100.0 * SUM(CASE WHEN st.is_done THEN 1 ELSE 0 END) / COUNT(s.id)
+               END AS pct_done
+          FROM epics e
+          LEFT JOIN initiatives i ON i.id = e.initiative_id
+          LEFT JOIN stories s ON s.epic_id = e.id AND COALESCE(s.is_archived,0) = 0
+          LEFT JOIN statuses st ON st.id = s.status_id
+         WHERE {where_sql}
+         GROUP BY e.id
+         ORDER BY {order_sql}
+         LIMIT ? OFFSET ?
+    """
+    rows = conn.execute(sql, (*params, limit, offset)).fetchall()
+    total_sql = (
+        f"SELECT COUNT(*) AS c FROM epics e "
+        f"LEFT JOIN initiatives i ON i.id = e.initiative_id "
+        f"WHERE {where_sql}"
+    )
+    total = conn.execute(total_sql, params).fetchone()["c"]
+    conn.close()
+    return rows, total
+
+
+def set_epic_archived(epic_id: int, archived: bool) -> None:
+    conn = get_db()
+    conn.execute(
+        "UPDATE epics SET is_archived=?, updated_at=? WHERE id=?",
+        (1 if archived else 0, int(time.time()), epic_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def bulk_set_epic_archived(project_id: int, epic_ids, archived: bool) -> int:
+    if not epic_ids:
+        return 0
+    conn = get_db()
+    placeholders = ",".join("?" * len(epic_ids))
+    cur = conn.execute(
+        f"UPDATE epics SET is_archived=?, updated_at=? "
+        f"WHERE project_id=? AND id IN ({placeholders})",
+        (1 if archived else 0, int(time.time()), project_id, *epic_ids),
+    )
+    n = cur.rowcount
+    conn.commit()
+    conn.close()
+    return n

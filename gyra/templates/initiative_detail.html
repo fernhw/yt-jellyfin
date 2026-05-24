@@ -196,17 +196,115 @@
       {% endif %}
 
       {% if session.role in ('admin', 'super_user') and available_epics %}
-      <form method="post" class="init-attach-epic-form"
+      <form method="post" id="init-attach-epic-form"
             action="{{ url_for('initiative_attach_epic', project_id=project.id, initiative_id=initiative.id) }}">
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-        <select name="epic_id" required>
-          <option value="">— pick an unattached epic —</option>
-          {% for e in available_epics %}
-          <option value="{{ e.id }}">{{ e.title }}</option>
-          {% endfor %}
-        </select>
-        <button class="btn btn-sm btn-primary" type="submit">+ Attach</button>
+        <button type="button" class="btn btn-sm btn-primary"
+                id="init-attach-open">+ Attach epics…</button>
       </form>
+
+      <div class="init-epic-picker-bg" id="init-epic-picker-bg" hidden>
+        <div class="init-epic-picker">
+          <div class="iep-header">
+            <h3>Attach epics</h3>
+            <button type="button" class="iep-close" id="iep-close" aria-label="Close">×</button>
+          </div>
+          <div class="iep-toolbar">
+            <input type="search" id="iep-search"
+                   placeholder="Filter by name…" autocomplete="off">
+            <div class="iep-counter"><span id="iep-count">0</span> selected</div>
+            <button type="button" class="btn btn-xs btn-secondary" id="iep-all">All</button>
+            <button type="button" class="btn btn-xs btn-secondary" id="iep-none">None</button>
+          </div>
+          <div class="iep-list" id="iep-list">
+            {% for e in available_epics %}
+            <label class="iep-row" data-title="{{ e.title|lower }}">
+              <input type="checkbox" class="iep-cb" value="{{ e.id }}">
+              <span class="iep-dot" style="background: {{ e.color or '#6B7280' }}"></span>
+              <span class="iep-title">{{ e.title }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          <div class="iep-footer">
+            <button type="button" class="btn btn-sm btn-secondary" id="iep-cancel">Cancel</button>
+            <button type="button" class="btn btn-sm btn-primary" id="iep-attach" disabled>
+              Attach <span id="iep-attach-count">0</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <script>
+      (function(){
+        const bg     = document.getElementById('init-epic-picker-bg');
+        const openBt = document.getElementById('init-attach-open');
+        const closeX = document.getElementById('iep-close');
+        const cancel = document.getElementById('iep-cancel');
+        const search = document.getElementById('iep-search');
+        const list   = document.getElementById('iep-list');
+        const allBt  = document.getElementById('iep-all');
+        const noneBt = document.getElementById('iep-none');
+        const count  = document.getElementById('iep-count');
+        const cAtt   = document.getElementById('iep-attach-count');
+        const attach = document.getElementById('iep-attach');
+        const form   = document.getElementById('init-attach-epic-form');
+
+        function checkboxes(){ return Array.from(list.querySelectorAll('.iep-cb')); }
+        function visibleRows(){
+          return Array.from(list.querySelectorAll('.iep-row')).filter(r => r.style.display !== 'none');
+        }
+        function updateCount(){
+          const n = checkboxes().filter(c => c.checked).length;
+          count.textContent = n; cAtt.textContent = n;
+          attach.disabled = n === 0;
+        }
+        function applyFilter(){
+          const q = (search.value || '').trim().toLowerCase();
+          list.querySelectorAll('.iep-row').forEach(r => {
+            r.style.display = (!q || r.dataset.title.includes(q)) ? '' : 'none';
+          });
+        }
+        function open(){
+          bg.hidden = false;
+          search.value = '';
+          checkboxes().forEach(c => c.checked = false);
+          applyFilter(); updateCount();
+          setTimeout(() => search.focus(), 30);
+        }
+        function close(){ bg.hidden = true; }
+
+        openBt.addEventListener('click', open);
+        closeX.addEventListener('click', close);
+        cancel.addEventListener('click', close);
+        bg.addEventListener('click', e => { if (e.target === bg) close(); });
+        document.addEventListener('keydown', e => {
+          if (!bg.hidden && e.key === 'Escape') close();
+        });
+        search.addEventListener('input', applyFilter);
+        list.addEventListener('change', e => {
+          if (e.target.classList.contains('iep-cb')) updateCount();
+        });
+        allBt.addEventListener('click', () => {
+          visibleRows().forEach(r => { r.querySelector('.iep-cb').checked = true; });
+          updateCount();
+        });
+        noneBt.addEventListener('click', () => {
+          visibleRows().forEach(r => { r.querySelector('.iep-cb').checked = false; });
+          updateCount();
+        });
+        attach.addEventListener('click', () => {
+          // Move checked boxes into the form, submit it.
+          form.querySelectorAll('input[name="epic_id"]').forEach(n => n.remove());
+          checkboxes().filter(c => c.checked).forEach(c => {
+            const h = document.createElement('input');
+            h.type = 'hidden'; h.name = 'epic_id'; h.value = c.value;
+            form.appendChild(h);
+          });
+          attach.disabled = true;
+          form.submit();
+        });
+      })();
+      </script>
       {% elif session.role in ('admin', 'super_user') %}
       <div class="init-empty-mini">All epics in this project are already attached somewhere.</div>
       {% endif %}

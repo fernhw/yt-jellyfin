@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — Manage Epics — Gyra{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <span class="project-key-badge">{{ project.key }}</span>
+    <h2>📚 Manage Epics</h2>
+  </div>
+  <div class="page-header-right" id="ep-mgr-header-actions">
+    <button id="ep-mgr-new" class="btn btn-sm btn-primary">+ New epic</button>
+    <a class="btn btn-sm btn-secondary"
+       href="{{ url_for('board', project_id=project.id) }}">← Back to board</a>
+  </div>
+</div>
+
+<div class="ep-mgr-toolbar">
+  <div class="ep-mgr-tabs">
+    <button class="ep-mgr-tab is-active" data-archived="0">Active</button>
+    <button class="ep-mgr-tab" data-archived="1">Archived</button>
+    <button class="ep-mgr-tab" data-archived="all">All</button>
+  </div>
+
+  <label class="ep-mgr-sort">
+    <span>Sort:</span>
+    <select id="ep-mgr-sort">
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+      <option value="order">Manual order (drag)</option>
+      <option value="name_asc">Name A–Z</option>
+      <option value="name_desc">Name Z–A</option>
+      <option value="pct_done_desc">% done ↓</option>
+      <option value="pct_done_asc">% done ↑</option>
+      <option value="stories_desc"># stories ↓</option>
+    </select>
+  </label>
+
+  <input id="ep-mgr-search" type="search" class="ep-mgr-search"
+         placeholder="Filter by name…" autocomplete="off">
+
+  <div class="ep-mgr-bulk" id="ep-mgr-bulk" style="display:none">
+    <span id="ep-mgr-bulk-count">0 selected</span>
+    <button class="btn btn-xs btn-secondary" id="ep-mgr-bulk-archive">Archive</button>
+    <button class="btn btn-xs btn-secondary" id="ep-mgr-bulk-unarchive">Unarchive</button>
+    <button class="btn btn-xs btn-secondary" id="ep-mgr-bulk-clear">Clear</button>
+  </div>
+</div>
+
+<div id="ep-mgr-list" class="ep-mgr-list"
+     data-pid="{{ project.id }}"
+     data-csrf="{{ csrf_token() }}"></div>
+
+<div id="ep-mgr-loading" class="ep-mgr-loading" style="display:none">Loading…</div>
+<div id="ep-mgr-end" class="ep-mgr-end" style="display:none">— end of list —</div>
+<div id="ep-mgr-empty" class="ep-mgr-empty" style="display:none">No epics here yet.</div>
+
+<template id="ep-mgr-row-tpl">
+  <div class="ep-mgr-row" draggable="true">
+    <label class="ep-mgr-check">
+      <input type="checkbox" class="ep-mgr-cb">
+    </label>
+    <span class="ep-mgr-drag" title="Drag to reorder">⋮⋮</span>
+    <span class="ep-mgr-color-wrap" title="Click to change color">
+      <span class="ep-mgr-color"></span>
+      <input type="color" class="ep-mgr-color-input" tabindex="-1">
+    </span>
+    <div class="ep-mgr-main">
+      <div class="ep-mgr-title-row">
+        <a class="ep-mgr-title" target="_blank"></a>
+        <span class="ep-mgr-init"></span>
+        <span class="ep-mgr-arch-pill" style="display:none">archived</span>
+      </div>
+      <div class="ep-mgr-bar">
+        <div class="ep-mgr-bar-fill"></div>
+      </div>
+      <div class="ep-mgr-meta">
+        <span class="ep-mgr-pct"></span>
+        <span class="ep-mgr-sep">·</span>
+        <span class="ep-mgr-stories"></span>
+        <span class="ep-mgr-sep">·</span>
+        <span class="ep-mgr-points"></span>
+        <span class="ep-mgr-sep">·</span>
+        <span class="ep-mgr-pri">
+          <span class="ep-mgr-pri-pill ep-pri-VH" title="Very High">VH <b></b></span>
+          <span class="ep-mgr-pri-pill ep-pri-H"  title="High">H <b></b></span>
+          <span class="ep-mgr-pri-pill ep-pri-M"  title="Medium">M <b></b></span>
+          <span class="ep-mgr-pri-pill ep-pri-L"  title="Low">L <b></b></span>
+          <span class="ep-mgr-pri-pill ep-pri-VL" title="Very Low">VL <b></b></span>
+          <span class="ep-mgr-pri-pill ep-pri-unset" title="No priority">— <b></b></span>
+        </span>
+      </div>
+    </div>
+    <div class="ep-mgr-actions">
+      <button class="btn btn-xs btn-secondary ep-mgr-archive-btn"></button>
+    </div>
+  </div>
+</template>
+
+<script>
+(function(){
+  const list   = document.getElementById('ep-mgr-list');
+  const tpl    = document.getElementById('ep-mgr-row-tpl');
+  const loadEl = document.getElementById('ep-mgr-loading');
+  const endEl  = document.getElementById('ep-mgr-end');
+  const empty  = document.getElementById('ep-mgr-empty');
+  const sortSel= document.getElementById('ep-mgr-sort');
+  const search = document.getElementById('ep-mgr-search');
+  const bulk   = document.getElementById('ep-mgr-bulk');
+  const bulkN  = document.getElementById('ep-mgr-bulk-count');
+  const pid    = list.dataset.pid;
+  const csrf   = list.dataset.csrf;
+  const PAGE   = 20;
+
+  let archivedMode = '0';
+  let sort         = 'newest';
+  let offset       = 0;
+  let total        = 0;
+  let loading      = false;
+  let exhausted    = false;
+  let allRows      = [];
+
+  function selectedIds() {
+    return [...list.querySelectorAll('.ep-mgr-cb:checked')]
+      .map(c => parseInt(c.closest('.ep-mgr-row').dataset.id, 10));
+  }
+  function refreshBulk() {
+    const n = selectedIds().length;
+    if (n === 0) { bulk.style.display = 'none'; return; }
+    bulk.style.display = '';
+    bulkN.textContent = n + ' selected';
+  }
+
+  // ── Color helpers (CIE76 distance in Lab) ──────────────────────────
+  function hexToRgb(h){
+    h = (h||'').replace('#','');
+    if (h.length === 3) h = h.split('').map(c=>c+c).join('');
+    const n = parseInt(h,16);
+    return [(n>>16)&255,(n>>8)&255,n&255];
+  }
+  function rgbToHex(r,g,b){
+    const h = (v)=>('0'+Math.max(0,Math.min(255,Math.round(v))).toString(16)).slice(-2);
+    return '#'+h(r)+h(g)+h(b);
+  }
+  function rgbToLab(r,g,b){
+    // sRGB → linear
+    let R=r/255, G=g/255, B=b/255;
+    [R,G,B] = [R,G,B].map(v => v>0.04045 ? Math.pow((v+0.055)/1.055,2.4) : v/12.92);
+    // linear → XYZ (D65)
+    const X = (R*0.4124 + G*0.3576 + B*0.1805) / 0.95047;
+    const Y = (R*0.2126 + G*0.7152 + B*0.0722) / 1.00000;
+    const Z = (R*0.0193 + G*0.1192 + B*0.9505) / 1.08883;
+    const f = (t)=> t > 0.008856 ? Math.cbrt(t) : (7.787*t + 16/116);
+    const fx=f(X), fy=f(Y), fz=f(Z);
+    return [116*fy - 16, 500*(fx-fy), 200*(fy-fz)];
+  }
+  function labDist(a,b){
+    const dL=a[0]-b[0], dA=a[1]-b[1], dB=a[2]-b[2];
+    return Math.sqrt(dL*dL + dA*dA + dB*dB);
+  }
+  function hslToRgb(h, s, l){
+    h/=360; s/=100; l/=100;
+    if (s === 0) { const v = l*255; return [v,v,v]; }
+    const q = l < 0.5 ? l*(1+s) : l + s - l*s;
+    const p = 2*l - q;
+    const hue2rgb = (t)=>{
+      if (t<0) t+=1; if (t>1) t-=1;
+      if (t<1/6) return p + (q-p)*6*t;
+      if (t<1/2) return q;
+      if (t<2/3) return p + (q-p)*(2/3 - t)*6;
+      return p;
+    };
+    return [hue2rgb(h+1/3)*255, hue2rgb(h)*255, hue2rgb(h-1/3)*255];
+  }
+  function pickFurthestColor(existingHexes, selfId){
+    const existing = existingHexes
+      .filter(Boolean)
+      .map(h => rgbToLab(...hexToRgb(h)));
+    let best = null, bestScore = -1;
+    // Sample a HSL grid biased toward pleasant saturation/lightness.
+    const HUES = 36, SATS = [55, 70, 85], LIGHTS = [45, 55, 65];
+    for (let i=0; i<HUES; i++){
+      const h = (i * 360 / HUES);
+      for (const s of SATS) for (const l of LIGHTS){
+        const rgb = hslToRgb(h, s, l);
+        const lab = rgbToLab(...rgb);
+        let minD = Infinity;
+        for (const e of existing){
+          const d = labDist(lab, e);
+          if (d < minD) minD = d;
+          if (d < bestScore) break; // can't beat current best, prune
+        }
+        if (minD > bestScore){
+          bestScore = minD;
+          best = rgbToHex(...rgb);
+        }
+      }
+    }
+    return best || '#6B7280';
+  }
+
+  async function patchEpic(id, fields){
+    const r = await fetch('/api/epic/' + id, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json','X-CSRF-Token':csrf},
+      body: JSON.stringify(fields)
+    });
+    return r.ok;
+  }
+
+  function renderRow(ep) {
+    const node = tpl.content.firstElementChild.cloneNode(true);
+    node.dataset.id = ep.id;
+    node.querySelector('.ep-mgr-color').style.background = ep.color || '#6B7280';
+    const colorInput = node.querySelector('.ep-mgr-color-input');
+    colorInput.value = (ep.color || '#6B7280');
+    colorInput.addEventListener('input', () => {
+      node.querySelector('.ep-mgr-color').style.background = colorInput.value;
+    });
+    colorInput.addEventListener('change', async () => {
+      const ok = await patchEpic(ep.id, {color: colorInput.value});
+      if (ok) {
+        ep.color = colorInput.value;
+        const local = allRows.find(x => x.id === ep.id);
+        if (local) local.color = colorInput.value;
+      }
+    });
+    const a = node.querySelector('.ep-mgr-title');
+    a.textContent = ep.title;
+    a.href = '#';
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (typeof window.openEpicModal === 'function') {
+        window.openEpicModal(ep.id, { onChange: () => reset() });
+      } else {
+        window.location.href = '/project/' + pid + '/board?epic=' + ep.id;
+      }
+    });
+    const init = node.querySelector('.ep-mgr-init');
+    if (ep.initiative_name) {
+      init.textContent = '🌟 ' + ep.initiative_name;
+    } else { init.style.display = 'none'; }
+    if (ep.is_archived) node.querySelector('.ep-mgr-arch-pill').style.display = '';
+    node.querySelector('.ep-mgr-bar-fill').style.width = ep.pct_done + '%';
+    node.querySelector('.ep-mgr-pct').textContent = ep.pct_done + '%';
+    node.querySelector('.ep-mgr-stories').textContent =
+      ep.done_stories + '/' + ep.total_stories + ' stories';
+    node.querySelector('.ep-mgr-points').textContent =
+      ep.done_points + '/' + ep.total_points + ' pts';
+    const pri = ep.pri || {};
+    const setCount = (cls, val) => {
+      const el = node.querySelector('.' + cls + ' b');
+      el.textContent = val;
+      if (!val) el.parentElement.classList.add('is-zero');
+    };
+    setCount('ep-pri-VH', pri.VH);
+    setCount('ep-pri-H',  pri.H);
+    setCount('ep-pri-M',  pri.M);
+    setCount('ep-pri-L',  pri.L);
+    setCount('ep-pri-VL', pri.VL);
+    setCount('ep-pri-unset', pri.unset);
+    const arBtn = node.querySelector('.ep-mgr-archive-btn');
+    arBtn.textContent = ep.is_archived ? 'Unarchive' : 'Archive';
+    arBtn.addEventListener('click', () => toggleArchive([ep.id], !ep.is_archived));
+    node.querySelector('.ep-mgr-cb').addEventListener('change', refreshBulk);
+    attachDrag(node);
+    return node;
+  }
+
+  function attachDrag(node) {
+    node.addEventListener('dragstart', e => {
+      node.classList.add('is-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', node.dataset.id);
+    });
+    node.addEventListener('dragend', () => {
+      node.classList.remove('is-dragging');
+      list.querySelectorAll('.ep-mgr-row').forEach(r => r.classList.remove('drop-above'));
+      persistOrder();
+    });
+    node.addEventListener('dragover', e => {
+      if (sort !== 'order') return;
+      e.preventDefault();
+      const dragging = list.querySelector('.is-dragging');
+      if (!dragging || dragging === node) return;
+      const rect = node.getBoundingClientRect();
+      const before = (e.clientY - rect.top) < rect.height / 2;
+      list.insertBefore(dragging, before ? node : node.nextSibling);
+    });
+  }
+
+  async function persistOrder() {
+    if (sort !== 'order') return;
+    const ids = [...list.querySelectorAll('.ep-mgr-row')]
+      .map(r => parseInt(r.dataset.id, 10));
+    try {
+      await fetch('/api/project/' + pid + '/epics/reorder', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','X-CSRF-Token':csrf},
+        body: JSON.stringify({ids})
+      });
+    } catch (e) { console.error(e); }
+  }
+
+  async function toggleArchive(ids, archived) {
+    try {
+      await fetch('/api/project/' + pid + '/epics/bulk-archive', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','X-CSRF-Token':csrf},
+        body: JSON.stringify({ids, archived})
+      });
+      reset();
+    } catch (e) { console.error(e); }
+  }
+
+  async function loadMore() {
+    if (loading || exhausted) return;
+    loading = true;
+    loadEl.style.display = '';
+    try {
+      const url = '/api/project/' + pid + '/epics/stats'
+        + '?offset=' + offset + '&limit=' + PAGE
+        + '&sort=' + encodeURIComponent(sort)
+        + '&archived=' + encodeURIComponent(archivedMode)
+        + '&q=' + encodeURIComponent((search.value || '').trim());
+      const r = await fetch(url);
+      const j = await r.json();
+      if (!j.ok) throw new Error('bad response');
+      total = j.total;
+      allRows = allRows.concat(j.epics);
+      applyFilter();
+      offset += j.epics.length;
+      if (offset >= total || j.epics.length === 0) exhausted = true;
+    } catch (e) { console.error(e); }
+    finally {
+      loading = false;
+      loadEl.style.display = 'none';
+      endEl.style.display = exhausted && allRows.length > 0 ? '' : 'none';
+      empty.style.display = exhausted && allRows.length === 0 ? '' : 'none';
+    }
+  }
+
+  function applyFilter() {
+    const q = (search.value || '').trim().toLowerCase();
+    list.innerHTML = '';
+    const filtered = q
+      ? allRows.filter(e => e.title.toLowerCase().includes(q))
+      : allRows;
+    filtered.forEach(ep => list.appendChild(renderRow(ep)));
+    list.classList.toggle('drag-enabled', sort === 'order');
+  }
+
+  function reset() {
+    offset = 0; total = 0; exhausted = false; allRows = [];
+    list.innerHTML = ''; endEl.style.display = 'none'; empty.style.display = 'none';
+    loadMore();
+  }
+  // Exposed so the global epic context-menu / modal can refresh this page.
+  window.__epicListReset = reset;
+
+  // Tab switching
+  document.querySelectorAll('.ep-mgr-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ep-mgr-tab').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      archivedMode = btn.dataset.archived;
+      reset();
+    });
+  });
+  sortSel.addEventListener('change', () => { sort = sortSel.value; reset(); });
+  let _searchTimer = null;
+  search.addEventListener('input', () => {
+    // Re-filter loaded rows immediately for snappy feedback…
+    applyFilter();
+    // …then hit the server (debounced) so results past the current page are included.
+    clearTimeout(_searchTimer);
+    _searchTimer = setTimeout(() => reset(), 250);
+  });
+
+  // Bulk buttons
+  document.getElementById('ep-mgr-bulk-archive').onclick   = () => toggleArchive(selectedIds(), true);
+  document.getElementById('ep-mgr-bulk-unarchive').onclick = () => toggleArchive(selectedIds(), false);
+  document.getElementById('ep-mgr-bulk-clear').onclick = () => {
+    list.querySelectorAll('.ep-mgr-cb').forEach(c => c.checked = false);
+    refreshBulk();
+  };
+
+  // New epic
+  document.getElementById('ep-mgr-new').addEventListener('click', async () => {
+    const title = (prompt('New epic title:') || '').trim();
+    if (!title) return;
+    try {
+      const r = await fetch('/api/project/' + pid + '/epics', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','X-CSRF-Token':csrf},
+        body: JSON.stringify({title, color: '#6B7280', description: ''})
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) { alert('Could not create epic' + (j.error ? ': ' + j.error : '')); return; }
+      // Switch to Active tab so the new row is visible, then open the modal for editing.
+      const activeTab = document.querySelector('.ep-mgr-tab[data-archived="0"]');
+      if (activeTab && !activeTab.classList.contains('is-active')) activeTab.click();
+      else reset();
+      if (typeof window.openEpicModal === 'function' && j.id) {
+        setTimeout(() => window.openEpicModal(j.id, { onChange: () => reset() }), 50);
+      }
+    } catch (e) {
+      alert('Network error: ' + e);
+    }
+  });
+
+  // Infinite scroll — the layout's `.main-content` is the actual scroll container
+  // (window itself never scrolls because `.layout { overflow: hidden }`).
+  const scroller = document.querySelector('.main-content') || window;
+  function onScroll() {
+    const el = (scroller === window) ? document.documentElement : scroller;
+    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 400;
+    if (nearBottom) loadMore();
+  }
+  scroller.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+
+  // If the first page doesn't fill the viewport, keep loading until it does
+  // (or until we exhaust). Otherwise the user has nothing to scroll on.
+  async function fillViewport() {
+    for (let i = 0; i < 10 && !exhausted; i++) {
+      const el = (scroller === window) ? document.documentElement : scroller;
+      if (el.scrollHeight > el.clientHeight + 50) break;
+      await loadMore();
+    }
+  }
+  const _origReset = reset;
+  window.__epicListReset = function() { _origReset(); setTimeout(fillViewport, 50); };
+
+  reset();
+  setTimeout(fillViewport, 100);
+})();
+</script>
+{% endblock %}

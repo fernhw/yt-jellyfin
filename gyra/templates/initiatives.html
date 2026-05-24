@@ -52,24 +52,103 @@
      href="{{ url_for('initiative_detail', project_id=project.id, initiative_id=it.id) }}"
      style="--init-color: {{ it.color }}">
     <div class="init-card-head">
-      <span class="init-status-pill init-status-{{ it.status }}">{{ STATUS_LABELS[it.status] }}</span>
+      <span class="init-status-pill init-status-{{ it.status }}">
+        {% if it.status == 'active' %}<span class="init-pulse-dot"></span>{% endif %}
+        {{ STATUS_LABELS[it.status] }}
+      </span>
       <span class="init-rule-pill" title="{{ RULE_LABELS[it.rule_type] }}">{{ it.rule_type }}</span>
     </div>
     <div class="init-card-name">{{ it.name }}</div>
     {% if it.description %}
-    <div class="init-card-desc">{{ it.description[:140] }}{% if it.description|length > 140 %}…{% endif %}</div>
+    <div class="init-card-desc">{{ it.description[:160] }}{% if it.description|length > 160 %}…{% endif %}</div>
     {% endif %}
-    <div class="init-card-meta">
-      <span>{{ it.epic_count }} epic{{ '' if it.epic_count == 1 else 's' }}</span>
-      <span>·</span>
-      <span>{{ it.milestone_count }} milestone{{ '' if it.milestone_count == 1 else 's' }}</span>
+
+    <div class="init-card-stats">
+      <div class="init-card-stat">
+        <div class="init-card-stat-v">{{ it.epic_count }}</div>
+        <div class="init-card-stat-l">Epics</div>
+      </div>
+      <div class="init-card-stat">
+        <div class="init-card-stat-v">{{ it.done_stories }}<span class="init-card-stat-of">/{{ it.total_stories }}</span></div>
+        <div class="init-card-stat-l">Stories</div>
+      </div>
+      <div class="init-card-stat">
+        <div class="init-card-stat-v">{{ it.done_points }}<span class="init-card-stat-of">/{{ it.total_points }}</span></div>
+        <div class="init-card-stat-l">Points</div>
+      </div>
+      <div class="init-card-stat">
+        <div class="init-card-stat-v">{{ it.milestones_hit }}<span class="init-card-stat-of">/{{ it.milestones_total }}</span></div>
+        <div class="init-card-stat-l">Milestones</div>
+      </div>
     </div>
+
+    {% if it.pri_chips %}
+    <div class="init-card-pri">
+      <span class="init-card-pri-label">Priority mix</span>
+      <div class="init-card-pri-strip">
+        {% for c in it.pri_chips %}
+        <span class="init-card-pri-chip ipc-{{ c.code }}"
+              title="{{ c.code }}: {{ c.done }}/{{ c.total }} done ({{ c.pct|round(0)|int }}%)">
+          <span class="ipc-code">{{ c.code }}</span>
+          <span class="ipc-count">{{ c.done }}/{{ c.total }}</span>
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     <div class="init-card-bar">
       <div class="init-card-bar-fill" style="width: {{ it.overall_pct|round(1) }}%"></div>
+      <span class="init-card-bar-text">{{ it.overall_pct|round(1) }}%</span>
     </div>
-    <div class="init-card-pct">{{ it.overall_pct|round(1) }}% overall</div>
+    <div class="init-card-progress-row">
+      <span class="init-card-remaining">
+        {{ it.remaining_stories }} stories · {{ it.remaining_points }} pts left
+      </span>
+      <span class="init-card-rule-tag" title="{{ RULE_LABELS[it.rule_type] }}">{{ it.rule_type }}</span>
+    </div>
+
+    {% if it.next_milestone %}
+    <div class="init-card-next">
+      <div class="init-card-next-head">
+        <span class="init-card-next-label">🎯 Next: <strong>{{ it.next_milestone }}</strong></span>
+        <span class="init-card-next-pct">{{ it.next_milestone_pct|round(0)|int }}%</span>
+      </div>
+      <div class="init-card-next-bar">
+        <div class="init-card-next-bar-fill"
+             style="width: {{ it.next_milestone_pct|round(1) }}%"></div>
+      </div>
+      <div class="init-card-next-meta">{{ it.next_milestone_label }}</div>
+    </div>
+    {% elif it.milestones_total > 0 %}
+    <div class="init-card-next is-all-done">🎉 All milestones achieved</div>
+    {% endif %}
+
+    <div class="init-card-foot">
+      <span><span class="ic-foot-dot">●</span> {{ STATUS_LABELS[it.status] }}</span>
+      <time class="init-card-updated" datetime="{{ it.updated_at }}"
+            data-ts="{{ it.updated_at }}">updated {{ it.updated_at }}</time>
+    </div>
   </a>
   {% endfor %}
 </div>
 {% endif %}
+
+<script>
+(function(){
+  function rel(ts){
+    var n = Math.floor(Date.now()/1000), d = n - ts;
+    if (d < 60)        return 'just now';
+    if (d < 3600)      return Math.floor(d/60)   + 'm ago';
+    if (d < 86400)     return Math.floor(d/3600) + 'h ago';
+    if (d < 86400*30)  return Math.floor(d/86400) + 'd ago';
+    if (d < 86400*365) return Math.floor(d/(86400*30)) + 'mo ago';
+    return Math.floor(d/(86400*365)) + 'y ago';
+  }
+  document.querySelectorAll('.init-card-updated[data-ts]').forEach(function(el){
+    var ts = parseInt(el.dataset.ts, 10);
+    if (!isNaN(ts)) el.textContent = 'updated ' + rel(ts);
+  });
+})();
+</script>
 {% endblock %}

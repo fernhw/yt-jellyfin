@@ -48,7 +48,7 @@
     <nav class="sidebar-nav">
       {% for p in projects %}
       {% set is_current = project is defined and project and project.id == p.id %}
-      {% set sub_endpoints = ['backlog','grooming','standup','dailies','retro','archive','bulk_add','prioritizer','initiatives_index','initiative_new','initiative_detail'] %}
+      {% set sub_endpoints = ['backlog','grooming','standup','dailies','retro','archive','bulk_add','prioritizer','initiatives_index','initiative_new','initiative_detail','epics_manage'] %}
       {% set more_open = is_current and request.endpoint in sub_endpoints %}
       <div class="sidebar-section{% if is_current %} is-current{% endif %}" data-proj-id="{{ p.id }}">
         <div class="sidebar-proj-head">
@@ -72,6 +72,11 @@
                href="{{ url_for('initiatives_index', project_id=p.id) }}">
               <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.5l2.6 5.3 5.9.86-4.25 4.14 1 5.86L10 14.9l-5.27 2.77 1-5.86L1.5 7.66l5.9-.86L10 1.5z"/></svg>
               Initiatives
+            </a>
+            <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'epics_manage' and is_current %} active{% endif %}"
+               href="{{ url_for('epics_manage', project_id=p.id) }}">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 3h6v2H7V7zm0 4h6v2H7v-2z"/></svg>
+              Manage Epics
             </a>
             <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'backlog' and is_current %} active{% endif %}"
                href="{{ url_for('backlog', project_id=p.id) }}">
@@ -389,6 +394,10 @@
 {% endif %}
 
 <script src="{{ url_for('static', filename='js/gyra.js') }}"></script>
+{% if session.user_id %}
+  {% include '_epic_modal.html' %}
+  <script src="{{ url_for('static', filename='js/epic_modal.js') }}"></script>
+{% endif %}
 <script>
 // Sidebar collapse toggle
 (function () {

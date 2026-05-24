@@ -9,7 +9,8 @@ from flask import (abort, flash, jsonify, redirect, render_template, request,
                    session, url_for)
 
 from auth import enforce_csrf, login_required
-from db import (add_initiative_milestone, create_initiative,
+from db import (add_initiative_milestone, compute_initiative_rollup,
+                create_initiative,
                 delete_initiative, delete_initiative_milestone,
                 evaluate_initiative_progress, get_db, get_initiative,
                 get_initiative_history, get_initiatives, get_project,
@@ -68,12 +69,40 @@ def register(app) -> None:
         if status_filter not in INIT_STATUSES:
             status_filter = None
         items = get_initiatives(project_id, status_filter)
-        # Attach overall progress
+        # Attach overall progress + story/points rollup + next milestone
         rows = []
         for it in items:
-            overall, _ms = evaluate_initiative_progress(it["id"])
+            overall, mss = evaluate_initiative_progress(it["id"])
+            roll = compute_initiative_rollup(it["id"])
             d = dict(it)
             d["overall_pct"] = overall
+            d["total_stories"] = roll["total_stories"]
+            d["done_stories"]  = roll["done_stories"]
+            d["total_points"]  = roll["total_points"]
+            d["done_points"]   = roll["done_points"]
+            d["milestones_hit"]   = sum(1 for m in mss if m["achieved"])
+            d["milestones_total"] = len(mss)
+            nxt = next((m for m in mss if not m["achieved"]), None)
+            d["next_milestone"]      = nxt["name"]  if nxt else None
+            d["next_milestone_pct"]  = nxt["progress_pct"] if nxt else None
+            d["next_milestone_label"] = nxt["label"] if nxt else None
+            # Priority breakdown for the chip strip
+            pri_chips = []
+            for pcode in ("VH", "H", "M", "L", "VL"):
+                bp = roll["by_priority"].get(pcode, {})
+                tot = bp.get("total", 0)
+                if tot:
+                    pri_chips.append({
+                        "code": pcode,
+                        "total": tot,
+                        "done": bp.get("done", 0),
+                        "pct": (bp.get("done", 0) / tot * 100) if tot else 0,
+                    })
+            d["pri_chips"] = pri_chips
+            d["remaining_stories"] = max(
+                0, roll["total_stories"] - roll["done_stories"])
+            d["remaining_points"] = max(
+                0, roll["total_points"] - roll["done_points"])
             rows.append(d)
         return render_template(
             "initiatives.html",
@@ -295,30 +324,49 @@ def register(app) -> None:
         project, init = _check_initiative(project_id, initiative_id)
         _need_writer()
         enforce_csrf()
-        try:
-            epic_id = int(request.form.get("epic_id") or 0)
-        except ValueError:
-            epic_id = 0
-        if epic_id <= 0:
-            flash("Pick an epic to attach.", "error")
+        # Accept either a single `epic_id` or a multi-checkbox list of them.
+        raw_ids = request.form.getlist("epic_id")
+        if not raw_ids and request.form.get("epic_id"):
+            raw_ids = [request.form.get("epic_id")]
+        epic_ids = []
+        for v in raw_ids:
+            try:
+                n = int(v)
+            except (TypeError, ValueError):
+                continue
+            if n > 0:
+                epic_ids.append(n)
+        if not epic_ids:
+            flash("Pick at least one epic to attach.", "error")
             return redirect(url_for("initiative_detail",
                                     project_id=project_id,
                                     initiative_id=initiative_id))
         conn = get_db()
-        ep = conn.execute(
-            "SELECT id, title, project_id, initiative_id FROM epics WHERE id=?",
-            (epic_id,)).fetchone()
+        placeholders = ",".join("?" * len(epic_ids))
+        rows = conn.execute(
+            f"SELECT id, title, project_id, initiative_id FROM epics "
+            f"WHERE id IN ({placeholders})",
+            epic_ids).fetchall()
         conn.close()
-        if not ep or ep["project_id"] != project_id:
-            flash("Epic not found in this project.", "error")
-        elif ep["initiative_id"] is not None:
-            flash("Epic already belongs to another initiative — detach first.",
-                  "error")
-        else:
-            set_epic_initiative(epic_id, initiative_id)
+        attached, skipped = [], []
+        for ep in rows:
+            if ep["project_id"] != project_id:
+                skipped.append(ep["title"])
+                continue
+            if ep["initiative_id"] is not None and ep["initiative_id"] != initiative_id:
+                skipped.append(ep["title"])
+                continue
+            if ep["initiative_id"] == initiative_id:
+                continue  # already attached here
+            set_epic_initiative(ep["id"], initiative_id)
             log_initiative_change(initiative_id, session["user_id"],
                                   "Epic attached", None, ep["title"])
-            flash(f"Epic “{ep['title']}” attached.", "success")
+            attached.append(ep["title"])
+        if attached:
+            flash(f"Attached {len(attached)} epic(s): " + ", ".join(attached), "success")
+        if skipped:
+            flash(f"Skipped {len(skipped)} (already attached elsewhere): "
+                  + ", ".join(skipped), "error")
         return redirect(url_for("initiative_detail",
                                 project_id=project_id,
                                 initiative_id=initiative_id))
