@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>GYRA — Pricing Strategy (working doc)</title>
+<style>
+  :root{
+    --bg:#F9F5EE; --panel:#EDE4D0; --line:#DDD0B8; --ink:#1A1208;
+    --muted:#7A6A52; --accent:#7C4A1E; --accent2:#A0632A;
+    --good:#059669; --warn:#92400E; --bad:#991B1B;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px 24px 80px; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    line-height:1.55; font-size:15px;
+  }
+  .wrap{max-width:880px; margin:0 auto}
+  header{
+    border-bottom:2px solid var(--line); padding-bottom:18px; margin-bottom:28px;
+  }
+  header .tag{
+    display:inline-block; background:var(--accent); color:#fff;
+    font-size:10px; font-weight:800; letter-spacing:.8px;
+    padding:3px 8px; border-radius:4px; text-transform:uppercase;
+  }
+  h1{margin:8px 0 4px; font-size:28px; letter-spacing:-.5px}
+  header .meta{color:var(--muted); font-size:13px}
+  h2{
+    margin:36px 0 12px; font-size:20px;
+    padding-bottom:6px; border-bottom:1.5px solid var(--line);
+  }
+  h3{margin:22px 0 8px; font-size:16px; color:var(--accent)}
+  p{margin:8px 0}
+  ul,ol{margin:8px 0; padding-left:22px}
+  li{margin:4px 0}
+  code{
+    background:var(--panel); padding:1px 6px; border-radius:3px;
+    font-size:13px; color:var(--accent);
+  }
+  blockquote{
+    margin:14px 0; padding:12px 16px; border-left:3px solid var(--accent);
+    background:var(--panel); border-radius:0 6px 6px 0;
+  }
+  table{
+    width:100%; border-collapse:collapse; margin:14px 0;
+    background:#fff; border:1.5px solid var(--line); border-radius:6px;
+    overflow:hidden; font-size:14px;
+  }
+  th,td{
+    padding:10px 12px; text-align:left;
+    border-bottom:1px solid var(--line); vertical-align:top;
+  }
+  th{
+    background:var(--panel); font-size:11px; text-transform:uppercase;
+    letter-spacing:.6px; color:var(--muted); font-weight:800;
+  }
+  tr:last-child td{border-bottom:none}
+  .tier-price{font-weight:800; color:var(--accent); white-space:nowrap}
+  .callout{
+    background:#FEF3C7; border-left:4px solid var(--warn);
+    padding:12px 16px; border-radius:0 6px 6px 0; margin:14px 0;
+  }
+  .good{
+    background:#D1FAE5; border-left:4px solid var(--good);
+    padding:12px 16px; border-radius:0 6px 6px 0; margin:14px 0;
+  }
+  .grid2{
+    display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0;
+  }
+  .card{
+    background:#fff; border:1.5px solid var(--line); border-radius:6px;
+    padding:14px 16px;
+  }
+  .card h4{margin:0 0 6px; font-size:14px; color:var(--accent)}
+  footer{
+    margin-top:60px; padding-top:18px; border-top:1.5px solid var(--line);
+    font-size:12px; color:var(--muted); text-align:center;
+  }
+  .num{
+    display:inline-block; min-width:22px; height:22px; line-height:22px;
+    text-align:center; background:var(--accent); color:#fff;
+    border-radius:50%; font-size:12px; font-weight:800; margin-right:6px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="tag">Internal · Working Doc</span>
+  <h1>GYRA — Pricing &amp; Tier Strategy</h1>
+  <div class="meta">Draft v1 · gyra.fernhw.com · Author: Alex (with GitHub Copilot as sparring partner)</div>
+</header>
+
+<h2>The pitch in one sentence</h2>
+<blockquote>
+  Task-manager software is the heart of a business. All the tools in the world can't make you better
+  if you don't know how to use them — if you repeatedly say "agile" but don't understand it.
+  <strong>GYRA protects the process with guardrails. It prevents users and managers from undermining the process.</strong>
+</blockquote>
+
+<h2>The financial target</h2>
+<p>
+  Sustainability number: roughly <strong>$8–10k / month gross</strong>
+  (one developer's livelihood + infra + Stripe fees + support time).
+  At <strong>400 paying customers</strong> that's an ARPU of <strong>$20–25</strong>.
+  Every pricing decision below has to honour that number.
+</p>
+
+<h2>The tier table</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Tier</th>
+      <th>Price</th>
+      <th>Users</th>
+      <th>Projects</th>
+      <th>Storage</th>
+      <th>AI tokens<br><span style="font-size:10px;font-weight:400;color:var(--muted)">Self Scrum Master</span></th>
+      <th>SSO</th>
+      <th>Self-host</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Free</strong><br><span style="font-size:12px;color:var(--muted)">Solo or duo, kicking the tires</span></td>
+      <td class="tier-price">$0</td>
+      <td>up to 3</td>
+      <td>1</td>
+      <td>6 images<br>(10 MB max each)</td>
+      <td>—<br><span style="font-size:11px;color:var(--muted)">no AI on Free</span></td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><strong>Indie</strong><br><span style="font-size:12px;color:var(--muted)">Default for small teams</span></td>
+      <td class="tier-price">$9.99 / mo<br>$99 / yr<br><span style="font-size:11px;color:var(--muted)">+ $1/user beyond included</span></td>
+      <td>up to 12 included</td>
+      <td>1</td>
+      <td>40 images</td>
+      <td><strong>200 tokens</strong> / mo<br><span style="font-size:11px;color:var(--muted)">reset monthly, no rollover</span></td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr style="background:#FFF8E7">
+      <td><strong>Indie Scholarship</strong><br><span style="font-size:12px;color:var(--muted)">By application — free, or a forever discount code</span></td>
+      <td class="tier-price">$0 — $4.99<br><span style="font-size:11px;color:var(--muted)">lifetime, locked in</span></td>
+      <td>up to 12</td>
+      <td>1</td>
+      <td>40 images</td>
+      <td>0 included<br><span style="font-size:11px;color:var(--muted)">add-on allowed — abuse rule applies</span></td>
+      <td>—</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><strong>Studio</strong><br><span style="font-size:12px;color:var(--muted)">Real studios with shipping cadence</span></td>
+      <td class="tier-price">$29 / mo<br>$290 / yr<br><span style="font-size:11px;color:var(--muted)">+ $2/user above 30</span></td>
+      <td>up to 30 included</td>
+      <td>unlimited</td>
+      <td>200 images</td>
+      <td><strong>300 tokens</strong> / mo<br><span style="font-size:11px;color:var(--muted)">reset monthly, no rollover</span></td>
+      <td>✅</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><strong>Publisher</strong><br><span style="font-size:12px;color:var(--muted)">Multi-project shops, big enough they stopped counting</span></td>
+      <td class="tier-price">$79 / mo<br>$790 / yr</td>
+      <td>up to 100</td>
+      <td>up to 25</td>
+      <td>1000 images</td>
+      <td><strong>4 000 tokens</strong> / mo<br><span style="font-size:11px;color:var(--muted)">reset monthly, no rollover</span></td>
+      <td>✅</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><strong>Self-host License</strong><br><span style="font-size:12px;color:var(--muted)">B2B, their hardware, no caps</span></td>
+      <td class="tier-price">$12k / year</td>
+      <td>unlimited<br>(their iron)</td>
+      <td>unlimited</td>
+      <td>their disk</td>
+      <td>BYOK only<br><span style="font-size:11px;color:var(--muted)">their key, their bill</span></td>
+      <td>✅</td>
+      <td>✅</td>
+    </tr>
+    <tr>
+      <td><strong>Storage Add-on</strong><br><span style="font-size:12px;color:var(--muted)">Stacks on any paid tier</span></td>
+      <td class="tier-price">$2.99<br>per 100 images / mo</td>
+      <td colspan="6" style="color:var(--muted)">No markup games. Covers cloud storage + backups + a slice of support time.</td>
+    </tr>
+    <tr>
+      <td><strong>AI Tokens Add-on</strong><br><span style="font-size:12px;color:var(--muted)">Indie, Scholarship, Studio, Publisher — not Free</span></td>
+      <td class="tier-price">$3.99<br>per 190 tokens / mo</td>
+      <td colspan="6" style="color:var(--muted)">Roughly "a sprint or two of saved time" — the number you look at and think <em>we can get a lot done with this</em>. Stacks on any paid tier (Scholarship included). Free tier cannot purchase the add-on — upgrade to Indie first.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong>Publisher is capped on purpose.</strong> 100 users / 25 projects / 1000 images is the “we're too big to count and we don't want to think about it” tier —
+  but not the “one customer eats our entire infra budget” tier. Anyone bigger than that gets routed to
+  <strong>Self-host ($12k/yr)</strong> where their growth runs on their own iron, not ours. That conversation
+  starts with a real sales email, not a checkout button.
+</div>
+
+<div class="callout">
+  <strong>Pricing page says only the headline numbers.</strong> $9.99 · $29 · $79.
+  The per-user extras (+$1 Indie, +$2 Studio) are surfaced inside the billing screen
+  <em>after</em> the customer has signed up and added their team — not on the marketing page.
+  Marketing pages convert on simplicity; billing pages can be honest.
+</div>
+
+<h2>Self Scrum Master — the AI layer</h2>
+<p>
+  Every paid tier includes <strong>Self Scrum Master</strong>, GYRA's built-in agentic helper.
+  It runs through <strong>OpenRouter on our own servers</strong> (we pick the cheap, fast model
+  for each job — GPT-mini class, Grok-fast, Haiku-class) because the work is small, structured,
+  and bounded. We're not writing essays, we're cleaning up tickets.
+</p>
+
+<div class="callout">
+  <strong>We bill in GYRA AI tokens, not raw LLM tokens.</strong>
+  A GYRA token is a unit of <em>work</em>, not a unit of compute. One token = one ordinary AI action
+  (split a story, polish acceptance criteria). Heavier actions cost more tokens, in whole numbers,
+  posted before you run them. You always see the cost before you click. Compute fluctuations are
+  our problem, not yours.
+</div>
+
+<h3>What it does &amp; what it costs</h3>
+<table>
+  <thead>
+    <tr><th>Action</th><th>Cost</th><th>What you get</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Split a story</strong></td>
+      <td><strong>1 token</strong></td>
+      <td>A 13-point monster comes in; SSM proposes 2–4 smaller stories. You approve, edit, or reject.</td>
+    </tr>
+    <tr>
+      <td><strong>Refine story &amp; acceptance criteria</strong></td>
+      <td><strong>1 token</strong></td>
+      <td>Rewrites into ACTOR / VERB / CONNECTOR shape, drafts AC bullets. Never invents requirements.</td>
+    </tr>
+    <tr>
+      <td><strong>Issue review &amp; suggestion</strong></td>
+      <td><strong>1 token</strong></td>
+      <td>"SSM thinks…" panel on a blocked or stale story: likely cause, suggested unblock, who to ping.</td>
+    </tr>
+    <tr>
+      <td><strong>Initiative → epics</strong></td>
+      <td><strong>20 tokens</strong><br><span style="font-size:11px;color:var(--muted)">+10 per re-iteration</span></td>
+      <td>One initiative becomes a structured set of epics with rough sizing and an order. Each "try again, but…" iteration costs another 10.</td>
+    </tr>
+    <tr>
+      <td><strong>Speeding-Agent backlog pass</strong><br><span style="font-size:11px;color:var(--muted)">dynamic</span></td>
+      <td><strong>~1 token per 3 stories</strong><br><span style="font-size:11px;color:var(--muted)">can spend an entire Studio month in one click</span></td>
+      <td>Reads the full backlog, splits everything splittable, drafts AC where missing, flags duplicates, proposes priority. The "agent" job — deep and recursive. On a 900-story backlog, that's ~300 tokens. We show the estimate before launch and you confirm.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>The included-token ladder</h3>
+<table>
+  <thead><tr><th>Tier</th><th>Tokens / month</th><th>What that buys, in practice</th></tr></thead>
+  <tbody>
+    <tr><td>Free</td><td>—</td><td><strong>No AI access at all.</strong> Free is for evaluating the board. Upgrade to Indie to unlock Self Scrum Master.</td></tr>
+    <tr><td>Indie Scholarship</td><td>0 included</td><td>Can buy the $3.99 / 190-token add-on. <strong>Subject to the scholarship-abuse rule below.</strong></td></tr>
+    <tr><td>Indie</td><td><strong>200</strong></td><td>~200 splits/refines, or 10 initiative→epic runs, or one big Speeding-Agent pass on a small backlog. Comfortable monthly headroom.</td></tr>
+    <tr><td>Studio</td><td><strong>300</strong></td><td>Daily refinement plus a Speeding-Agent burst every sprint. The "we use it every standup" tier.</td></tr>
+    <tr><td>Publisher</td><td><strong>4 000</strong></td><td>Multiple projects, full Speeding-Agent passes on each, on demand. Hard to exhaust without trying.</td></tr>
+    <tr><td>Self-host</td><td>BYOK only</td><td>Customer brings their own key. Their data never touches our infra.</td></tr>
+  </tbody>
+</table>
+
+<h3>The add-on top-up</h3>
+<p>
+  <strong>$3.99 = 190 tokens / month.</strong> Sized on purpose to be the number a customer looks at and
+  thinks <em>"we can do a lot with that"</em> — roughly a sprint or two of saved time. Available on
+  <strong>Indie, Scholarship, Studio, and Publisher</strong>. Not available on Free — the upgrade is the path.
+  Tokens reset every billing cycle, no rollover (release valve, not a savings account).
+</p>
+
+<div class="callout" style="border-left-color:var(--warn); background:#FFF8E7">
+  <strong>Scholarship abuse rule — the polite escalator.</strong>
+  Scholarship is for builders who genuinely can't justify $9.99/mo on a board tool.
+  If a Scholarship account is buying add-on tokens at a rate that implies <strong>~100+ tokens/day sustained</strong>
+  (roughly $60+/month in AI spend), that's a strong signal they <em>can</em> afford Indie. We email once, then
+  the next month the account is auto-converted to standard Indie pricing ($9.99/mo) and the scholarship discount ends.
+  No back-billing, no shame — just "you've outgrown the lane." Documented in the Scholarship terms so it's never a surprise.
+</div>
+
+<h3>BYOK — bring your own key (paid tiers only)</h3>
+<div class="callout">
+  <strong>Indie, Studio, Publisher, and Self-host can paste an OpenRouter, OpenAI, Groq, or Anthropic key into Settings and skip the included quota entirely.</strong>
+  Free tier cannot — AI is part of the paid promise, not a free-tier surface. Scholarship can BYOK; same abuse rule applies
+  (if they're burning real money on a model, they can fund an Indie seat).
+  We don't advertise BYOK loudly on the marketing page (it would cannibalize the add-on), but it's documented,
+  supported, and never artificially throttled. Enterprise security teams love it because their data goes directly
+  from their browser session to <em>their</em> vendor under <em>their</em> contract.
+</div>
+
+<h3>Why this token model, not "AI calls"</h3>
+<ul>
+  <li><strong>Predictable to the customer.</strong> "Split costs 1, initiative→epic costs 20" reads like a menu, not a meter. People plan against menus; they fear meters.</li>
+  <li><strong>Honest about heavy work.</strong> The Speeding-Agent pass is genuinely expensive on the compute side. Charging "1 call" for it would lose money; charging "300 tokens" makes the customer aware <em>and</em> in control. They confirm before it runs.</li>
+  <li><strong>Margin protection without metering anxiety.</strong> We run on OpenRouter, so compute cost moves under us. A whole-number token price absorbs that swing without us re-issuing pricing PDFs every quarter.</li>
+  <li><strong>Latency over IQ.</strong> Cheap fast models are picked per action; the customer never sees that choice, just the token cost.</li>
+  <li><strong>Drafts, always.</strong> SSM outputs are previews you approve. Token is only burned when the action <em>runs</em>, not when it's previewed.</li>
+</ul>
+
+<h3>What SSM will <em>never</em> do</h3>
+<ul>
+  <li>Run on Free. AI is locked to paid tiers; Free has no add-on, no BYOK, no exceptions.</li>
+  <li>Auto-create, auto-delete, or auto-move stories without a human approving the diff.</li>
+  <li>Burn tokens on a preview, a retry due to our error, or a request the customer cancels mid-flight.</li>
+  <li>Train on customer data. Period. Calls are stateless; no fine-tuning, no replay, no logging of story bodies beyond a 24h debug retention.</li>
+  <li>Silently keep a Scholarship customer subsidised when they're spending real money on AI — the polite escalator above kicks in instead.</li>
+  <li>Pretend to be a real scrum master. The name is a wink. It assists; it doesn't replace the human who actually runs the room.</li>
+</ul>
+
+<h2>Switching from Jira / Linear / Notion / ClickUp / Trello? We'll match.</h2>
+<p>
+  Teams already paying for a competitor are the highest-intent customers we can win.
+  They know what a project board is worth, they've already opened their wallet for one, and they're
+  switching because something hurts. The right move is to make the switch obvious, painless, and cheap.
+</p>
+
+<div class="good">
+  <strong>The Switch Offer (one line on the pricing page, expandable section in the FAQ):</strong>
+  <ul style="margin-top:8px">
+    <li><strong>Price match</strong> on whatever you're paying your current tracker (per-seat or flat), for the
+    equivalent GYRA tier or the next one up if our quotas need it.</li>
+    <li><strong>Plus 10% off that matched price for your first year</strong> — not forever, just enough that
+    the switch math is strictly positive in year one.</li>
+    <li><strong>Free migration assistance.</strong> We pull your full project board, epics, stories, comments,
+    attachments, and sprint history out of the old tool and into GYRA — done by us, not a script you have to run.</li>
+  </ul>
+</div>
+
+<div class="warn-box" style="background:#FEF3C7;border-left:3px solid var(--warn);padding:12px 16px;border-radius:0 6px 6px 0;margin:14px 0;color:var(--warn)">
+  <strong>Proof of payment is mandatory. No exceptions.</strong>
+  Before any match or migration begins, you upload <strong>one redacted invoice or billing-page screenshot from your current tracker, dated within the last 60 days</strong>, showing the vendor name, the plan, the per-seat or flat price, and the billing date. Bank account numbers / card digits redacted is fine &mdash; everything else stays visible.
+  <ul style="margin-top:6px;margin-bottom:0">
+    <li>No screenshot &rarr; no match, no migration, no exceptions. Not even for friends.</li>
+    <li>One match per organisation, ever. The discount applies to the first paid year only.</li>
+    <li>If we later find the screenshot was forged, the account is downgraded to the standard tier and back-billed for the difference. This is stated on the form, in plain English, before they upload.</li>
+  </ul>
+</div>
+
+<h3>What we migrate, and how it actually works</h3>
+<ul>
+  <li><strong>Jira:</strong> full project export via REST API — epics, stories, sub-tasks, comments, sprint history,
+  custom fields mapped to GYRA's closest equivalent. The hairy bits (status workflow, custom issue types) we
+  hand-map on a 30-min call before the import runs.</li>
+  <li><strong>Linear:</strong> GraphQL export — cycles become sprints, projects become epics, issues become stories.
+  Cleanest migration of the bunch.</li>
+  <li><strong>Notion (databases used as trackers):</strong> CSV export per database + an interview to figure out which
+  column meant what. The worst of the four, but doable.</li>
+  <li><strong>ClickUp:</strong> JSON export — spaces become projects, lists become epics.</li>
+  <li><strong>Trello:</strong> JSON export per board — lists become statuses, cards become stories, checklists become
+  acceptance criteria.</li>
+</ul>
+
+<h3>Why this is worth doing even though it costs us hours</h3>
+<ul>
+  <li><strong>Switching cost is the #1 reason teams stay on a tool they hate.</strong> If we eat that cost, we win
+  customers who would otherwise never have moved.</li>
+  <li><strong>A migrated customer is a sticky customer.</strong> They have months of history inside GYRA on day one.
+  Churn drops near zero.</li>
+  <li><strong>It generates the best testimonials we'll ever get:</strong> “I moved 3 years of Jira tickets in one
+  afternoon. The GYRA team did it for me.” That sentence sells the next ten Studio licenses.</li>
+  <li><strong>It's bounded.</strong> One human-hour per small migration, maybe four for a Jira project with 2k tickets.
+  At an effective $29/mo recovered, payback is 1–2 months.</li>
+</ul>
+
+<div class="callout">
+  <strong>Soft cap:</strong> we cap free migrations at <em>~2 per month</em> in year one. If demand explodes that's a great
+  problem — we either hire someone to run them or paywall it at $299 flat for very large projects (10k+ tickets).
+</div>
+
+<h2>The non-negotiables</h2>
+<ol>
+  <li><strong>Full import / export on every tier.</strong> JSON, CSV, Markdown. We will never trap a user. The pricing page says, in plain text: <em>"You can leave any day. Your data leaves with you."</em></li>
+  <li><strong>Headline price first, extras hidden until checkout.</strong> The pricing page shows $9.99 / $29 / $79. The per-user overage line lives in the billing UI and the FAQ, never the hero table.</li>
+  <li><strong>Per-user overage is a graceful ramp, not a cliff.</strong> +$1/user on Indie, +$2/user on Studio above 30. A 13-person team pays $10.99, not "please upgrade." Friction-free growth wins.</li>
+  <li><strong>Storage stays honest.</strong> Small included quota, transparent per-100-image expansion. The reason is published openly: <em>"every image costs us real money to host, back up, and serve."</em></li>
+  <li><strong>SSO gated to Studio and above.</strong> SSO is a real support burden — fair to ask the customers who actually need it to fund it.</li>
+  <li><strong>Self-host is annual recurring, never perpetual.</strong> $12k/yr buys the binary + all updates + a quarterly office-hour call + security patches + redistribution rights inside their org.</li>
+</ol>
+
+<h2>“Is this too complex?” — honest answer</h2>
+<p>You asked the right question. Here's the trade-off laid bare:</p>
+
+<div class="grid2">
+  <div class="card">
+    <h4>Option A: Tiers with per-user extras (current plan)</h4>
+    <p><strong>$9.99 base + $1/user above 12 · $29 base + $2/user above 30 · $79 flat.</strong></p>
+    <p>Pros: graceful growth, no cliff, indies don't feel punished for hiring person 13. Matches your kindness instinct.</p>
+    <p>Cons: billing logic is more code to write and test. Customer service questions will exist (“why is my bill $14 this month?”). Pricing page risks looking like Jira if extras leak above the fold.</p>
+  </div>
+  <div class="card">
+    <h4>Option B: Hard tiers, no extras</h4>
+    <p><strong>$9.99 up to 12 · $29 up to 30 · $79 unlimited. Scholarship covers anyone stuck.</strong></p>
+    <p>Pros: brain-dead simple. Pricing page is three boxes. Billing logic is three rows. Zero support questions about overages.</p>
+    <p>Cons: a 13-person indie team feels suddenly forced into $29. That cliff <em>could</em> make them resent you the day they hit it.</p>
+  </div>
+</div>
+
+<p><strong>Recommendation: ship Option B, add the per-user overage later only if you see real customer pain.</strong></p>
+<p>
+  Reasons:
+</p>
+<ul>
+  <li><strong>Option B is what every successful indie SaaS does at launch.</strong> Basecamp, Plausible, Linear all started with flat tiers. They added complexity only when customer demand proved the cliff was hurting conversion.</li>
+  <li><strong>You can't measure cliff-pain without first seeing the cliff in action.</strong> Right now you're solving a hypothetical — “what if the 13-person team feels robbed?” Real answer: a 13-person team that values GYRA pays the $29. Most do. The ones who don't tell you, and <em>then</em> you add the overage line.</li>
+  <li><strong>Option B is one weekend of code. Option A is a week, plus an audit trail, plus a Stripe metered-billing setup, plus a customer-service playbook.</strong> That week is better spent on the public site, the Stripe payment link, or shipping retros.</li>
+  <li><strong>The scholarship covers the edge case.</strong> Any 13-person team genuinely unable to jump from $9.99 to $29 can apply. That's what the scholarship is <em>for</em>.</li>
+</ul>
+
+<div class="good">
+  <strong>Verdict:</strong> Launch Option B (clean flat tiers). Add Option A's per-user overage in v2 only if 5+ customers complain about the cliff. Until then: complexity is a future-you problem to opt into, not a present-you cost to pre-pay.
+</div>
+
+<h2>The Free tier is for kicking the tires</h2>
+<p>
+  Free is up to <strong>3 users, 1 project, 6 images</strong>. It exists so a solo dev or a two-person team
+  can spin up a board, push a few stories around, decide they like it, and upgrade to Indie when they hire person 4.
+  No application, no friction — just sign up.
+</p>
+<p>
+  Free is <em>not</em> the place where a real indie team lives long-term. The caps are deliberately tight
+  so the tier evaluates the product, not bankrolls a team. The moment a Free user adds a fourth seat
+  or hits 6 images, the upgrade prompt is friendly, obvious, and one click.
+</p>
+
+<h2>Scholarship — the door at the bottom of the pricing page</h2>
+<p>
+  Below the tier table, in smaller type, one line:
+</p>
+<blockquote>
+  <strong>Indie team and need to work? Pitch us your project.</strong> We give a handful of discounts —
+  sometimes fully free — to teams who are shipping something real and can't afford the full price yet.
+  <a href="#" style="color:var(--accent);font-weight:700">Apply here →</a>
+</blockquote>
+
+<div class="callout">
+  <strong>This is a one-shot deal and the page says so.</strong> The application form is blunt:
+  <em>“If we decline, the decision is final. You will not be able to re-apply for this project.
+  Declining means you stay on the paid tier you would have chosen anyway. Please only apply if you've
+  actually read this paragraph.”</em>
+  Kids will find the form. The wording above is what filters them — not us, not later, not a support ticket.
+</div>
+
+<h3>Why the gate has to be this hard</h3>
+<p>Every scholarship is real money out of our pocket. So the application asks for proof of intent:</p>
+<ul>
+  <li><strong>Custom-domain email required.</strong> A <code>@yourstudio.com</code> address means you've already spent
+  money on a domain, hosting, and a team identity. A <code>@gmail.com</code> address is an automatic no.
+  This single rule kills 80% of low-effort applications.</li>
+  <li><strong>Public socials linked.</strong> Twitter / Bluesky / Mastodon / Itch / Steam page — we need to see that
+  the studio exists outside the application form.</li>
+  <li><strong>The game itself, playable or shown.</strong> A build, a trailer, a devlog, a Steam page, an Itch listing.
+  Something we can look at and form an opinion about. “It's a secret” is a no.</li>
+  <li><strong>One paragraph: why $9.99/mo is genuinely hard right now.</strong> Honest answers welcomed. We can tell.</li>
+</ul>
+
+<div class="warn-box" style="background:#FEF3C7;border-left:3px solid var(--warn);padding:12px 16px;border-radius:0 6px 6px 0;margin:14px 0;color:var(--warn)">
+  <strong>We may also decline projects that look <em>too</em> good.</strong>
+  A team with a custom email, a polished Steam page, and a 50k follower count is clearly already spending money.
+  They don't need the scholarship — they need the Indie tier. We say that out loud in the rejection note
+  and offer a 20% lifetime discount instead. Most accept; the ones who don't were never going to pay anyway.
+</div>
+
+<h3>How many we actually give out</h3>
+<p>
+  Realistically: <strong>a few full-free seats per year</strong>. Maybe 3 to 6. Each one is a real cost (storage, support time,
+  the precedent it sets). The honest math is that one full-free Studio license costs us roughly $350/yr in infra plus
+  whatever support hours land in our inbox.
+</p>
+<p>
+  But here's the move: <strong>almost everyone who applies and has real signal gets a lifetime discount on Indie instead.</strong>
+  50% off for life. $4.99/mo forever. That is cheap enough to say yes to the team, expensive enough that they're invested,
+  and small enough that we can give it to <em>most</em> qualified applicants without going broke.
+</p>
+<p>
+  The split looks like:
+</p>
+<ul>
+  <li><strong>~5%</strong> of applicants get the full-free Studio scholarship (the standout cases).</li>
+  <li><strong>~60%</strong> get the 50%-for-life Indie discount.</li>
+  <li><strong>~35%</strong> get a polite decline. Most of those are kids, asset flips, or studios already too funded.</li>
+</ul>
+
+<div class="good">
+  <strong>The scholarship is a marketing engine and a filter, not a charity line.</strong>
+  “GYRA gave 6 indie studios a free pro license this year and 40 more a lifetime discount” is a story that sells
+  more paid Studio tiers in North America and Europe than any ad ever will — and the lifetime-discount line
+  is the one that makes the whole indie community whisper your name in the right Discord servers.
+</div>
+
+<h2>What we will <em>not</em> build (yet)</h2>
+<ul>
+  <li><strong>No native apps.</strong> Web-only, responsive. Native apps are a $50k/yr maintenance tax for marginal value.</li>
+  <li><strong>No SSO until a Studio customer asks for it</strong> and is willing to be invoiced for it.</li>
+  <li><strong>No API integrations on day one.</strong> A clean export beats a half-finished integration every time.</li>
+  <li><strong>No revenue-share pricing, ever.</strong> Indies hate it, collection is impossible at this scale, and the legal scaffolding eats the margin.</li>
+</ul>
+
+<h2>The trick that protects margin on storage</h2>
+<p>
+  Implement image optimization on upload <em>before</em> launching paid storage:
+</p>
+<ul>
+  <li>Auto-resize anything wider than 2048 px down to 2048.</li>
+  <li>Re-encode as WebP at quality 82.</li>
+  <li>Reject anything > 10 MB at the boundary (clear error: "10 MB max — please compress").</li>
+</ul>
+<p>
+  Net effect: average stored image drops from ~4 MB to ~700 KB. The 40-image Indie quota becomes
+  effectively 100+ usable images. Customer feels generously treated. Our real cloud bill stays flat.
+  This is a code change worth shipping <strong>before</strong> the storage add-on goes live.
+</p>
+
+<h2>Annual billing</h2>
+<p>Standard SaaS move, costs nothing to offer, improves cashflow and lowers churn:</p>
+<ul>
+  <li>Indie: <strong>$99 / yr</strong> (vs $119.88 monthly — saves 2 months)</li>
+  <li>Studio: <strong>$290 / yr</strong> base (vs $348 monthly)</li>
+  <li>Publisher: <strong>$790 / yr</strong> (vs $948 monthly)</li>
+  <li>Self-host: already annual.</li>
+</ul>
+
+<h2>The competitive frame</h2>
+<div class="grid2">
+  <div class="card">
+    <h4>vs Trello</h4>
+    <p>
+      Trello Standard is $5/user/mo — a 20-person team pays $100/mo. GYRA Studio at the same headcount
+      is ~$36/mo (base + 6 extra users). <strong>We're cheaper at team size</strong>, and we do the
+      one thing Trello structurally cannot: enforce process.
+    </p>
+  </div>
+  <div class="card">
+    <h4>vs Jira</h4>
+    <p>
+      Jira is for teams that already know Scrum cold. Most teams don't. They pick up Jira and inherit
+      forty fields, twelve states, and zero context. <strong>GYRA is the opposite: the tool teaches the
+      practice.</strong> That's the entire reason GYRA gets to be opinionated.
+    </p>
+  </div>
+  <div class="card">
+    <h4>vs Linear</h4>
+    <p>
+      Linear is gorgeous and built for SaaS engineering teams. GYRA is built for studios — small,
+      cross-discipline, where one card needs an artist + a coder + a tester to ship. Linear's
+      one-owner model breaks that. <strong>We don't.</strong>
+    </p>
+  </div>
+  <div class="card">
+    <h4>vs Notion / Spreadsheets</h4>
+    <p>
+      They're flexible enough to do anything, which means they do <em>nothing</em> well by default.
+      GYRA's guardrails ARE the value. <strong>A workflow that's hard to break is more valuable than
+      a blank canvas you keep redrawing.</strong>
+    </p>
+  </div>
+</div>
+
+<h2>ARPU math at 400 paying customers</h2>
+<p>Assumed mix under Option B (flat tiers, no per-user extras):</p>
+<ul>
+  <li>60% Indie @ $9.99 → $5.99/customer</li>
+  <li>25% Studio @ $29 → $7.25/customer</li>
+  <li>10% Publisher @ $79 → $7.90/customer</li>
+  <li>5% Self-host @ $1000/mo (amortised $12k/yr) → $50.00/customer</li>
+  <li>Storage add-on uptake ~15% @ $2.99 avg → $0.45/customer</li>
+</ul>
+<p>
+  <strong>Blended ARPU ≈ $73/mo per paying customer.</strong>
+  Note this is wildly skewed by the self-host line — one self-host customer ≈ 100 Indie customers.
+  Stripping self-host: pure SaaS ARPU ≈ $23/mo. <em>Either way the model lands above the survival
+  number.</em>
+</p>
+
+<h2>Rollout sequence</h2>
+<ol>
+  <li><span class="num">1</span><strong>Now (pre-revenue):</strong> Add a "Pay early" Stripe Payment Link to the footer. $9.99/mo. Anyone who clicks is a real signal.</li>
+  <li><span class="num">2</span><strong>Before Indie launch:</strong> Stripe Customer Portal. Image optimization on upload. Image-count enforcement. Export buttons surfaced clearly.</li>
+  <li><span class="num">3</span><strong>Before Studio launch:</strong> Multi-tenant / workspace switching. Story attachments. SSO scaffolding (build only when first Studio customer offers $).</li>
+  <li><span class="num">4</span><strong>Before Publisher launch:</strong> Audit log. Multi-workspace UX. Invoiced billing. Signed DPA template.</li>
+  <li><span class="num">5</span><strong>Self-host:</strong> Don't list publicly. Sell only when a B2B contact reaches out. First sale validates pricing; second sale validates the channel.</li>
+</ol>
+
+<h2>The two demand-signal experiments (free, do now)</h2>
+<ol>
+  <li>
+    <strong>Footer "Pay Early" button.</strong> Stripe Payment Link, $9.99/mo, copy:
+    <em>"Like GYRA? Pay early — $9.99/mo — and we grandfather you forever."</em>
+  </li>
+  <li>
+    <strong>The churn question.</strong> Email the next 20 users who actually complete a refinement
+    session. One question: <em>"If GYRA cost $29/mo for your studio, would you stay or churn?"</em>
+    Not <em>"would you pay"</em> — <em>"would you churn"</em>. The latter separates polite yes-people
+    from real buyers.
+  </li>
+</ol>
+
+<h2>Open questions to settle before publishing the pricing page</h2>
+<ul>
+  <li>Stripe vs Paddle? (Paddle handles VAT/MoSS globally; Stripe is cheaper but you owe the tax filings.)</li>
+  <li>What is the legal name on invoices — High Ground LLC, personal, or a new entity?</li>
+  <li>Domain plan: stay on gyra.fernhw.com until launch, or move to gyra.app / usegyra.com / similar?</li>
+  <li>What's the exact public copy for the "no data lock-in" promise? (1 sentence, must appear above the tier table.)</li>
+  <li>Scholarship: do we publish the accept/decline split openly, or keep the numbers private and only publish the recipient list? (Transparency builds trust; numbers invite haggling.)</li>
+</ul>
+
+<h2>The one-line summary to remember</h2>
+<blockquote>
+  Free attracts noise. Cheap attracts intent. Generous attracts respect.
+  <strong>GYRA is cheap by default, generous by application, and never a trap.</strong>
+</blockquote>
+
+<footer>
+  This document lives at <code>/static/pricing-strategy.html</code> inside the GYRA Flask app.<br>
+  Working draft — update freely as decisions firm up.
+</footer>
+
+</div>
+</body>
+</html>

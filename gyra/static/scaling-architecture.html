@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>GYRA — Scaling Architecture (working doc)</title>
+<style>
+  :root{
+    --bg:#F9F5EE; --panel:#EDE4D0; --line:#DDD0B8; --ink:#1A1208;
+    --muted:#7A6A52; --accent:#7C4A1E; --accent2:#A0632A;
+    --good:#059669; --warn:#92400E; --bad:#991B1B;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:40px 24px 80px; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    line-height:1.55; font-size:15px;
+  }
+  .wrap{max-width:920px; margin:0 auto}
+  header{border-bottom:2px solid var(--line); padding-bottom:18px; margin-bottom:28px}
+  header .tag{
+    display:inline-block; background:var(--accent); color:#fff;
+    font-size:10px; font-weight:800; letter-spacing:.8px;
+    padding:3px 8px; border-radius:4px; text-transform:uppercase;
+  }
+  h1{margin:8px 0 4px; font-size:28px; letter-spacing:-.5px}
+  header .meta{color:var(--muted); font-size:13px}
+  h2{margin:36px 0 12px; font-size:20px; padding-bottom:6px; border-bottom:1.5px solid var(--line)}
+  h3{margin:22px 0 8px; font-size:16px; color:var(--accent)}
+  p{margin:8px 0}
+  ul,ol{margin:8px 0; padding-left:22px}
+  li{margin:4px 0}
+  code{background:var(--panel); padding:1px 6px; border-radius:3px; font-size:13px; color:var(--accent)}
+  pre{
+    background:#1A1208; color:#F9F5EE; padding:14px 18px; border-radius:6px;
+    overflow-x:auto; font-size:12.5px; line-height:1.5;
+    font-family:"SF Mono",Menlo,Monaco,Consolas,monospace;
+  }
+  blockquote{
+    margin:14px 0; padding:12px 16px; border-left:3px solid var(--accent);
+    background:var(--panel); border-radius:0 6px 6px 0;
+  }
+  table{
+    width:100%; border-collapse:collapse; margin:14px 0;
+    background:#fff; border:1.5px solid var(--line); border-radius:6px;
+    overflow:hidden; font-size:14px;
+  }
+  th,td{padding:10px 12px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top}
+  th{background:var(--panel); font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.5px}
+  tr:last-child td{border-bottom:none}
+  .callout{
+    background:#FEF3C7; border-left:3px solid var(--warn); color:var(--warn);
+    padding:12px 16px; border-radius:0 6px 6px 0; margin:14px 0;
+  }
+  .good{
+    background:#D1FAE5; border-left:3px solid var(--good); color:#065F46;
+    padding:12px 16px; border-radius:0 6px 6px 0; margin:14px 0;
+  }
+  .bad{
+    background:#FEE2E2; border-left:3px solid var(--bad); color:var(--bad);
+    padding:12px 16px; border-radius:0 6px 6px 0; margin:14px 0;
+  }
+  .phase{
+    background:#fff; border:1.5px solid var(--line); border-radius:8px;
+    padding:18px 20px; margin:14px 0;
+  }
+  .phase h3{margin-top:0}
+  .phase-tag{
+    display:inline-block; padding:3px 9px; border-radius:4px; font-size:11px;
+    font-weight:800; text-transform:uppercase; letter-spacing:.5px;
+    margin-right:8px; vertical-align:middle;
+  }
+  .phase-now    { background:var(--good); color:#fff }
+  .phase-soon   { background:#3B82F6; color:#fff }
+  .phase-later  { background:var(--accent); color:#fff }
+  .phase-much   { background:var(--muted); color:#fff }
+  .trigger{
+    background:var(--panel); padding:8px 12px; border-radius:4px;
+    font-size:13px; margin-top:10px;
+  }
+  .trigger strong{color:var(--accent)}
+  footer{
+    margin-top:50px; padding-top:18px; border-top:1.5px solid var(--line);
+    color:var(--muted); font-size:13px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="tag">Internal · Engineering Plan</span>
+  <h1>GYRA — Scaling Architecture</h1>
+  <div class="meta">How we go from one Mac mini to 3,000 teams without rewriting the world.</div>
+</header>
+
+<blockquote>
+  <strong>Plan first, scale later.</strong> The current stack handles the next 50 paying teams without changes.
+  We design the destination now, then migrate <em>incrementally</em>, only when real traffic forces us.
+  Every step ships on its own and is reversible.
+</blockquote>
+
+<h2>The core decision: shard by team, stay in Python</h2>
+<p>
+  We do not rewrite to Elixir, Go, or anything we don't already operate. The team building this is one person who
+  knows Python and Flask. The right architecture is the one we can keep running at 3 AM \u2014 not the one with the
+  best benchmarks.
+</p>
+
+<div class="good">
+  <strong>Architecture in one sentence:</strong> each team lives in its own SQLite file, multiple teams share an instance,
+  multiple instances are picked by a dumb router that maps <code>team_slug \u2192 instance_url</code>. Scaling = add an instance,
+  move some teams to it. No new tech.
+</div>
+
+<h2>The picture</h2>
+<pre>            \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+            \u2502  Router (nginx + tiny Flask)  \u2502
+            \u2502  maps team_slug \u2192 instance   \u2502
+            \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+                            \u2502
+        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+        \u25bc                   \u25bc                   \u25bc
+   \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510        \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+   \u2502 Inst #1  \u2502        \u2502 Inst #2  \u2502   \u2026    \u2502 Inst #N  \u2502
+   \u2502 40 teams \u2502        \u2502 40 teams \u2502        \u2502 40 teams \u2502
+   \u2502 \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2502        \u2502 \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2502        \u2502 \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2510 \u2502
+   \u2502 \u2502acme  \u2502 \u2502        \u2502 \u2502bolt  \u2502 \u2502        \u2502 \u2502xeno  \u2502 \u2502
+   \u2502 \u2502.db   \u2502 \u2502        \u2502 \u2502.db   \u2502 \u2502        \u2502 \u2502.db   \u2502 \u2502
+   \u2502 \u2502bear  \u2502 \u2502        \u2502 \u2502cell  \u2502 \u2502        \u2502 \u2502yarn  \u2502 \u2502
+   \u2502 \u2502.db   \u2502 \u2502        \u2502 \u2502.db   \u2502 \u2502        \u2502 \u2502.db   \u2502 \u2502
+   \u2502 \u2502 \u202640  \u2502 \u2502        \u2502 \u2502 \u202640  \u2502 \u2502        \u2502 \u2502 \u202640  \u2502 \u2502
+   \u2502 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2502        \u2502 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2502        \u2502 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2518 \u2502
+   \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518        \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518</pre>
+
+<h2>The two key ideas</h2>
+
+<h3>1. One SQLite file per team \u2014 not a shared database</h3>
+<ul>
+  <li><code>data/teams/acme.db</code>, <code>data/teams/bolt.db</code>, etc.</li>
+  <li><strong>Strongest possible silo:</strong> file-level isolation. Code that opens <code>acme.db</code> physically cannot read <code>bolt.db</code>. No row-level security, no <code>WHERE team_id = ?</code> bugs, no leakage ever possible.</li>
+  <li>Backup a team = <code>cp acme.db backups/</code></li>
+  <li>Delete a team (GDPR request) = <code>rm acme.db</code></li>
+  <li>Move team to another instance = <code>scp acme.db newhost:</code> + update router</li>
+  <li>SQLite in WAL mode handles 500 users + ~100 concurrent writes comfortably. We will never get near that per team.</li>
+</ul>
+
+<h3>2. The router is dumb and stateless</h3>
+<ul>
+  <li>Nginx (or a tiny Flask app) reads <code>team_slug</code> from subdomain or URL prefix</li>
+  <li>Looks it up in a small registry (JSON file or a tiny SQLite): <code>{"acme": "https://inst1.gyra.app"}</code></li>
+  <li>Proxies HTTP and WebSocket to that instance</li>
+  <li>That's the entire job. No business logic, no team data, no auth decisions.</li>
+</ul>
+
+<h2>The math at 3,000 teams</h2>
+
+<table>
+  <tr><th>Metric</th><th>Value</th></tr>
+  <tr><td>Teams per instance (conservative)</td><td>40</td></tr>
+  <tr><td>Teams per instance (realistic, small avg team)</td><td>~80</td></tr>
+  <tr><td>Instances needed for 3,000 teams (conservative)</td><td>~75</td></tr>
+  <tr><td>Instances needed for 3,000 teams (realistic)</td><td>~38</td></tr>
+  <tr><td>Instance spec</td><td>Hetzner CCX13: 2 vCPU, 8 GB RAM, NVMe</td></tr>
+  <tr><td>Cost per instance</td><td>$25 / mo</td></tr>
+  <tr><td><strong>Total infra (conservative)</strong></td><td><strong>$1,875 / mo (~19% of $120k ARR)</strong></td></tr>
+  <tr><td><strong>Total infra (realistic, bigger boxes)</strong></td><td><strong>$750\u20131,000 / mo (~8\u201310% of ARR)</strong></td></tr>
+</table>
+
+<div class="good">
+  <strong>Target operating cost:</strong> 8\u201312% of ARR for infra is normal for B2B SaaS. We have headroom.
+</div>
+
+<h2>The phased rollout</h2>
+<p>
+  Each phase ships independently and is reversible. We <strong>do not move to phase N+1 until phase N hurts</strong>.
+</p>
+
+<div class="phase">
+  <h3><span class="phase-tag phase-now">Phase 0 \u2014 Today</span> One box, one DB, no sharding</h3>
+  <p>Mac mini, Flask, single <code>gyra.db</code>, cloudflared tunnel. This is fine. No code changes.</p>
+  <p><strong>Holds:</strong> ~50 active paying teams comfortably. Probably more if traffic is light.</p>
+  <div class="trigger"><strong>Trigger to move on:</strong> 30 paying teams <em>or</em> CPU sustained &gt;60% during planning hours <em>or</em> first user complaint about lag.</div>
+</div>
+
+<div class="phase">
+  <h3><span class="phase-tag phase-soon">Phase 1 \u2014 Team-slug routing in code</span></h3>
+  <p>Add <code>/t/&lt;team_slug&gt;/...</code> to all URLs. Middleware sets <code>g.team_slug</code>. Single DB still, but every query is namespaced by team. <strong>Zero infrastructure changes</strong> \u2014 this is a code-only refactor on the existing Mac mini.</p>
+  <p><strong>Why now even though Phase 0 holds:</strong> the URL shape needs to exist <em>before</em> we shard. We bake it in early so every new route uses it from day one. Far cheaper than retrofitting.</p>
+  <p><strong>Effort:</strong> 1\u20132 weekends. Mostly find-and-replace in the routes and templates.</p>
+  <div class="trigger"><strong>Trigger:</strong> next time we touch the routes layer for any reason, do this in the same pass.</div>
+</div>
+
+<div class="phase">
+  <h3><span class="phase-tag phase-soon">Phase 2 \u2014 Per-team SQLite files</span></h3>
+  <p>Switch <code>get_db()</code> to <code>get_db(team_slug)</code> returning a connection to <code>data/teams/&lt;slug&gt;.db</code>. Each team gets a fresh DB created from the schema on first signup. <strong>Still one instance.</strong></p>
+  <p><strong>This is the big win.</strong> File-level silo is in place. Backups become per-team. Self-host becomes trivial. Everything else stays the same.</p>
+  <p><strong>Effort:</strong> 1 week. Touches <code>db.py</code>, schema migrations need a per-file runner, signup creates the file.</p>
+  <div class="trigger"><strong>Trigger:</strong> first paying customer who asks "where exactly is my data stored?" \u2014 or, defensively, before we hit 20 paying teams.</div>
+</div>
+
+<div class="phase">
+  <h3><span class="phase-tag phase-later">Phase 3 \u2014 Router + second instance</span></h3>
+  <p>Write a tiny Flask router (50 lines) that reads <code>team_slug</code> and proxies to the right instance. Spin up a second instance on the same Mac mini (different port) <em>or</em> on a cheap Hetzner box. Move half the teams over. <strong>Validates the model before it has to scale.</strong></p>
+  <p><strong>Effort:</strong> 1\u20132 weeks. Router itself is trivial; the work is in deployment automation and the per-team registry.</p>
+  <div class="trigger"><strong>Trigger:</strong> 40 paying teams <em>or</em> Mac mini at 80% CPU peak <em>or</em> first paying Self-host customer (their box becomes a real "instance" you need a router for).</div>
+</div>
+
+<div class="phase">
+  <h3><span class="phase-tag phase-much">Phase 4 \u2014 Cloud, multi-region, auto-deploy</span></h3>
+  <p>Move off the Mac mini. Hetzner cluster, Docker image per instance, GitHub Actions to deploy, registry in a managed Postgres. Optional: separate EU and US instance pools for data residency. SSO becomes real.</p>
+  <p><strong>Effort:</strong> 3\u20134 weeks of focused work, mostly DevOps.</p>
+  <div class="trigger"><strong>Trigger:</strong> 200 paying teams <em>or</em> first enterprise/Publisher customer asking about uptime SLA, data residency, or compliance.</div>
+</div>
+
+<h2>Sockets: why this design dodges the hardest scaling problem</h2>
+<p>
+  Real-time collaboration is normally the thing that forces a Redis pub/sub layer, sticky sessions, and a lot of operational complexity.
+  Our shard model <strong>eliminates that need entirely</strong>:
+</p>
+<ul>
+  <li>A team's users always land on the same instance (router guarantees it)</li>
+  <li>Flask-SocketIO with eventlet handles 2k\u20135k concurrent sockets per instance easily</li>
+  <li>Rooms are scoped to the team: <code>socketio.emit('board:update', data, room=f'team_{slug}')</code></li>
+  <li><strong>No Redis needed.</strong> No cross-instance pub/sub. No sticky-session headaches.</li>
+</ul>
+<div class="good">
+  <strong>This is the architectural prize.</strong> Sharding by team gives us realtime sockets for free
+  because the silo boundary <em>is</em> the broadcast boundary.
+</div>
+
+<h2>Trade-offs (honest)</h2>
+<table>
+  <tr><th>Cost</th><th>Mitigation</th></tr>
+  <tr>
+    <td>Cross-team analytics need an aggregator</td>
+    <td>Nightly cron opens every DB, sums into one analytics DB. Runs in seconds for 3,000 small SQLite files.</td>
+  </tr>
+  <tr>
+    <td>Schema migrations run per-file</td>
+    <td>Single script: <code>for f in data/teams/*.db: apply(f)</code>. Parallelised, completes in minutes.</td>
+  </tr>
+  <tr>
+    <td>A team outgrowing 500 users must move to its own instance</td>
+    <td>This is <em>good</em>: those are Publisher / Self-host customers and can pay for dedicated iron.</td>
+  </tr>
+  <tr>
+    <td>One instance going down takes 40 teams with it</td>
+    <td>Acceptable blast radius. Far better than "one DB outage kills 3,000 teams." Instance restarts in seconds.</td>
+  </tr>
+  <tr>
+    <td>Router becomes a single point of failure</td>
+    <td>Run two routers behind a cheap load balancer once we have &gt;200 teams. Until then, a 50-line Flask app on the Mac mini is fine.</td>
+  </tr>
+</table>
+
+<h2>What we are explicitly NOT doing</h2>
+<div class="bad">
+  <ul style="margin:0">
+    <li><strong>No Elixir / Go / Rust rewrite.</strong> We don't know them. We can't operate them at 3 AM. End of discussion.</li>
+    <li><strong>No Postgres migration before Phase 2.</strong> SQLite per-team is genuinely simpler and faster for our access pattern. Postgres comes in only as the registry/analytics DB later.</li>
+    <li><strong>No Kubernetes.</strong> Docker + systemd + nginx is enough until 1,000+ teams.</li>
+    <li><strong>No Redis until proven necessary.</strong> The shard model is designed precisely to avoid it.</li>
+    <li><strong>No microservices.</strong> One Flask app per instance, period. Modular code, monolithic deploy.</li>
+  </ul>
+</div>
+
+<h2>What we do RIGHT NOW</h2>
+<p>Nothing infrastructural. Phase 0 is fine.</p>
+<p>The only thing to bake in <em>today</em> is the discipline that <strong>every new feature is written team-scoped from day one</strong>: every query joins on team, every URL carries the slug, every socket emits to a team room. That way Phase 1 and Phase 2 are pure refactors, never re-architecture.</p>
+
+<blockquote>
+  Build like it's already sharded. Deploy like it isn't, until it has to be.
+</blockquote>
+
+<h2>Open questions</h2>
+<ul>
+  <li>Subdomain (<code>acme.gyra.app</code>) or URL prefix (<code>gyra.app/t/acme</code>)? Subdomains are cleaner for cookies and tenant isolation; prefix is simpler for SSL and dev. <em>Lean: subdomain, but ship prefix first.</em></li>
+  <li>Where does shared user identity live? (One person on multiple teams.) Probably a separate <code>identity.db</code> the router consults for auth before proxying. Needs design.</li>
+  <li>Where do user-uploaded images live? Per-team folder on disk (mirrors the DB shard model) vs. S3-compatible blob store. <em>Lean: per-team folder until Phase 4, then S3.</em></li>
+  <li>How do we expose Self-host? Same Docker image as a production instance, with the router baked in pointing at <code>localhost</code>. The customer runs one container, gets the full GYRA on their own iron.</li>
+</ul>
+
+<footer>
+  <strong>Status:</strong> design locked, no code changes pending until Phase 0 triggers fire.<br>
+  <strong>Owner:</strong> Alex.<br>
+  <strong>Next review:</strong> when paying-team count hits 20 or first Self-host inquiry lands.
+</footer>
+
+</div>
+</body>
+</html>
