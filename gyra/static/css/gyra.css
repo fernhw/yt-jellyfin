@@ -2693,3 +2693,99 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
 .init-history-old { color: #94A3B8; text-decoration: line-through; }
 .init-history-new { color: #F1F5F9; font-weight: 600; }
 .init-history-time { color: #64748B; font-size: .72rem; margin-top: 2px; }
+
+/* Initiatives intro collapsible */
+.init-intro-wrap { margin: 8px 0 14px; }
+.init-intro-wrap .init-intro { margin: 8px 0 0; }
+.init-intro-toggle {
+  display: inline-block;
+  cursor: pointer;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #1f2330;
+  border: 1px solid #2d3344;
+  color: #C7D2FE;
+  font-size: .82rem;
+  font-weight: 600;
+  list-style: none;
+  user-select: none;
+}
+.init-intro-toggle::-webkit-details-marker { display: none; }
+.init-intro-toggle:hover { border-color: #6366F1; color: #FFF; }
+.init-intro-wrap[open] .init-intro-toggle { background: #6D28D9; border-color: #6D28D9; color: #FFF; }
+
+/* Initiatives form — hard overrides (defeat global form rules + caches) */
+.init-form, .init-form * { box-sizing: border-box; }
+.init-form { color: #E5E7EB !important; }
+.init-form .init-field > span,
+.init-form label > span,
+.init-form h3,
+.init-form h4 { color: #F8FAFC !important; }
+.init-form input[type=text],
+.init-form input[type=number],
+.init-form input[type=color],
+.init-form textarea,
+.init-form select {
+  background: #11141b !important;
+  color: #F8FAFC !important;
+  border: 1px solid #2d3344 !important;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: .95rem;
+  width: 100%;
+}
+.init-form input[type=color] {
+  width: 56px; height: 36px; padding: 2px;
+}
+.init-form input::placeholder,
+.init-form textarea::placeholder { color: #94A3B8 !important; opacity: 1; }
+.init-form input:focus,
+.init-form textarea:focus,
+.init-form select:focus {
+  outline: none !important;
+  border-color: #6366F1 !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.25) !important;
+}
+.init-form .init-rule-radio strong { color: #FBBF24 !important; }
+.init-form .init-rule-radio span { color: #E5E7EB !important; }
+.init-form .init-rule-help { color: #CBD5E1 !important; }
+.init-form .init-rule-help strong { color: #FBBF24 !important; }
+.init-form .init-rule-lock-note { color: #94A3B8 !important; }
+.init-form .init-rule-block { background: #11141b !important; }
+
+/* Initiatives form — FINAL light-theme override (page bg is cream #f9f5ee) */
+.init-form .init-field > span,
+.init-form label > span { color: #1F2937 !important; font-weight: 700 !important; }
+.init-form > .init-rule-block h3,
+.init-form > .init-rule-block h4 { color: #F8FAFC !important; }
+.init-form > h3, .init-form > h4 { color: #1F2937 !important; }
+.init-form input[type=text],
+.init-form input[type=number],
+.init-form textarea,
+.init-form select {
+  background: #FFFFFF !important;
+  color: #111827 !important;
+  border: 1.5px solid #D1D5DB !important;
+}
+.init-form input[type=text]::placeholder,
+.init-form textarea::placeholder { color: #9CA3AF !important; }
+.init-form input[type=color] {
+  background: transparent !important;
+  border: 1.5px solid #D1D5DB !important;
+}
+.init-form input:focus,
+.init-form textarea:focus,
+.init-form select:focus {
+  border-color: #6D28D9 !important;
+  box-shadow: 0 0 0 3px rgba(109,40,217,.15) !important;
+}
+/* Field on cream bg needs spacing; lock dark block intact */
+.init-field { margin-bottom: 18px !important; }
+.init-rule-block { color: #E5E7EB !important; }
+.init-rule-block .init-rule-radio strong { color: #FBBF24 !important; }
+.init-rule-block .init-rule-radio span,
+.init-rule-block .init-rule-radio > * { color: #E5E7EB !important; }
+.init-rule-block .init-rule-help { color: #CBD5E1 !important; }
+.init-rule-block .init-rule-help strong { color: #FBBF24 !important; }
+.init-rule-block .init-rule-lock-note { color: #94A3B8 !important; }

@@ -68,6 +68,11 @@
             </svg>
           </button>
           <div class="sidebar-more-menu">
+            <a class="sidebar-link sidebar-link-sm{% if request.endpoint in ('initiatives_index','initiative_new','initiative_detail') and is_current %} active{% endif %}"
+               href="{{ url_for('initiatives_index', project_id=p.id) }}">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.5l2.6 5.3 5.9.86-4.25 4.14 1 5.86L10 14.9l-5.27 2.77 1-5.86L1.5 7.66l5.9-.86L10 1.5z"/></svg>
+              Initiatives
+            </a>
             <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'backlog' and is_current %} active{% endif %}"
                href="{{ url_for('backlog', project_id=p.id) }}">
               <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="4" width="16" height="2" rx="1"/><rect x="2" y="9" width="16" height="2" rx="1"/><rect x="2" y="14" width="10" height="2" rx="1"/></svg>
@@ -105,11 +110,6 @@
               Bulk Add
             </a>
             {% endif %}
-            <a class="sidebar-link sidebar-link-sm{% if request.endpoint in ('initiatives_index','initiative_new','initiative_detail') and is_current %} active{% endif %}"
-               href="{{ url_for('initiatives_index', project_id=p.id) }}">
-              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.5l2.6 5.3 5.9.86-4.25 4.14 1 5.86L10 14.9l-5.27 2.77 1-5.86L1.5 7.66l5.9-.86L10 1.5z"/></svg>
-              Initiatives
-            </a>
           </div>
         </div>
       </div>
