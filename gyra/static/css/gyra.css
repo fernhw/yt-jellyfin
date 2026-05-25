@@ -1049,6 +1049,33 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
 .comment-body { font-size: 13px; padding-left: 30px; }
 .comment-form { margin-top: 20px; }
 
+/* System-generated comments (cascade / scope-change auto notices). */
+.comment.is-system {
+  background: #FFF8E1;
+  border-left: 3px solid #C9A227;
+  padding: 8px 12px 8px 10px;
+  border-radius: 4px;
+}
+.comment.is-system .comment-body { padding-left: 26px; color: #5C4400; }
+.comment.is-system .comment-meta strong { color: #7A5B00; }
+.comment-sys-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #C9A227; color: #fff; font-size: 12px;
+  flex-shrink: 0;
+}
+/* Delete button on a comment — sits at the right of the meta row. */
+.comment-del-btn {
+  margin-left: auto;
+  border: none; background: transparent; cursor: pointer;
+  color: var(--c-gray-400, #9ca3af);
+  font-size: 16px; line-height: 1;
+  padding: 2px 6px; border-radius: 4px;
+}
+.comment-del-btn:hover {
+  background: #FEE2E2; color: #991B1B;
+}
+
 /* ── Admin tables ── */
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table th, .data-table td {
@@ -2288,10 +2315,32 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
   color: var(--c-gray-500); line-height: 1; padding: 0 6px;
 }
 .tpl-modal-body { padding: 14px 16px; overflow-y: auto; }
+.tpl-q-why {
+  background: #FFF7E6; border-left: 4px solid var(--c-purple-500);
+  padding: 9px 12px; margin-bottom: 12px; border-radius: 4px;
+}
+.tpl-q-why-label,
+.tpl-q-preview-label {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .6px; color: var(--c-gray-500, #7A6A52); margin-bottom: 4px;
+}
+.tpl-q-why-desc { font-size: 13px; line-height: 1.4; color: var(--c-gray-900, #1A1208); }
+.tpl-q-preview {
+  background: #F5F0E6; border: 1.5px dashed var(--c-gray-300, #C4B49A);
+  padding: 9px 12px; margin-bottom: 14px; border-radius: 4px;
+}
+.tpl-q-preview-text {
+  font-size: 14px; line-height: 1.45; color: var(--c-gray-900, #1A1208);
+  font-style: italic;
+}
+.tpl-q-preview-text strong { font-style: normal; color: var(--c-purple-500); }
+.tpl-q-prev-blank { color: var(--c-gray-500, #7A6A52); }
 .tpl-modal-hint { color: var(--c-gray-600); font-size: 12px; margin: 0 0 12px; }
 .tpl-q-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
 .tpl-q-row label { font-size: 12px; font-weight: 600; color: var(--c-gray-700); }
 .tpl-q-row input { font-size: 13px; }
+.tpl-q-row input.is-invalid { border-color: var(--c-red, #DC2626); background: #FEF2F2; }
+.tpl-q-req { color: var(--c-red, #DC2626); font-weight: 700; margin-left: 2px; }
 .tpl-modal-footer {
   display: flex; justify-content: flex-end; gap: 8px;
   padding: 10px 16px; border-top: 1px solid var(--c-gray-200);

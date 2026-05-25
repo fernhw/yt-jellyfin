@@ -42,7 +42,7 @@ def register(app) -> None:
         if was_done == now_done:
             return
         attached = conn.execute(
-            "SELECT id, title FROM stories WHERE attached_to=?", (story_id,)
+            "SELECT id, title, status_id FROM stories WHERE attached_to=?", (story_id,)
         ).fetchall()
         if not attached:
             return
@@ -52,8 +52,10 @@ def register(app) -> None:
                 "SELECT user_id FROM story_users WHERE story_id=?", (att["id"],)
             ).fetchall()
             for a in assignees:
-                if a["user_id"] == actor_id:
-                    continue
+                # Do NOT skip the actor here. The actor moved the *container*;
+                # the *dependent* story they're assigned to just had its scope
+                # auto-changed and they need a notification + badge for that
+                # specific story too.
                 if now_done:
                     msg = (f"{actor_name} closed container '{row['title'][:40]}' — "
                            f"your story '{att['title'][:40]}' is now an Integrate task")
@@ -67,6 +69,22 @@ def register(app) -> None:
                     "(user_id,type,message,story_id,from_user,created_at) "
                     "VALUES (?,?,?,?,?,?)",
                     (a["user_id"], ntype, msg, att["id"], actor_id, ts),
+                )
+            # System comment on in-flight (not-done) attached stories only,
+            # so contributors mid-work see why their scope just changed.
+            if now_done and not _is_done(att["status_id"]):
+                sys_body = (
+                    f"⚙️ Scope auto-changed: container "
+                    f"\u201C{row['title']}\u201D was just closed by {actor_name}, "
+                    f"so this story now needs the integrate step. "
+                    f"Story points already account for collaboration — if this "
+                    f"was already in flight, sorry for the late additions."
+                )
+                conn.execute(
+                    "INSERT INTO comments "
+                    "(story_id, user_id, content, created_at, is_system) "
+                    "VALUES (?,?,?,?,1)",
+                    (att["id"], actor_id, sys_body, ts),
                 )
 
     # ── B1: project-membership guard for every per-story endpoint ────────────
@@ -190,6 +208,18 @@ def register(app) -> None:
             (story_id,),
         ).fetchall()
         conn.close()
+        uid = session.get("user_id")
+        role = session.get("role")
+        comments_out = []
+        for c in comments:
+            cd = dict(c)
+            cd["is_system"] = bool(cd.get("is_system"))
+            cd["can_delete"] = (
+                role in ("admin", "super_user")
+                or cd["user_id"] == uid
+                or cd["is_system"]
+            )
+            comments_out.append(cd)
         return jsonify(
             ok=True,
             story=dict(s),
@@ -203,7 +233,7 @@ def register(app) -> None:
                 for img in images
             ],
             addons=[dict(a) for a in addons],
-            comments=[dict(c) for c in comments],
+            comments=comments_out,
             history=[dict(h) for h in history],
             statuses=[dict(st) for st in statuses],
             all_users=[dict(u) for u in all_users],
@@ -831,7 +861,41 @@ def register(app) -> None:
                              f"'{s['title'][:50]}'"),
                     story_id=story_id, from_user=commenter,
                 )
-        return jsonify(ok=True, comment=dict(row))
+        out = dict(row)
+        out["is_system"] = bool(out.get("is_system"))
+        out["can_delete"] = True  # author can always delete their own
+        return jsonify(ok=True, comment=out)
+
+    @app.route("/api/comment/<int:comment_id>", methods=["DELETE"])
+    @login_required
+    def api_delete_comment(comment_id):
+        enforce_csrf()
+        conn = get_db()
+        c = conn.execute(
+            "SELECT id, story_id, user_id, is_system FROM comments WHERE id=?",
+            (comment_id,),
+        ).fetchone()
+        if not c:
+            conn.close()
+            return jsonify(ok=False), 404
+        # Must have access to the host story (project membership).
+        if not _require_story_access(c["story_id"]):
+            conn.close()
+            return jsonify(ok=False), 404
+        uid  = session.get("user_id")
+        role = session.get("role")
+        is_sys = bool(c["is_system"])
+        # Allowed: admins, the author, or anyone with access if it's a
+        # system-generated comment.
+        if not (role in ("admin", "super_user")
+                or c["user_id"] == uid
+                or is_sys):
+            conn.close()
+            return jsonify(ok=False, error="forbidden"), 403
+        conn.execute("DELETE FROM comments WHERE id=?", (comment_id,))
+        conn.commit()
+        conn.close()
+        return jsonify(ok=True)
 
     # ── Bulk operations ───────────────────────────────────────────────────────
 

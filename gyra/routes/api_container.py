@@ -188,6 +188,55 @@ def register(app) -> None:
             "WHERE id=?",
             (container_id, action, int(time.time()), child_id),
         )
+
+        # Scope-grew notification + system comment on the CONTAINER, but only
+        # when (a) this is a NEW attach (not a re-action of existing dep) and
+        # (b) the container itself is not already Done.
+        is_new_attach = (prev_container != container_id)
+        if is_new_attach:
+            ctr_status = conn.execute(
+                "SELECT s.status_id, st.is_done FROM stories s "
+                "LEFT JOIN statuses st ON st.id = s.status_id "
+                "WHERE s.id=?", (container_id,)
+            ).fetchone()
+            container_done = bool(ctr_status and ctr_status["is_done"])
+            if not container_done:
+                ts = int(time.time())
+                actor_id   = session["user_id"]
+                actor_name = session.get("display_name") or "Someone"
+                # Notify container assignees (skip the actor themself).
+                assignees = conn.execute(
+                    "SELECT user_id FROM story_users WHERE story_id=?",
+                    (container_id,),
+                ).fetchall()
+                msg = (f"{actor_name} attached '{child['title'][:40]}' as a "
+                       f"dependency on your container — scope grew")
+                for a in assignees:
+                    if a["user_id"] == actor_id:
+                        continue
+                    conn.execute(
+                        "INSERT INTO notifications "
+                        "(user_id,type,message,story_id,from_user,created_at) "
+                        "VALUES (?,?,?,?,?,?)",
+                        (a["user_id"], "scope_grew", msg,
+                         container_id, actor_id, ts),
+                    )
+                # System comment on the container, so contributors see why
+                # their scope just expanded.
+                sys_body = (
+                    f"⚙️ Scope auto-changed: {actor_name} just attached "
+                    f"\u201C{child['title']}\u201D as a dependency, so this "
+                    f"container now needs to integrate it. Story points "
+                    f"already account for collaboration — if this was already "
+                    f"in flight, sorry for the late additions."
+                )
+                conn.execute(
+                    "INSERT INTO comments "
+                    "(story_id, user_id, content, created_at, is_system) "
+                    "VALUES (?,?,?,?,1)",
+                    (container_id, actor_id, sys_body, ts),
+                )
+
         conn.commit()
         conn.close()
 

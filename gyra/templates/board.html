@@ -3526,14 +3526,32 @@
     comments.forEach(function(c){ el.appendChild(buildComment(c)); });
   }
   function buildComment(c) {
-    var div = document.createElement('div'); div.className = 'comment';
-    var av  = c.avatar
-      ? '<img src="'+ROOT+'/avatars/'+esc(c.avatar)+'" class="avatar-xs" alt="">'
-      : '<span class="avatar-initial-xs">'+esc((c.display_name||'?')[0].toUpperCase())+'</span>';
+    var div = document.createElement('div');
+    div.className = 'comment' + (c.is_system ? ' is-system' : '');
+    if (c.id) div.dataset.cid = c.id;
+    var av  = c.is_system
+      ? '<span class="comment-sys-badge" title="System-generated">⚙️</span>'
+      : (c.avatar
+          ? '<img src="'+ROOT+'/avatars/'+esc(c.avatar)+'" class="avatar-xs" alt="">'
+          : '<span class="avatar-initial-xs">'+esc((c.display_name||'?')[0].toUpperCase())+'</span>');
+    var who = c.is_system ? 'System' : esc(c.display_name);
+    var del = c.can_delete
+      ? '<button type="button" class="comment-del-btn" title="Delete comment" aria-label="Delete">×</button>'
+      : '';
     div.innerHTML = '<div class="comment-meta">'+ av
-      +'<strong>'+esc(c.display_name)+'</strong>'
-      +'<time>'+fmtDate(c.created_at)+'</time></div>'
+      +'<strong>'+who+'</strong>'
+      +'<time>'+fmtDate(c.created_at)+'</time>'
+      + del +'</div>'
       +'<p class="comment-body">'+esc(c.content)+'</p>';
+    if (c.can_delete && c.id) {
+      div.querySelector('.comment-del-btn').addEventListener('click', function(){
+        if (!confirm('Delete this comment?')) return;
+        apiDelete('/api/comment/'+c.id).then(function(d){
+          if (d && d.ok) div.remove();
+          else alert((d && d.error) || 'Could not delete.');
+        });
+      });
+    }
     return div;
   }
   document.getElementById('sm-comment-btn').addEventListener('click', function(){

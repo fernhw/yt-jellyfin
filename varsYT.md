@@ -1,14 +1,14 @@
-last_scan=1779726913145
-total_videos=2622
-updated=2026-05-25 11:35:13
+last_scan=1779740052864
+total_videos=2625
+updated=2026-05-25 15:14:12
 report_date=2026-05-25
-downloaded_today=5
-deleted_today=3
+downloaded_today=8
+deleted_today=5
 skipped_today=1
 channels_scanned=93
 channels_total=93
 errors_last_run=0
 errors_list=
-downloaded_list=Big A:The Balance is Shifting|Asmongold TV  :Resident Evil 4 is REALLY GOOD..|Lessons in Meme Culture:The Amazing Digital Circus/Glitch Fandom Is Crashing Out|Asmongold TV  :This man is an absolute f***ing patriot..|Second Wind:The Beautiful & Baffling Designs of Metal Gear Solid | Design Delve
-deleted_list=AsmongoldTV:This_video_fed_me_up_S26E147|AsmongoldTV:Elons_ex_is_out_of_her_mind_S26E148|SecondWind:Aphelion_Fully_Ramblomatic_S26E20
+downloaded_list=Big A:The Balance is Shifting|Asmongold TV  :Resident Evil 4 is REALLY GOOD..|Lessons in Meme Culture:The Amazing Digital Circus/Glitch Fandom Is Crashing Out|Asmongold TV  :This man is an absolute f***ing patriot..|Second Wind:The Beautiful & Baffling Designs of Metal Gear Solid | Design Delve|SAMTIME:We’re Winning Against Microsoft|Gamers Nexus:COLLAPSE of Personal Computing | Investigation Into the Destruction of Ownership|Asmongold TV  :Bro is facing 45000 years in prison..
+deleted_list=AsmongoldTV:This_video_fed_me_up_S26E147|AsmongoldTV:Elons_ex_is_out_of_her_mind_S26E148|SecondWind:Aphelion_Fully_Ramblomatic_S26E20|AsmongoldTV:Jeff_Bezos_pissed_everyone_off_S26E149|GamersNexus:Youll_Subscribe_to_Your_Router_Too_The_First_Router_Bribes_Are_Here_S26E10
 skipped_list=members-only:https://www.youtube.com/watch?v=I56uHVF-lFk

@@ -156,7 +156,7 @@
 
       <div class="form-group mt-4">
         <label>Description</label>
-        <div class="story-guidance story-guidance-sm">
+        <div class="story-guidance story-guidance-sm tpl-only-hint" style="display:none">
           Templates are starting points, not gospel. Edit anything that doesn't fit your story.
         </div>
         <textarea name="description" rows="4" class="form-input"
@@ -165,7 +165,7 @@
 
       <div class="form-group">
         <label>Acceptance Criteria</label>
-        <div class="story-guidance story-guidance-sm">
+        <div class="story-guidance story-guidance-sm tpl-only-hint" style="display:none">
           Check this list covers every outcome we'll verify. Add anything missing, remove anything that doesn't apply.
         </div>
         <textarea name="acceptance_criteria" id="ac-hidden" style="display:none">{{ story.acceptance_criteria if story else '' }}</textarea>
@@ -176,7 +176,7 @@
       {% if mode == 'new' %}
       <div class="story-tasks-section mt-4">
         <div class="tasks-header"><h3>Tasks</h3></div>
-        <div class="story-guidance story-guidance-sm">
+        <div class="story-guidance story-guidance-sm tpl-only-hint" style="display:none">
           Move, remove or add any task to cover the actual work. Tasks are <strong>BINARY</strong> — done or not done.
         </div>
         <div id="new-tasks-list" class="tasks-list"></div>
@@ -277,15 +277,24 @@
       <!-- Comments pane -->
       <div id="tab-comments" class="tab-pane active">
         {% for c in comments %}
-        <div class="comment">
+        {% set _can_del = (session.role in ('admin','super_user')) or (c.user_id == session.user_id) or c.is_system %}
+        <div class="comment{% if c.is_system %} is-system{% endif %}" data-cid="{{ c.id }}">
           <div class="comment-meta">
-            {% if c.avatar %}
-              <img src="{{ url_for('avatar', filename=c.avatar) }}" class="avatar-xs" alt="">
+            {% if c.is_system %}
+              <span class="comment-sys-badge" title="System-generated">⚙️</span>
+              <strong>System</strong>
             {% else %}
-              <span class="avatar-initial-xs">{{ c.display_name[0]|upper }}</span>
+              {% if c.avatar %}
+                <img src="{{ url_for('avatar', filename=c.avatar) }}" class="avatar-xs" alt="">
+              {% else %}
+                <span class="avatar-initial-xs">{{ c.display_name[0]|upper }}</span>
+              {% endif %}
+              <strong>{{ c.display_name }}</strong>
             {% endif %}
-            <strong>{{ c.display_name }}</strong>
             <time>{{ c.created_at | datetimeformat }}</time>
+            {% if _can_del %}
+            <button type="button" class="comment-del-btn js-del-comment" title="Delete comment" aria-label="Delete">×</button>
+            {% endif %}
           </div>
           <p class="comment-body">{{ c.content }}</p>
         </div>
@@ -335,16 +344,25 @@
         {% for entry in all_items | sort(attribute='ts') %}
           {% if entry.type == 'comment' %}
           {% set c = entry.item %}
-          <div class="comment">
+          {% set _can_del = (session.role in ('admin','super_user')) or (c.user_id == session.user_id) or c.is_system %}
+          <div class="comment{% if c.is_system %} is-system{% endif %}" data-cid="{{ c.id }}">
             <div class="comment-meta">
-              {% if c.avatar %}
-                <img src="{{ url_for('avatar', filename=c.avatar) }}" class="avatar-xs" alt="">
+              {% if c.is_system %}
+                <span class="comment-sys-badge" title="System-generated">⚙️</span>
+                <strong>System</strong>
               {% else %}
-                <span class="avatar-initial-xs">{{ c.display_name[0]|upper }}</span>
+                {% if c.avatar %}
+                  <img src="{{ url_for('avatar', filename=c.avatar) }}" class="avatar-xs" alt="">
+                {% else %}
+                  <span class="avatar-initial-xs">{{ c.display_name[0]|upper }}</span>
+                {% endif %}
+                <strong>{{ c.display_name }}</strong>
               {% endif %}
-              <strong>{{ c.display_name }}</strong>
               <time>{{ c.created_at | datetimeformat }}</time>
               <span class="form-hint-inline" style="font-size:9px;opacity:.6">comment</span>
+              {% if _can_del %}
+              <button type="button" class="comment-del-btn js-del-comment" title="Delete comment" aria-label="Delete">×</button>
+              {% endif %}
             </div>
             <p class="comment-body">{{ c.content }}</p>
           </div>
@@ -1131,7 +1149,14 @@
               aria-label="Close">×</button>
     </div>
     <div class="tpl-modal-body">
-      <p class="tpl-modal-hint">Fill in the bits in <code>{braces?}</code>.</p>
+      <div class="tpl-q-why">
+        <div class="tpl-q-why-label">What this template makes</div>
+        <div class="tpl-q-why-desc" id="tpl-q-desc"></div>
+      </div>
+      <div class="tpl-q-preview">
+        <div class="tpl-q-preview-label">Your user story (updates as you type)</div>
+        <div class="tpl-q-preview-text" id="tpl-q-preview"></div>
+      </div>
       <div id="tpl-q-fields"></div>
     </div>
     <div class="tpl-modal-footer">
@@ -1277,6 +1302,8 @@
 
   var qModal  = document.getElementById('tpl-questions');
   var qTitle  = document.getElementById('tpl-q-title');
+  var qDesc   = document.getElementById('tpl-q-desc');
+  var qPrev   = document.getElementById('tpl-q-preview');
   var qFields = document.getElementById('tpl-q-fields');
   var qBack   = document.getElementById('tpl-q-back');
   var qClose  = document.getElementById('tpl-q-close');
@@ -1450,19 +1477,37 @@
       return;
     }
     qTitle.textContent = tpl.name;
+    qDesc.innerHTML = humanizePlaceholders(tpl.description || '');
+    var updatePreview = function () {
+      var answers = {};
+      qFields.querySelectorAll('input').forEach(function (i) {
+        answers[i.dataset.key] = i.value.trim();
+      });
+      var z = fillPlaceholdersSoft(tpl.z || '', answers);
+      var x = fillPlaceholdersSoft(tpl.x || '', answers);
+      var y = fillPlaceholdersSoft(tpl.y || '', answers);
+      qPrev.innerHTML = [tpl.actor, tpl.verb, z, x, tpl.for_conn, y]
+        .filter(Boolean).join(' ');
+    };
     qFields.innerHTML = '';
     qs.forEach(function (qText) {
       var row = document.createElement('div');
       row.className = 'tpl-q-row';
       var lab = document.createElement('label');
-      // Strip the trailing ? for the label so it reads naturally.
-      lab.textContent = qText.replace(/\?\s*$/, '');
+      // Strip the trailing ? and capitalize first letter for a clean label.
+      var clean = qText.replace(/\?\s*$/, '').trim();
+      lab.textContent = clean.charAt(0).toUpperCase() + clean.slice(1);
+      lab.innerHTML += ' <span class="tpl-q-req">*</span>';
       var inp = document.createElement('input');
       inp.type = 'text'; inp.className = 'form-input';
       inp.dataset.key = qText;
+      inp.required = true;
+      inp.placeholder = exampleFor(qText);
+      inp.addEventListener('input', updatePreview);
       row.appendChild(lab); row.appendChild(inp);
       qFields.appendChild(row);
     });
+    updatePreview();
     if (tpl.os_field) {
       var row = document.createElement('div'); row.className = 'tpl-q-row';
       row.innerHTML = '<label>OS / Platform</label>' +
@@ -1510,6 +1555,72 @@
       })
       .replace(/\{(\w+)\}/g, function (m, k) { return '<' + k + '>'; });
   }
+  // Example values shown as input placeholders so users know what to type.
+  var EXAMPLES = {
+    'character name?':           'e.g. Amy',
+    'prop name?':                'e.g. Brass lantern',
+    'kit name?':                 'e.g. Victorian interior kit',
+    'target area?':              'e.g. Sub-basement levels',
+    'effect name?':              'e.g. Lantern flare',
+    'trigger?':                  'e.g. on pickup',
+    'sound name?':               'e.g. Lantern pickup',
+    'how many variations?':      'e.g. 4',
+    'how many tris for model?':  'e.g. 8000',
+    'video name?':               'e.g. Episode 1 teaser',
+    'screen name?':              'e.g. Settings',
+    'mechanic name?':            'e.g. Wall-run',
+    'level name?':               'e.g. Sub-Basement 02',
+    'system to rebalance?':      'e.g. Enemy damage curve',
+    'symptom we are fixing?':    'e.g. boss too easy after wave 3',
+    'what is broken?':           'e.g. save fails on macOS 14',
+    'customer impact?':          'e.g. paying users locked out',
+    'page path or name?':        'e.g. /pricing',
+    'component name?':           'e.g. PrimaryButton',
+    'HTTP method?':              'e.g. POST',
+    'endpoint path?':            'e.g. /api/users',
+    'table or collection?':      'e.g. users',
+    'pipeline step name?':       'e.g. Lint',
+    'pipeline name?':            'e.g. asset build',
+    'check name?':               'e.g. Unit tests',
+    'environment name?':         'e.g. staging',
+    'what are we alerting on?':  'e.g. p95 latency > 500ms',
+    'incident name or date?':    'e.g. INC-2026-05-12',
+    'asset name?':               'e.g. Logo dark variant',
+    'where will this be used?':  'e.g. social headers',
+    'what are we trying to learn?':'e.g. why trial users drop on day 3',
+    'timebox in days?':          'e.g. 3',
+    'area to refactor?':         'e.g. auth/session module',
+    'dependency?':               'e.g. flask',
+    'target version?':           'e.g. 3.1.0',
+    'doc topic?':                'e.g. API auth',
+    'role or team?':             'e.g. backend engineer',
+    'campaign name?':            'e.g. Spring launch',
+    'what does success look like?':'e.g. 10k landing-page visits',
+    'series name?':              'e.g. Behind the build',
+    'what should the screen let the player do?':'e.g. change controls',
+    'what should the level make the player feel?':'e.g. tense, hunted',
+    'what should the reader be able to do?':'e.g. wire up OAuth',
+    'what should the video sell?':'e.g. the new boss fight'
+  };
+  function exampleFor(qText) {
+    return EXAMPLES[qText] || 'Type your answer';
+  }
+  // Soft fill: empty answers render as a faded <hint> so the preview stays
+  // readable while the user types instead of dropping in [bracketed] keys.
+  function fillPlaceholdersSoft(s, answers) {
+    if (!s) return '';
+    return String(s).replace(/\{([^{}]+?\?)\}/g, function (m, k) {
+      var v = answers[k];
+      if (v && v.length) return '<strong>' + escapeHtmlSafe(v) + '</strong>';
+      return '<span class="tpl-q-prev-blank">&lt;' +
+        escapeHtmlSafe(k.replace(/\?\s*$/, '').trim()) + '&gt;</span>';
+    });
+  }
+  function escapeHtmlSafe(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
   // Replace {Question text?} tokens (inline syntax) AND legacy {key} tokens.
   function fillPlaceholders(s, answers) {
     if (!s) return '';
@@ -1537,14 +1648,30 @@
   qGo.addEventListener('click', function () {
     var tpl = currentTpl; if (!tpl) return;
     var answers = {};
+    var missing = [];
     qFields.querySelectorAll('input').forEach(function (i) {
-      answers[i.dataset.key] = i.value.trim();
+      var v = i.value.trim();
+      answers[i.dataset.key] = v;
+      if (i.required && !v) {
+        missing.push(i);
+        i.classList.add('is-invalid');
+      } else {
+        i.classList.remove('is-invalid');
+      }
     });
+    if (missing.length) {
+      missing[0].focus();
+      return;
+    }
     fillStory(tpl, answers);
     closeQuestions();
   });
 
   function fillStory(tpl, answers) {
+    // Template has been applied — reveal the template-related editing hints.
+    document.querySelectorAll('.tpl-only-hint').forEach(function (el) {
+      el.style.display = '';
+    });
     // Grammar
     setVal('sb-actor', tpl.actor || 'User');
     setVal('sb-verb',  tpl.verb  || 'needs');
@@ -1580,7 +1707,7 @@
     if (listEl) {
       listEl.innerHTML = '';
       acList.forEach(function (txt) {
-        var row = document.createElement('div'); row.className = 'ac-item';
+        var row = document.createElement('div'); row.className = 'ac-item-row';
         var inp = document.createElement('input');
         inp.type = 'text'; inp.className = 'ac-item-input form-input'; inp.value = txt;
         var del = document.createElement('button');
@@ -1641,6 +1768,33 @@
 
     closePicker();
   }
+}());
+</script>
+
+<script>
+(function () {
+  // Delete-comment handler (own comments + system comments).
+  var CSRF = (document.querySelector('meta[name="csrf-token"]') || {content:''}).content;
+  var ROOT = (document.querySelector('meta[name="app-root"]') || {getAttribute:function(){return '';}}).getAttribute('content') || '';
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest && ev.target.closest('.js-del-comment');
+    if (!btn) return;
+    var card = btn.closest('.comment');
+    var cid  = card && card.dataset.cid;
+    if (!cid) return;
+    if (!confirm('Delete this comment?')) return;
+    fetch(ROOT + '/api/comment/' + cid, {
+      method: 'DELETE', credentials: 'same-origin',
+      headers: {'X-CSRF-Token': CSRF}
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d && d.ok) {
+        // Remove all rendered copies of this comment (Comments + All tabs).
+        document.querySelectorAll('.comment[data-cid="' + cid + '"]').forEach(function (n) { n.remove(); });
+      } else {
+        alert((d && d.error) || 'Could not delete.');
+      }
+    });
+  });
 }());
 </script>
 {% endif %}

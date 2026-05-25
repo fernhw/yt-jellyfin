@@ -361,6 +361,10 @@ def _migrate_db() -> None:
         ("epics",   "order_index", "INTEGER DEFAULT 0"),
         ("epics",   "initiative_id", "INTEGER DEFAULT NULL"),
         ("epics",   "is_archived", "INTEGER DEFAULT 0"),
+        # ── Comments: system-generated flag for auto-comments (cascade,
+        # scope-change). Users can delete their own comments AND any
+        # system-comment on stories they can access.
+        ("comments", "is_system", "INTEGER DEFAULT 0"),
     ]
     conn = get_db()
     for table, col, col_def in new_cols:
