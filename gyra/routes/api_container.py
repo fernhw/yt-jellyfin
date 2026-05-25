@@ -269,15 +269,15 @@ def register(app) -> None:
         offset = max(int(request.args.get("offset", "0")), 0)
 
         params = [s["project_id"], story_id, story_id]
-        where  = ("project_id=? AND id<>? "
-                  "AND COALESCE(is_archived,0)=0 "
-                  "AND (attached_to IS NULL OR attached_to<>?)")
+        where  = ("s.project_id=? AND s.id<>? "
+                  "AND COALESCE(s.is_archived,0)=0 "
+                  "AND (s.attached_to IS NULL OR s.attached_to<>?)")
         if q:
-            where += " AND (title LIKE ? OR CAST(id AS TEXT) LIKE ?"
+            where += " AND (s.title LIKE ? OR CAST(s.id AS TEXT) LIKE ?"
             like = "%" + q + "%"
             params.extend([like, like])
             if q_id is not None:
-                where += " OR id=?"
+                where += " OR s.id=?"
                 params.append(q_id)
             where += ")"
 

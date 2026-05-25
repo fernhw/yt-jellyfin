@@ -690,18 +690,18 @@
           </label>
           <select id="sm-box-type" class="story-sidebar-select">
             <option value="">— Not a container —</option>
-            <option value="whitebox">Whitebox — built &amp; live</option>
-            <option value="greybox">Greybox — stub, hooks sketched</option>
-            <option value="blackbox">Blackbox — opaque future promise</option>
-            <option value="featurebox">Featurebox — I'll absorb on integrate</option>
+            <option value="whitebox">Whitebox — naked idea working, no layout or style</option>
+            <option value="greybox">Greybox — real functionality, no design or polish</option>
+            <option value="blackbox">Blackbox — tiny test room for one small part</option>
+            <option value="featurebox">Featurebox — focused space to test a complex feature</option>
           </select>
           <div id="sm-box-help-panel" class="sm-box-help-panel" style="display:none">
             <p><strong>Boxes</strong> let a story declare how attachments should treat it. Authority flows host → guest only; no story ever blocks another's "Done".</p>
             <ul>
-              <li><strong>Whitebox</strong> — I'm built &amp; inspectable. Wire in now.</li>
-              <li><strong>Greybox</strong> — I'm a stub, hooks sketched. Dry-run only.</li>
-              <li><strong>Blackbox</strong> — I don't exist yet. Build standalone, integration deferred.</li>
-              <li><strong>Featurebox</strong> — I own integration. Just signal complete; I'll absorb.</li>
+              <li><strong>Whitebox</strong> — Like putting one button on a white screen when there is no menu yet. Games: simple shapes testing movement, scale, timing, rooms, routes, or camera before art exists. Software: the naked idea working before layout, style, or structure exists.</li>
+              <li><strong>Greybox</strong> — Like a no-design menu made of plain blocks, but the functionality is real. Games: a level with correct paths, room sizes, enemy spots, cover, and flow, but no final assets. Software: screens, buttons, menus, forms, and navigation working with no branding, no art, and no polish.</li>
+              <li><strong>Blackbox</strong> — Like making a tiny test room for one small part of a feature. Games: tests one part only, like a face animation, door interaction, AI reaction, navmesh path, or dialogue trigger. Software: tests one small function, like one button action, one form rule, one API call, or one save event.</li>
+              <li><strong>Featurebox</strong> — Like making a special space to test one complex feature. Games: testing a full system like inventory, stealth detection, subtitles, checkpoints, or save/load away from the full game. Software: a focused area where a complex feature can be used, broken, fixed, and understood before it joins the real app.</li>
             </ul>
           </div>
         </div>
@@ -840,6 +840,19 @@
     padding:6px 14px; background:#fef3c7; font-size:11px; color:#78350f;
     border-top:1px solid #fde68a;
   }
+  .attach-picker-row .ap-attached {
+    font-size:10px; padding:2px 6px; border-radius:3px;
+    background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;
+    white-space:nowrap;
+  }
+  .attach-picker-row.is-selected { background:#c7d2fe; box-shadow:inset 3px 0 0 #4f46e5; }
+  .attach-picker-selected .ap-chip {
+    display:inline-flex; align-items:center; gap:4px;
+    background:#fff; border:1px solid #fde68a; border-radius:10px;
+    padding:2px 6px; margin:2px 2px 0 0; cursor:pointer;
+  }
+  .attach-picker-selected .ap-chip:hover { background:#fef9c3; }
+  .attach-picker-selected .ap-chip-x { color:#b45309; font-weight:700; }
 </style>
 
 {# ──────────────────────── EPIC MODAL ─────────────────────────── #}
@@ -2749,23 +2762,23 @@
   var BOX_INFO = {
     whitebox: {
       label: 'WhiteBox',
-      tip:   'Build this on its own. No container, no surroundings, no integration.',
-      detail:'Make it work alone — a button with no menu, a screen with no game, an animation with no world, a Feature with no character. Get it right in isolation. Wiring it in comes later.'
+      tip:   'The naked idea working before layout, style, or structure exists.',
+      detail:'Like putting one button on a white screen when there is no menu yet. In games, it is simple shapes testing movement, scale, timing, rooms, routes, or camera before art exists. In software, it is the naked idea working before layout, style, or structure exists.'
     },
     greybox: {
       label: 'GreyBox',
-      tip:   'Build a rough draft that lives inside its container — stubs and sketches.',
-      detail:'Place it where it belongs, but keep it low-fidelity. Dummy data, placeholder art, stubbed logic. The point is to feel the shape inside the container, not to ship.'
+      tip:   'Real functionality with no design, branding, art, or polish.',
+      detail:'Like a no-design menu made of plain blocks, but the functionality is real. In games, it is a level with correct paths, room sizes, enemy spots, cover, and flow, but no final assets. In software, it is screens, buttons, menus, forms, and navigation working with no branding, no art, and no polish.'
     },
     blackbox: {
       label: 'BlackBox',
-      tip:   'Build it as a sealed unit inside its container. Container does not look in.',
-      detail:'Wrap up the behavior so the rest of the system just calls it. No leaking internals, no special hooks. When you are done, the container only knows it works.'
+      tip:   'A tiny test room for one small part of a feature.',
+      detail:'Like making a tiny test room for one small part of a feature. In games, it tests one part only, like a face animation, door interaction, AI reaction, navmesh path, or dialogue trigger. In software, it tests one small function, like one button action, one form rule, one API call, or one save event.'
     },
     featurebox: {
       label: 'FeatureBox',
-      tip:   'Build the full polished feature, drop it into its container, done.',
-      detail:'End-to-end: art, logic, copy, edge cases. When you hand it off, no further work is needed in the container — it just slots in and ships.'
+      tip:   'A focused space to test one complex feature.',
+      detail:'Like making a special space to test one complex feature. In games, it means testing a full system like inventory, stealth detection, subtitles, checkpoints, or save/load away from the full game. In software, it means building a focused area where a complex feature can be used, broken, fixed, and understood before it joins the real app.'
     }
   };
   function boxBadge(box, withTip) {
@@ -2920,19 +2933,55 @@
   var _apAction   = document.getElementById('attach-picker-action');
   var _apConfirm  = document.getElementById('attach-picker-confirm');
   var _apSelected = document.getElementById('attach-picker-selected');
-  var _apSelectedId    = null;
-  var _apSelectedTitle = '';
+  var _apSelectedIds   = [];   // multi-select
+  var _apSelectedMeta  = {};   // id -> { title, attached_to }
   var _apOffset   = 0;
   var _apHasMore  = false;
   var _apLoading  = false;
   var _apSearchT  = null;
 
+  function _apRenderSelected() {
+    if (!_apSelectedIds.length) {
+      _apSelected.style.display = 'none';
+      _apSelected.innerHTML = '';
+      _apConfirm.disabled = true;
+      _apConfirm.textContent = 'Attach';
+      return;
+    }
+    _apSelected.style.display = '';
+    _apConfirm.disabled = false;
+    _apConfirm.textContent = 'Attach ' + _apSelectedIds.length;
+    _apSelected.innerHTML = 'Selected: ' + _apSelectedIds.map(function(id){
+      var m = _apSelectedMeta[id] || {};
+      return '<span class="ap-chip" data-id="'+id+'">#'+id+' '+esc(m.title||'')+' <span class="ap-chip-x">✕</span></span>';
+    }).join(' ');
+    _apSelected.querySelectorAll('.ap-chip').forEach(function(ch){
+      ch.addEventListener('click', function(){
+        var id = parseInt(ch.dataset.id);
+        _apToggleSelect(id, false);
+      });
+    });
+  }
+  function _apToggleSelect(id, meta) {
+    var idx = _apSelectedIds.indexOf(id);
+    if (idx >= 0) {
+      _apSelectedIds.splice(idx, 1);
+      delete _apSelectedMeta[id];
+    } else {
+      _apSelectedIds.push(id);
+      if (meta) _apSelectedMeta[id] = meta;
+    }
+    // Reflect in list
+    var row = _apList.querySelector('.attach-picker-row[data-id="'+id+'"]');
+    if (row) row.classList.toggle('is-selected', _apSelectedIds.indexOf(id) >= 0);
+    _apRenderSelected();
+  }
+
   function openAttachPicker() {
     if (!curId) return;
-    _apSelectedId = null;
-    _apSelectedTitle = '';
-    _apConfirm.disabled = true;
-    _apSelected.style.display = 'none';
+    _apSelectedIds = [];
+    _apSelectedMeta = {};
+    _apRenderSelected();
     _apAction.value = '';
     _apQ.value = '';
     _apBg.style.display = 'flex';
@@ -2959,19 +3008,18 @@
       d.items.forEach(function(it){
         var row = document.createElement('div');
         row.className = 'attach-picker-row';
+        if (_apSelectedIds.indexOf(it.id) >= 0) row.classList.add('is-selected');
         row.dataset.id = it.id;
         row.dataset.title = it.title;
+        var attachedBadge = it.attached_to
+          ? '<span class="ap-attached" title="Already attached to container #'+it.attached_to+' — will be moved here">⛓ #'+it.attached_to+'</span>'
+          : '';
         row.innerHTML = '<span class="ap-id">#'+it.id+'</span>'
                       + '<span class="ap-title">'+esc(it.title)+'</span>'
+                      + attachedBadge
                       + '<span class="ap-status" style="background:'+esc(it.status_color)+'22;color:'+esc(it.status_color)+'">'+esc(it.status_name)+'</span>';
         row.addEventListener('click', function(){
-          _apList.querySelectorAll('.is-selected').forEach(function(n){ n.classList.remove('is-selected'); });
-          row.classList.add('is-selected');
-          _apSelectedId = it.id;
-          _apSelectedTitle = it.title;
-          _apConfirm.disabled = false;
-          _apSelected.style.display = '';
-          _apSelected.textContent = 'Selected: #' + it.id + ' ' + it.title;
+          _apToggleSelect(it.id, { title: it.title, attached_to: it.attached_to });
         });
         _apList.appendChild(row);
       });
@@ -2991,9 +3039,24 @@
   document.getElementById('attach-picker-close').addEventListener('click', closeAttachPicker);
   _apBg.addEventListener('click', function(e){ if (e.target === _apBg) closeAttachPicker(); });
   _apConfirm.addEventListener('click', function(){
-    if (!_apSelectedId) return;
-    doAttach(_apSelectedId, _apAction.value.trim(), false);
+    if (!_apSelectedIds.length) return;
+    var act = _apAction.value.trim();
+    // Pre-confirm moving any items already attached elsewhere.
+    var moving = _apSelectedIds.filter(function(id){
+      var m = _apSelectedMeta[id]; return m && m.attached_to;
+    });
+    if (moving.length && !confirm(moving.length + ' selected story(ies) are already attached to another container. Move them here?')) {
+      return;
+    }
+    var ids = _apSelectedIds.slice();
     closeAttachPicker();
+    // Sequential attach to keep server state consistent + avoid race on attachments list.
+    (function next(i){
+      if (i >= ids.length) return;
+      doAttach(ids[i], act, true);
+      // small stagger so each /attach POST resolves before the next renders
+      setTimeout(function(){ next(i+1); }, 120);
+    })(0);
   });
   var _apOpenBtn = document.getElementById('sm-attach-open-picker');
   if (_apOpenBtn) _apOpenBtn.addEventListener('click', openAttachPicker);
