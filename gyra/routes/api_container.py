@@ -77,7 +77,7 @@ def _fetch_container(child_id):
 def register(app) -> None:
 
     # ── Box-type setter ─────────────────────────────────────────────────────
-    @app.route("/api/story/<int:story_id>/box", methods=["POST"])
+    @app.route("/api/story/<storyref:story_id>/box", methods=["POST"])
     @login_required
     def api_set_box(story_id):
         enforce_csrf()
@@ -119,7 +119,7 @@ def register(app) -> None:
         return jsonify(ok=True, box_type=raw)
 
     # ── Attach a child story to a container ─────────────────────────────────
-    @app.route("/api/story/<int:container_id>/attach", methods=["POST"])
+    @app.route("/api/story/<storyref:container_id>/attach", methods=["POST"])
     @login_required
     def api_attach(container_id):
         enforce_csrf()
@@ -202,7 +202,7 @@ def register(app) -> None:
                        attachments=_fetch_attachments(container_id))
 
     # ── Detach a child from a container ─────────────────────────────────────
-    @app.route("/api/story/<int:container_id>/attach/<int:child_id>",
+    @app.route("/api/story/<storyref:container_id>/attach/<storyref:child_id>",
                methods=["DELETE"])
     @login_required
     def api_detach(container_id, child_id):
@@ -228,7 +228,7 @@ def register(app) -> None:
                        attachments=_fetch_attachments(container_id))
 
     # ── Read-only: container info for a story ───────────────────────────────
-    @app.route("/api/story/<int:story_id>/container-info")
+    @app.route("/api/story/<storyref:story_id>/container-info")
     @login_required
     def api_container_info(story_id):
         s = _require_access(story_id)
@@ -250,7 +250,7 @@ def register(app) -> None:
         return jsonify(ok=True, **info)
 
     # ── Searchable, paged candidates picker ─────────────────────────────────
-    @app.route("/api/story/<int:story_id>/attach-search")
+    @app.route("/api/story/<storyref:story_id>/attach-search")
     @login_required
     def api_attach_search(story_id):
         s = _require_access(story_id)

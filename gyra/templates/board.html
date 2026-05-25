@@ -132,7 +132,7 @@
              data-story-id="{{ story.id }}"
              data-order-index="{{ story.order_index }}"
              data-subcol-index="{{ story.subcol_index or 0 }}"
-             data-href="{{ url_for('story_view', story_id=story.id) }}"
+             data-href="{{ request.script_root }}/story/{{ project.key }}-{{ story.story_number if story.story_number is not none else story.id }}"
              data-assignee-ids="{{ story.assignees | map(attribute='id') | join(',') }}"
              data-epic-id="{{ story.epic_id or '' }}"
              data-box-type="{{ story.box_type or '' }}"
@@ -157,7 +157,7 @@
           <span class="card-type-badge">{{ story.story_type_name }}</span>
           {% endif %}
           {# Card ID — top-right #}
-          <span class="card-id">{{ project.key }}-{{ story.id }}</span>
+          <span class="card-id">{{ project.key }}-{{ story.story_number if story.story_number is not none else story.id }}</span>
 
           <div class="card-title">{{ story.html_title }}</div>
 
@@ -574,7 +574,7 @@
     <div class="sm-header">
       <button id="sm-back" class="story-modal-back" aria-label="Back" title="Back" style="display:none">←</button>
       <a id="sm-key" class="story-key" href="#" title="Open this story"></a>
-      <button id="sm-key-copy" class="story-key-copy" type="button" title="Copy code and title" aria-label="Copy code and title">⧉</button>
+      <button id="sm-key-copy" class="story-key-copy" type="button" title="Copy link" aria-label="Copy link">⧉</button>
       <span style="flex:1"></span>
       <button id="sm-close" class="story-modal-close" aria-label="Close">✕</button>
     </div>
@@ -2214,7 +2214,9 @@
     card.dataset.storyId     = s.id;
     card.dataset.orderIndex  = s.order_index;
     card.dataset.subcolIndex = s.subcol_index || 0;
-    card.dataset.href        = appRoot + '/story/' + s.id;
+    // Prefer the human-readable composite ref (KEY-N) in URLs. The backend
+    // route converter accepts both forms, so old PK links still resolve.
+    card.dataset.href        = appRoot + '/story/' + ((s.project_key && s.story_number) ? (s.project_key + '-' + s.story_number) : s.id);
     card.dataset.assigneeIds = (s.assignees || []).map(function (a) { return a.id || ''; }).join(',');
     card.dataset.epicId      = s.epic_id || '';
     card.dataset.syncedAt    = String(s.updated_at || '');
@@ -2232,7 +2234,7 @@
     if (s.story_type_name) {
       html += '<span class="card-type-badge">' + _escHtml(s.story_type_name) + '</span>';
     }
-    html += '<span class="card-id">' + _escHtml(projectKey ? projectKey + '-' : '') + s.id + '</span>';
+    html += '<span class="card-id">' + _escHtml(projectKey ? projectKey + '-' : '') + (s.story_number || s.id) + '</span>';
     html += '<div class="card-title">' + (s.html_title || _escHtml(s.title || '')) + '</div>';
     if (s.images && s.images.length) {
       html += '<div class="card-images">' + s.images.slice(0, 5).map(function (fn) {
@@ -2690,7 +2692,7 @@
   if (smKeyCopy) {
     smKeyCopy.addEventListener('click', function(e){
       e.preventDefault();
-      var txt = (smKey && smKey.dataset.copyText) || (smKey && smKey.textContent) || '';
+      var txt = (smKey && smKey.dataset.copyText) || (smKey && smKey.href) || '';
       var done = function(){
         var prev = smKeyCopy.textContent;
         smKeyCopy.classList.add('is-copied');
@@ -2762,20 +2764,28 @@
 
   // ── Open / Close ──
   function openStoryModal(href) {
-    // Accept either a URL like /story/123 or a numeric ID
-    var id = typeof href === 'number' ? href : parseInt((href.match(/\/story\/(\d+)/) || [])[1] || '0');
-    if (!id) return;
+    // Accept either a URL (/story/123 or /story/CTL-12), a numeric PK,
+    // or a composite string ("CTL-12"). The ref is passed through as-is
+    // to the API — the backend converter resolves both forms.
+    var ref;
+    if (typeof href === 'number') {
+      ref = String(href);
+    } else if (typeof href === 'string') {
+      var m = href.match(/\/story\/([A-Za-z0-9][A-Za-z0-9\-]*)/);
+      ref = m ? m[1] : href.replace(/^\/+|\/+$/g, '');
+    }
+    if (!ref) return;
     // Push current story onto history stack (skip first open or re-open of same)
-    if (curId && curId !== id) {
+    if (curId && curId !== ref) {
       _navStack.push(curId);
     }
     _renderBackBtn();
-    curId = id;
+    curId = ref;
     document.getElementById('sm-loading').style.display = 'block';
     document.getElementById('sm-content').style.display = 'none';
     bg.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    apiGet('/api/story/' + id + '/full').then(function(d) {
+    apiGet('/api/story/' + encodeURIComponent(ref) + '/full').then(function(d) {
       if (!d.ok) { alert('Could not load story'); closeStoryModal(); return; }
       _allUsers = d.all_users || [];
       populate(d);
@@ -2830,11 +2840,17 @@
   // ── Populate all fields ──
   function populate(d) {
     var s = d.story;
-    var code = (s.project_key || '') + '-' + s.id;
+    // Display + URL use the per-project story_number (falls back to PK
+    // for any legacy story missing a number).
+    var num = (s.story_number != null) ? s.story_number : s.id;
+    var composite = (s.project_key && s.story_number != null)
+      ? (s.project_key + '-' + s.story_number)
+      : String(s.id);
+    var code = (s.project_key || '') + '-' + num;
     var label = code + ' — ' + (s.title || '');
     smKey.textContent = label;
-    smKey.href = ROOT + '/story/' + s.id;
-    smKey.dataset.copyText = label;
+    smKey.href = ROOT + '/story/' + composite;
+    smKey.dataset.copyText = location.origin + ROOT + '/story/' + composite;
     smKey.dataset.code = code;
 
     // Story builder
@@ -3577,7 +3593,7 @@
       if (code) {
         var label = code + ' — ' + liveTitle;
         smKey.textContent = label;
-        smKey.dataset.copyText = label;
+        // copyText stays as the URL — don't overwrite it here
       }
       // Update the parent-title line in the attach banner (it mirrors current story title)
       var bannerEl = document.getElementById('sm-attach-banner');
@@ -3941,7 +3957,7 @@
     if (e.stories && e.stories.length) {
       storiesHtml = '<ul class="epic-story-list">' +
         e.stories.map(function(s) {
-          return '<li><a href="/story/' + s.id + '" class="epic-story-link">' +
+          return '<li><a href="/story/' + ((s.project_key && s.story_number != null) ? (s.project_key + '-' + s.story_number) : s.id) + '" class="epic-story-link">' +
             '<span class="epic-story-dot" style="background:' + esc(s.status_color) + '"></span>' +
             esc(s.title) +
             (s.story_points ? '<span class="epic-story-pts">' + s.story_points + 'pt</span>' : '') +

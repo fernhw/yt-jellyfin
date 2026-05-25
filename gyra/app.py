@@ -12,6 +12,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from auth import get_csrf_token
 from config import Config
+from converters import StoryRefConverter
 from db import (get_db, get_projects, get_unread_count,
                 get_user_projects, init_db)
 from routes import register_all
@@ -26,6 +27,9 @@ app = Flask(__name__)
 app.config.from_object(Config)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.jinja_env.auto_reload = True
+# Register custom URL converters so `<storyref:story_id>` accepts both bare
+# numeric ids (back-compat) and composite KEY-NUM keys (e.g. CTL-124).
+app.url_map.converters["storyref"] = StoryRefConverter
 # Trust X-Forwarded-Prefix from nginx so url_for() works behind /gyra sub-path
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 

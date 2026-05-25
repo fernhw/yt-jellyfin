@@ -75,18 +75,25 @@ def register(app) -> None:
                 (project_id,),
             ).fetchone()
             order = row["nxt"]
+            # Per-project sequential story number (used in URLs / display keys).
+            snum_row = conn.execute(
+                "SELECT COALESCE(MAX(story_number),0)+1 AS nxt "
+                "FROM stories WHERE project_id=?",
+                (project_id,),
+            ).fetchone()
+            story_number = snum_row["nxt"]
 
             cur = conn.execute(
                 """INSERT INTO stories
                    (project_id,title,description,acceptance_criteria,story_points,
                     status_id,sprint,order_index,created_at,created_by,updated_at,
                     story_actor,story_verb,story_z,story_x,story_for,story_y,
-                    story_type,epic_id,priority,software_version,os)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    story_type,epic_id,priority,software_version,os,story_number)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (project_id, title, description, ac, points,
                  status_id, sprint, order, now, session["user_id"], now,
                  actor, verb, z, x, for_conn, y, story_type, epic_id, priority,
-                 software_version, os_field),
+                 software_version, os_field, story_number),
             )
             story_id = cur.lastrowid
             for uid in assignees:
@@ -162,7 +169,7 @@ def register(app) -> None:
             addons=[],
         )
 
-    @app.route("/story/<int:story_id>", methods=["GET", "POST"])
+    @app.route("/story/<storyref:story_id>", methods=["GET", "POST"])
     @login_required
     def story_view(story_id):
         s = get_story(story_id)

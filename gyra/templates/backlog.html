@@ -54,7 +54,7 @@
   <div class="backlog-row" data-story-id="{{ story.id }}" data-order-index="{{ story.order_index }}" draggable="true">
     {% if session.role != 'viewer' %}<input type="checkbox" class="bl-row-check" value="{{ story.id }}" aria-label="Select story">{% endif %}
     <span class="bl-drag-handle" title="Drag to reorder">⠿</span>
-    <span class="bl-id">{{ project.key }}-{{ story.id }}</span>
+    <span class="bl-id">{{ project.key }}-{{ story.story_number if story.story_number is not none else story.id }}</span>
     <a class="bl-title" href="{{ url_for('story_view', story_id=story.id) }}">
       {{ story.title }}
     </a>

@@ -348,6 +348,12 @@ def _migrate_db() -> None:
         ("stories", "box_type",          "TEXT DEFAULT NULL"),
         ("stories", "attached_to",       "INTEGER DEFAULT NULL"),
         ("stories", "dependent_action",  "TEXT DEFAULT NULL"),
+        # ── Per-project sequential story number (May 2026) ─────────────────
+        # The integer PK `id` is globally unique but meaningless to users.
+        # `story_number` is the per-project sequence (1, 2, 3, …) used to
+        # build human-readable keys like CTL-1, AMY-42. URLs and display
+        # labels prefer `story_number`; `id` remains the internal handle.
+        ("stories", "story_number",      "INTEGER DEFAULT NULL"),
         ("epics",   "start_date",  "TEXT DEFAULT NULL"),
         ("epics",   "due_date",    "TEXT DEFAULT NULL"),
         ("epics",   "status",      "TEXT DEFAULT 'planning'"),
@@ -446,6 +452,58 @@ def _migrate_db() -> None:
             "SELECT p.id, u.id, ? FROM projects p, users u WHERE u.is_active = 1",
             (now,),
         )
+
+    # ── Backfill stories.story_number per project (idempotent) ─────────────
+    # Assigns 1, 2, 3 … to every existing story within each project, ordered
+    # by id ASC. Only touches rows where story_number IS NULL, so re-running
+    # is a no-op and new stories created with explicit numbers are preserved.
+    try:
+        missing = conn.execute(
+            "SELECT COUNT(*) FROM stories WHERE story_number IS NULL"
+        ).fetchone()[0]
+    except Exception:
+        missing = 0
+    if missing:
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            project_ids = [r[0] for r in conn.execute(
+                "SELECT DISTINCT project_id FROM stories WHERE story_number IS NULL"
+            ).fetchall()]
+            for pid in project_ids:
+                # Continue numbering after the current max (handles partial backfills).
+                start_row = conn.execute(
+                    "SELECT COALESCE(MAX(story_number),0) AS mx "
+                    "FROM stories WHERE project_id = ?",
+                    (pid,),
+                ).fetchone()
+                n = int(start_row["mx"] or 0)
+                rows = conn.execute(
+                    "SELECT id FROM stories WHERE project_id = ? "
+                    "AND story_number IS NULL ORDER BY id ASC",
+                    (pid,),
+                ).fetchall()
+                for r in rows:
+                    n += 1
+                    conn.execute(
+                        "UPDATE stories SET story_number = ? WHERE id = ?",
+                        (n, r["id"]),
+                    )
+            conn.execute("COMMIT")
+        except Exception:
+            conn.execute("ROLLBACK")
+            raise
+
+    # Enforce uniqueness of (project_id, story_number) — partial index skips
+    # any NULLs that might briefly appear during a failed backfill.
+    try:
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_stories_project_number "
+            "ON stories(project_id, story_number) "
+            "WHERE story_number IS NOT NULL"
+        )
+        conn.commit()
+    except Exception:
+        pass
 
     # Migrate users: add super_user to role CHECK constraint.
     # Idempotent: only runs if the current CHECK still excludes 'super_user'.

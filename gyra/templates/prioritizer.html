@@ -72,7 +72,7 @@
           data-story-id="{{ s.id }}"
           data-origin="{{ s.priority }}">
         <span class="prio-card-handle">⠿</span>
-        <span class="prio-card-id">{{ project.key }}-{{ s.id }}</span>
+        <span class="prio-card-id">{{ project.key }}-{{ s.story_number if s.story_number is not none else s.id }}</span>
         <span class="prio-card-title">{{ s.title }}</span>
         {% if s.points %}<span class="prio-card-pts">{{ s.points }}pt</span>{% endif %}
         <span class="prio-card-changed" hidden>changed</span>

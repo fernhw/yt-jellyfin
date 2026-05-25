@@ -135,17 +135,22 @@ def register(app) -> None:
                     "SELECT COALESCE(MAX(order_index), 0) + 1 FROM stories WHERE project_id=?",
                     (project_id,),
                 ).fetchone()[0]
+                next_snum = conn.execute(
+                    "SELECT COALESCE(MAX(story_number), 0) + 1 FROM stories WHERE project_id=?",
+                    (project_id,),
+                ).fetchone()[0]
                 cur = conn.execute(
                     """INSERT INTO stories
                        (project_id, title, description, story_points, priority,
                         story_type, epic_id,
                         status_id, created_at, created_by, order_index, is_archived,
-                        story_actor, story_verb, story_z, story_x, story_for, story_y)
-                       VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?)""",
+                        story_actor, story_verb, story_z, story_x, story_for, story_y,
+                        story_number)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?,?)""",
                     (project_id, title, desc, pts, prio,
                      st_id, ep_id,
                      status_id, now, session["user_id"], max_idx,
-                     actor, verb, z, x, for_conn, y),
+                     actor, verb, z, x, for_conn, y, next_snum),
                 )
                 if a_id:
                     conn.execute(
@@ -1154,7 +1159,7 @@ def register(app) -> None:
 
         conn = get_db()
         rows = conn.execute(
-            """SELECT s.id, s.title, s.story_z, s.story_points, s.priority, s.sprint,
+            """SELECT s.id, s.story_number, s.title, s.story_z, s.story_points, s.priority, s.sprint,
                       s.updated_at, s.created_at,
                       st.name AS status_name, st.color AS status_color,
                       sty.name AS story_type_name, sty.color AS story_type_color,
@@ -1211,7 +1216,7 @@ def register(app) -> None:
 
     # ── Unarchive (re-add to active sprint) ───────────────────────────────────
 
-    @app.route("/api/story/<int:story_id>/unarchive", methods=["POST"])
+    @app.route("/api/story/<storyref:story_id>/unarchive", methods=["POST"])
     @login_required
     def api_unarchive_story(story_id):
         enforce_csrf()

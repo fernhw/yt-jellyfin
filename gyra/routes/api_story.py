@@ -105,7 +105,7 @@ def register(app) -> None:
 
     # ── Single-story read ──────────────────────────────────────────────────────
 
-    @app.route("/api/story/<int:story_id>/detail")
+    @app.route("/api/story/<storyref:story_id>/detail")
     @login_required
     def api_story_detail(story_id):
         if not _require_story_access(story_id):
@@ -137,7 +137,7 @@ def register(app) -> None:
             acceptance_criteria=row["acceptance_criteria"] or "",
         )
 
-    @app.route("/api/story/<int:story_id>/card")
+    @app.route("/api/story/<storyref:story_id>/card")
     @login_required
     def api_story_card(story_id):
         """Card-level snapshot — used by the board to refresh a card after an edit."""
@@ -164,7 +164,7 @@ def register(app) -> None:
             ],
         )
 
-    @app.route("/api/story/<int:story_id>/full")
+    @app.route("/api/story/<storyref:story_id>/full")
     @login_required
     def api_story_full(story_id):
         s = _require_story_access(story_id)
@@ -210,7 +210,7 @@ def register(app) -> None:
 
     # ── Story mutation ──────────────────────────────────────────────────────────
 
-    @app.route("/api/story/<int:story_id>/split", methods=["POST"])
+    @app.route("/api/story/<storyref:story_id>/split", methods=["POST"])
     @login_required
     def api_split_story(story_id):
         enforce_csrf()
@@ -248,21 +248,26 @@ def register(app) -> None:
             "FROM stories WHERE project_id=?",
             (orig["project_id"],),
         ).fetchone()
+        snum_row = conn.execute(
+            "SELECT COALESCE(MAX(story_number),0)+1 AS nxt "
+            "FROM stories WHERE project_id=?",
+            (orig["project_id"],),
+        ).fetchone()
         now = int(time.time())
         cur = conn.execute(
             """INSERT INTO stories
                (project_id,title,description,acceptance_criteria,story_points,
                 status_id,sprint,order_index,created_at,created_by,updated_at,
                 story_actor,story_verb,story_z,story_x,story_for,story_y,
-                story_type,priority,epic_id)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                story_type,priority,epic_id,story_number)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (orig["project_id"], b_title, b_desc,
              b_ac,
              int(b_points), orig["status_id"], orig["sprint"],
              order_row["nxt"], now, session["user_id"], now,
              orig["story_actor"], orig["story_verb"], orig["story_z"],
              orig["story_x"], orig["story_for"], orig["story_y"],
-             orig["story_type"], b_priority, orig["epic_id"]),
+             orig["story_type"], b_priority, orig["epic_id"], snum_row["nxt"]),
         )
         new_id = cur.lastrowid
 
@@ -284,7 +289,7 @@ def register(app) -> None:
         conn.close()
         return jsonify(ok=True, id=new_id)
 
-    @app.route("/api/story/<int:story_id>/move", methods=["POST"])
+    @app.route("/api/story/<storyref:story_id>/move", methods=["POST"])
     @login_required
     def api_move_story(story_id):
         enforce_csrf()
@@ -339,7 +344,7 @@ def register(app) -> None:
         conn.close()
         return jsonify(ok=True)
 
-    @app.route("/api/story/<int:story_id>/sprint", methods=["POST"])
+    @app.route("/api/story/<storyref:story_id>/sprint", methods=["POST"])
     @login_required
     def api_move_to_sprint(story_id):
         enforce_csrf()
@@ -377,7 +382,7 @@ def register(app) -> None:
         conn.close()
         return jsonify(ok=True)
 
-    @app.route("/api/story/<int:story_id>", methods=["PATCH"])
+    @app.route("/api/story/<storyref:story_id>", methods=["PATCH"])
     @login_required
     def api_update_story(story_id):
         enforce_csrf()
@@ -521,7 +526,7 @@ def register(app) -> None:
         )
 
     # ── Quick-update: single-field patch for the right-click context menu ──
-    @app.route("/api/story/<int:story_id>/quick-update", methods=["POST"])
+    @app.route("/api/story/<storyref:story_id>/quick-update", methods=["POST"])
     @login_required
     def api_quick_update_story(story_id):
         """Apply a single targeted mutation to a story.
@@ -696,7 +701,7 @@ def register(app) -> None:
         finally:
             conn.close()
 
-    @app.route("/api/story/<int:story_id>", methods=["DELETE"])
+    @app.route("/api/story/<storyref:story_id>", methods=["DELETE"])
     @login_required
     def api_delete_story(story_id):
         enforce_csrf()
@@ -714,7 +719,7 @@ def register(app) -> None:
 
     # ── Images ────────────────────────────────────────────────────────────────
 
-    @app.route("/api/story/<int:story_id>/image", methods=["POST"])
+    @app.route("/api/story/<storyref:story_id>/image", methods=["POST"])
     @login_required
     def api_upload_story_image(story_id):
         enforce_csrf()
@@ -756,7 +761,7 @@ def register(app) -> None:
                        med_url=url_for("story_image", filename="med_" + filename),
                        thumb_url=url_for("story_image", filename="thumb_" + filename))
 
-    @app.route("/api/story/<int:story_id>/image/<int:image_id>",
+    @app.route("/api/story/<storyref:story_id>/image/<int:image_id>",
                methods=["DELETE"])
     @login_required
     def api_delete_story_image(story_id, image_id):
@@ -787,7 +792,7 @@ def register(app) -> None:
 
     # ── Comments ──────────────────────────────────────────────────────────────
 
-    @app.route("/api/story/<int:story_id>/comment", methods=["POST"])
+    @app.route("/api/story/<storyref:story_id>/comment", methods=["POST"])
     @login_required
     def api_create_comment(story_id):
         enforce_csrf()
@@ -1028,7 +1033,7 @@ def register(app) -> None:
 
     # ── Addons (mini-waterfall tasks) ─────────────────────────────────────────
 
-    @app.route("/api/story/<int:story_id>/addons", methods=["GET"])
+    @app.route("/api/story/<storyref:story_id>/addons", methods=["GET"])
     @login_required
     def api_get_addons(story_id):
         if not _require_story_access(story_id):
@@ -1036,7 +1041,7 @@ def register(app) -> None:
         addons = get_story_addons(story_id, session["user_id"])
         return jsonify([dict(a) for a in addons])
 
-    @app.route("/api/story/<int:story_id>/addons", methods=["POST"])
+    @app.route("/api/story/<storyref:story_id>/addons", methods=["POST"])
     @login_required
     def api_create_addon(story_id):
         enforce_csrf()
