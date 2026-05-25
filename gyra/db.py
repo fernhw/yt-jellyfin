@@ -1263,7 +1263,7 @@ def create_notification(user_id: int, type_: str, message: str,
     conn.close()
 
 
-def get_notifications(user_id: int, limit: int = 30):
+def get_notifications(user_id: int, limit: int = 20, offset: int = 0):
     conn = get_db()
     rows = conn.execute(
         """SELECT n.*, u.display_name as from_name, u.avatar as from_avatar,
@@ -1272,8 +1272,8 @@ def get_notifications(user_id: int, limit: int = 30):
            LEFT JOIN users u ON u.id = n.from_user
            LEFT JOIN stories s ON s.id = n.story_id
            WHERE n.user_id = ?
-           ORDER BY n.created_at DESC LIMIT ?""",
-        (user_id, limit),
+           ORDER BY n.created_at DESC LIMIT ? OFFSET ?""",
+        (user_id, limit, offset),
     ).fetchall()
     conn.close()
     return rows

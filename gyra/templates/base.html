@@ -614,8 +614,15 @@
 
   var appRoot = (document.querySelector('meta[name="app-root"]') || {}).content || '';
   var csrf    = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
-  var POLL_MS = 30000;
-  var lastData = { notifications: [], unread: 0 };
+  var POLL_MS = 8000;
+  var PAGE_SIZE = 20;
+  var lastData = { notifications: [], unread: 0, has_more: false };
+  // All loaded notifications, oldest fetches appended to the bottom. The
+  // poll() refresh only ever rewrites the FIRST page (newest items); any
+  // older pages the user paged into stay in the list below.
+  var loaded   = [];
+  var loadedMore = false;        // user clicked "Load more" at least once
+  var olderHasMore = false;      // older-pages exhaustion flag
 
   function relTime(ts) {
     if (!ts) return '';
@@ -632,28 +639,75 @@
       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
-  function renderList(items) {
-    if (!items || !items.length) {
+  function itemHtml(n) {
+    var avatar = n.from_avatar
+      ? '<img src="' + appRoot + '/avatars/' + encodeURIComponent(n.from_avatar) + '" class="avatar-xs" alt="">'
+      : '<span class="avatar-initial-xs">' + escHtml((n.from_name || '?').charAt(0).toUpperCase()) + '</span>';
+    var link = n.story_id ? (appRoot + '/story/' + n.story_id) : '#';
+    return ''
+      + '<a class="gyra-bell-item' + (n.is_read ? '' : ' is-unread') + '" href="' + link + '">'
+      +   '<div class="gyra-bell-avatar">' + avatar + '</div>'
+      +   '<div class="gyra-bell-body">'
+      +     '<div class="gyra-bell-msg">' + escHtml(n.message || '') + '</div>'
+      +     (n.story_title
+              ? '<div class="gyra-bell-story">' + escHtml(n.story_title) + '</div>'
+              : '')
+      +     '<div class="gyra-bell-time">' + relTime(n.created_at) + ' ago</div>'
+      +   '</div>'
+      + '</a>';
+  }
+
+  function renderList() {
+    if (!loaded.length) {
       list.innerHTML = '<div class="gyra-bell-empty">No notifications yet.</div>';
       return;
     }
-    list.innerHTML = items.map(function (n) {
-      var avatar = n.from_avatar
-        ? '<img src="' + appRoot + '/avatars/' + encodeURIComponent(n.from_avatar) + '" class="avatar-xs" alt="">'
-        : '<span class="avatar-initial-xs">' + escHtml((n.from_name || '?').charAt(0).toUpperCase()) + '</span>';
-      var link = n.story_id ? (appRoot + '/story/' + n.story_id) : '#';
-      return ''
-        + '<a class="gyra-bell-item' + (n.is_read ? '' : ' is-unread') + '" href="' + link + '">'
-        +   '<div class="gyra-bell-avatar">' + avatar + '</div>'
-        +   '<div class="gyra-bell-body">'
-        +     '<div class="gyra-bell-msg">' + escHtml(n.message || '') + '</div>'
-        +     (n.story_title
-                ? '<div class="gyra-bell-story">' + escHtml(n.story_title) + '</div>'
-                : '')
-        +     '<div class="gyra-bell-time">' + relTime(n.created_at) + ' ago</div>'
-        +   '</div>'
-        + '</a>';
-    }).join('');
+    var html = loaded.map(itemHtml).join('');
+    // Show "Load more" if either the latest poll says there are more pages
+    // beyond what we've shown, or the older-pages cursor still has more.
+    var showMore = (lastData && lastData.has_more) || olderHasMore;
+    if (showMore) {
+      html += '<button type="button" class="gyra-bell-more" id="gyra-bell-more">Load more</button>';
+    } else if (loaded.length >= PAGE_SIZE) {
+      html += '<div class="gyra-bell-end">— end —</div>';
+    }
+    list.innerHTML = html;
+    var moreBtn = document.getElementById('gyra-bell-more');
+    if (moreBtn) moreBtn.addEventListener('click', loadMore);
+  }
+
+  function mergeFirstPage(items) {
+    // Replace the leading slice of `loaded` (everything up to the oldest id
+    // in this page) with the freshly-fetched page. Older paged-in items
+    // (with id smaller than the smallest in `items`) are preserved.
+    if (!items || !items.length) { loaded = []; return; }
+    var minId = items[items.length - 1].id;
+    var tail  = loaded.filter(function (x) { return x.id < minId; });
+    loaded = items.concat(tail);
+  }
+
+  function loadMore() {
+    var moreBtn = document.getElementById('gyra-bell-more');
+    if (moreBtn) { moreBtn.disabled = true; moreBtn.textContent = 'Loading…'; }
+    var off = loaded.length;
+    fetch(appRoot + '/api/notifications?limit=' + PAGE_SIZE + '&offset=' + off,
+          { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) { if (moreBtn) { moreBtn.disabled = false; moreBtn.textContent = 'Load more'; } return; }
+        loadedMore = true;
+        olderHasMore = !!d.has_more;
+        // Append, dedupe by id.
+        var seen = {};
+        loaded.forEach(function (x) { seen[x.id] = 1; });
+        (d.notifications || []).forEach(function (x) {
+          if (!seen[x.id]) loaded.push(x);
+        });
+        renderList();
+      })
+      .catch(function(){
+        if (moreBtn) { moreBtn.disabled = false; moreBtn.textContent = 'Load more'; }
+      });
   }
 
   function updateCount(n) {
@@ -668,20 +722,22 @@
   }
 
   function poll() {
-    fetch(appRoot + '/api/notifications', { credentials: 'same-origin' })
+    fetch(appRoot + '/api/notifications?limit=' + PAGE_SIZE + '&offset=0',
+          { credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d) return;
         lastData = d;
+        mergeFirstPage(d.notifications || []);
         updateCount(d.unread || 0);
-        if (!panel.hidden) renderList(d.notifications || []);
+        if (!panel.hidden) renderList();
       })
       .catch(function(){});
   }
 
   function openPanel() {
     panel.hidden = false;
-    renderList(lastData.notifications || []);
+    renderList();
     // Position panel next to the bell button
     var r = btn.getBoundingClientRect();
     panel.style.left = (r.right + 8) + 'px';
@@ -720,6 +776,13 @@
   // Initial fetch + interval
   poll();
   setInterval(poll, POLL_MS);
+  // Re-poll immediately when the tab regains focus / visibility, so the
+  // badge updates as soon as the user comes back instead of waiting up to
+  // POLL_MS for the next tick.
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') poll();
+  });
+  window.addEventListener('focus', poll);
 }());
 </script>
 {% endif %}
