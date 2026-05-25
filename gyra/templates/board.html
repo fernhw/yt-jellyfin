@@ -573,7 +573,8 @@
   <div id="sm-wrap" class="story-modal-wrap">
     <div class="sm-header">
       <button id="sm-back" class="story-modal-back" aria-label="Back" title="Back" style="display:none">←</button>
-      <span id="sm-key" class="story-key"></span>
+      <a id="sm-key" class="story-key" href="#" title="Open this story"></a>
+      <button id="sm-key-copy" class="story-key-copy" type="button" title="Copy code and title" aria-label="Copy code and title">⧉</button>
       <span style="flex:1"></span>
       <button id="sm-close" class="story-modal-close" aria-label="Close">✕</button>
     </div>
@@ -914,9 +915,58 @@
     border-bottom:2px solid rgba(0,0,0,.08);
   }
   .sm-attach-headline {
-    font-size:44px; font-weight:900; letter-spacing:2px;
-    line-height:1; text-transform:uppercase; color:#0f172a;
+    font-size:28px; font-weight:900; letter-spacing:1.5px;
+    line-height:1.1; text-transform:uppercase; color:#0f172a;
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
   }
+  .sm-attach-help-btn {
+    font-size:14px; font-weight:700;
+    width:26px; height:26px; border-radius:50%;
+    border:2px solid currentColor; background:transparent; color:inherit;
+    cursor:pointer; line-height:1; padding:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    opacity:.7;
+  }
+  .sm-attach-help-btn:hover { opacity:1; background:rgba(0,0,0,.06); }
+  /* Header story-key acts as both link and copy button */
+  a#sm-key.story-key {
+    text-decoration:none; cursor:pointer;
+    max-width:min(60vw, 720px);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    padding:2px 8px; border-radius:6px;
+    transition:background-color .15s;
+  }
+  a#sm-key.story-key:hover { background:rgba(124,74,30,.10); text-decoration:underline; text-underline-offset:3px; }
+  a#sm-key.story-key.is-copied { background:#D1FAE5; color:#065F46; }
+  /* Banner for "current story" (no container / no dependency) — no box, just text */
+  .sm-attach-banner.is-current {
+    background:transparent; border:none; color:#3D2E1A;
+  }
+  #sm-content.sm-tint-current   .sm-attach-parent-title { color:#3D2E1A; }
+  #sm-content.sm-tint-current   .sm-attach-headline     { color:#7C4A1E; }
+  button#sm-key-copy.story-key-copy {
+    background:transparent; border:1.5px solid var(--c-gray-300,#C4B49A);
+    color:var(--c-gray-700,#3D2E1A);
+    width:28px; height:28px; border-radius:6px;
+    display:inline-flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:14px; line-height:1; padding:0;
+    transition:background-color .15s, border-color .15s, color .15s;
+  }
+  button#sm-key-copy.story-key-copy:hover { background:rgba(124,74,30,.10); border-color:var(--c-purple-500,#7C4A1E); color:var(--c-purple-500,#7C4A1E); }
+  button#sm-key-copy.story-key-copy.is-copied { background:#D1FAE5; border-color:#065F46; color:#065F46; }
+  .sm-attach-parent-title {
+    font-size:22px; font-weight:800; color:inherit; opacity:.92;
+    text-transform:none; letter-spacing:.2px; line-height:1.25;
+    margin:0 0 10px;
+  }
+  .sm-attach-parent-title a { color:inherit; text-decoration:none; border-bottom:1px dashed currentColor; }
+  .sm-attach-parent-title a:hover { opacity:.7; }
+  .sm-attach-explain {
+    margin-top:6px; padding:10px 12px; border-radius:6px;
+    background:rgba(255,255,255,.55); border:1px solid rgba(0,0,0,.08);
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .sm-attach-explain[hidden] { display:none; }
   .sm-attach-tip {
     font-size:15px; font-weight:600; color:#334155;
   }
@@ -929,27 +979,57 @@
   .sm-attach-do {
     font-size:14px; font-weight:700; color:#0f172a; margin-top:6px;
   }
+  .sm-attach-faq-title {
+    margin-top:10px; padding-top:8px; border-top:1px dashed rgba(0,0,0,.18);
+    font-size:11px; font-weight:800; letter-spacing:.6px;
+    text-transform:uppercase; color:#475569;
+  }
+  .sm-attach-faq-list { display:flex; flex-direction:column; gap:4px; margin-top:4px; }
+  details.sm-attach-faq {
+    background:rgba(255,255,255,.55); border:1px solid rgba(0,0,0,.08);
+    border-radius:5px; padding:6px 10px;
+  }
+  details.sm-attach-faq[open] { background:rgba(255,255,255,.85); }
+  details.sm-attach-faq summary {
+    cursor:pointer; font-size:13px; font-weight:700; color:#0f172a;
+    list-style:none; outline:none;
+  }
+  details.sm-attach-faq summary::-webkit-details-marker { display:none; }
+  details.sm-attach-faq summary::before {
+    content:'▸'; display:inline-block; width:14px;
+    transition:transform .15s; color:#64748b;
+  }
+  details.sm-attach-faq[open] summary::before { transform:rotate(90deg); }
+  .sm-attach-faq-a {
+    margin-top:6px; padding-left:14px; font-size:13px;
+    color:#334155; line-height:1.5; max-width:62ch;
+  }
 
   /* ── Whole-modal tint by box type ── */
   /* Each tint colors the FULL inside of the modal, not just a banner. */
   #sm-content.sm-tint-whitebox   .story-main { background:#fefce8; }
-  #sm-content.sm-tint-whitebox   .sm-attach-headline { color:#854d0e; }
+  #sm-content.sm-tint-whitebox   .sm-attach-headline,
+  #sm-content.sm-tint-whitebox   .sm-attach-parent-title { color:#854d0e; }
 
   #sm-content.sm-tint-greybox    .story-main { background:#f1f5f9; }
-  #sm-content.sm-tint-greybox    .sm-attach-headline { color:#334155; }
+  #sm-content.sm-tint-greybox    .sm-attach-headline,
+  #sm-content.sm-tint-greybox    .sm-attach-parent-title { color:#334155; }
 
   #sm-content.sm-tint-blackbox   .story-main { background:#e5e7eb; }
-  #sm-content.sm-tint-blackbox   .sm-attach-headline { color:#0f172a; }
+  #sm-content.sm-tint-blackbox   .sm-attach-headline,
+  #sm-content.sm-tint-blackbox   .sm-attach-parent-title { color:#0f172a; }
   #sm-content.sm-tint-blackbox   .sm-attach-tip,
   #sm-content.sm-tint-blackbox   .sm-attach-detail,
   #sm-content.sm-tint-blackbox   .sm-attach-target { color:#334155; }
   #sm-content.sm-tint-blackbox   .sm-attach-do     { color:#0f172a; }
 
   #sm-content.sm-tint-featurebox .story-main { background:#f5f3ff; }
-  #sm-content.sm-tint-featurebox .sm-attach-headline { color:#5b21b6; }
+  #sm-content.sm-tint-featurebox .sm-attach-headline,
+  #sm-content.sm-tint-featurebox .sm-attach-parent-title { color:#5b21b6; }
 
   #sm-content.sm-tint-integrate  .story-main { background:#f0fdf4; }
-  #sm-content.sm-tint-integrate  .sm-attach-headline { color:#15803d; }
+  #sm-content.sm-tint-integrate  .sm-attach-headline,
+  #sm-content.sm-tint-integrate  .sm-attach-parent-title { color:#15803d; }
 
   .sm-container-summary {
     background:transparent; border:none; padding:6px 14px; margin:14px 0;
@@ -2603,6 +2683,33 @@
 
   var bg    = document.getElementById('sm-bg');
   var smKey = document.getElementById('sm-key');
+  var smKeyCopy = document.getElementById('sm-key-copy');
+
+  // Copy icon next to the title → copies "CODE — title" to clipboard.
+  // Clicking the title itself navigates to the story page (default <a> behavior).
+  if (smKeyCopy) {
+    smKeyCopy.addEventListener('click', function(e){
+      e.preventDefault();
+      var txt = (smKey && smKey.dataset.copyText) || (smKey && smKey.textContent) || '';
+      var done = function(){
+        var prev = smKeyCopy.textContent;
+        smKeyCopy.classList.add('is-copied');
+        smKeyCopy.textContent = '✓';
+        setTimeout(function(){
+          smKeyCopy.textContent = prev;
+          smKeyCopy.classList.remove('is-copied');
+        }, 900);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(done, done);
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = txt; document.body.appendChild(ta);
+        ta.select(); try { document.execCommand('copy'); } catch(_){}
+        document.body.removeChild(ta); done();
+      }
+    });
+  }
 
   // Listen for card-click events dispatched by wireCard
   document.addEventListener('gyra:openStory', function(e) {
@@ -2723,7 +2830,12 @@
   // ── Populate all fields ──
   function populate(d) {
     var s = d.story;
-    smKey.textContent = (s.project_key || '') + '-' + s.id;
+    var code = (s.project_key || '') + '-' + s.id;
+    var label = code + ' — ' + (s.title || '');
+    smKey.textContent = label;
+    smKey.href = ROOT + '/story/' + s.id;
+    smKey.dataset.copyText = label;
+    smKey.dataset.code = code;
 
     // Story builder
     setOpts('sm-actor', {{ story_actor_options|tojson }}, s.story_actor);
@@ -2759,26 +2871,97 @@
   }
 
   // ── Container/Attachment UI ──
+  var BOX_FAQ_COMMON = [
+    {
+      q: "Wouldn't this make more work?",
+      a: "No \u2014 this IS the work, just done in a smaller, testable environment first. Scrum's no-double-work rule means we don't rebuild things twice. A box is a real system: the button, the rule, the flow you build here is the same one that ships. It either integrates straight into the app, or it stays as a permanent test harness for that part of the product. Nothing is wasted.\n\n<strong>And GYRA enforces this for you.</strong> Every box is tracked with a link to the feature or container it's exploring. The moment that parent container exists and the box is integrated into it, GYRA automatically drops the WhiteBox / BlackBox label from the story \u2014 it stops being a \"box\" and becomes part of the real feature. So you never end up with stale labels, duplicated tickets, or orphaned prototypes floating around the board. The box is a phase, not a parallel track."
+    },
+    {
+      q: "Why not just wait and build it properly?",
+      a: "Because waiting is the most expensive option in Scrum. The team's priority is producing a working increment every sprint — a box IS that increment for risky or unknown work. You get evidence now instead of assumptions later, and the team keeps moving instead of stalling on a guess."
+    }
+  ];
+  // Shared note for white/black boxes about where they live.
+  var ISOLATED_VS_CONNECTED = ''
+    + '<strong>Isolated</strong> means the box lives in its own sandbox '
+    + '(a separate route, scene, or test page). You can break it, reset it, '
+    + 'and demo it without touching the real app. Best when the rest of the '
+    + 'system is still moving or doesn\'t exist yet.\n\n'
+    + '<strong>Connected to app</strong> means the box is wired into the real '
+    + 'app shell, using real navigation, real auth, real data flow — but the '
+    + 'feature itself is still simplified. Best when the surrounding app is '
+    + 'stable and the question you\'re answering depends on real context.\n\n'
+    + 'Both are valid. Pick the one that answers the question fastest. Either '
+    + 'way, the working code graduates — it either becomes the feature, or it '
+    + 'becomes the permanent test bed for that feature.';
   var BOX_INFO = {
     whitebox: {
       label: 'WhiteBox',
       tip:   'The naked idea working before layout, style, or structure exists.',
-      detail:'Like putting one button on a white screen when there is no menu yet. In games, it is simple shapes testing movement, scale, timing, rooms, routes, or camera before art exists. In software, it is the naked idea working before layout, style, or structure exists.'
+      detail:'Like putting one button on a white screen when there is no menu yet. In games, it is simple shapes testing movement, scale, timing, rooms, routes, or camera before art exists. In software, it is the naked idea working before layout, style, or structure exists. A WhiteBox can live <strong>isolated</strong> in its own page/scene, or <strong>connected to the app</strong> wired into the real shell — either way, what you build is the real thing in a smaller form.',
+      faqs: BOX_FAQ_COMMON.concat([
+        {
+          q: "Isolated or connected to the app — which should my WhiteBox be?",
+          a: ISOLATED_VS_CONNECTED
+        },
+        {
+          q: "Is this just a sketch I could draw on paper?",
+          a: "A sketch shows intent. A WhiteBox shows behaviour. Even one button on a blank page proves the idea is real, clickable, and demoable. The interaction you build here is the same interaction the user will eventually have — paper can't deliver that."
+        },
+        {
+          q: "When is a WhiteBox 'done'?",
+          a: "When the core interaction works once, end-to-end, and the team can answer the question it was built to ask. That's the trigger to either GreyBox the next layer, or graduate the WhiteBox straight into the app."
+        }
+      ])
     },
     greybox: {
       label: 'GreyBox',
       tip:   'Real functionality with no design, branding, art, or polish.',
-      detail:'Like a no-design menu made of plain blocks, but the functionality is real. In games, it is a level with correct paths, room sizes, enemy spots, cover, and flow, but no final assets. In software, it is screens, buttons, menus, forms, and navigation working with no branding, no art, and no polish.'
+      detail:'Like a no-design menu made of plain blocks, but the functionality is real. In games, it is a level with correct paths, room sizes, enemy spots, cover, and flow, but no final assets. In software, it is screens, buttons, menus, forms, and navigation working with no branding, no art, and no polish.',
+      faqs: BOX_FAQ_COMMON.concat([
+        {
+          q: "Why ship something ugly to the team?",
+          a: "Because Scrum reviews need real interaction, not slides. Ugly + working > pretty + broken. Stakeholders can click through the flow at sprint review and give feedback that polish would only hide."
+        },
+        {
+          q: "Won't the team confuse this with the final version?",
+          a: "No — that's the point of naming it a GreyBox. The label is the contract: 'flow is real, look is not'. It keeps design and engineering work parallel without one blocking the other."
+        }
+      ])
     },
     blackbox: {
       label: 'BlackBox',
       tip:   'A tiny test room for one small part of a feature.',
-      detail:'Like making a tiny test room for one small part of a feature. In games, it tests one part only, like a face animation, door interaction, AI reaction, navmesh path, or dialogue trigger. In software, it tests one small function, like one button action, one form rule, one API call, or one save event.'
+      detail:'Like making a tiny test room for one small part of a feature. In games, it tests one part only, like a face animation, door interaction, AI reaction, navmesh path, or dialogue trigger. In software, it tests one small function, like one button action, one form rule, one API call, or one save event. A BlackBox can be <strong>isolated</strong> in its own sandbox, or <strong>connected to the app</strong> running against real data and shell — the code you write is real either way.',
+      faqs: BOX_FAQ_COMMON.concat([
+        {
+          q: "Isolated or connected to the app — which should my BlackBox be?",
+          a: ISOLATED_VS_CONNECTED
+        },
+        {
+          q: "Why not just unit-test it inside the feature?",
+          a: "A unit test proves the code runs. A BlackBox proves the behaviour is correct in a place the team can actually see, click, and stress. It doubles as permanent UI/behaviour-test value — the same harness you used to build it stays as the place you reproduce bugs forever after."
+        },
+        {
+          q: "What happens to the BlackBox once the feature ships?",
+          a: "It keeps living. A BlackBox done right is a real, testable single-environment system — perfect for regression testing, onboarding new devs, and isolating bugs when the integrated feature misbehaves. Or, if it makes sense, you integrate the working part straight into the app. It is never throwaway code."
+        }
+      ])
     },
     featurebox: {
       label: 'FeatureBox',
       tip:   'A focused space to test one complex feature.',
-      detail:'Like making a special space to test one complex feature. In games, it means testing a full system like inventory, stealth detection, subtitles, checkpoints, or save/load away from the full game. In software, it means building a focused area where a complex feature can be used, broken, fixed, and understood before it joins the real app.'
+      detail:'Like making a special space to test one complex feature. In games, it means testing a full system like inventory, stealth detection, subtitles, checkpoints, or save/load away from the full game. In software, it means building a focused area where a complex feature can be used, broken, fixed, and understood before it joins the real app.',
+      faqs: BOX_FAQ_COMMON.concat([
+        {
+          q: "Why not build it directly inside the product?",
+          a: "Because complex features destabilise sprints. A FeatureBox lets the team work at full speed without blocking other stories or risking the increment. Scrum protects the sprint goal — and isolating risk is how you protect it."
+        },
+        {
+          q: "How is this different from a long-lived branch?",
+          a: "A branch hides progress. A FeatureBox is visible on the board, demoable at review, and has its own Definition of Done. The team can refine, estimate, and re-prioritise it like any other story — that's what makes it Scrum-compliant."
+        }
+      ])
     }
   };
   function boxBadge(box, withTip) {
@@ -2809,7 +2992,7 @@
     if (!content) return;
     content.classList.remove(
       'sm-tint-whitebox','sm-tint-greybox','sm-tint-blackbox',
-      'sm-tint-featurebox','sm-tint-integrate'
+      'sm-tint-featurebox','sm-tint-integrate','sm-tint-current'
     );
   }
 
@@ -2834,19 +3017,46 @@
       banner.className = 'sm-attach-banner' + (done ? ' is-integrate' : (' box-' + box));
       var html = '';
       if (done) {
-        html += '<div class="sm-attach-headline">INTEGRATE</div>'
-              + '<div class="sm-attach-detail">The container is finished. Wire this story into '
-              + storyLink(c.container.id, c.container.title)
-              + ' and confirm it works in place.</div>';
+        html += '<div class="sm-attach-parent-title">'
+              +   esc(s.title)
+              + '</div>'
+              + '<div class="sm-attach-headline">INTEGRATE</div>'
+              + '<div class="sm-attach-target">into: '
+              +   storyLink(c.container.id, c.container.title)
+              + '</div>';
         if (c.dependent_action) {
           html += '<div class="sm-attach-do">→ ' + esc(c.dependent_action) + '</div>';
         }
       } else {
-        html += '<div class="sm-attach-headline">' + esc(info.label.toUpperCase()) + '</div>'
-              + '<div class="sm-attach-tip">' + esc(info.tip) + '</div>'
-              + '<div class="sm-attach-detail">' + esc(info.detail) + '</div>'
-              + '<div class="sm-attach-target">Lives inside: '
-              + storyLink(c.container.id, c.container.title) + '</div>';
+        var explainerId = 'sm-attach-explain-' + box;
+        html += '<div class="sm-attach-parent-title">'
+              +   esc(s.title)
+              + '</div>'
+              + '<div class="sm-attach-headline">'
+              +   esc(info.label.toUpperCase())
+              +   ' <button type="button" class="sm-attach-help-btn"'
+              +        ' data-target="' + explainerId + '"'
+              +        ' aria-label="What is ' + esc(info.label) + '?">?</button>'
+              + '</div>'
+              + '<div class="sm-attach-target">will be integrated in: '
+              +   storyLink(c.container.id, c.container.title)
+              + '</div>'
+              + '<div class="sm-attach-explain" id="' + explainerId + '" hidden>'
+              +   '<div class="sm-attach-tip">' + esc(info.tip) + '</div>'
+              +   '<div class="sm-attach-detail">' + info.detail + '</div>'
+              +   (info.faqs && info.faqs.length
+                    ? '<div class="sm-attach-faq-title">Common questions</div>'
+                      + '<div class="sm-attach-faq-list">'
+                      + info.faqs.map(function(f){
+                          var ans = String(f.a || '').replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+                          return '<details class="sm-attach-faq">'
+                               +   '<summary>' + esc(f.q) + '</summary>'
+                               +   '<div class="sm-attach-faq-a">' + ans + '</div>'
+                               + '</details>';
+                        }).join('')
+                      + '</div>'
+                    : '')
+              + '</div>';
         if (c.dependent_action) {
           html += '<div class="sm-attach-do">→ ' + esc(c.dependent_action) + '</div>';
         }
@@ -2854,8 +3064,26 @@
       banner.innerHTML = html;
       banner.style.display = '';
       wireStoryLinks(banner);
+      // Wire the (?) toggle inside the banner.
+      var helpBtn = banner.querySelector('.sm-attach-help-btn');
+      if (helpBtn) {
+        helpBtn.addEventListener('click', function(e){
+          e.stopPropagation();
+          var tgt = document.getElementById(helpBtn.dataset.target);
+          if (tgt) tgt.hidden = !tgt.hidden;
+        });
+      }
     } else {
-      banner.style.display = 'none';
+      // ── No container / no dependency: show "Current Story / Create <Type>" banner ──
+      var typeName = s.story_type_name || '';
+      var headline = typeName ? ('CREATE ' + typeName.toUpperCase()) : 'CURRENT STORY';
+      banner.className = 'sm-attach-banner is-current';
+      banner.innerHTML =
+          '<div class="sm-attach-parent-title">' + esc(s.title || '(untitled)') + '</div>'
+        + '<div class="sm-attach-headline">' + esc(headline) + '</div>';
+      banner.style.display = '';
+      // Apply a neutral tint when no box context
+      content.classList.add('sm-tint-current');
     }
 
     // ── Container summary (this story IS a container) ──
@@ -3337,11 +3565,27 @@
     var parts = ['sm-actor','sm-verb','sm-z','sm-x','sm-for','sm-y'].map(function(id){
       var e = document.getElementById(id); return e ? e.value.trim() : '';
     }).filter(Boolean);
-    document.getElementById('sm-preview').textContent = parts.join(' ') || 'Preview will appear here…';
+    var liveTitle = parts.join(' ');
+    document.getElementById('sm-preview').textContent = liveTitle || 'Preview will appear here…';
     var wc = parts.reduce(function(n,p){ return n + p.split(/\s+/).filter(Boolean).length; }, 0);
     var wcEl = document.getElementById('sm-wc');
     wcEl.textContent = wc + ' / 19';
     wcEl.style.color = wc > 19 ? 'var(--c-red)' : '';
+    // ── Propagate the live title everywhere it's shown in the modal ──
+    if (curId && liveTitle) {
+      var code = smKey ? (smKey.dataset.code || '') : '';
+      if (code) {
+        var label = code + ' — ' + liveTitle;
+        smKey.textContent = label;
+        smKey.dataset.copyText = label;
+      }
+      // Update the parent-title line in the attach banner (it mirrors current story title)
+      var bannerEl = document.getElementById('sm-attach-banner');
+      if (bannerEl) {
+        var pt = bannerEl.querySelector('.sm-attach-parent-title');
+        if (pt) pt.textContent = liveTitle;
+      }
+    }
   }
   ['sm-actor','sm-verb','sm-z','sm-x','sm-for','sm-y'].forEach(function(id){
     var el = document.getElementById(id); if (el) el.addEventListener('input', updatePreview);
