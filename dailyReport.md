@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-25
 
-> *Good evening! Here's what landed on Monday, May 25, 2026 at 05:10 PM.*
-> **YT Mirror:** 551.59 GB used · 1.18 TB free
+> *Good evening! Here's what landed on Monday, May 25, 2026 at 06:03 PM.*
+> **YT Mirror:** 551.61 GB used · 1.18 TB free
 
 ### Priority Videos
 
@@ -25,6 +25,11 @@ No priority uploads today — your favorites are taking a break.
 - **The Balance is Shifting** — *Big A* · downloaded 12:35 AM · not podcastable
 
 ---
+
+
+### Heads Up
+
+Last scan hit a wall — 86 of 93 channels returned nothing. YouTube is likely rate-limiting or IP-blocking. Will retry next run.
 
 
 ---
