@@ -100,7 +100,7 @@
         <span class="col-name">{{ status.name }}</span>
         <span class="col-count">{{ board_map.get(status.id, []) | list | length }}</span>
         {% set _col_eps = column_epics.get(status.id, []) %}
-        <button type="button" class="col-sort-btn" title="Sort by priority" data-sorted="0">⇅</button>
+        <button type="button" class="col-sort-btn" title="Organize">⇅</button>
         {% if _col_eps %}
         <span class="col-epics" title="Epics with stories in this column">
           {% for ep in _col_eps %}
@@ -863,7 +863,7 @@
     flex-shrink:0;
   }
   .col-sort-btn:hover          { background:#fff; color:var(--c-gray-700,#374151); border-color:var(--c-gray-300,#d1d5db); }
-  .col-sort-btn[data-sorted="1"] { background:var(--c-purple-500,#7c3aed); color:#fff; border-color:transparent; }
+  .col-sort-btn.is-organizing  { background:var(--c-purple-500,#7c3aed); color:#fff; border-color:transparent; transform:rotate(180deg); transition:transform .4s ease, background .15s, color .15s; }
 
   /* ── Container/Attachment ── */
   .box-badge {
@@ -1259,26 +1259,27 @@
   window._cascadeContainerBadges = cascadeContainerBadges;
   window._postMoveBadgeRefresh = postMoveBadgeRefresh;
 
-  // ── Column sort-by-priority ──────────────────────────────────────────────
+  // ── Column "Organize" button ─────────────────────────────────────────────
+  // One-shot action: sort cards by priority, redistribute evenly across the
+  // column's subcols, then PERSIST the new order/subcol layout to the server
+  // so other clients see it via the realtime reconciler.
   var PRIO_RANK = { VH: 0, H: 1, M: 2, L: 3, VL: 4 };
   function cardPriority(card) {
     var tape = card.querySelector('.card-tape');
     return tape ? (tape.textContent.trim()) : null;
   }
 
-  // Collect every card in this column, no matter which subcol it currently lives in.
   function allCardsInCol(col) {
     return Array.from(col.querySelectorAll('.board-card'));
   }
 
-  // Distribute a sorted card list across the column's subcols as evenly as possible,
-  // updating each card's data-subcol-index to match its new bucket. Cards are kept
-  // in sort order within each subcol (contiguous chunks).
+  // Distribute a sorted card list across the column's subcols as evenly as
+  // possible, updating each card's data-subcol-index. Cards stay in sort
+  // order within each subcol (contiguous chunks).
   function distributeCardsEvenly(col, sortedCards) {
     var outer = col.querySelector('.board-cards');
     if (!outer) return;
     var subs = Array.from(outer.querySelectorAll(':scope > .board-subcol'));
-    // No subcols (single-column layout) — just re-append in order to outer.
     if (subs.length === 0) {
       sortedCards.forEach(function (c) {
         c.dataset.subcolIndex = '0';
@@ -1301,40 +1302,33 @@
     }
   }
 
-  function sortColByPriority(col) {
+  function organizeColumn(col) {
     var items = allCardsInCol(col);
+    if (!items.length) return;
     items.sort(function (a, b) {
       var pa = PRIO_RANK[cardPriority(a)];
       var pb = PRIO_RANK[cardPriority(b)];
       if (pa === undefined) pa = 99;
       if (pb === undefined) pb = 99;
       if (pa !== pb) return pa - pb;
-      // Stable secondary: original order_index
       return parseInt(a.dataset.orderIndex || 0) - parseInt(b.dataset.orderIndex || 0);
     });
     distributeCardsEvenly(col, items);
+    // Persist new order + subcol_index so it sticks for everyone.
+    if (window._saveColOrder) window._saveColOrder(col);
   }
-  function restoreColOrder(col) {
-    var items = allCardsInCol(col);
-    items.sort(function (a, b) {
-      return parseInt(a.dataset.orderIndex || 0) - parseInt(b.dataset.orderIndex || 0);
-    });
-    distributeCardsEvenly(col, items);
-  }
+
   document.querySelectorAll('.col-sort-btn').forEach(function (btn) {
+    btn.title = 'Organize';
+    btn.removeAttribute('data-sorted');
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
-      var col    = btn.closest('.board-column');
-      var sorted = btn.dataset.sorted === '1';
-      if (sorted) {
-        restoreColOrder(col);
-        btn.dataset.sorted = '0';
-        btn.title = 'Sort by priority';
-      } else {
-        sortColByPriority(col);
-        btn.dataset.sorted = '1';
-        btn.title = 'Restore original order';
-      }
+      var col = btn.closest('.board-column');
+      if (!col) return;
+      btn.classList.add('is-organizing');
+      organizeColumn(col);
+      // Brief flash so the user sees something happened
+      setTimeout(function () { btn.classList.remove('is-organizing'); }, 600);
     });
   });
 
@@ -2214,7 +2208,24 @@
       var card = document.querySelector('.board-card[data-story-id="' + s.id + '"]');
       if (!card) return;
       if (openModalId === String(s.id)) return; // user is editing this card
-      if (card.dataset.syncedAt === String(s.updated_at)) return; // nothing changed
+
+      // ── Container / attachment badge sync (always, even if updated_at hasn't
+      // changed — because when a container flips done, the attached children's
+      // updated_at does NOT change but their parent_is_done flag does). ─────
+      var srvBox        = s.box_type        || '';
+      var srvAttached   = s.attached_to ? String(s.attached_to) : '';
+      var srvParentDone = s.parent_is_done ? '1' : '0';
+      var srvStatusDone = s.status_is_done ? '1' : '0';
+      var badgesDirty = false;
+      if (card.dataset.boxType            !== srvBox)        { card.dataset.boxType        = srvBox;        badgesDirty = true; }
+      if ((card.dataset.attachedTo || '') !== srvAttached)   { card.dataset.attachedTo     = srvAttached;   badgesDirty = true; }
+      if (card.dataset.parentIsDone       !== srvParentDone) { card.dataset.parentIsDone   = srvParentDone; badgesDirty = true; }
+      if (card.dataset.statusIsDone       !== srvStatusDone) { card.dataset.statusIsDone   = srvStatusDone; badgesDirty = true; }
+      if (badgesDirty && window._renderCardBoxBadges) {
+        window._renderCardBoxBadges(card);
+      }
+
+      if (card.dataset.syncedAt === String(s.updated_at)) return; // nothing else changed
       card.dataset.syncedAt = String(s.updated_at);
       // Title
       var t = card.querySelector('.card-title');

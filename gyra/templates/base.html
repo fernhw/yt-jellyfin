@@ -591,7 +591,10 @@
 <div id="gyra-bell-panel" class="gyra-bell-panel" hidden role="dialog" aria-label="Notifications">
   <div class="gyra-bell-hdr">
     <span>Notifications</span>
-    <button type="button" id="gyra-bell-mark" class="gyra-bell-mark">Mark all read</button>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <button type="button" id="gyra-bell-mark" class="gyra-bell-mark">Mark all read</button>
+      <button type="button" id="gyra-bell-close" class="gyra-bell-close" title="Close" aria-label="Close notifications">×</button>
+    </div>
   </div>
   <div class="gyra-bell-list" id="gyra-bell-list">
     <div class="gyra-bell-empty">Loading…</div>
@@ -606,6 +609,7 @@
   var list  = document.getElementById('gyra-bell-list');
   var count = document.getElementById('gyra-bell-count');
   var mark  = document.getElementById('gyra-bell-mark');
+  var closeBtn = document.getElementById('gyra-bell-close');
   if (!btn || !panel) return;
 
   var appRoot = (document.querySelector('meta[name="app-root"]') || {}).content || '';
@@ -689,6 +693,10 @@
     e.stopPropagation();
     if (panel.hidden) { openPanel(); poll(); }
     else closePanel();
+  });
+  if (closeBtn) closeBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    closePanel();
   });
   document.addEventListener('click', function (e) {
     if (panel.hidden) return;

@@ -266,6 +266,8 @@
   window._refreshColWidths = refreshColWidths;
   // Expose so the realtime reconciler can wire drag on newly-inserted cards
   window._initBoardCardDrag = initCard;
+  // Expose so the Organize button can persist new order/subcol layout
+  window._saveColOrder = saveColOrder;
 
   // ── Shift multi-select ───────────────────────────────────────────────────
   let lastSelected = null;

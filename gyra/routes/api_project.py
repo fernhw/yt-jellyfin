@@ -32,10 +32,17 @@ def register(app) -> None:
             """SELECT s.id, s.status_id, s.order_index, s.subcol_index,
                       s.title, s.description, s.acceptance_criteria, s.story_z, s.priority, s.story_points, s.updated_at,
                       s.epic_id,
+                      s.box_type, s.attached_to,
+                      COALESCE(st.is_done,0)  AS status_is_done,
+                      COALESCE(pst.is_done,0) AS parent_is_done,
+                      p.box_type              AS parent_box_type,
                       sty.name  AS story_type_name,
                       sty.color AS story_type_color
                FROM stories s
                LEFT JOIN story_types sty ON s.story_type = sty.id
+               LEFT JOIN statuses    st  ON s.status_id   = st.id
+               LEFT JOIN stories     p   ON s.attached_to = p.id
+               LEFT JOIN statuses    pst ON p.status_id   = pst.id
                WHERE s.project_id=? AND s.sprint IS NOT NULL
                  AND COALESCE(s.is_archived,0)=0
                ORDER BY s.order_index""",
