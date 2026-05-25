@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-24
 
-> *Good evening! Here's what landed on Sunday, May 24, 2026 at 06:07 PM.*
-> **YT Mirror:** 541.58 GB used · 1.19 TB free
+> *Good evening! Here's what landed on Sunday, May 24, 2026 at 07:07 PM.*
+> **YT Mirror:** 541.70 GB used · 1.19 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **The Mandalorian Movie Bums Me Out** — *The Cosmonaut Variety Hour* · downloaded 07:06 PM · not podcastable · *30 days since their last upload*
 - **The feds got him..** — *Asmongold TV* · downloaded 06:05 PM · not podcastable
 - **My farm internet is a disaster** — *jakkuh* · downloaded 03:27 PM · not podcastable
 - **What Game is That?** — *TechDweeb* · downloaded 03:26 PM · podcastable
