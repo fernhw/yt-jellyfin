@@ -91,6 +91,7 @@
     {% for status in statuses %}
     <div class="board-column"
          data-status-id="{{ status.id }}"
+         data-status-is-done="{{ 1 if status.is_done else 0 }}"
          data-sprint="1"
          style="--col-color:{{ status.color }}">
 
@@ -134,6 +135,10 @@
              data-href="{{ url_for('story_view', story_id=story.id) }}"
              data-assignee-ids="{{ story.assignees | map(attribute='id') | join(',') }}"
              data-epic-id="{{ story.epic_id or '' }}"
+             data-box-type="{{ story.box_type or '' }}"
+             data-attached-to="{{ story.attached_to or '' }}"
+             data-parent-is-done="{{ 1 if story.parent_is_done else 0 }}"
+             data-status-is-done="{{ 1 if story.status_is_done else 0 }}"
              style="--rot:{{ rot }}deg; --card-bg:{{ card_bg }}; --card-accent:{{ card_accent }}">
 
           {# select hit area — intercepts clicks so card nav doesn't fire #}
@@ -1184,6 +1189,75 @@
   document.querySelectorAll('.board-card').forEach(wireCard);
   // Expose so the realtime reconciler can wire click/select on newly-inserted cards
   window._wireBoardCard = wireCard;
+
+  // ── Container/attachment badge live render ───────────────────────────────
+  var BOX_LABELS = { whitebox:'WhiteBox', greybox:'GreyBox', blackbox:'BlackBox', featurebox:'FeatureBox' };
+  // Rebuilds the (Container) and attachment/(Integrate) badges for a card based on its data attrs.
+  function renderCardBoxBadges(card) {
+    if (!card) return;
+    // Remove existing badges
+    Array.from(card.querySelectorAll('.card-box-badge')).forEach(function(el){ el.remove(); });
+    var boxType    = card.dataset.boxType || '';
+    var attachedTo = card.dataset.attachedTo || '';
+    var parentDone = card.dataset.parentIsDone === '1';
+    var statusDone = card.dataset.statusIsDone === '1';
+    var footer = card.querySelector('.card-footer');
+    var anchor = footer ? footer.nextSibling : card.firstChild;
+    // Helper to insert into card after footer
+    function insertBadge(el) {
+      if (footer && footer.nextSibling) card.insertBefore(el, footer.nextSibling);
+      else card.appendChild(el);
+    }
+    // Container badge first
+    if (boxType && !statusDone) {
+      var b = document.createElement('div');
+      b.className = 'card-box-badge is-container';
+      b.title = 'This story contains other stories (dynamic container)';
+      b.textContent = '(Container)';
+      insertBadge(b);
+    }
+    // Attachment badge
+    if (attachedTo && !statusDone) {
+      if (parentDone) {
+        var bi = document.createElement('div');
+        bi.className = 'card-box-badge is-integrate';
+        bi.title = 'The container is already done — this story needs to be integrated';
+        bi.textContent = '(Integrate)';
+        insertBadge(bi);
+      } else if (boxType) {
+        var ba = document.createElement('div');
+        ba.className = 'card-box-badge box-' + boxType + ' is-attached-box';
+        ba.title = 'Build this as a ' + (BOX_LABELS[boxType] || boxType);
+        ba.textContent = (BOX_LABELS[boxType] || boxType);
+        insertBadge(ba);
+      }
+    }
+  }
+  // Find every card attached to this container and flip its parent-done flag
+  // then re-render its badges. Called immediately after a container changes status.
+  function cascadeContainerBadges(parentId, parentIsDone) {
+    if (!parentId) return;
+    var attached = document.querySelectorAll('.board-card[data-attached-to="' + parentId + '"]');
+    attached.forEach(function(c){
+      c.dataset.parentIsDone = parentIsDone ? '1' : '0';
+      renderCardBoxBadges(c);
+    });
+  }
+  // After ANY successful move, refresh the moved card's own statusDone and badges,
+  // and if it's a container, cascade to its attachments.
+  function postMoveBadgeRefresh(card) {
+    if (!card) return;
+    var col = card.closest('.board-column');
+    var colDone = col && col.dataset.statusIsDone === '1';
+    card.dataset.statusIsDone = colDone ? '1' : '0';
+    renderCardBoxBadges(card);
+    if (card.dataset.boxType) {
+      cascadeContainerBadges(card.dataset.storyId, colDone);
+    }
+  }
+  window._renderCardBoxBadges  = renderCardBoxBadges;
+  window._cascadeContainerBadges = cascadeContainerBadges;
+  window._postMoveBadgeRefresh = postMoveBadgeRefresh;
 
   // ── Column sort-by-priority ──────────────────────────────────────────────
   var PRIO_RANK = { VH: 0, H: 1, M: 2, L: 3, VL: 4 };

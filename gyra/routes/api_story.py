@@ -23,6 +23,52 @@ from routes.api_container import container_payload
 
 def register(app) -> None:
 
+    def _cascade_container_status(conn, story_id, old_status_id, new_status_id, actor_id, actor_name):
+        """When a CONTAINER story's done-state flips, notify assignees of all
+        attached stories that they (un)became Integrate stories."""
+        if old_status_id == new_status_id:
+            return
+        row = conn.execute(
+            "SELECT box_type, title FROM stories WHERE id=?", (story_id,)
+        ).fetchone()
+        if not row or not row["box_type"]:
+            return  # not a container
+        def _is_done(sid):
+            if not sid: return False
+            r = conn.execute("SELECT is_done FROM statuses WHERE id=?", (sid,)).fetchone()
+            return bool(r and r["is_done"])
+        was_done = _is_done(old_status_id)
+        now_done = _is_done(new_status_id)
+        if was_done == now_done:
+            return
+        attached = conn.execute(
+            "SELECT id, title FROM stories WHERE attached_to=?", (story_id,)
+        ).fetchall()
+        if not attached:
+            return
+        ts = int(time.time())
+        for att in attached:
+            assignees = conn.execute(
+                "SELECT user_id FROM story_users WHERE story_id=?", (att["id"],)
+            ).fetchall()
+            for a in assignees:
+                if a["user_id"] == actor_id:
+                    continue
+                if now_done:
+                    msg = (f"{actor_name} closed container '{row['title'][:40]}' — "
+                           f"your story '{att['title'][:40]}' is now an Integrate task")
+                    ntype = "integrate_ready"
+                else:
+                    msg = (f"{actor_name} reopened container '{row['title'][:40]}' — "
+                           f"your story '{att['title'][:40]}' is no longer Integrate")
+                    ntype = "integrate_undone"
+                conn.execute(
+                    "INSERT INTO notifications "
+                    "(user_id,type,message,story_id,from_user,created_at) "
+                    "VALUES (?,?,?,?,?,?)",
+                    (a["user_id"], ntype, msg, att["id"], actor_id, ts),
+                )
+
     # ── B1: project-membership guard for every per-story endpoint ────────────
     def _require_story_access(story_id):
         """Return the story row if the current session user may access it,
@@ -285,6 +331,10 @@ def register(app) -> None:
                          f"{session['display_name']} moved a story to {st_name}",
                          story_id, session["user_id"], int(time.time())),
                     )
+            _cascade_container_status(
+                conn, story_id, old["status_id"], status_id,
+                session["user_id"], session["display_name"],
+            )
         conn.commit()
         conn.close()
         return jsonify(ok=True)
@@ -392,6 +442,15 @@ def register(app) -> None:
         uid = session["user_id"]
         log_story_change(story_id, uid, "Status",
                          old.get("status_id"), status_id)
+        # Cascade integrate notifications if this is a container that flipped done-state
+        if old.get("status_id") != status_id:
+            _cascade_conn = get_db()
+            _cascade_container_status(
+                _cascade_conn, story_id, old.get("status_id"), status_id,
+                uid, session["display_name"],
+            )
+            _cascade_conn.commit()
+            _cascade_conn.close()
         log_story_change(story_id, uid, "Sprint",
                          old.get("sprint"), sprint)
         log_story_change(story_id, uid, "Priority",
@@ -807,6 +866,11 @@ def register(app) -> None:
             return jsonify(ok=False, error="invalid ids"), 400
         ph   = ",".join("?" * len(story_ids))
         conn = get_db()
+        # Snapshot old status per story so we can detect container done-state flips
+        old_rows = conn.execute(
+            f"SELECT id, status_id FROM stories WHERE id IN ({ph})", story_ids
+        ).fetchall()
+        old_status_map = {r["id"]: r["status_id"] for r in old_rows}
         # Only update sprint if explicitly provided — omitting it must NOT null it out
         # (stories with sprint=NULL are hidden from the board entirely)
         if "sprint" in data:
@@ -820,6 +884,12 @@ def register(app) -> None:
                 f"UPDATE stories SET status_id=?,updated_at=? "
                 f"WHERE id IN ({ph})",
                 [int(status_id), int(time.time())] + story_ids,
+            )
+        # Cascade integrate notifications for any container that flipped done-state
+        for sid in story_ids:
+            _cascade_container_status(
+                conn, sid, old_status_map.get(sid), int(status_id),
+                session["user_id"], session["display_name"],
             )
         conn.commit()
         conn.close()

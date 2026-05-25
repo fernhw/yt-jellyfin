@@ -146,6 +146,12 @@
           {% endif %}
           <span>{{ session.display_name }}</span>
         </a>
+        <button class="sidebar-bell-btn" id="gyra-bell-btn" title="Notifications" aria-label="Notifications" type="button">
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M10 2a1 1 0 011 1v.6a5 5 0 014 4.9V11l1.3 2.6a1 1 0 01-.9 1.4H4.6a1 1 0 01-.9-1.4L5 11V8.5a5 5 0 014-4.9V3a1 1 0 011-1zm-2 14a2 2 0 104 0H8z"/>
+          </svg>
+          <span class="bell-count" id="gyra-bell-count" hidden>0</span>
+        </button>
         <button class="sidebar-help-btn" id="gyra-help-open" title="GYRA Guide — Scrum for Indies" aria-label="Open GYRA Guide">?</button>
       </div>
 
@@ -579,6 +585,137 @@
   });
 }());
 </script>
+
+{% if session.user_id %}
+<!-- ── Notification bell dropdown panel ── -->
+<div id="gyra-bell-panel" class="gyra-bell-panel" hidden role="dialog" aria-label="Notifications">
+  <div class="gyra-bell-hdr">
+    <span>Notifications</span>
+    <button type="button" id="gyra-bell-mark" class="gyra-bell-mark">Mark all read</button>
+  </div>
+  <div class="gyra-bell-list" id="gyra-bell-list">
+    <div class="gyra-bell-empty">Loading…</div>
+  </div>
+</div>
+
+<script>
+/* Notification bell — polls /api/notifications every 30s */
+(function () {
+  var btn   = document.getElementById('gyra-bell-btn');
+  var panel = document.getElementById('gyra-bell-panel');
+  var list  = document.getElementById('gyra-bell-list');
+  var count = document.getElementById('gyra-bell-count');
+  var mark  = document.getElementById('gyra-bell-mark');
+  if (!btn || !panel) return;
+
+  var appRoot = (document.querySelector('meta[name="app-root"]') || {}).content || '';
+  var csrf    = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+  var POLL_MS = 30000;
+  var lastData = { notifications: [], unread: 0 };
+
+  function relTime(ts) {
+    if (!ts) return '';
+    var d = Math.max(0, Math.floor(Date.now()/1000) - ts);
+    if (d < 60)    return d + 's';
+    if (d < 3600)  return Math.floor(d/60)  + 'm';
+    if (d < 86400) return Math.floor(d/3600)+ 'h';
+    return Math.floor(d/86400) + 'd';
+  }
+
+  function escHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function renderList(items) {
+    if (!items || !items.length) {
+      list.innerHTML = '<div class="gyra-bell-empty">No notifications yet.</div>';
+      return;
+    }
+    list.innerHTML = items.map(function (n) {
+      var avatar = n.from_avatar
+        ? '<img src="' + appRoot + '/avatars/' + encodeURIComponent(n.from_avatar) + '" class="avatar-xs" alt="">'
+        : '<span class="avatar-initial-xs">' + escHtml((n.from_name || '?').charAt(0).toUpperCase()) + '</span>';
+      var link = n.story_id ? (appRoot + '/story/' + n.story_id) : '#';
+      return ''
+        + '<a class="gyra-bell-item' + (n.is_read ? '' : ' is-unread') + '" href="' + link + '">'
+        +   '<div class="gyra-bell-avatar">' + avatar + '</div>'
+        +   '<div class="gyra-bell-body">'
+        +     '<div class="gyra-bell-msg">' + escHtml(n.message || '') + '</div>'
+        +     (n.story_title
+                ? '<div class="gyra-bell-story">' + escHtml(n.story_title) + '</div>'
+                : '')
+        +     '<div class="gyra-bell-time">' + relTime(n.created_at) + ' ago</div>'
+        +   '</div>'
+        + '</a>';
+    }).join('');
+  }
+
+  function updateCount(n) {
+    if (n > 0) {
+      count.hidden = false;
+      count.textContent = n > 99 ? '99+' : String(n);
+      btn.classList.add('has-unread');
+    } else {
+      count.hidden = true;
+      btn.classList.remove('has-unread');
+    }
+  }
+
+  function poll() {
+    fetch(appRoot + '/api/notifications', { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) return;
+        lastData = d;
+        updateCount(d.unread || 0);
+        if (!panel.hidden) renderList(d.notifications || []);
+      })
+      .catch(function(){});
+  }
+
+  function openPanel() {
+    panel.hidden = false;
+    renderList(lastData.notifications || []);
+    // Position panel next to the bell button
+    var r = btn.getBoundingClientRect();
+    panel.style.left = (r.right + 8) + 'px';
+    panel.style.bottom = (window.innerHeight - r.bottom - 4) + 'px';
+  }
+  function closePanel() { panel.hidden = true; }
+
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (panel.hidden) { openPanel(); poll(); }
+    else closePanel();
+  });
+  document.addEventListener('click', function (e) {
+    if (panel.hidden) return;
+    if (panel.contains(e.target) || btn.contains(e.target)) return;
+    closePanel();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !panel.hidden) closePanel();
+  });
+
+  mark.addEventListener('click', function () {
+    fetch(appRoot + '/api/notifications/mark-read', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': csrf, 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: '{}'
+    })
+    .then(function () { updateCount(0); poll(); });
+  });
+
+  // Initial fetch + interval
+  poll();
+  setInterval(poll, POLL_MS);
+}());
+</script>
+{% endif %}
+
 {% block scripts %}{% endblock %}
 </body>
 </html>

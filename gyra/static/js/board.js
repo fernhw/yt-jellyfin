@@ -112,7 +112,17 @@
           }),
         })
         .then(r => { if (!r.ok) throw new Error('API error ' + r.status); })
-        .then(() => { affectedCols.forEach(saveColOrder); clearSelection(); })
+        .then(() => {
+          affectedCols.forEach(saveColOrder);
+          // Cascade container/integrate badges for every moved card
+          if (window._postMoveBadgeRefresh) {
+            allIds.forEach(function(sid){
+              var c = document.querySelector('.board-card[data-story-id="' + sid + '"]');
+              if (c) window._postMoveBadgeRefresh(c);
+            });
+          }
+          clearSelection();
+        })
         .catch(() => {
           if (prevParent) {
             if (prevSibling) prevParent.insertBefore(dragCard, prevSibling);
@@ -144,7 +154,10 @@
           }),
         })
         .then(r => { if (!r.ok) throw new Error('API error ' + r.status); })
-        .then(() => { saveColOrder(col); saveColOrder(sourceCol); })
+        .then(() => {
+          saveColOrder(col); saveColOrder(sourceCol);
+          if (window._postMoveBadgeRefresh) window._postMoveBadgeRefresh(dragCard);
+        })
         .catch(() => {
           if (prevParent) {
             if (prevSibling) prevParent.insertBefore(dragCard, prevSibling);
