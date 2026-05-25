@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Story not found — Gyra{% endblock %}
+{% block content %}
+<div class="empty-state" style="max-width:560px;margin:60px auto;text-align:center;">
+  <svg viewBox="0 0 48 48" width="64" height="64" fill="none"
+       stroke="currentColor" stroke-width="1.5" style="opacity:.6;">
+    <circle cx="24" cy="24" r="20"/>
+    <line x1="16" y1="16" x2="32" y2="32"/>
+    <line x1="32" y1="16" x2="16" y2="32"/>
+  </svg>
+  <h2 style="margin-top:18px;">Story not found</h2>
+  {% if requested_ref %}
+    <p><strong>{{ requested_ref }}</strong> doesn’t exist — it was either
+       deleted or the reference is wrong.</p>
+  {% else %}
+    <p>That story doesn’t exist — it was either deleted or the link is wrong.</p>
+  {% endif %}
+  <p class="form-hint" style="margin-top:12px;">
+    Story IDs are permanent. If a story is deleted, its number stays empty
+    so links you’ve shared keep pointing to a clear “not found” page
+    instead of silently jumping to the wrong card.
+  </p>
+  <div style="margin-top:22px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+    {% if projects %}
+      <a class="btn btn-primary"
+         href="{{ url_for('board', project_id=projects[0].id) }}">
+        ← Back to board
+      </a>
+    {% endif %}
+    <a class="btn" href="{{ request.script_root or '/' }}">Home</a>
+  </div>
+</div>
+{% endblock %}
