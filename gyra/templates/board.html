@@ -172,12 +172,19 @@
           {# ── Container / Attachment badges (rendered BEFORE the absolute
              footer so they don't visually butt against the points row) ── #}
           {# A story can be BOTH a container AND an attachment. Container badge always first. #}
-          {% set _box_labels = {'whitebox':'WhiteBox','greybox':'GreyBox','blackbox':'BlackBox','featurebox':'FeatureBox'} %}
+          {% set _box_labels = {'whitebox':'WhiteBox','greybox':'GreyBox','blackbox':'BlackBox','featurebox':'FeatureBox','stubbox':'StubBox','blocked':'BLOCKED'} %}
           {% if story.box_type and not story.status_is_done %}
-            <div class="card-box-badge is-container"
-                 title="This story contains other stories (dynamic container)">
-              (Container)
-            </div>
+            {% if story.box_type == 'blocked' %}
+              <div class="card-box-badge is-blocker"
+                   title="This container holds work that is BLOCKED on a hard dependency. The container itself is the blocker — its attached stories are the ones that can't move.">
+                (Blocker)
+              </div>
+            {% else %}
+              <div class="card-box-badge is-container"
+                   title="This story contains other stories (dynamic container)">
+                (Container)
+              </div>
+            {% endif %}
           {% endif %}
           {% if story.attached_to and not story.status_is_done %}
             {% if story.parent_is_done %}
@@ -695,6 +702,8 @@
             <option value="greybox">Greybox — real functionality, no design or polish</option>
             <option value="blackbox">Blackbox — tiny test room for one small part</option>
             <option value="featurebox">Featurebox — focused space to test a complex feature</option>
+            <option value="stubbox">Stubbox — surrounding deps faked (no DB, no API, no save)</option>
+            <option value="blocked">Blocked — HARD dependency, no mock possible (belongs in backlog)</option>
           </select>
           <div id="sm-box-help-panel" class="sm-box-help-panel" style="display:none">
             <p><strong>Boxes</strong> let a story declare how attachments should treat it. Authority flows host → guest only; no story ever blocks another's "Done".</p>
@@ -703,8 +712,42 @@
               <li><strong>Greybox</strong> — Like a no-design menu made of plain blocks, but the functionality is real. Games: a level with correct paths, room sizes, enemy spots, cover, and flow, but no final assets. Software: screens, buttons, menus, forms, and navigation working with no branding, no art, and no polish.</li>
               <li><strong>Blackbox</strong> — Like making a tiny test room for one small part of a feature. Games: tests one part only, like a face animation, door interaction, AI reaction, navmesh path, or dialogue trigger. Software: tests one small function, like one button action, one form rule, one API call, or one save event.</li>
               <li><strong>Featurebox</strong> — Like making a special space to test one complex feature. Games: testing a full system like inventory, stealth detection, subtitles, checkpoints, or save/load away from the full game. Software: a focused area where a complex feature can be used, broken, fixed, and understood before it joins the real app.</li>
+              <li><strong>Stubbox</strong> — Like wiring the thing up to a pretend world so it runs end-to-end on canned data. Games: checkpoint system that doesn't actually save, inventory backed by a hardcoded list, AI talking to a fake sensor feed. Software: API client pointed at fixture JSON, DB layer returning in-memory rows, auth that always says yes. Proves the shape works before the real backend exists.</li>
+              <li><strong>Blocked</strong> — A real, hard dependency that cannot be mocked, stubbed, whiteboxed, or blackboxed. You cannot animate without a character. You cannot enter a world that has no world. <em>This is not agile</em> — Blocked work belongs on the BACKLOG, not in a sprint, because Scrum says a sprint is a set of stories that <strong>can</strong> reach Done. Only choose Blocked after you've honestly tried WhiteBox / StubBox / BlackBox / FeatureBox. Gyra will warn you loudly if you try to send a Blocked story to a sprint.</li>
             </ul>
           </div>
+        </div>
+        {# ── Blocked-only justification fields (shown when Container box = Blocked) ── #}
+        <div id="sm-blocked-fields" class="story-sidebar-field sm-blocked-fields" style="display:none">
+          <div class="sm-blocked-reprimand">
+            ⚠ <strong>This is not agile.</strong> Blocked work doesn't belong in a sprint —
+            it lives on the backlog until the dependency is real. Scrum says
+            a sprint contains stories that <strong>can</strong> reach Done. A
+            blocked story by definition cannot.
+            <br><br>Before you commit, have you tried:
+            <ul>
+              <li><strong>WhiteBox</strong> — the naked idea on a blank page</li>
+              <li><strong>StubBox</strong> — fake the dependency with canned data</li>
+              <li><strong>BlackBox</strong> — tiny test room for one piece</li>
+              <li><strong>FeatureBox</strong> — focused space for one complex feature</li>
+            </ul>
+            Pick Blocked <em>only</em> when there is literally no way to mock,
+            stub, or whitebox the dependency.
+          </div>
+          <label class="story-sidebar-label" style="margin-top:8px">
+            What is blocking this? <span style="color:#b91c1c">*</span>
+          </label>
+          <textarea id="sm-block-desc" class="form-input" rows="3"
+                    placeholder="The hard dependency that makes this story un-doable…"></textarea>
+          <label class="story-sidebar-label" style="margin-top:8px">
+            If you HAD to mock it, what would the mock look like?
+            <span style="color:#b91c1c">*</span>
+          </label>
+          <textarea id="sm-block-mock" class="form-input" rows="3"
+                    placeholder="Force yourself to describe a stub. If you can describe it, this isn't Blocked — it's a StubBox."></textarea>
+          <button type="button" id="sm-blocked-save" class="btn btn-sm btn-primary" style="margin-top:8px;width:100%;background:#b91c1c;border-color:#7f1d1d">
+            Save Blocked justification
+          </button>
         </div>
         {# ── Attachments list (only when this story is a Container) ── #}
         <div id="sm-attachments-wrap" class="story-sidebar-field" style="display:none">
@@ -900,6 +943,7 @@
   .box-greybox    { background:#e2e8f0; color:#334155; }
   .box-blackbox   { background:#1f2937; color:#f9fafb; }
   .box-featurebox { background:#ede9fe; color:#4c1d95; }
+  .box-stubbox    { background:#fef3c7; color:#78350f; }
 
   .story-link {
     color:inherit; font-weight:700; text-decoration:underline;
@@ -1027,6 +1071,25 @@
   #sm-content.sm-tint-featurebox .sm-attach-headline,
   #sm-content.sm-tint-featurebox .sm-attach-parent-title { color:#5b21b6; }
 
+  #sm-content.sm-tint-stubbox    .story-main { background:#fffbeb; }
+  #sm-content.sm-tint-stubbox    .sm-attach-headline,
+  #sm-content.sm-tint-stubbox    .sm-attach-parent-title { color:#78350f; }
+
+  /* Blocked tint screams: angry red wash + red headline. */
+  #sm-content.sm-tint-blocked    .story-main { background:#fef2f2; }
+  #sm-content.sm-tint-blocked    .sm-attach-headline,
+  #sm-content.sm-tint-blocked    .sm-attach-parent-title { color:#7f1d1d; font-weight:900; }
+
+  /* Reprimand panel shown in sidebar when Blocked is chosen. */
+  .sm-blocked-reprimand {
+    background:#fef2f2; border:2px solid #b91c1c; border-radius:6px;
+    padding:10px 12px; margin:8px 0; font-size:12px; color:#7f1d1d;
+    line-height:1.45;
+  }
+  .sm-blocked-reprimand strong { color:#7f1d1d; }
+  .sm-blocked-reprimand ul { margin:6px 0 6px 18px; padding:0; }
+  .sm-blocked-reprimand li { margin:2px 0; }
+
   #sm-content.sm-tint-integrate  .story-main { background:#f0fdf4; }
   #sm-content.sm-tint-integrate  .sm-attach-headline,
   #sm-content.sm-tint-integrate  .sm-attach-parent-title { color:#15803d; }
@@ -1092,13 +1155,46 @@
   .card-box-badge.is-container {
     background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd;
   }
-  .card-box-badge.is-integrate {
-    background:#fef9c3; color:#854d0e; border:1px solid #fde047;
+  /* (Blocker) — a container whose attached children are BLOCKED on a hard
+     dependency. The container itself is the blocker, not blocked, so it
+     stays full-opacity; the children get the dim/grayscale treatment. */
+  .card-box-badge.is-blocker {
+    background:#fee2e2; color:#7f1d1d; border:1px solid #b91c1c;
+    font-weight:800;
   }
-  .card-box-badge.box-whitebox  { background:#f8fafc; color:#0f172a; border:1px solid #cbd5e1; }
-  .card-box-badge.box-greybox   { background:#f1f5f9; color:#334155; border:1px solid #94a3b8; }
-  .card-box-badge.box-blackbox  { background:#1e293b; color:#f1f5f9; border:1px solid #0f172a; }
-  .card-box-badge.box-featurebox{ background:#dbeafe; color:#1e3a8a; border:1px solid #93c5fd; }
+  /* INTEGRATE = GO. Parent container is done, this dependent is cleared to ship. */
+  .card-box-badge.is-integrate {
+    background:#16a34a; color:#fff; border:1px solid #15803d;
+    box-shadow:0 0 0 1px rgba(22,163,74,.25), 0 1px 2px rgba(0,0,0,.15);
+  }
+  /* Attachment badges keep distinct per-box colours, but all read as
+     "not green" so it's obvious only INTEGRATE means go. */
+  .card-box-badge.box-whitebox   { background:#fde68a; color:#78350f; border:1px solid #f59e0b; }  /* amber  */
+  .card-box-badge.box-greybox    { background:#e5e7eb; color:#1f2937; border:1px solid #6b7280; }  /* slate  */
+  .card-box-badge.box-blackbox   { background:#1f2937; color:#fafafa; border:1px solid #000;    }  /* black  */
+  .card-box-badge.box-featurebox { background:#ede9fe; color:#4c1d95; border:1px solid #8b5cf6; }  /* violet */
+  .card-box-badge.box-stubbox    { background:#fed7aa; color:#7c2d12; border:1px solid #ea580c; }  /* orange */
+  /* BLOCKED = scream. Dark red with crosshatched border vibe via box-shadow. */
+  .card-box-badge.box-blocked    {
+    background:#7f1d1d; color:#fff5f5; border:1px solid #450a0a;
+    text-shadow:0 1px 1px rgba(0,0,0,.4);
+    box-shadow:0 0 0 2px #fecaca, 0 2px 4px rgba(127,29,29,.4);
+  }
+  /* Children of a Blocked container (the actual blocked work) are dimmed.
+     The Blocked container itself is the BLOCKER — it isn't blocked, so it
+     stays at full opacity. We also stop dimming when:
+       • the child is DONE (it found a way past the dependency), OR
+       • the parent container is DONE (block is lifted → INTEGRATE).
+     Just like WhiteBox/BlackBox children flip to INTEGRATE when the
+     parent finishes, Blocked children simply become "free" again. */
+  .board-card[data-parent-box-type="blocked"]:not([data-status-is-done="1"]):not([data-parent-is-done="1"]) {
+    opacity:.55;
+    filter:grayscale(.35);
+  }
+  .board-card[data-parent-box-type="blocked"]:not([data-status-is-done="1"]):not([data-parent-is-done="1"]):hover {
+    opacity:.95;
+    filter:none;
+  }
 
 </style>
 
@@ -1288,7 +1384,7 @@
   window._wireBoardCard = wireCard;
 
   // ── Container/attachment badge live render ───────────────────────────────
-  var BOX_LABELS = { whitebox:'WhiteBox', greybox:'GreyBox', blackbox:'BlackBox', featurebox:'FeatureBox' };
+  var BOX_LABELS = { whitebox:'WhiteBox', greybox:'GreyBox', blackbox:'BlackBox', featurebox:'FeatureBox', stubbox:'StubBox', blocked:'BLOCKED' };
   // Rebuilds the (Container) and attachment/(Integrate) badges for a card based on its data attrs.
   function renderCardBoxBadges(card) {
     if (!card) return;
@@ -1308,9 +1404,15 @@
     // Container badge first
     if (boxType && !statusDone) {
       var b = document.createElement('div');
-      b.className = 'card-box-badge is-container';
-      b.title = 'This story contains other stories (dynamic container)';
-      b.textContent = '(Container)';
+      if (boxType === 'blocked') {
+        b.className = 'card-box-badge is-blocker';
+        b.title = 'This container holds work that is BLOCKED on a hard dependency. The container itself is the blocker.';
+        b.textContent = '(Blocker)';
+      } else {
+        b.className = 'card-box-badge is-container';
+        b.title = 'This story contains other stories (dynamic container)';
+        b.textContent = '(Container)';
+      }
       insertBadge(b);
     }
     // Attachment badge
@@ -2978,6 +3080,44 @@
           a: "A branch hides progress. A FeatureBox is visible on the board, demoable at review, and has its own Definition of Done. The team can refine, estimate, and re-prioritise it like any other story — that's what makes it Scrum-compliant."
         }
       ])
+    },
+    stubbox: {
+      label: 'StubBox',
+      tip:   'Surrounding dependencies faked so the thing runs end-to-end on canned data.',
+      detail:'Like wiring the thing up to a pretend world so it runs end-to-end on canned data. In games, it is a checkpoint system that does not actually save, an inventory backed by a hardcoded list, or AI talking to a fake sensor feed. In software, it is an API client pointed at fixture JSON, a DB layer returning in-memory rows, or auth that always says yes. The thing being tested is real — everything around it is a stand-in so you can prove the shape works before the real backend exists.',
+      faqs: BOX_FAQ_COMMON.concat([
+        {
+          q: "How is a StubBox different from a WhiteBox?",
+          a: "A WhiteBox is the naked idea, often alone on a blank page. A StubBox is the real thing wired into a fake world: it expects to call a DB, an API, a save system — and those calls succeed against fixtures. You build the StubBox when the unknown is integration shape, not interaction shape."
+        },
+        {
+          q: "Won't the stubs lie to me and hide real bugs?",
+          a: "Yes — that's the trade. Stubs are honest about what they're not. The point is to unblock the work that depends on a missing backend so the team can keep shipping. The moment the real dependency lands, the stubs come out and the integration story exposes anything they hid."
+        },
+        {
+          q: "When is a StubBox 'done'?",
+          a: "When the thing runs end-to-end against the stubs and the team can answer 'does the shape of the dependency contract work?'. Then either the real dependency replaces the stub, or the StubBox stays as a permanent test harness for the integration story."
+        }
+      ])
+    },
+    blocked: {
+      label: 'BLOCKED',
+      tip:   'Hard dependency — cannot be mocked, stubbed, or whiteboxed. Belongs on the backlog, NOT in a sprint.',
+      detail:'A <strong>real, hard</strong> dependency. You cannot animate without a character. You cannot enter a world that has no world. Blocked is the last resort — only valid after you have honestly tried WhiteBox, StubBox, BlackBox and FeatureBox. <strong>Blocked work does not belong in a sprint.</strong> Scrum says a sprint is a set of stories that <em>can</em> reach Done. A blocked story by definition cannot. It stays on the backlog until the dependency is real, then it gets re-boxed (or sprinted).',
+      faqs: BOX_FAQ_COMMON.concat([
+        {
+          q: "Why not just sprint it and see what happens?",
+          a: "Because Scrum's contract is that the sprint backlog is what the team commits to deliver. Pulling in something that cannot reach Done corrodes that commitment, makes velocity meaningless, and trains the team to accept failure as normal. Blocked stays on the backlog. Period."
+        },
+        {
+          q: "How do I know it's <em>really</em> Blocked and not just lazy?",
+          a: "If you can describe what a mock or stub would look like, it is a StubBox — not Blocked. If you can put one button on a blank page that demonstrates the idea, it is a WhiteBox. If you can carve out one small piece to test alone, it is a BlackBox. If you can build a focused area for the complex part, it is a FeatureBox. Blocked is what remains after honestly answering 'no' to all four."
+        },
+        {
+          q: "What unblocks a Blocked story?",
+          a: "The dependency becoming real. When it does, edit the story, change the box type to whatever now fits (often nothing — it just becomes a normal story), and pull it into a sprint at the next planning."
+        }
+      ])
     }
   };
   function boxBadge(box, withTip) {
@@ -3008,7 +3148,8 @@
     if (!content) return;
     content.classList.remove(
       'sm-tint-whitebox','sm-tint-greybox','sm-tint-blackbox',
-      'sm-tint-featurebox','sm-tint-integrate','sm-tint-current'
+      'sm-tint-featurebox','sm-tint-stubbox','sm-tint-blocked',
+      'sm-tint-integrate','sm-tint-current'
     );
   }
 
@@ -3017,6 +3158,16 @@
     var c     = d.container || {};
     var boxEl = document.getElementById('sm-box-type');
     boxEl.value = c.box_type || '';
+
+    // Toggle the BLOCKED justification panel + populate from server data.
+    var blockedFields = document.getElementById('sm-blocked-fields');
+    var descEl = document.getElementById('sm-block-desc');
+    var mockEl = document.getElementById('sm-block-mock');
+    if (blockedFields && descEl && mockEl) {
+      descEl.value = c.block_description || '';
+      mockEl.value = c.block_mock_idea   || '';
+      blockedFields.style.display = (c.box_type === 'blocked') ? '' : 'none';
+    }
 
     clearStoryTint();
 
@@ -3152,11 +3303,19 @@
     atts.forEach(function(a){
       var row = document.createElement('div');
       row.className = 'sm-attachment-row' + (a.is_done ? ' done' : '');
+      row.style.cursor = 'pointer';
+      row.title = 'Open story #' + a.id;
       row.innerHTML =
           '<span class="sm-att-title" title="'+esc(a.title)+'">' + esc(a.title) + '</span>'
         + '<span class="sm-att-status">' + esc(a.status_name || '—') + '</span>'
         + '<button type="button" class="sm-att-detach" title="Detach">×</button>';
-      row.querySelector('.sm-att-detach').addEventListener('click', function(){
+      // Whole row navigates to that story (except the detach button).
+      row.addEventListener('click', function(e){
+        if (e.target.closest('.sm-att-detach')) return;
+        openStoryModal(a.id);
+      });
+      row.querySelector('.sm-att-detach').addEventListener('click', function(e){
+        e.stopPropagation();
         if (!confirm('Detach "' + a.title + '" from this container?')) return;
         apiDelete('/api/story/'+containerId+'/attach/'+a.id).then(function(r){
           if (r.ok) renderAttachmentsList(containerId, r.attachments);
@@ -3318,13 +3477,42 @@
 
   document.getElementById('sm-box-type').addEventListener('change', function(){
     var v = this.value || null;
+    var blockedFields = document.getElementById('sm-blocked-fields');
+
+    if (v === 'blocked') {
+      // Reprimand BEFORE flipping the box type. If they back out, revert.
+      var ok = confirm(
+        '⚠ BLOCKED = not agile.\n\n' +
+        'Blocked stories belong on the BACKLOG, not in a sprint, because\n' +
+        'Scrum says a sprint is a set of stories that CAN reach Done.\n\n' +
+        'Before you choose this, have you honestly tried:\n' +
+        '  • WhiteBox  — the naked idea on a blank page\n' +
+        '  • StubBox   — fake the dependency with canned data\n' +
+        '  • BlackBox  — tiny test room for one piece\n' +
+        '  • FeatureBox — focused space for one complex feature\n\n' +
+        'If literally none of those work, continue and fill in the\n' +
+        'two required justification fields. Otherwise pick a real box.'
+      );
+      if (!ok) {
+        // revert dropdown to whatever the server thinks it is
+        this.value = (_savedData && _savedData.container && _savedData.container.box_type) || '';
+        return;
+      }
+      // Show fields, but DO NOT save yet — user must fill description + mock
+      // and hit "Save Blocked justification".
+      if (blockedFields) blockedFields.style.display = '';
+      var descEl = document.getElementById('sm-block-desc');
+      if (descEl) descEl.focus();
+      return;
+    }
+
+    // Non-blocked: hide the panel and save immediately as before.
+    if (blockedFields) blockedFields.style.display = 'none';
     apiJson('/api/story/'+curId+'/box', 'POST', {box_type: v}).then(function(r){
       if (!r.ok) {
         alert(r.error || 'Failed to set box type');
-        // revert
         return;
       }
-      // Re-open: simplest way to refresh container UI fully
       var wrap = document.getElementById('sm-attachments-wrap');
       var summary = document.getElementById('sm-container-summary');
       if (v) {
@@ -3336,6 +3524,44 @@
         wrap.style.display = 'none';
         summary.style.display = 'none';
       }
+    });
+  });
+
+  // ── Explicit save button for BLOCKED (requires both justification fields) ──
+  var _blkSaveBtn = document.getElementById('sm-blocked-save');
+  if (_blkSaveBtn) _blkSaveBtn.addEventListener('click', function(){
+    var desc = (document.getElementById('sm-block-desc').value || '').trim();
+    var mock = (document.getElementById('sm-block-mock').value || '').trim();
+    if (!desc || !mock) {
+      alert('Both "What is blocking this?" and "If you HAD to mock it…" are required.\n\nIf you cannot describe a mock, this isn\'t Blocked — it\'s a StubBox.');
+      return;
+    }
+    _blkSaveBtn.disabled = true;
+    _blkSaveBtn.textContent = 'Saving…';
+    apiJson('/api/story/'+curId+'/box', 'POST', {
+      box_type: 'blocked',
+      block_description: desc,
+      block_mock_idea:   mock
+    }).then(function(r){
+      _blkSaveBtn.disabled = false;
+      _blkSaveBtn.textContent = 'Save Blocked justification';
+      if (!r.ok) { alert(r.error || 'Failed to save'); return; }
+      // Reflect persisted state so revert-on-cancel works next time.
+      if (_savedData) {
+        _savedData.container = _savedData.container || {};
+        _savedData.container.box_type          = 'blocked';
+        _savedData.container.block_description = desc;
+        _savedData.container.block_mock_idea   = mock;
+      }
+      // Apply visuals immediately.
+      clearStoryTint();
+      document.getElementById('sm-content').classList.add('sm-tint-blocked');
+      var wrap = document.getElementById('sm-attachments-wrap');
+      var summary = document.getElementById('sm-container-summary');
+      wrap.style.display = '';
+      summary.style.display = '';
+      renderAttachmentsList(curId, []);
+      summary.innerHTML = '<div class="sm-cs-empty">Blocked container. Attachments are not normally meaningful here.</div>';
     });
   });
 
@@ -3628,6 +3854,25 @@
   // ── Save ──
   document.getElementById('sm-save-btn').addEventListener('click', saveStory);
   function saveStory() {
+    // ⚠ Scrum guardrail: refuse to silently put a Blocked story into a sprint.
+    var sprintVal = document.getElementById('sm-sprint').value || '';
+    var curBox = (_savedData && _savedData.container && _savedData.container.box_type) || '';
+    var parentBox = (_savedData && _savedData.container && _savedData.container.container
+                     && _savedData.container.container.box_type) || '';
+    if (sprintVal && (curBox === 'blocked' || parentBox === 'blocked')) {
+      var who = (curBox === 'blocked') ? 'THIS STORY IS BLOCKED' : 'THIS STORY\'S CONTAINER IS BLOCKED';
+      var warn =
+        '⚠ ' + who + '.\n\n' +
+        'Scrum says blocked work stays in the BACKLOG until the\n' +
+        'dependency is real.\n\n' +
+        'Sprinting blocked work fails sprint goals, breaks predictability,\n' +
+        'and tells the team that "Done" doesn\'t mean Done.\n\n' +
+        'If the dependency can be mocked, stubbed, or whiteboxed — close\n' +
+        'this, change the box type, and try again.\n\n' +
+        'Are you absolutely sure you want to put a BLOCKED story into the sprint?';
+      if (!confirm(warn)) return;
+    }
+
     var assigneeIds = Array.from(document.querySelectorAll('#sm-assignee-pills .assignee-pill'))
       .map(function(p){ return parseInt(p.dataset.uid); });
     var payload = {

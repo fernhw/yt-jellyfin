@@ -1,14 +1,14 @@
-last_scan=1779740052864
-total_videos=2625
-updated=2026-05-25 15:14:12
+last_scan=1779746970412
+total_videos=2627
+updated=2026-05-25 17:09:30
 report_date=2026-05-25
-downloaded_today=8
-deleted_today=5
+downloaded_today=10
+deleted_today=6
 skipped_today=1
 channels_scanned=93
 channels_total=93
 errors_last_run=0
 errors_list=
-downloaded_list=Big A:The Balance is Shifting|Asmongold TV  :Resident Evil 4 is REALLY GOOD..|Lessons in Meme Culture:The Amazing Digital Circus/Glitch Fandom Is Crashing Out|Asmongold TV  :This man is an absolute f***ing patriot..|Second Wind:The Beautiful & Baffling Designs of Metal Gear Solid | Design Delve|SAMTIME:We’re Winning Against Microsoft|Gamers Nexus:COLLAPSE of Personal Computing | Investigation Into the Destruction of Ownership|Asmongold TV  :Bro is facing 45000 years in prison..
-deleted_list=AsmongoldTV:This_video_fed_me_up_S26E147|AsmongoldTV:Elons_ex_is_out_of_her_mind_S26E148|SecondWind:Aphelion_Fully_Ramblomatic_S26E20|AsmongoldTV:Jeff_Bezos_pissed_everyone_off_S26E149|GamersNexus:Youll_Subscribe_to_Your_Router_Too_The_First_Router_Bribes_Are_Here_S26E10
+downloaded_list=Big A:The Balance is Shifting|Asmongold TV  :Resident Evil 4 is REALLY GOOD..|Lessons in Meme Culture:The Amazing Digital Circus/Glitch Fandom Is Crashing Out|Asmongold TV  :This man is an absolute f***ing patriot..|Second Wind:The Beautiful & Baffling Designs of Metal Gear Solid | Design Delve|SAMTIME:We’re Winning Against Microsoft|Gamers Nexus:COLLAPSE of Personal Computing | Investigation Into the Destruction of Ownership|Asmongold TV  :Bro is facing 45000 years in prison..|Bellular News:Bungie Pulled The Plug On Destiny 2: Now Staff Are Leaking|Asmongold TV  :She even tried to bribe the officer..
+deleted_list=AsmongoldTV:This_video_fed_me_up_S26E147|AsmongoldTV:Elons_ex_is_out_of_her_mind_S26E148|SecondWind:Aphelion_Fully_Ramblomatic_S26E20|AsmongoldTV:Jeff_Bezos_pissed_everyone_off_S26E149|GamersNexus:Youll_Subscribe_to_Your_Router_Too_The_First_Router_Bribes_Are_Here_S26E10|AsmongoldTV:Ethan_Klein_won_and_destroyed_her_S26E150
 skipped_list=members-only:https://www.youtube.com/watch?v=I56uHVF-lFk

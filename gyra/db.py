@@ -340,14 +340,21 @@ def _migrate_db() -> None:
         ("stories", "os",          "TEXT DEFAULT NULL"),
         # ── Container/Attachment model (sovereign-story system) ─────────────
         # box_type:        only set on Container stories. One of
-        #                  'whitebox' | 'blackbox' | 'greybox' | 'featurebox'.
+        #                  'whitebox' | 'blackbox' | 'greybox' | 'featurebox'
+        #                  | 'stubbox' | 'blocked'.
         # attached_to:     only set on Attachment stories — points at the
         #                  Container story that hosts this one. Strict 1:1.
         # dependent_action:short string the Container declares onto the
         #                  Attachment ("DO NOT integrate yet", "Wire to slot 3"…).
+        # block_description / block_mock_idea: only meaningful when
+        #   box_type == 'blocked'. The description is the real-world hard
+        #   dependency; the mock-idea forces the user to justify why a
+        #   StubBox / WhiteBox / etc. cannot replace the block.
         ("stories", "box_type",          "TEXT DEFAULT NULL"),
         ("stories", "attached_to",       "INTEGER DEFAULT NULL"),
         ("stories", "dependent_action",  "TEXT DEFAULT NULL"),
+        ("stories", "block_description", "TEXT DEFAULT NULL"),
+        ("stories", "block_mock_idea",   "TEXT DEFAULT NULL"),
         # ── Per-project sequential story number (May 2026) ─────────────────
         # The integer PK `id` is globally unique but meaningless to users.
         # `story_number` is the per-project sequence (1, 2, 3, …) used to
@@ -825,9 +832,11 @@ def get_board_stories(project_id: int):
 def get_backlog_stories(project_id: int):
     conn = get_db()
     rows = conn.execute(
-        """SELECT s.*, st.name AS status_name, st.color AS status_color
+        """SELECT s.*, st.name AS status_name, st.color AS status_color,
+                  p.box_type AS parent_box_type
            FROM stories s
            LEFT JOIN statuses st ON s.status_id = st.id
+           LEFT JOIN stories  p  ON s.attached_to = p.id
            WHERE s.project_id = ? AND s.sprint IS NULL AND s.is_archived = 0
            ORDER BY s.order_index""",
         (project_id,),

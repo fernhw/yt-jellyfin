@@ -10,6 +10,11 @@ choosing a `box_type`:
   * blackbox   — opaque future promise; attachments must NOT reference yet
   * greybox    — stub / placeholder; attachments may dry-run only
   * featurebox — Container will absorb attachments itself; just signal complete
+  * stubbox    — surrounding deps faked (no DB, no API, no save); attachments may run end-to-end against canned data only
+  * blocked    — HARD dependency; cannot be mocked/stubbed/whiteboxed. Story
+                 should live on the BACKLOG, NOT in a sprint. Requires a
+                 block_description (what is blocking) and a block_mock_idea
+                 (forces the user to prove a stub really is impossible).
 
 Another story may then point at the Container via `attached_to` (strict 1:1).
 The Container may also declare a `dependent_action` string that is broadcast
@@ -31,7 +36,7 @@ from auth import enforce_csrf, login_required
 from db import get_db, get_story, log_story_change, user_in_project
 
 
-VALID_BOXES = ("whitebox", "blackbox", "greybox", "featurebox")
+VALID_BOXES = ("whitebox", "blackbox", "greybox", "featurebox", "stubbox", "blocked")
 
 
 def _require_access(story_id):
@@ -106,9 +111,32 @@ def register(app) -> None:
                     error=(f"This Container still has {cnt} attachment(s). "
                            "Detach them first."),
                 ), 400
+        # Blocked-only fields. Stored regardless of current box_type so that
+        # toggling back to 'blocked' restores the user's last justification,
+        # but they're only required (and only meaningful) when raw=='blocked'.
+        block_desc = (data.get("block_description") or "").strip() or None
+        block_mock = (data.get("block_mock_idea")   or "").strip() or None
+        if raw == "blocked":
+            if not block_desc:
+                conn.close()
+                return jsonify(
+                    ok=False,
+                    error=("Blocked stories require a description of what is "
+                           "blocking them."),
+                ), 400
+            if not block_mock:
+                conn.close()
+                return jsonify(
+                    ok=False,
+                    error=("Blocked stories require a 'what would the mock "
+                           "look like' answer. If you can describe the mock, "
+                           "this is a StubBox, not Blocked."),
+                ), 400
+
         conn.execute(
-            "UPDATE stories SET box_type=?, updated_at=? WHERE id=?",
-            (raw, int(time.time()), story_id),
+            "UPDATE stories SET box_type=?, block_description=?, "
+            "block_mock_idea=?, updated_at=? WHERE id=?",
+            (raw, block_desc, block_mock, int(time.time()), story_id),
         )
         conn.commit()
         conn.close()
@@ -351,6 +379,10 @@ def _container_payload(s):
         "attached_to":      s["attached_to"] if "attached_to" in s.keys() else None,
         "dependent_action": (s["dependent_action"]
                              if "dependent_action" in s.keys() else None),
+        "block_description": (s["block_description"]
+                              if "block_description" in s.keys() else None),
+        "block_mock_idea":   (s["block_mock_idea"]
+                              if "block_mock_idea" in s.keys() else None),
         "attachments":      [],
         "container":        None,
     }
@@ -377,6 +409,8 @@ def _container_payload(s):
                 "title":    c["title"],
                 "box_type": c["box_type"] if "box_type" in c.keys() else None,
                 "is_done":  done,
+                "block_description": (c["block_description"]
+                                      if "block_description" in c.keys() else None),
             }
     return out
 
