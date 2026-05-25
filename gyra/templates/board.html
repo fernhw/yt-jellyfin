@@ -158,7 +158,7 @@
           {% if story.images %}
           <div class="card-images">
             {% for fname in story.images[:5] %}
-            <div class="card-image-item"><img src="{{ url_for('story_image', filename='thumb_' + fname) }}" alt="" loading="lazy"></div>
+            <div class="card-image-item"><img src="{{ url_for('story_image', filename='thumb_' + fname) }}" alt="" loading="lazy" draggable="false"></div>
             {% endfor %}
           </div>
           {% endif %}
@@ -1191,36 +1191,73 @@
     var tape = card.querySelector('.card-tape');
     return tape ? (tape.textContent.trim()) : null;
   }
-  function sortColByPriority(cards) {
-    var items  = Array.from(cards.querySelectorAll(':scope > .board-card'));
+
+  // Collect every card in this column, no matter which subcol it currently lives in.
+  function allCardsInCol(col) {
+    return Array.from(col.querySelectorAll('.board-card'));
+  }
+
+  // Distribute a sorted card list across the column's subcols as evenly as possible,
+  // updating each card's data-subcol-index to match its new bucket. Cards are kept
+  // in sort order within each subcol (contiguous chunks).
+  function distributeCardsEvenly(col, sortedCards) {
+    var outer = col.querySelector('.board-cards');
+    if (!outer) return;
+    var subs = Array.from(outer.querySelectorAll(':scope > .board-subcol'));
+    // No subcols (single-column layout) — just re-append in order to outer.
+    if (subs.length === 0) {
+      sortedCards.forEach(function (c) {
+        c.dataset.subcolIndex = '0';
+        outer.appendChild(c);
+      });
+      return;
+    }
+    var inner = subs.length;
+    var n     = sortedCards.length;
+    var base  = Math.floor(n / inner);
+    var extra = n % inner;
+    var idx   = 0;
+    for (var s = 0; s < inner; s++) {
+      var take = base + (s < extra ? 1 : 0);
+      for (var k = 0; k < take; k++) {
+        var card = sortedCards[idx++];
+        card.dataset.subcolIndex = String(s);
+        subs[s].appendChild(card);
+      }
+    }
+  }
+
+  function sortColByPriority(col) {
+    var items = allCardsInCol(col);
     items.sort(function (a, b) {
       var pa = PRIO_RANK[cardPriority(a)];
       var pb = PRIO_RANK[cardPriority(b)];
       if (pa === undefined) pa = 99;
       if (pb === undefined) pb = 99;
-      return pa - pb;
+      if (pa !== pb) return pa - pb;
+      // Stable secondary: original order_index
+      return parseInt(a.dataset.orderIndex || 0) - parseInt(b.dataset.orderIndex || 0);
     });
-    items.forEach(function (c) { cards.appendChild(c); });
+    distributeCardsEvenly(col, items);
   }
-  function restoreColOrder(cards) {
-    var items  = Array.from(cards.querySelectorAll(':scope > .board-card'));
+  function restoreColOrder(col) {
+    var items = allCardsInCol(col);
     items.sort(function (a, b) {
       return parseInt(a.dataset.orderIndex || 0) - parseInt(b.dataset.orderIndex || 0);
     });
-    items.forEach(function (c) { cards.appendChild(c); });
+    distributeCardsEvenly(col, items);
   }
   document.querySelectorAll('.col-sort-btn').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
       var col    = btn.closest('.board-column');
-      var cards  = col.querySelector('.board-cards');
       var sorted = btn.dataset.sorted === '1';
       if (sorted) {
-        restoreColOrder(cards);
+        restoreColOrder(col);
         btn.dataset.sorted = '0';
         btn.title = 'Sort by priority';
       } else {
-        sortColByPriority(cards);
+        sortColByPriority(col);
         btn.dataset.sorted = '1';
         btn.title = 'Restore original order';
       }
@@ -2032,7 +2069,7 @@
     html += '<div class="card-title">' + (s.html_title || _escHtml(s.title || '')) + '</div>';
     if (s.images && s.images.length) {
       html += '<div class="card-images">' + s.images.slice(0, 5).map(function (fn) {
-        return '<div class="card-image-item"><img src="' + appRoot + '/story-images/thumb_' + fn + '" alt="" loading="lazy"></div>';
+        return '<div class="card-image-item"><img src="' + appRoot + '/story-images/thumb_' + fn + '" alt="" loading="lazy" draggable="false"></div>';
       }).join('') + '</div>';
     }
     html += '<div class="card-footer">';
@@ -2158,7 +2195,7 @@
           else card.appendChild(imagesWrap);
         }
         imagesWrap.innerHTML = s.images.slice(0, 5).map(function(fn) {
-          return '<div class="card-image-item"><img src="' + appRoot + '/story-images/thumb_' + fn + '" alt="" loading="lazy"></div>';
+          return '<div class="card-image-item"><img src="' + appRoot + '/story-images/thumb_' + fn + '" alt="" loading="lazy" draggable="false"></div>';
         }).join('');
       } else if (imagesWrap) { imagesWrap.remove(); }
       // Hover tooltip data — keep in sync so tooltip reflects latest changes
@@ -3252,7 +3289,7 @@
         else card.appendChild(imagesWrap);
       }
       imagesWrap.innerHTML = d.images.slice(0, 5).map(function(fn) {
-        return '<div class="card-image-item"><img src="' + ROOT + '/story-images/thumb_' + fn + '" alt="" loading="lazy"></div>';
+        return '<div class="card-image-item"><img src="' + ROOT + '/story-images/thumb_' + fn + '" alt="" loading="lazy" draggable="false"></div>';
       }).join('');
     } else if (imagesWrap) { imagesWrap.remove(); }
     if (d.status_id) {
