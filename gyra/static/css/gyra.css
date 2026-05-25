@@ -264,6 +264,16 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
 .form-group-action { display: flex; align-items: flex-end; }
 
 /* ── User Story Builder ── */
+.story-guidance {
+  background: #FFF7E6; border-left: 4px solid var(--c-purple-500);
+  padding: 10px 14px; margin: 0 0 12px;
+  font-size: 13px; line-height: 1.45; color: var(--c-gray-900, #1A1208);
+  border-radius: 4px;
+}
+.story-guidance strong { color: var(--c-purple-500); }
+.story-guidance em { font-style: italic; font-weight: 600; }
+.story-guidance-sm { font-size: 12px; padding: 7px 11px; margin: 4px 0 8px; }
+
 .story-builder-card {
   background: #fff; border: 2px solid var(--c-purple-100);
   border-radius: var(--r-md); padding: 18px 20px; margin-bottom: 0;

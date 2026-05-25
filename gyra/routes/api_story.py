@@ -99,9 +99,14 @@ def register(app) -> None:
     @app.route("/api/story-templates")
     @login_required
     def api_story_templates():
-        from story_templates import TEMPLATES
-        # Return public-safe copy. Strip nothing — these are static, no PII.
-        return jsonify(templates=TEMPLATES)
+        from story_templates import TEMPLATES, BLOCKS, TYPES, DOMAINS
+        # Public-safe — static catalogue, no PII.
+        return jsonify(
+            templates=TEMPLATES,
+            blocks=BLOCKS,
+            types=TYPES,
+            domains=DOMAINS,
+        )
 
     # ── Single-story read ──────────────────────────────────────────────────────
 
