@@ -3814,3 +3814,7 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
   padding: 0;
 }
 .gyra-bell-close:hover { background: rgba(255,255,255,.18); }
+
+/* HTML [hidden] is display:none by default, but our .gyra-bell-panel sets
+   display:flex which beats it. Force hidden to win. */
+.gyra-bell-panel[hidden] { display: none !important; }

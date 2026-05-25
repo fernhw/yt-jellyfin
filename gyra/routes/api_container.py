@@ -257,6 +257,14 @@ def register(app) -> None:
         if not s:
             return jsonify(ok=False), 404
         q      = (request.args.get("q") or "").strip()
+        # Allow users to type project codes like "CTL-168" or "#168"; strip
+        # any leading non-digit prefix so plain id-search still works.
+        q_id = None
+        import re as _re
+        m = _re.match(r'^[#\s]*([A-Za-z]+-)?(\d+)\s*$', q)
+        if m:
+            try: q_id = int(m.group(2))
+            except Exception: q_id = None
         limit  = min(max(int(request.args.get("limit",  "30")), 1), 100)
         offset = max(int(request.args.get("offset", "0")), 0)
 
@@ -265,9 +273,13 @@ def register(app) -> None:
                   "AND COALESCE(is_archived,0)=0 "
                   "AND (attached_to IS NULL OR attached_to<>?)")
         if q:
-            where += " AND (title LIKE ? OR CAST(id AS TEXT) LIKE ?)"
+            where += " AND (title LIKE ? OR CAST(id AS TEXT) LIKE ?"
             like = "%" + q + "%"
             params.extend([like, like])
+            if q_id is not None:
+                where += " OR id=?"
+                params.append(q_id)
+            where += ")"
 
         conn = get_db()
         rows = conn.execute(

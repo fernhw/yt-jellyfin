@@ -137,6 +137,7 @@
              data-epic-id="{{ story.epic_id or '' }}"
              data-box-type="{{ story.box_type or '' }}"
              data-attached-to="{{ story.attached_to or '' }}"
+             data-parent-box-type="{{ story.parent_box_type or '' }}"
              data-parent-is-done="{{ 1 if story.parent_is_done else 0 }}"
              data-status-is-done="{{ 1 if story.status_is_done else 0 }}"
              style="--rot:{{ rot }}deg; --card-bg:{{ card_bg }}; --card-accent:{{ card_accent }}">
@@ -168,6 +169,33 @@
           </div>
           {% endif %}
 
+          {# ── Container / Attachment badges (rendered BEFORE the absolute
+             footer so they don't visually butt against the points row) ── #}
+          {# A story can be BOTH a container AND an attachment. Container badge always first. #}
+          {% set _box_labels = {'whitebox':'WhiteBox','greybox':'GreyBox','blackbox':'BlackBox','featurebox':'FeatureBox'} %}
+          {% if story.box_type and not story.status_is_done %}
+            <div class="card-box-badge is-container"
+                 title="This story contains other stories (dynamic container)">
+              (Container)
+            </div>
+          {% endif %}
+          {% if story.attached_to and not story.status_is_done %}
+            {% if story.parent_is_done %}
+              {# Parent container already done → this dependent needs integration #}
+              <div class="card-box-badge is-integrate"
+                   title="The container is already done — this story needs to be integrated">
+                (Integrate)
+              </div>
+            {% elif story.parent_box_type %}
+              {# Tag derived from the PARENT container's type so a child's own
+                 container toggling never wipes its attachment badge. #}
+              <div class="card-box-badge box-{{ story.parent_box_type }} is-attached-box"
+                   title="Build this as a {{ _box_labels.get(story.parent_box_type, story.parent_box_type) }}">
+                {{ _box_labels.get(story.parent_box_type, story.parent_box_type) }}
+              </div>
+            {% endif %}
+          {% endif %}
+
           <div class="card-footer">
             {% if story.story_points %}
             <span class="card-points">{{ story.story_points }}pt</span>
@@ -190,30 +218,6 @@
             </div>
             {% endif %}
           </div>
-          {# ── Container / Attachment badges ── #}
-          {# A story can be BOTH a container AND an attachment. Container badge always first. #}
-          {% set _box_labels = {'whitebox':'WhiteBox','greybox':'GreyBox','blackbox':'BlackBox','featurebox':'FeatureBox'} %}
-          {% if story.box_type and not story.status_is_done %}
-            <div class="card-box-badge is-container"
-                 title="This story contains other stories (dynamic container)">
-              (Container)
-            </div>
-          {% endif %}
-          {% if story.attached_to and not story.status_is_done %}
-            {% if story.parent_is_done %}
-              {# Parent container already done → this dependent needs integration #}
-              <div class="card-box-badge is-integrate"
-                   title="The container is already done — this story needs to be integrated">
-                (Integrate)
-              </div>
-            {% elif story.box_type %}
-              {# Show this attachment's own box-type so the worker knows HOW to build it #}
-              <div class="card-box-badge box-{{ story.box_type }} is-attached-box"
-                   title="Build this as a {{ _box_labels.get(story.box_type, story.box_type) }}">
-                {{ _box_labels.get(story.box_type, story.box_type) }}
-              </div>
-            {% endif %}
-          {% endif %}
           {# ── embedded data for hover tooltip ── #}
           <script type="application/json" class="card-data">{"desc":{{ (story.description or '') | tojson }},"ac":{{ (story.acceptance_criteria or '') | tojson }},"tasks":[{% for t in story.tasks %}{"c":{{ t.content | tojson }},"a":{{ (t.assigned_name or '') | tojson }},"done":{{ 'true' if t.is_done_by_me else 'false' }}}{% if not loop.last %},{% endif %}{% endfor %}]}</script>
           {# ── stickers pinned to this card (move with it) ── #}
@@ -990,7 +994,7 @@
     display:inline-flex; align-items:center; gap:3px;
     font-size:9px; font-weight:800; text-transform:uppercase;
     letter-spacing:.4px; padding:2px 6px; border-radius:8px;
-    margin-top:4px; line-height:1.3;
+    margin-top:4px; margin-bottom:6px; line-height:1.3;
   }
   .card-box-badge.is-container {
     background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd;
@@ -1197,16 +1201,16 @@
     if (!card) return;
     // Remove existing badges
     Array.from(card.querySelectorAll('.card-box-badge')).forEach(function(el){ el.remove(); });
-    var boxType    = card.dataset.boxType || '';
-    var attachedTo = card.dataset.attachedTo || '';
-    var parentDone = card.dataset.parentIsDone === '1';
-    var statusDone = card.dataset.statusIsDone === '1';
+    var boxType       = card.dataset.boxType        || '';
+    var attachedTo    = card.dataset.attachedTo     || '';
+    var parentBoxType = card.dataset.parentBoxType  || '';
+    var parentDone    = card.dataset.parentIsDone   === '1';
+    var statusDone    = card.dataset.statusIsDone   === '1';
     var footer = card.querySelector('.card-footer');
-    var anchor = footer ? footer.nextSibling : card.firstChild;
-    // Helper to insert into card after footer
+    // Insert BEFORE the absolute-positioned footer so badges sit in-flow above it.
     function insertBadge(el) {
-      if (footer && footer.nextSibling) card.insertBefore(el, footer.nextSibling);
-      else card.appendChild(el);
+      if (footer) card.insertBefore(el, footer);
+      else        card.appendChild(el);
     }
     // Container badge first
     if (boxType && !statusDone) {
@@ -1224,11 +1228,13 @@
         bi.title = 'The container is already done — this story needs to be integrated';
         bi.textContent = '(Integrate)';
         insertBadge(bi);
-      } else if (boxType) {
+      } else if (parentBoxType) {
+        // Tag derived from the PARENT container's type so the child's own
+        // box_type toggling never wipes its attachment badge.
         var ba = document.createElement('div');
-        ba.className = 'card-box-badge box-' + boxType + ' is-attached-box';
-        ba.title = 'Build this as a ' + (BOX_LABELS[boxType] || boxType);
-        ba.textContent = (BOX_LABELS[boxType] || boxType);
+        ba.className = 'card-box-badge box-' + parentBoxType + ' is-attached-box';
+        ba.title = 'Build this as a ' + (BOX_LABELS[parentBoxType] || parentBoxType);
+        ba.textContent = (BOX_LABELS[parentBoxType] || parentBoxType);
         insertBadge(ba);
       }
     }
@@ -2214,11 +2220,13 @@
       // updated_at does NOT change but their parent_is_done flag does). ─────
       var srvBox        = s.box_type        || '';
       var srvAttached   = s.attached_to ? String(s.attached_to) : '';
+      var srvParentBox  = s.parent_box_type || '';
       var srvParentDone = s.parent_is_done ? '1' : '0';
       var srvStatusDone = s.status_is_done ? '1' : '0';
       var badgesDirty = false;
       if (card.dataset.boxType            !== srvBox)        { card.dataset.boxType        = srvBox;        badgesDirty = true; }
       if ((card.dataset.attachedTo || '') !== srvAttached)   { card.dataset.attachedTo     = srvAttached;   badgesDirty = true; }
+      if ((card.dataset.parentBoxType || '') !== srvParentBox) { card.dataset.parentBoxType = srvParentBox; badgesDirty = true; }
       if (card.dataset.parentIsDone       !== srvParentDone) { card.dataset.parentIsDone   = srvParentDone; badgesDirty = true; }
       if (card.dataset.statusIsDone       !== srvStatusDone) { card.dataset.statusIsDone   = srvStatusDone; badgesDirty = true; }
       if (badgesDirty && window._renderCardBoxBadges) {
