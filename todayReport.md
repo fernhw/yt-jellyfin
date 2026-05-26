@@ -1,16 +1,19 @@
 # What to Watch — 2026-05-26
 
-> *Good morning! Here's what landed on Tuesday, May 26, 2026 at 11:38 AM.*
-> **YT Mirror:** 553.09 GB used · 1.18 TB free
+> *Good afternoon! Here's what landed on Tuesday, May 26, 2026 at 03:09 PM.*
+> **YT Mirror:** 553.07 GB used · 1.18 TB free
 
 ## Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **10 weird OSS projects you need to know about...** — *Fireship* · downloaded 03:03 PM · podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **007 First Light PS5/PS5 Pro Review - Performance, Features, Mode + More** — *Digital Foundry* · downloaded 03:07 PM · not podcastable
+- **Everything Is Crab | Bytesized Review** — *Second Wind* · downloaded 03:06 PM · podcastable
+- **Slot Machines Are Killing Us...** — *Papa Meat* · downloaded 03:05 PM · not podcastable
 - **The Mandalorian and Grogu Is Content to be Content | The Backdrop** — *Second Wind* · downloaded 11:36 AM · podcastable
 - **The Adventures of Elliot: The Millennium Tales – New Demo and Gameplay Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 11:34 AM · not podcastable
 - **Actions have consequences..** — *Asmongold TV* · downloaded 11:34 AM · not podcastable
