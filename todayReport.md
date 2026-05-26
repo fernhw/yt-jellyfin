@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-25
 
-> *Good evening! Here's what landed on Monday, May 25, 2026 at 06:03 PM.*
-> **YT Mirror:** 551.61 GB used · 1.18 TB free
+> *Good evening! Here's what landed on Monday, May 25, 2026 at 07:06 PM.*
+> **YT Mirror:** 551.77 GB used · 1.18 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **Ranking the Wii Play Minigames** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
 - **Bungie Pulled The Plug On Destiny 2: Now Staff Are Leaking** — *Bellular News* · downloaded 05:08 PM · podcastable
 - **She even tried to bribe the officer..** — *Asmongold TV* · downloaded 05:07 PM · not podcastable
 - **We’re Winning Against Microsoft** — *SAMTIME* · downloaded 03:13 PM · not podcastable
@@ -23,9 +24,4 @@ No priority uploads today — your favorites are taking a break.
 - **The Balance is Shifting** — *Big A* · downloaded 12:35 AM · not podcastable
 
 ---
-
-
-## Heads Up
-
-Last scan hit a wall — 86 of 93 channels returned nothing. YouTube is likely rate-limiting or IP-blocking. Will retry next run.
 
