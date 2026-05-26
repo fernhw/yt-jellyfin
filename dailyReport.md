@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-26
 
-> *Good afternoon! Here's what landed on Tuesday, May 26, 2026 at 03:09 PM.*
-> **YT Mirror:** 553.07 GB used · 1.18 TB free
+> *Good evening! Here's what landed on Tuesday, May 26, 2026 at 05:06 PM.*
+> **YT Mirror:** 553.47 GB used · 1.18 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@
 
 ### Non-Priority Videos
 
+- **I Played Through 007 First Light...Let’s Talk About It (No Spoilers)** — *Spawn Wave* · downloaded 05:04 PM · not podcastable
 - **007 First Light PS5/PS5 Pro Review - Performance, Features, Mode + More** — *Digital Foundry* · downloaded 03:07 PM · not podcastable
 - **Everything Is Crab | Bytesized Review** — *Second Wind* · downloaded 03:06 PM · podcastable
 - **Slot Machines Are Killing Us...** — *Papa Meat* · downloaded 03:05 PM · not podcastable
