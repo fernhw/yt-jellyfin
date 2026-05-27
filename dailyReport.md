@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-27
 
-> *Good afternoon! Here's what landed on Wednesday, May 27, 2026 at 03:05 PM.*
-> **YT Mirror:** 554.40 GB used · 1.17 TB free
+> *Good evening! Here's what landed on Wednesday, May 27, 2026 at 05:09 PM.*
+> **YT Mirror:** 555.45 GB used · 1.17 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@
 
 ### Non-Priority Videos
 
+- **Stop Killing Games Just Got Very Real** — *Bellular News* · downloaded 05:07 PM · podcastable
+- **The Steam Machine Has A Serious Problem** — *Spawn Wave* · downloaded 05:04 PM · not podcastable
 - **If AI Had to Pass Job Interviews** — *SAMTIME* · downloaded 03:04 PM · not podcastable
 - **Forza Horizon 6 PC Tech Review + Complete Settings/Performance Breakdown** — *Digital Foundry* · downloaded 11:40 AM · not podcastable
 - **I Went to the Cannes Film Festival...** — *Karsten Runquist* · downloaded 11:39 AM · not podcastable
