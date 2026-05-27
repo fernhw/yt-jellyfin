@@ -273,12 +273,13 @@ def check_window(row: Dict, today: Optional[datetime.date] = None) -> Tuple[bool
             w_end   = datetime.date.fromisoformat(end_s)
             if w_start <= today <= w_end:
                 return True, False
-            if today > w_end:
-                return False, False   # window expired
+            # Window expired without a hit. Fall through so we can open a
+            # fresh window on the next release day (otherwise the row gets
+            # stuck in 'searching' forever).
         except ValueError:
             pass
 
-    # No active window — start one if today is a release day
+    # No active window (or previous one expired) — start one if today is a release day
     if today.weekday() in release_days:
         return True, True
 
