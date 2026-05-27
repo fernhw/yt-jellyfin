@@ -10,8 +10,9 @@
   <div class="card-header">
     <h3>Add user</h3>
     <p class="form-hint">
-      No passwords — users authenticate via TOTP only.
-      A one-time setup link is generated for each new account.
+      A signup link is generated for each new account. The user sets their own
+      password from that link, and can optionally enable two-factor (TOTP)
+      after.
     </p>
   </div>
   <form method="post" action="{{ url_for('admin_create_user') }}"
@@ -52,7 +53,7 @@
         <th>User</th>
         <th>Email</th>
         <th>Role</th>
-        <th>TOTP</th>
+        <th>Status</th>
         <th>Active</th>
         <th>Created</th>
         <th>Actions</th>
@@ -77,10 +78,16 @@
         <td>{{ u.email }}</td>
         <td><span class="role-badge role-{{ u.role }}">{{ u.role }}</span></td>
         <td>
-          {% if u.totp_confirmed %}
-          <span class="badge badge-green">Configured</span>
+          {% if u.setup_complete and u.password_hash %}
+            {% if u.totp_confirmed %}
+              <span class="badge badge-green">Password + TOTP</span>
+            {% else %}
+              <span class="badge badge-blue">Password only</span>
+            {% endif %}
+          {% elif u.totp_confirmed %}
+            <span class="badge badge-blue">TOTP only (legacy)</span>
           {% else %}
-          <span class="badge badge-yellow">Pending</span>
+            <span class="badge badge-yellow">Invite pending</span>
           {% endif %}
         </td>
         <td>
@@ -98,13 +105,21 @@
                     onclick='openEditModal({{ u.id }}, {{ u.username|tojson }}, {{ u.email|tojson }}, {{ u.display_name|tojson }}, {{ u.role|tojson }}, {{ u.is_active }})'>
               Edit
             </button>
+            {% if u.setup_token_plain and not u.setup_complete %}
+              {% set invite_url = url_for('setup_account', token=u.setup_token_plain, _external=True) %}
+              <button type="button" class="btn btn-xs btn-secondary invite-copy-btn"
+                      data-invite-url="{{ invite_url }}"
+                      title="Copy signup link for {{ u.username }}">
+                Copy signup link
+              </button>
+            {% endif %}
             <form method="post"
                   action="{{ url_for('admin_reset_totp', user_id=u.id) }}"
                   style="display:inline">
               <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
               <button type="submit" class="btn btn-xs btn-secondary"
-                      onclick="return confirm('Reset TOTP for {{ u.username }}?')">
-                Reset TOTP
+                      onclick="return confirm('Reset {{ u.username }}\'s account? This clears their password and TOTP, and issues a fresh signup link.')">
+                Reset signup
               </button>
             </form>
             {% if u.id != session.user_id %}
@@ -189,5 +204,44 @@ function closeEditModal() {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeEditModal();
 });
+
+// Copy a signup link to the clipboard, with a brief button affordance.
+function copyInvite(btn, url) {
+  var done = function () {
+    var prev = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.disabled = true;
+    setTimeout(function () {
+      btn.textContent = prev;
+      btn.disabled = false;
+    }, 1500);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done).catch(function () { fallback(); });
+  } else {
+    fallback();
+  }
+  function fallback() {
+    var ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); }
+    catch (e) { window.prompt('Copy this link:', url); }
+    document.body.removeChild(ta);
+  }
+}
 </script>
+<style>
+  .invite-toast {
+    display:flex; gap:8px; align-items:center; margin-top:8px;
+  }
+  .invite-toast-input {
+    flex:1; padding:6px 10px; border:1.5px solid var(--c-gray-300,#C4B49A);
+    border-radius:5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size:12px; background:#fff; color:var(--c-gray-900,#1A1208);
+  }
+  .badge-blue { background:#DBEAFE; color:#1E40AF; }
+</style>
 {% endblock %}

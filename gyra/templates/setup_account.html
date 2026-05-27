@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Welcome to Gyra — Set your password{% endblock %}
+
+{% block auth_content %}
+<div class="auth-wrap">
+  <div class="auth-card auth-card-wide">
+    <div class="auth-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/>
+        <line x1="12" y1="2"  x2="12" y2="22"/>
+        <line x1="2"  y1="8.5"  x2="22" y2="8.5"/>
+        <line x1="2"  y1="15.5" x2="22" y2="15.5"/>
+      </svg>
+      <h1>Welcome to Gyra, {{ user.display_name }}!</h1>
+    </div>
+
+    <p class="auth-sub">
+      Pick a password to finish setting up your account. After this, you'll
+      have the option to add two-factor authentication for extra security.
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }} mb-4">{{ msg|safe }}</div>
+      {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="post" autocomplete="off" id="setup-form">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" class="form-input" value="{{ user.username }}" readonly disabled>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Choose a password</label>
+        <input id="password" name="password" type="password"
+               autocomplete="new-password" required minlength="8"
+               class="form-input" placeholder="At least 8 characters" autofocus>
+        <ul id="pw-rules" class="pw-rules" aria-live="polite">
+          <li data-rule="len"><span class="pw-rule-mark">○</span> At least 8 characters</li>
+          <li data-rule="letter"><span class="pw-rule-mark">○</span> Contains a letter</li>
+          <li data-rule="digit"><span class="pw-rule-mark">○</span> Contains a number</li>
+          <li data-rule="symbol"><span class="pw-rule-mark">○</span> Contains a symbol (e.g. ! @ # $ %)</li>
+        </ul>
+      </div>
+
+      <div class="form-group">
+        <label for="password_confirm">Confirm password</label>
+        <input id="password_confirm" name="password_confirm" type="password"
+               autocomplete="new-password" required minlength="8"
+               class="form-input" placeholder="Type it again">
+        <p id="pw-match" class="form-hint" aria-live="polite"></p>
+      </div>
+
+      <button type="submit" id="setup-submit" class="btn btn-primary btn-full" disabled>
+        Set password &amp; continue
+      </button>
+    </form>
+  </div>
+</div>
+
+<style>
+.pw-rules {
+  list-style:none; padding:0; margin:8px 0 0;
+  display:flex; flex-direction:column; gap:3px;
+  font-size:12px; color:var(--c-gray-500,#7A6A52);
+}
+.pw-rules li { display:flex; align-items:center; gap:6px; transition:color .15s; }
+.pw-rules li.is-ok { color:var(--c-green,#059669); }
+.pw-rule-mark {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:14px; height:14px; border-radius:50%;
+  font-size:10px; font-weight:700; line-height:1;
+  background:var(--c-gray-200,#DDD0B8); color:var(--c-gray-500,#7A6A52);
+}
+.pw-rules li.is-ok .pw-rule-mark { background:#D1FAE5; color:#065F46; }
+.pw-match-ok   { color:var(--c-green,#059669); }
+.pw-match-bad  { color:var(--c-red,#DC2626); }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var f   = document.getElementById('setup-form');
+  var p1  = document.getElementById('password');
+  var p2  = document.getElementById('password_confirm');
+  var btn = document.getElementById('setup-submit');
+  var matchEl = document.getElementById('pw-match');
+  var rulesEl = document.getElementById('pw-rules');
+  if (!f || !p1 || !p2) return;
+
+  var rules = {
+    len:    function (v) { return v.length >= 8; },
+    letter: function (v) { return /[A-Za-z]/.test(v); },
+    digit:  function (v) { return /\d/.test(v); },
+    symbol: function (v) { return /[^A-Za-z0-9\s]/.test(v); }
+  };
+
+  function evaluate() {
+    var v = p1.value;
+    var allOk = true;
+    Object.keys(rules).forEach(function (k) {
+      var ok = rules[k](v);
+      var li = rulesEl.querySelector('li[data-rule="' + k + '"]');
+      if (li) {
+        li.classList.toggle('is-ok', ok);
+        var mark = li.querySelector('.pw-rule-mark');
+        if (mark) mark.textContent = ok ? '✓' : '○';
+      }
+      if (!ok) allOk = false;
+    });
+
+    var matched = p2.value.length > 0 && p1.value === p2.value;
+    if (p2.value.length === 0) {
+      matchEl.textContent = '';
+      matchEl.className   = 'form-hint';
+    } else if (matched) {
+      matchEl.textContent = '✓ Passwords match.';
+      matchEl.className   = 'form-hint pw-match-ok';
+    } else {
+      matchEl.textContent = '✗ Passwords don\'t match yet.';
+      matchEl.className   = 'form-hint pw-match-bad';
+    }
+    p2.setCustomValidity(matched || p2.value.length === 0 ? '' : 'Passwords do not match.');
+
+    btn.disabled = !(allOk && matched);
+  }
+
+  p1.addEventListener('input', evaluate);
+  p2.addEventListener('input', evaluate);
+  f.addEventListener('submit', function (e) {
+    evaluate();
+    if (btn.disabled) {
+      e.preventDefault();
+      p2.reportValidity();
+    }
+  });
+  evaluate();
+}());
+</script>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Two-factor authentication — Gyra{% endblock %}
+
+{% block content %}
+<div class="auth-wrap" style="min-height:auto;padding:24px 0">
+  <div class="auth-card auth-card-wide">
+    <div class="auth-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/>
+        <line x1="12" y1="2"  x2="12" y2="22"/>
+        <line x1="2"  y1="8.5"  x2="22" y2="8.5"/>
+        <line x1="2"  y1="15.5" x2="22" y2="15.5"/>
+      </svg>
+      <h1>
+        {% if enabled %}Two-factor is on
+        {% elif welcome %}One more step (optional)
+        {% else %}Add two-factor auth
+        {% endif %}
+      </h1>
+    </div>
+
+    {% if welcome %}
+    <p class="auth-sub">
+      Nice work, <strong>{{ user.display_name }}</strong> — your password is set.
+      Want to add an extra layer of security with an authenticator app?
+      You can do this now, or skip and enable it later from Account.
+    </p>
+    <form method="post" autocomplete="off" class="totp-skip-bar">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="skip">
+      <button type="submit" class="btn btn-secondary">
+        Skip for now &amp; go to Gyra →
+      </button>
+      <span class="totp-skip-hint">(You can enable 2FA any time from Account → Security.)</span>
+    </form>
+    {% elif enabled %}
+    <p class="auth-sub">
+      Two-factor authentication is currently <strong>enabled</strong> on your
+      account. You'll be asked for a 6-digit code every time you sign in.
+    </p>
+    {% else %}
+    <p class="auth-sub">
+      Add two-factor authentication to require a 6-digit code from an
+      authenticator app at every sign-in.
+    </p>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat, msg in messages %}
+      <div class="flash flash-{{ cat }} mb-4">{{ msg|safe }}</div>
+      {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    {% if enabled %}
+      <form method="post" autocomplete="off">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="disable">
+        <div class="form-group">
+          <label for="password">Confirm your password to disable two-factor</label>
+          <input id="password" name="password" type="password"
+                 autocomplete="current-password" required
+                 class="form-input" placeholder="Your password">
+        </div>
+        <button type="submit" class="btn btn-danger btn-full"
+                onclick="return confirm('Disable two-factor authentication?')">
+          Disable two-factor
+        </button>
+      </form>
+      <div style="margin-top:14px">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary btn-full">Back to Gyra</a>
+      </div>
+    {% else %}
+      <div class="totp-setup-grid">
+        <div class="totp-qr">
+          <img src="{{ qr }}" alt="TOTP QR code" width="200" height="200">
+        </div>
+
+        <div class="totp-manual">
+          <p class="form-hint">
+            Scan with Google Authenticator, Authy, 1Password, Bitwarden, etc.
+            Can't scan? Enter this key manually:
+          </p>
+          <code class="totp-secret-display">{{ secret }}</code>
+
+          <form method="post" autocomplete="off" style="margin-top:14px">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="confirm">
+            <div class="form-group">
+              <label for="totp_code">Enter the 6-digit code</label>
+              <input id="totp_code" name="totp_code" type="text" inputmode="numeric"
+                     pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"
+                     required class="form-input totp-input" placeholder="000000" autofocus>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">
+              Enable two-factor
+            </button>
+          </form>
+
+          <form method="post" autocomplete="off" style="margin-top:10px">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="skip">
+            <button type="submit" class="btn btn-secondary btn-full">
+              {% if welcome %}Skip for now &amp; go to Gyra
+              {% else %}Cancel &amp; go back{% endif %}
+            </button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+<style>
+.totp-skip-bar {
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  margin:0 0 18px; padding:12px 14px;
+  background:var(--c-gray-100,#EDE4D0);
+  border:1.5px dashed var(--c-gray-300,#C4B49A);
+  border-radius:8px;
+}
+.totp-skip-bar .btn { flex:0 0 auto; }
+.totp-skip-hint {
+  font-size:12px; color:var(--c-gray-500,#7A6A52); font-style:italic;
+  flex:1; min-width:180px;
+}
+</style>
+{% endblock %}

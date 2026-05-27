@@ -155,6 +155,11 @@
         <button class="sidebar-help-btn" id="gyra-help-open" title="GYRA Guide — Scrum for Indies" aria-label="Open GYRA Guide">?</button>
       </div>
 
+      <a class="sidebar-link" href="{{ url_for('account_totp') }}">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 1a5 5 0 00-5 5v2H4a2 2 0 00-2 2v7a2 2 0 002 2h12a2 2 0 002-2v-7a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm3 7V6a3 3 0 10-6 0v2h6z" clip-rule="evenodd"/></svg>
+        Security &amp; 2FA
+      </a>
+
       <a class="sidebar-link" href="{{ url_for('logout') }}">
         <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V5h10v10H4a1 1 0 100 2h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm9.293 4.293a1 1 0 011.414 1.414L12.414 10l1.293 1.293a1 1 0 01-1.414 1.414l-2-2a1 1 0 010-1.414l2-2z" clip-rule="evenodd"/></svg>
         Sign out
@@ -788,5 +793,156 @@
 {% endif %}
 
 {% block scripts %}{% endblock %}
+
+{# ── Global invite-link copy handler (delegated; works in flash toasts
+     and in the admin users table without needing per-page wiring). ── #}
+<script>
+(function () {
+  function flashCopied(btn) {
+    var prev = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('is-copied');
+    btn.disabled = true;
+    setTimeout(function () {
+      btn.textContent = prev;
+      btn.classList.remove('is-copied');
+      btn.disabled = false;
+    }, 1500);
+  }
+  function fallbackCopy(url, btn) {
+    var ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); flashCopied(btn); }
+    catch (e) { window.prompt('Copy this link:', url); }
+    document.body.removeChild(ta);
+  }
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('.invite-copy-btn, [data-invite-url]');
+    if (!btn) return;
+    var url = btn.getAttribute('data-invite-url');
+    if (!url) {
+      // Older inline buttons might pass URL via a sibling input.
+      var input = btn.parentElement && btn.parentElement.querySelector('.invite-toast-input');
+      if (input) url = input.value;
+    }
+    if (!url) return;
+    ev.preventDefault();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(
+        function () { flashCopied(btn); },
+        function () { fallbackCopy(url, btn); }
+      );
+    } else {
+      fallbackCopy(url, btn);
+    }
+  }, false);
+  // Back-compat shim for templates still calling copyInvite(btn, url) inline.
+  window.copyInvite = function (btn, url) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(
+        function () { flashCopied(btn); },
+        function () { fallbackCopy(url, btn); }
+      );
+    } else {
+      fallbackCopy(url, btn);
+    }
+  };
+})();
+</script>
+
+{# ── First-login welcome modal (set by routes/auth.py on initial sign-in) ── #}
+{% if session.user_id and session._show_welcome %}
+<div id="gyra-welcome-modal" class="gw-modal-bg" role="dialog" aria-modal="true" aria-labelledby="gw-welcome-title">
+  <div class="gw-modal-card">
+    <div class="gw-modal-emoji" aria-hidden="true">👋</div>
+    <h2 id="gw-welcome-title" class="gw-modal-title">
+      Welcome to Gyra, {{ session.display_name or session.username }}.
+    </h2>
+    <p class="gw-modal-lede">
+      Gyra is a small, opinionated workspace for humans who actually make things.
+    </p>
+    <ul class="gw-modal-list">
+      <li><strong>Projects</strong> hold the work — pick one from the sidebar to dive in.</li>
+      <li><strong>Initiatives &amp; Epics</strong> group big bets into something steerable.</li>
+      <li><strong>Stories</strong> are the day-to-day units: tasks, acceptance criteria, points.</li>
+      <li><strong>The Board</strong> is where stories move from <em>idea</em> to <em>shipped</em>.</li>
+    </ul>
+    <p class="gw-modal-foot">
+      No spammy notifications. No "AI insights" pestering you. Just your stuff,
+      where you left it.
+    </p>
+    <div class="gw-modal-actions">
+      <button type="button" id="gw-welcome-dismiss" class="btn btn-primary">Let's go</button>
+    </div>
+  </div>
+</div>
+<style>
+.gw-modal-bg {
+  position:fixed; inset:0; background:rgba(0,0,0,.55);
+  z-index:60000; display:flex; align-items:center; justify-content:center;
+  padding:20px; animation:gw-fade .25s ease-out;
+}
+.gw-modal-card {
+  background:var(--c-gray-50,#F9F5EE); border-radius:12px;
+  max-width:520px; width:100%; padding:28px 30px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+  border:1.5px solid var(--c-gray-200,#DDD0B8);
+  animation:gw-pop .3s cubic-bezier(.2,.9,.3,1.2);
+}
+.gw-modal-emoji { font-size:42px; line-height:1; margin-bottom:8px; }
+.gw-modal-title {
+  font-size:22px; font-weight:900; color:var(--c-gray-900,#1A1208);
+  margin:0 0 10px; line-height:1.2;
+}
+.gw-modal-lede {
+  font-size:14px; color:var(--c-gray-700,#3D2E1A);
+  margin:0 0 14px;
+}
+.gw-modal-list {
+  list-style:none; padding:0; margin:0 0 14px;
+  display:flex; flex-direction:column; gap:6px;
+  font-size:13px; color:var(--c-gray-700,#3D2E1A);
+}
+.gw-modal-list li {
+  padding:6px 10px; background:#fff;
+  border:1.5px solid var(--c-gray-200,#DDD0B8); border-radius:6px;
+}
+.gw-modal-list strong { color:var(--c-purple-500,#7C4A1E); }
+.gw-modal-foot {
+  font-size:12px; color:var(--c-gray-500,#7A6A52);
+  font-style:italic; margin:0 0 18px;
+}
+.gw-modal-actions { display:flex; justify-content:flex-end; }
+@keyframes gw-fade { from { opacity:0; } to { opacity:1; } }
+@keyframes gw-pop  { from { opacity:0; transform:translateY(10px) scale(.97); }
+                     to   { opacity:1; transform:translateY(0)    scale(1);   } }
+</style>
+<script>
+(function () {
+  var modal = document.getElementById('gyra-welcome-modal');
+  var btn   = document.getElementById('gw-welcome-dismiss');
+  if (!modal || !btn) return;
+
+  function close() {
+    modal.style.display = 'none';
+    fetch("{{ url_for('account_welcome_dismiss') }}", {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': "{{ csrf_token() }}" },
+      credentials: 'same-origin'
+    }).catch(function () { /* best-effort */ });
+  }
+
+  btn.addEventListener('click', close);
+  modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modal.style.display !== 'none') close();
+  });
+  btn.focus();
+}());
+</script>
+{% endif %}
 </body>
 </html>

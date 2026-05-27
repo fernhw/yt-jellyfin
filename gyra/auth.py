@@ -17,10 +17,12 @@ import os
 import secrets
 import time
 from functools import wraps
+from typing import Optional
 
 import pyotp
 from cryptography.fernet import Fernet
 from flask import abort, redirect, request, session, url_for
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from config import Config
 
@@ -97,6 +99,42 @@ def verify_setup_token(raw: str, stored_hash: str, expires: int) -> bool:
     return hmac.compare_digest(sha256_hex(raw), stored_hash)
 
 
+# ── Passwords (primary auth, May 2026) ────────────────────────────────────────
+
+def hash_password(password: str) -> str:
+    """werkzeug pbkdf2-sha256 — salted, slow-by-default, no external deps."""
+    return generate_password_hash(password, method="pbkdf2:sha256:260000")
+
+
+def verify_password(password: str, stored_hash: str) -> bool:
+    if not password or not stored_hash:
+        return False
+    try:
+        return check_password_hash(stored_hash, password)
+    except Exception:
+        return False
+
+
+def password_strength_error(password: str) -> Optional[str]:
+    """Return a human error string, or None if the password is acceptable.
+
+    Rules (kept in sync with the JS live-checker in setup_account.html):
+      • at least 8 characters
+      • at least one letter
+      • at least one digit
+      • at least one symbol (anything that isn't a letter or digit)
+    """
+    if not password or len(password) < 8:
+        return "Password must be at least 8 characters long."
+    if not any(c.isalpha() for c in password):
+        return "Password must contain at least one letter."
+    if not any(c.isdigit() for c in password):
+        return "Password must contain at least one number."
+    if not any((not c.isalnum()) and (not c.isspace()) for c in password):
+        return "Password must contain at least one symbol (e.g. ! @ # $ %)."
+    return None
+
+
 # ── Admin key (local only, never touched by web routes) ──────────────────────
 
 def check_admin_key(password: str) -> bool:
@@ -130,11 +168,14 @@ def _verify_csrf(token) -> bool:
     return hmac.compare_digest(stored, token)
 
 
-def enforce_csrf() -> None:
+def enforce_csrf(*, allow_viewer: bool = False) -> None:
     """Call at the top of every mutating route (POST/PUT/DELETE).
     Reads the token from the form field *or* the X-CSRF-Token header.
-    Also blocks viewer-role users from all write operations."""
-    if session.get("role") == "viewer":
+    By default blocks viewer-role users from all write operations; pass
+    ``allow_viewer=True`` on self-service account routes (TOTP enrol/skip,
+    password change, welcome-dismiss, logout) so viewers can manage their
+    own account."""
+    if not allow_viewer and session.get("role") == "viewer":
         abort(403)
     token = request.form.get("_csrf") or request.headers.get("X-CSRF-Token")
     if not _verify_csrf(token):

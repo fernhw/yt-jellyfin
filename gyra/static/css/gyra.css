@@ -198,6 +198,46 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
                   cursor: pointer; opacity: .6; margin-left: 8px; }
 .flash-close:hover { opacity: 1; }
 
+/* Invite-link flash: the toast carries a copyable URL + Copy button, so
+   the default 320px-wide stack squishes the field into nothing. Widen the
+   whole stack and stack the inner pieces vertically when an invite is
+   present. */
+.flash-stack:has(.invite-toast) { width: min(560px, 92vw); }
+.flash:has(.invite-toast)       { flex-direction: column; align-items: stretch; }
+.flash:has(.invite-toast) .flash-close { align-self: flex-end; margin: -4px 0 4px; }
+.invite-toast {
+  display: flex; gap: 8px; align-items: center; margin-top: 8px;
+  width: 100%;
+}
+.invite-toast-input {
+  flex: 1 1 auto; min-width: 0;
+  padding: 6px 10px;
+  border: 1.5px solid var(--c-gray-300, #C4B49A);
+  border-radius: 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px; background: #fff; color: var(--c-gray-900, #1A1208);
+}
+.invite-toast button {
+  flex: 0 0 auto;
+  padding: 6px 14px;
+  border: 1.5px solid var(--c-purple-500, #7C4A1E);
+  border-radius: 5px;
+  background: var(--c-purple-500, #7C4A1E);
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: .3px;
+  transition: background .12s, transform .08s;
+}
+.invite-toast button:hover { background: var(--c-purple-400, #A0632A); border-color: var(--c-purple-400, #A0632A); }
+.invite-toast button:active { transform: translateY(1px); }
+.invite-toast button.is-copied {
+  background: var(--c-green, #059669);
+  border-color: var(--c-green, #059669);
+  color: #fff;
+}
+.invite-toast button:disabled { cursor: default; opacity: .95; }
+
 /* ── Auth ── */
 .auth-wrap {
   min-height: 100vh; display: flex; align-items: center;

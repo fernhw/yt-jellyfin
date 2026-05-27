@@ -372,6 +372,21 @@ def _migrate_db() -> None:
         # scope-change). Users can delete their own comments AND any
         # system-comment on stories they can access.
         ("comments", "is_system", "INTEGER DEFAULT 0"),
+        # ── Password auth (May 2026) ──────────────────────────────────────
+        # Primary auth is now password + optional TOTP as a second factor.
+        # `password_hash` stores ONLY the salted pbkdf2-sha256 hash produced
+        # by werkzeug.security.generate_password_hash — the plaintext
+        # password is never written to disk or logged.
+        # `setup_token_plain` keeps the raw invite URL token so admins can
+        # re-copy the signup link from the Users admin until the invitee
+        # finishes setup (cleared when password is set).
+        # `setup_complete` flips to 1 once the user has set their password.
+        # `welcomed_at` records when the user dismissed the first-login
+        # welcome modal; NULL means they haven't seen it yet.
+        ("users", "password_hash",      "TEXT DEFAULT NULL"),
+        ("users", "setup_token_plain",  "TEXT DEFAULT NULL"),
+        ("users", "setup_complete",     "INTEGER DEFAULT 0"),
+        ("users", "welcomed_at",        "INTEGER DEFAULT NULL"),
     ]
     conn = get_db()
     for table, col, col_def in new_cols:
@@ -463,6 +478,32 @@ def _migrate_db() -> None:
             "SELECT p.id, u.id, ? FROM projects p, users u WHERE u.is_active = 1",
             (now,),
         )
+
+    # ── Backfill setup_complete for legacy TOTP-only users ────────────────
+    # Pre-password users with a confirmed TOTP secret are considered setup
+    # complete so they can keep logging in (TOTP-only) until they choose to
+    # add a password.
+    try:
+        conn.execute(
+            "UPDATE users SET setup_complete = 1 "
+            "WHERE setup_complete = 0 AND totp_confirmed = 1"
+        )
+    except Exception:
+        pass
+
+    # ── Backfill welcomed_at for pre-existing users ───────────────────────
+    # Anyone already onboarded before the welcome-modal feature shipped
+    # should not see the "new user" popup — mark them as welcomed at the
+    # time the migration runs.
+    try:
+        now = int(time.time())
+        conn.execute(
+            "UPDATE users SET welcomed_at = ? "
+            "WHERE welcomed_at IS NULL AND setup_complete = 1",
+            (now,),
+        )
+    except Exception:
+        pass
 
     # ── Backfill stories.story_number per project (idempotent) ─────────────
     # Assigns 1, 2, 3 … to every existing story within each project, ordered
