@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-28
 
-> *Good morning! Here's what landed on Thursday, May 28, 2026 at 09:42 AM.*
-> **YT Mirror:** 558.32 GB used · 1.17 TB free
+> *Good morning! Here's what landed on Thursday, May 28, 2026 at 11:42 AM.*
+> **YT Mirror:** 559.90 GB used · 1.17 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,10 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **007 First Light In-Depth: The Big Digital Foundry Tech Review** — *Digital Foundry* · downloaded 11:39 AM · not podcastable
+- **What Movies Lose When They Use "Blender Cutting"** — *Thomas Flight* · downloaded 11:37 AM · not podcastable · *31 days since their last upload*
+- **Mixtape Is a Reminder That Teenagers Suck and Always Have** — *Second Wind* · downloaded 11:35 AM · podcastable
+- **The results are in..** — *Asmongold TV* · downloaded 11:34 AM · not podcastable
 - **The Supervillain of Forza Horizon 6 [bowie knife99]** — *Lessons in Meme Culture* · downloaded 09:39 AM · not podcastable
 - **Pictonico! – Launch Trailer** — *Nintendo of America* · downloaded 09:39 AM · not podcastable
 - **Attorney explains Hasan’s best case scenario..** — *Asmongold TV* · downloaded 09:38 AM · not podcastable
