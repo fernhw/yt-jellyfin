@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-28
 
-> *Good afternoon! Here's what landed on Thursday, May 28, 2026 at 03:09 PM.*
-> **YT Mirror:** 558.33 GB used · 1.17 TB free
+> *Good evening! Here's what landed on Thursday, May 28, 2026 at 05:16 PM.*
+> **YT Mirror:** 562.79 GB used · 1.16 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,9 @@
 
 ### Non-Priority Videos
 
+- **The Hidden Tech Behind an NBA Broadcast!** — *Marques Brownlee* · downloaded 05:13 PM · not podcastable
+- **I was completely wrong about this game..** — *Asmongold TV* · downloaded 05:11 PM · not podcastable
+- **I Played Subnautica 2 for the First Time** — *ConnorDawg* · downloaded 05:04 PM · not podcastable
 - **She beat up her husband and instantly got caught..** — *Asmongold TV* · downloaded 03:07 PM · not podcastable
 - **The Worst Airline...** — *Papa Meat* · downloaded 03:06 PM · not podcastable
 - **The Biggest Dumpster Fire In Anime** — *Gigguk* · downloaded 03:04 PM · not podcastable
