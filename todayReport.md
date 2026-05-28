@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-27
 
-> *Good evening! Here's what landed on Wednesday, May 27, 2026 at 08:07 PM.*
-> **YT Mirror:** 561.01 GB used · 1.17 TB free
+> *Good evening! Here's what landed on Wednesday, May 27, 2026 at 09:05 PM.*
+> **YT Mirror:** 561.02 GB used · 1.17 TB free
 
 ## Priority Videos
 
@@ -12,6 +12,7 @@
 
 ## Non-Priority Videos
 
+- **Donkey Kong 64 – Nintendo 64 – Nintendo Classics – Nintendo Switch Online + Expansion Pack** — *Nintendo of America* · downloaded 09:04 PM · not podcastable
 - **Not Cool, Valve…** — *TechLinked* · downloaded 08:06 PM · podcastable
 - **Wii U: Finale of a Failure (Part III) - Scott The Woz** — *Scott The Woz* · downloaded 07:15 PM · not podcastable · *153 days since their last upload*
 - **Stop Killing Games Just Got Very Real** — *Bellular News* · downloaded 05:07 PM · podcastable
