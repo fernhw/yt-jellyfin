@@ -223,10 +223,18 @@ def register(app) -> None:
         ).fetchone()
         conn.close()
         if not user:
-            abort(404)
+            # No matching token in the DB. Overwhelmingly this means the
+            # invitee already completed signup (we NULL the hash on success),
+            # so send them to login with a friendly note rather than a bare
+            # 404 that looks broken.
+            flash("This signup link has already been used. "
+                  "If this is your account, please log in.", "info")
+            return None, redirect(url_for("login"))
         if not verify_setup_token(token, user["setup_token_hash"],
                                    user["setup_token_expires"] or 0):
-            flash("Setup link has expired. Ask your admin for a new one.", "error")
+            flash("This signup link has expired. "
+                  "If you've already set up your account, just log in — "
+                  "otherwise ask your admin for a fresh link.", "info")
             return None, redirect(url_for("login"))
         return user, None
 
