@@ -2,11 +2,13 @@
 
 ## What to Watch — 2026-05-29
 
-> *Good morning! Here's what landed on Friday, May 29, 2026 at 11:55 AM.*
-> **YT Mirror:** 570.05 GB used · 1.16 TB free
+> *Good afternoon! Here's what landed on Friday, May 29, 2026 at 03:19 PM.*
+> **YT Mirror:** 573.90 GB used · 1.15 TB free
 
 ### Priority Videos
 
+- **The forgotten developer who saved JavaScript...** — *Fireship* · downloaded 03:05 PM · podcastable
+- **007 Fist Fight** — *videogamedunkey* · downloaded 03:05 PM · not podcastable
 - **The 6th Annual Trash Taste Awards | Trash Taste #310** — *Trash Taste* · downloaded 11:36 AM · podcastable
 - **Andor Gave Us One Of TV's Best Monologues** — *Nerdwriter1* · downloaded 09:34 AM · podcastable · *31 days since their last upload*
 
@@ -14,6 +16,12 @@
 
 ### Non-Priority Videos
 
+- **Everyone is Leaving Google** — *SAMTIME* · downloaded 03:14 PM · not podcastable
+- **The Splatoon 3 North American League Show 2026 – Episode 9** — *Nintendo of America* · downloaded 03:14 PM · not podcastable
+- **Stray – Launch Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:13 PM · not podcastable
+- **Hasan just made the biggest mistake of his career** — *Asmongold TV* · downloaded 03:12 PM · not podcastable
+- **I Became a Game Director for the Day** — *CDawgVA* · downloaded 03:10 PM · not podcastable · *104 days since their last upload*
+- **The Truth Behind The Anime Awards...** — *Garnt* · downloaded 03:07 PM · not podcastable
 - **DF Direct Q+A: What Is Unreal Engine 6? If Steam Is A Monopoly, Why Do We Like it?** — *Digital Foundry* · downloaded 11:51 AM · not podcastable
 - **I’ve Played Dreadmoor… I’m Still Not Convinced | Unpacked** — *Second Wind* · downloaded 11:48 AM · podcastable
 - **Mina the Hollower – Launch Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 11:47 AM · not podcastable
