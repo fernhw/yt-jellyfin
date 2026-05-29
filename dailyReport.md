@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-29
 
-> *Good evening! Here's what landed on Friday, May 29, 2026 at 05:06 PM.*
-> **YT Mirror:** 573.91 GB used · 1.16 TB free
+> *Good evening! Here's what landed on Friday, May 29, 2026 at 06:06 PM.*
+> **YT Mirror:** 573.93 GB used · 1.16 TB free
 
 ### Priority Videos
 
@@ -16,6 +16,7 @@
 
 ### Non-Priority Videos
 
+- **Case Manufacturers Struggle to Make-Up DRAM Price Difference | Montech TG3, King 95 3D, F738** — *Gamers Nexus* · downloaded 06:04 PM · not podcastable
 - **Everyone is Leaving Google** — *SAMTIME* · downloaded 03:14 PM · not podcastable
 - **The Splatoon 3 North American League Show 2026 – Episode 9** — *Nintendo of America* · downloaded 03:14 PM · not podcastable
 - **Stray – Launch Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:13 PM · not podcastable
