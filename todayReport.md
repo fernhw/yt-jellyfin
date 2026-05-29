@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-28
 
-> *Good evening! Here's what landed on Thursday, May 28, 2026 at 08:05 PM.*
-> **YT Mirror:** 563.05 GB used · 1.17 TB free
+> *Good evening! Here's what landed on Thursday, May 28, 2026 at 09:05 PM.*
+> **YT Mirror:** 563.46 GB used · 1.17 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@
 
 ## Non-Priority Videos
 
+- **Sure! Okay!** — *GameLinked* · downloaded 09:04 PM · podcastable
 - **The Strike Worked** — *Big A* · downloaded 08:04 PM · not podcastable
 - **The Hidden Tech Behind an NBA Broadcast!** — *Marques Brownlee* · downloaded 05:13 PM · not podcastable
 - **I was completely wrong about this game..** — *Asmongold TV* · downloaded 05:11 PM · not podcastable
