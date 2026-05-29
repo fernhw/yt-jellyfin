@@ -1,0 +1,23 @@
+name: audiobookshelf
+
+services:
+  audiobookshelf:
+    image: advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    restart: unless-stopped
+    ports:
+      - "13378:80"
+    environment:
+      TZ: America/New_York
+      PORT: "80"
+      NODE_ENV: production
+      CONFIG_PATH: /config
+      METADATA_PATH: /metadata
+      SOURCE: docker
+      ROUTER_BASE_PATH: /books
+    volumes:
+      - /Volumes/Jellyfin/Books:/audiobooks
+      - /Volumes/Jellyfin/Podcasts:/podcasts
+      - /Volumes/Jellyfin/Manga:/manga
+      - /Users/alexander-highground/.audiobookshelf/config:/config
+      - /Users/alexander-highground/.audiobookshelf/metadata:/metadata
