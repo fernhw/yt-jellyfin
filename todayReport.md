@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-29
 
-> *Good evening! Here's what landed on Friday, May 29, 2026 at 09:04 PM.*
-> **YT Mirror:** 575.20 GB used · 1.15 TB free
+> *Good evening! Here's what landed on Friday, May 29, 2026 at 10:05 PM.*
+> **YT Mirror:** 575.38 GB used · 1.15 TB free
 
 ## Priority Videos
 
@@ -14,6 +14,7 @@
 
 ## Non-Priority Videos
 
+- **I Have To Crack Down** — *Big A* · downloaded 10:04 PM · not podcastable
 - **AMD Better Watch Out** — *TechLinked* · downloaded 08:04 PM · podcastable
 - **Back to the Future (NES) with Chris Bores - Scott, Sam, Eric, Justin and the Worst Year Ever** — *Scott's Stash* · downloaded 07:06 PM · not podcastable
 - **Gaming Just Got A Reality Check** — *Spawn Wave* · downloaded 07:04 PM · not podcastable
