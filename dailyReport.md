@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-30
 
-> *Good afternoon! Here's what landed on Saturday, May 30, 2026 at 03:09 PM.*
-> **YT Mirror:** 589.05 GB used · 1.14 TB free
+> *Good evening! Here's what landed on Saturday, May 30, 2026 at 05:06 PM.*
+> **YT Mirror:** 589.88 GB used · 1.14 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@
 
 ### Non-Priority Videos
 
+- **007 First Light Disappointed Me, and Here's Why (Review)** — *Writing on Games* · downloaded 05:05 PM · podcastable
 - **Keep the Change | Adventure Is Nigh! - The Slow Walk Home | Ep. 2** — *Second Wind* · downloaded 03:07 PM · podcastable
 - **CEOs are the Worst...** — *Papa Meat* · downloaded 03:06 PM · not podcastable
 - **So I Tried the New Path of Exile 2..** — *Asmongold TV* · downloaded 11:56 AM · not podcastable
