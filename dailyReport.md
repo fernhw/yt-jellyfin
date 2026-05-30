@@ -2,17 +2,19 @@
 
 ## What to Watch — 2026-05-30
 
-> *Good morning! Here's what landed on Saturday, May 30, 2026 at 09:44 AM.*
-> **YT Mirror:** 574.45 GB used · 1.15 TB free
+> *Good morning! Here's what landed on Saturday, May 30, 2026 at 11:59 AM.*
+> **YT Mirror:** 588.90 GB used · 1.14 TB free
 
 ### Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **The Most Popular Star Wars Characters (as voted by YOU)** — *Schaffrillas Productions* · downloaded 11:42 AM · podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **So I Tried the New Path of Exile 2..** — *Asmongold TV* · downloaded 11:56 AM · not podcastable
+- **VFX Artists React to Bad & Great CG Eye 227** — *Corridor Crew* · downloaded 11:42 AM · not podcastable
 - **12VHPWR Bomb Has Been Planted | Cooler Master Fix, HAF II 500, 220mm Fans, & New Hyper 212** — *Gamers Nexus* · downloaded 09:42 AM · not podcastable
 - **Sony, you're making a huge mistake | This Week in Videogames** — *Skill Up* · downloaded 09:41 AM · not podcastable
 - **I NEED MIFU!! 1.3 SPECIAL PROGRAM REACTION! | Arknights: Endfield VODs** — *Yessenia* · downloaded 09:39 AM · not podcastable
