@@ -1,7 +1,7 @@
 # What to Watch — 2026-05-30
 
-> *Good morning! Here's what landed on Saturday, May 30, 2026 at 11:59 AM.*
-> **YT Mirror:** 588.90 GB used · 1.14 TB free
+> *Good afternoon! Here's what landed on Saturday, May 30, 2026 at 03:09 PM.*
+> **YT Mirror:** 589.05 GB used · 1.14 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,8 @@
 
 ## Non-Priority Videos
 
+- **Keep the Change | Adventure Is Nigh! - The Slow Walk Home | Ep. 2** — *Second Wind* · downloaded 03:07 PM · podcastable
+- **CEOs are the Worst...** — *Papa Meat* · downloaded 03:06 PM · not podcastable
 - **So I Tried the New Path of Exile 2..** — *Asmongold TV* · downloaded 11:56 AM · not podcastable
 - **VFX Artists React to Bad & Great CG Eye 227** — *Corridor Crew* · downloaded 11:42 AM · not podcastable
 - **12VHPWR Bomb Has Been Planted | Cooler Master Fix, HAF II 500, 220mm Fans, & New Hyper 212** — *Gamers Nexus* · downloaded 09:42 AM · not podcastable
