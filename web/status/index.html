@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0e11">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Status">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
+  <title>Status — fernhw</title>
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#101317;--panel:#171c21;--line:#2a323b;--text:#ecf2f8;--muted:#97a6b4;--warn:#f07f64;--warn-soft:#2b1916;--ok:#4ade80;--chrome-tint:rgba(10,13,16,.86);--chrome-line:rgba(255,255,255,.06)}
+    html{background:#05070a;min-height:100%}
+    body{background:linear-gradient(180deg,#05070a 0,#0b0e11 100px,var(--bg) 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding:calc(env(safe-area-inset-top) + 10px) 0 calc(env(safe-area-inset-bottom) + 28px);overflow-x:hidden}
+    #gate{display:none;position:fixed;inset:0;background:#0c0f13;z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:16px}
+    #gate h2{color:#fff;font-size:1.2rem;font-weight:500}
+    #gate input{background:#151a1f;border:1px solid #303844;color:#fff;padding:10px 16px;border-radius:8px;font-size:1rem;width:220px;text-align:center;outline:none}
+    #gate input:focus{border-color:#59687a}
+    #gate button{background:#1a2026;border:1px solid #36404c;color:#d0dae3;padding:8px 24px;border-radius:8px;cursor:pointer;font-size:.9rem}
+    #gate .err{color:#f07f64;font-size:.85rem;min-height:1.2em}
+    #app{display:none}
+    .shell{max-width:1200px;margin:0 auto;padding:0 14px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;margin-bottom:14px;background:var(--chrome-tint);border:1px solid var(--chrome-line);border-radius:18px;backdrop-filter:blur(10px)}
+    .kicker{font:600 .65rem/1.2 sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#c2a365}
+    header h1{font-size:1rem;color:#d8e1ea;font-weight:600}
+    .meta-ts{font:500 .74rem/1 sans-serif;color:var(--muted)}
+    .notify-btn{background:transparent;border:1px solid #3b4550;color:#c6d0da;padding:6px 12px;border-radius:999px;cursor:pointer;font:600 .68rem/1 sans-serif;letter-spacing:.06em;text-transform:uppercase;transition:all .2s}
+    .notify-btn:hover{border-color:#c2a365;color:#fff}
+    .sec{margin-bottom:18px}
+    .sec-label{font:600 .65rem/1 sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#92a0af;margin-bottom:9px}
+    /* ── service cards ─────────────────────────────────────────────────── */
+    .svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:7px}
+    .svc-card{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:11px}
+    .svc-card.down{border-color:rgba(240,127,100,.4);background:var(--warn-soft)}
+    .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+    .ok .dot,.dot.ok{background:var(--ok);box-shadow:0 0 5px #4ade8066}
+    .down .dot,.dot.down{background:var(--warn);box-shadow:0 0 5px #f07f6466}
+    .unk .dot,.dot.unk{background:#3d4f60}
+    .svc-name{flex:1;font-size:.84rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .svc-ms{font:500 .7rem/1 sans-serif;color:var(--muted);flex-shrink:0}
+    .svc-badge{font:600 .58rem/1 sans-serif;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.05);color:#627384;flex-shrink:0}
+    /* ── perf graph ────────────────────────────────────────────────────── */
+    .perf-list{display:flex;flex-direction:column;gap:5px}
+    .perf-row{display:flex;align-items:center;gap:10px;padding:6px 12px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+    .perf-name{width:170px;font-size:.81rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+    .perf-badge{font:600 .56rem/1 sans-serif;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.05);color:#627384;width:44px;text-align:center;flex-shrink:0}
+    .perf-ms{width:54px;font:500 .7rem/1 sans-serif;color:var(--muted);text-align:right;flex-shrink:0}
+    .perf-spark{flex:1;min-width:0;overflow:hidden}
+    .perf-spark svg{display:block;width:100%;height:28px}
+    @media(max-width:560px){.perf-spark{display:none}.perf-name{width:140px}}
+    /* ── log ───────────────────────────────────────────────────────────── */
+    .log-box{background:var(--panel);border:1px solid var(--line);border-radius:11px;max-height:360px;overflow-y:auto}
+    .log-item{font:400 .73rem/1.55 'SF Mono',Menlo,Consolas,monospace;padding:2px 12px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .log-item:last-child{border-bottom:none}
+    .log-item.log-down{color:#f4b9a5}
+    .refresh-ind{font:400 .65rem/1 sans-serif;color:#2d3b46;text-align:right;margin-top:6px;padding-right:2px}
+  </style>
+</head>
+<body>
+
+<div id="gate">
+  <h2>Status</h2>
+  <input type="password" id="pw" placeholder="password" autocomplete="current-password">
+  <button onclick="tryAuth()">Enter</button>
+  <p class="err" id="err"></p>
+</div>
+
+<div id="app">
+  <div class="shell">
+
+    <header>
+      <div><div class="kicker">fernhw</div><h1>Status</h1></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span id="check-ts" class="meta-ts"></span>
+        <button class="notify-btn" id="notif-btn" onclick="setupNotify()">Notify</button>
+      </div>
+    </header>
+
+    <div class="sec">
+      <div class="sec-label" id="svc-label">Services</div>
+      <div class="svc-grid" id="svc-grid"></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Response Time — last 24h</div>
+      <div class="perf-list" id="perf-list"></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Log <span id="log-count" style="font-weight:400;letter-spacing:0;text-transform:none;color:#3d4f60;font-size:.7rem"></span></div>
+      <div class="log-box" id="log-box"></div>
+    </div>
+
+    <div class="refresh-ind" id="refresh-ind"></div>
+
+  </div>
+</div>
+
+<script src="status.js"></script>
+<script src="perf.js"></script>
+<script>
+/* ── auth — same mechanism as report ────────────────────────────────────── */
+const PW_HASH = "5e7601a1ac99c87a65120283ae1b380901ca55bb402dce34e1a4ec51c20d29bb";
+const COOKIE  = "sauth";
+
+async function sha256hex(s) {
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(b)).map(b => b.toString(16).padStart(2,"0")).join("");
+}
+function getCookie(n) {
+  return document.cookie.split(";").map(c=>c.trim()).find(c=>c.startsWith(n+"="))?.slice(n.length+1) || "";
+}
+function setCookie(n, v, d) {
+  document.cookie = n+"="+v+";expires="+new Date(Date.now()+d*864e5).toUTCString()+";path=/;SameSite=Strict";
+}
+async function tryAuth(auto) {
+  const inp = auto || document.getElementById("pw").value;
+  const h = await sha256hex(inp);
+  if (h === PW_HASH) { setCookie(COOKIE, h.slice(0,16), 365); showApp(); }
+  else if (!auto) document.getElementById("err").textContent = "wrong password";
+}
+function showApp() {
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("app").style.display  = "block";
+  render();
+}
+document.getElementById("pw").addEventListener("keydown", e => { if (e.key==="Enter") tryAuth(); });
+(async () => {
+  const stored = getCookie(COOKIE);
+  if (stored && stored === PW_HASH.slice(0,16)) { showApp(); return; }
+  const url = new URL(location.href);
+  const p = url.searchParams.get("p") || url.searchParams.get("password");
+  if (p) {
+    url.searchParams.delete("p"); url.searchParams.delete("password");
+    history.replaceState({}, "", url.toString());
+    await tryAuth(p);
+    if (getCookie(COOKIE)) return;
+  }
+  document.getElementById("gate").style.display = "flex";
+})();
+
+/* ── OneSignal ───────────────────────────────────────────────────────────── */
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+OneSignalDeferred.push(async function(OS) {
+  await OS.init({ appId: "c88ae5a3-36df-4301-945f-9da65e63d87c" });
+});
+async function setupNotify() {
+  if (!window.OneSignal) { alert("OneSignal not loaded"); return; }
+  const ok = await window.OneSignal.Notifications.requestPermission();
+  document.getElementById("notif-btn").textContent = ok ? "Notifs on" : "Blocked";
+}
+
+/* ── helpers ─────────────────────────────────────────────────────────────── */
+function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function fmtTs(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})
+       + ", " + d.toLocaleDateString([], {month:"short", day:"numeric"});
+}
+
+/* ── sparkline (SVG inline, 24 hourly bars) ─────────────────────────────── */
+function sparkline(vals) {
+  const W = 120, H = 28, n = vals.length;
+  if (!n) return "";
+  const maxMs = Math.max(...vals.map(v => v.ms), 1);
+  const bw = W / n;
+  const bars = vals.map((v, i) => {
+    const pct = v.ok && v.ms > 0 ? v.ms / maxMs : (v.ok ? 0.05 : 1);
+    const h   = Math.max(3, Math.round(pct * (H - 4)));
+    const color = v.ok ? "#4ade80" : "#f07f64";
+    return `<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${(bw-.5).toFixed(1)}" height="${h}" fill="${color}" rx="1"/>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
+}
+
+/* ── render ──────────────────────────────────────────────────────────────── */
+function render() { renderStatus(); renderPerf(); }
+
+function renderStatus() {
+  const S = window.STATUS;
+  const ts = S?.ts ? fmtTs(S.ts) : "no data";
+  document.getElementById("check-ts").textContent = ts;
+
+  const grid = document.getElementById("svc-grid");
+  const svcs = S?.services || [];
+  const downCount = svcs.filter(s => !s.ok).length;
+
+  // Section label with summary
+  const lbl = document.getElementById("svc-label");
+  lbl.innerHTML = svcs.length
+    ? `Services &nbsp;<span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:.7rem;color:${downCount?"#f07f64":"#4ade80"}">${downCount ? downCount+" down" : "all OK"}</span>`
+    : "Services";
+
+  if (!svcs.length) {
+    grid.innerHTML = '<div style="color:var(--muted);font-size:.84rem;padding:8px 2px">No data yet — serviceCheck.sh will populate this.</div>';
+  } else {
+    grid.innerHTML = svcs.map(s => `
+      <div class="svc-card ${s.ok?"ok":"down"}">
+        <span class="dot"></span>
+        <span class="svc-name">${esc(s.name)}</span>
+        <span class="svc-ms">${s.ms||0}ms</span>
+        <span class="svc-badge">${esc(s.code)}</span>
+      </div>`).join("");
+  }
+
+  // Log
+  const log = (S?.log || []).slice(0, 1024);
+  document.getElementById("log-count").textContent = `(${log.length})`;
+  document.getElementById("log-box").innerHTML = log.length
+    ? log.map(e => `<div class="log-item ${e.msg&&e.msg.includes("DOWN")?"log-down":""}">`
+        + `<span style="color:#2d3b46">[${fmtTs(e.ts)}]</span> ${esc(e.msg||"")}</div>`).join("")
+    : '<div class="log-item">No log entries yet.</div>';
+}
+
+function renderPerf() {
+  const P = window.PERF;
+  const list = document.getElementById("perf-list");
+  if (!P?.hours?.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:.84rem;padding:8px 2px">No perf data yet — available after the first hourly perfCheck run.</div>';
+    return;
+  }
+  const hours  = P.hours.slice(0, 24);
+  const latest = hours[0];
+  const names  = Object.keys(latest.data);
+  list.innerHTML = names.map(name => {
+    const vals  = hours.map(h => h.data[name] || {ms:0, ok:false});
+    const cur   = vals[0];
+    const scope = name.includes(".") ? "public" : "local";
+    return `<div class="perf-row">
+      <span class="dot ${cur.ok?"ok":"down"}" style="flex-shrink:0"></span>
+      <span class="perf-name">${esc(name)}</span>
+      <span class="perf-badge">${scope}</span>
+      <span class="perf-ms">${cur.ms}ms</span>
+      <span class="perf-spark">${sparkline(vals)}</span>
+    </div>`;
+  }).join("");
+}
+
+/* ── auto-refresh status.js every 60s without full page reload ───────────── */
+function reloadData() {
+  const old = document.getElementById("_sd");
+  if (old) old.remove();
+  const s = document.createElement("script");
+  s.id  = "_sd";
+  s.src = "status.js?t=" + Date.now();
+  s.onload = () => {
+    renderStatus();
+    document.getElementById("refresh-ind").textContent = "refreshed " + new Date().toLocaleTimeString();
+  };
+  document.head.appendChild(s);
+}
+setInterval(reloadData, 60000);
+</script>
+</body>
+</html>

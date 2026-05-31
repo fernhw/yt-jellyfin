@@ -1,62 +1,25 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Cloudflared tunnel "jellyfin-tunnel" — public ingress for every service.
-#
-# RUNS AS LAUNCHD AGENT: ~/Library/LaunchAgents/com.cloudflare.cloudflared.plist
-#   restart: launchctl kickstart -k gui/$(id -u)/com.cloudflare.cloudflared
-# HEALTH CHECKED BY: serviceCheck.sh -> probes https://abs.fernhw.com (cloudflared row)
-#
-# Each ingress maps a public subdomain *.fernhw.com to a LOCAL port on this Mac.
-# Local ports are owned by either:
-#   - a docker container (audiobookshelf 13378, nextcloud 7990, onlyoffice 7991,
-#     vaultwarden 7992, immich 2283)
-#   - a launchd agent  (report 8765 -> com.alex.report.serve, request 8770 -> com.fernhw.requestserver)
-#   - a desktop .app   (jellyfin 8096 -> /Applications/Jellyfin.app)
-#   - a local python process (gyra 5050 -> /Users/.../gyra/app.py)
-#
-# DO NOT REPOINT abs.fernhw.com to a /books or /audiobookshelf path here —
-# ABS hardcodes /audiobookshelf in its built Nuxt client; let the subdomain hit
-# :13378 root and let ABS redirect itself to /audiobookshelf/login.
-# (See docker/audiobookshelf/docker-compose.yml + docker/nginx/nginx.conf for
-# the full prefix story. Also see serviceCheck.md "Audiobookshelf".)
-# ─────────────────────────────────────────────────────────────────────────────
 tunnel: jellyfin-tunnel
 credentials-file: /Users/alexander-highground/.cloudflared/7c61e981-605e-4aa0-bfac-5a5f91237519.json
 
 ingress:
   - hostname: gyra.fernhw.com
     service: http://127.0.0.1:5050
-    originRequest:
-      httpHostHeader: gyra.fernhw.com
-
   - hostname: jellyfin.fernhw.com
-    service: http://127.0.0.1:8096  # direct to Jellyfin — do NOT use port 80 (Docker port-table corruption)
-
+    service: http://127.0.0.1:8081
   - hostname: abs.fernhw.com
     service: http://127.0.0.1:13378
-
   - hostname: report.fernhw.com
     service: http://127.0.0.1:8765
-
+  - hostname: status.fernhw.com
+    service: http://127.0.0.1:8081
   - hostname: request.fernhw.com
     service: http://127.0.0.1:8770
-
-  # Routes through nginx-local (port 8081 — avoids Docker port-table corruption
-  # on 127.0.0.1:80) so nginx can pass the correct X-Forwarded-Host
-  # (drive.fernhw.com) and X-Forwarded-Proto (https) to Nextcloud.
-  # This makes Nextcloud generate drive.fernhw.com URLs for external users
-  # while agnos.local/drive still works for LAN.
-  # DO NOT point this directly at port 7990.
   - hostname: drive.fernhw.com
     service: http://127.0.0.1:8081
-
   - hostname: office.fernhw.com
     service: http://127.0.0.1:7991
-
   - hostname: vault.fernhw.com
     service: http://127.0.0.1:7992
-
   - hostname: photos.fernhw.com
     service: http://127.0.0.1:2283
-
-  # Catch-all (required)
   - service: http_status:404

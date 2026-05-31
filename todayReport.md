@@ -1,16 +1,17 @@
 # What to Watch — 2026-05-31
 
-> *Good evening! Here's what landed on Sunday, May 31, 2026 at 05:05 PM.*
-> **YT Mirror:** 594.84 GB used · 1.13 TB free
+> *Good evening! Here's what landed on Sunday, May 31, 2026 at 06:09 PM.*
+> **YT Mirror:** 595.30 GB used · 1.13 TB free
 
 ## Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **Half in the Bag: Backrooms** — *RedLetterMedia* · downloaded 06:05 PM · podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **Solving the GPU Airflow Problem | Bouncing Air in the HAVN HS 360** — *Gamers Nexus* · downloaded 06:07 PM · not podcastable
 - **This Controller Was A Terrible Idea** — *Spawn Wave* · downloaded 03:08 PM · not podcastable
 - **They let him out and this happened..** — *Asmongold TV* · downloaded 03:05 PM · not podcastable
 - **Who Are The Big 5?** — *Lessons in Meme Culture* · downloaded 11:43 AM · not podcastable

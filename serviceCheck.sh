@@ -19,6 +19,7 @@ set -u
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 CONFIG_MD="${SCRIPT_DIR}/serviceCheck.md"
 STATE_FILE="/tmp/serviceCheck.state"
+RESULT_FILE="$(mktemp -t serviceCheck.results.XXXXXX)"
 SECRETS_FILE="${SCRIPT_DIR}/secrets.md"
 ONESIGNAL_APP_ID="c88ae5a3-36df-4301-945f-9da65e63d87c"
 
@@ -73,12 +74,21 @@ push_notify() {
     -X POST "https://onesignal.com/api/v1/notifications" \
     -H "Authorization: Basic ${ONESIGNAL_KEY}" \
     -H "Content-Type: application/json" \
-    -d "{\"app_id\":\"${ONESIGNAL_APP_ID}\",\"included_segments\":[\"All\"],\"headings\":{\"en\":\"${heading}\"},\"contents\":{\"en\":\"${body}\"},\"url\":\"https://report.fernhw.com\"}"
+    -d "{\"app_id\":\"${ONESIGNAL_APP_ID}\",\"included_segments\":[\"All\"],\"headings\":{\"en\":\"${heading}\"},\"contents\":{\"en\":\"${body}\"},\"url\":\"https://status.fernhw.com\"}"
 }
 
 probe() {
   # echoes HTTP code, or 000 if curl failed
   curl -ks -o /dev/null -w '%{http_code}' --max-time 6 "$1" 2>/dev/null || echo "000"
+}
+
+probe_ms() {
+  # echoes "code ms" where ms is integer milliseconds; returns "000 0" on failure
+  local out
+  out=$(curl -ks -o /dev/null -w '%{http_code} %{time_total}' --max-time 6 "$1" 2>/dev/null) || out="000 0"
+  local ms
+  ms=$(awk "BEGIN{printf \"%d\", (\"${out##* }\"+0)*1000}" 2>/dev/null) || ms=0
+  echo "${out%% *} ${ms}"
 }
 
 # Fetches the body (following redirects) and grep -Eq for the pattern.
@@ -150,7 +160,9 @@ for row in "${SERVICES[@]}"; do
   [ "$enabled" != "1" ] && { log "$name: disabled, skipping"; continue; }
 
   prev=$(prev_state_of "$name")
-  code=$(probe "$url")
+  _timed=$(probe_ms "$url")
+  code="${_timed%% *}"
+  _ms="${_timed##* }"
   status_ok=0
   code_ok "$code" "$expect" && status_ok=1
 
@@ -167,6 +179,7 @@ for row in "${SERVICES[@]}"; do
 
   if [ "$status_ok" = "1" ] && [ "$body_ok" = "1" ]; then
     echo "$name=OK" >> "$NEW_STATE_FILE"
+    echo "${name}|${type}|OK|${code}|${_ms}" >> "$RESULT_FILE"
     log "$name [$type] $url -> $code OK${expect_body:+ (body ✓)}"
     [ "$prev" = "DOWN" ] && append_csv overall_recovered "$name (now $code)"
     continue
@@ -182,6 +195,7 @@ for row in "${SERVICES[@]}"; do
   fi
   if [ "$DRY_RUN" = "1" ] || [ -z "$restart_cmd" ]; then
     echo "$name=DOWN" >> "$NEW_STATE_FILE"
+    echo "${name}|${type}|DOWN|${code}|${_ms}" >> "$RESULT_FILE"
     append_csv overall_still_down "$name ($down_code)"
     [ -z "$restart_cmd" ] && log "  no restart_cmd configured; only notifying"
     continue
@@ -195,6 +209,7 @@ for row in "${SERVICES[@]}"; do
     log "  !! Docker daemon unresponsive — refusing to restart Docker Desktop automatically"
     log "  !! Marking $name as still down; will notify so a human can investigate"
     echo "$name=DOWN" >> "$NEW_STATE_FILE"
+    echo "${name}|${type}|DOWN|${code}|${_ms}" >> "$RESULT_FILE"
     append_csv overall_still_down "$name (docker daemon hung)"
     continue
   fi
@@ -216,10 +231,12 @@ for row in "${SERVICES[@]}"; do
   fi
   if [ "$status2_ok" = "1" ] && [ "$body2_ok" = "1" ]; then
     echo "$name=OK" >> "$NEW_STATE_FILE"
+    echo "${name}|${type}|OK|${code2}|${_ms}" >> "$RESULT_FILE"
     log "  recheck $url -> $code2 RECOVERED${expect_body:+ (body ✓)}"
     append_csv overall_failed "$name (was $down_code, now $code2)"
   else
     echo "$name=DOWN" >> "$NEW_STATE_FILE"
+    echo "${name}|${type}|DOWN|${code2}|${_ms}" >> "$RESULT_FILE"
     if [ "$status2_ok" = "1" ]; then
       log "  recheck $url -> $code2 STILL DOWN (body mismatch)"
       append_csv overall_still_down "$name (was $down_code, still $code2/body-mismatch)"
@@ -232,6 +249,41 @@ done
 
 # atomically replace state
 mv "$NEW_STATE_FILE" "$STATE_FILE"
+
+# ── write status.js for status.fernhw.com dashboard ─────────────────────────
+_STATUS_WEB="${SCRIPT_DIR}/web/status"
+if [ -d "$_STATUS_WEB" ]; then
+  RESULT_FILE="$RESULT_FILE" STATUS_JS="${_STATUS_WEB}/status.js" \
+    /usr/bin/python3 << 'PYEOF'
+import json, os, re, datetime, tempfile
+rf = os.environ.get("RESULT_FILE","")
+sj = os.environ.get("STATUS_JS","")
+services = []
+if os.path.exists(rf):
+    for line in open(rf):
+        p = line.strip().split("|")
+        if len(p) >= 5:
+            services.append({"name":p[0],"type":p[1],"ok":p[2]=="OK","code":p[3],"ms":int(p[4]) if p[4].isdigit() else 0})
+old_log = []
+if os.path.exists(sj):
+    try:
+        m = re.search(r'window\.STATUS\s*=\s*(\{.+\})\s*;', open(sj).read(), re.DOTALL)
+        if m:
+            old_log = json.loads(m.group(1)).get("log",[])
+    except Exception:
+        pass
+ts = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+new_entries = [{"ts":ts,"msg":f"{s['name']} {'OK' if s['ok'] else 'DOWN'} {s['code']} ({s['ms']}ms)","actions":[]} for s in services]
+log = (new_entries + old_log)[:1024]
+data = {"ts":ts,"services":services,"log":log}
+js = "window.STATUS = " + json.dumps(data,separators=(',',':')) + ";\n"
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(sj))
+os.write(fd, js.encode())
+os.close(fd)
+os.rename(tmp, sj)
+PYEOF
+fi
+rm -f "$RESULT_FILE"
 enabled_count=$(wc -l < "$STATE_FILE" | tr -d ' ')
 
 # ── notify ──────────────────────────────────────────────────────────────────
