@@ -29,7 +29,7 @@ ingress:
       httpHostHeader: gyra.fernhw.com
 
   - hostname: jellyfin.fernhw.com
-    service: http://127.0.0.1:8096
+    service: http://127.0.0.1:8096  # direct to Jellyfin — do NOT use port 80 (Docker port-table corruption)
 
   - hostname: abs.fernhw.com
     service: http://127.0.0.1:13378
@@ -40,8 +40,14 @@ ingress:
   - hostname: request.fernhw.com
     service: http://127.0.0.1:8770
 
+  # Routes through nginx-local (port 8081 — avoids Docker port-table corruption
+  # on 127.0.0.1:80) so nginx can pass the correct X-Forwarded-Host
+  # (drive.fernhw.com) and X-Forwarded-Proto (https) to Nextcloud.
+  # This makes Nextcloud generate drive.fernhw.com URLs for external users
+  # while agnos.local/drive still works for LAN.
+  # DO NOT point this directly at port 7990.
   - hostname: drive.fernhw.com
-    service: http://127.0.0.1:7990
+    service: http://127.0.0.1:8081
 
   - hostname: office.fernhw.com
     service: http://127.0.0.1:7991
