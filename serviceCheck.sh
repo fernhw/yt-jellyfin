@@ -81,6 +81,17 @@ probe() {
   curl -ks -o /dev/null -w '%{http_code}' --max-time 6 "$1" 2>/dev/null || echo "000"
 }
 
+# Fetches the body (following redirects) and grep -Eq for the pattern.
+# Returns 0 if pattern matches, 1 otherwise. Used as a content-level check
+# so we catch "wrong container is answering on this port" (e.g. OnlyOffice
+# accidentally responding on the Nextcloud port — both return 302 for /).
+body_matches() {
+  local url="$1" pattern="$2"
+  local body
+  body=$(curl -ksL --max-time 8 "$url" 2>/dev/null) || return 1
+  echo "$body" | grep -Eq "$pattern"
+}
+
 # Pure-bash bounded run — macOS has no `timeout`. Kills the child after N seconds.
 # Returns 124 if it timed out, otherwise the child's exit code.
 with_timeout() {
@@ -134,23 +145,44 @@ append_csv() { local var="$1"; shift; local cur="${!var}"; if [ -z "$cur" ]; the
 log "── serviceCheck start (dry_run=$DRY_RUN force_push=$FORCE_PUSH) ──"
 
 for row in "${SERVICES[@]}"; do
-  IFS='^' read -r name enabled type url expect restart_cmd recheck <<< "$row"
+  # 8th field expect_body is optional — older 7-field rows leave it empty.
+  IFS='^' read -r name enabled type url expect restart_cmd recheck expect_body <<< "$row"
   [ "$enabled" != "1" ] && { log "$name: disabled, skipping"; continue; }
 
   prev=$(prev_state_of "$name")
   code=$(probe "$url")
-  if code_ok "$code" "$expect"; then
+  status_ok=0
+  code_ok "$code" "$expect" && status_ok=1
+
+  body_ok=1
+  body_reason=""
+  if [ -n "${expect_body:-}" ] && [ "$status_ok" = "1" ]; then
+    if body_matches "$url" "$expect_body"; then
+      body_ok=1
+    else
+      body_ok=0
+      body_reason=" (body did not match /${expect_body}/)"
+    fi
+  fi
+
+  if [ "$status_ok" = "1" ] && [ "$body_ok" = "1" ]; then
     echo "$name=OK" >> "$NEW_STATE_FILE"
-    log "$name [$type] $url -> $code OK"
+    log "$name [$type] $url -> $code OK${expect_body:+ (body ✓)}"
     [ "$prev" = "DOWN" ] && append_csv overall_recovered "$name (now $code)"
     continue
   fi
 
   # ── service is DOWN ────────────────────────────────────────────────────────
-  log "$name [$type] $url -> $code DOWN (expected: $expect)"
+  if [ "$status_ok" = "1" ]; then
+    log "$name [$type] $url -> $code OK but DOWN${body_reason}"
+    down_code="$code/body-mismatch"
+  else
+    log "$name [$type] $url -> $code DOWN (expected: $expect)"
+    down_code="$code"
+  fi
   if [ "$DRY_RUN" = "1" ] || [ -z "$restart_cmd" ]; then
     echo "$name=DOWN" >> "$NEW_STATE_FILE"
-    append_csv overall_still_down "$name ($code)"
+    append_csv overall_still_down "$name ($down_code)"
     [ -z "$restart_cmd" ] && log "  no restart_cmd configured; only notifying"
     continue
   fi
@@ -176,14 +208,25 @@ for row in "${SERVICES[@]}"; do
   sleep "${recheck:-5}"
 
   code2=$(probe "$url")
-  if code_ok "$code2" "$expect"; then
+  status2_ok=0
+  code_ok "$code2" "$expect" && status2_ok=1
+  body2_ok=1
+  if [ -n "${expect_body:-}" ] && [ "$status2_ok" = "1" ]; then
+    body_matches "$url" "$expect_body" || body2_ok=0
+  fi
+  if [ "$status2_ok" = "1" ] && [ "$body2_ok" = "1" ]; then
     echo "$name=OK" >> "$NEW_STATE_FILE"
-    log "  recheck $url -> $code2 RECOVERED"
-    append_csv overall_failed "$name (was $code, now $code2)"
+    log "  recheck $url -> $code2 RECOVERED${expect_body:+ (body ✓)}"
+    append_csv overall_failed "$name (was $down_code, now $code2)"
   else
     echo "$name=DOWN" >> "$NEW_STATE_FILE"
-    log "  recheck $url -> $code2 STILL DOWN"
-    append_csv overall_still_down "$name (was $code, still $code2)"
+    if [ "$status2_ok" = "1" ]; then
+      log "  recheck $url -> $code2 STILL DOWN (body mismatch)"
+      append_csv overall_still_down "$name (was $down_code, still $code2/body-mismatch)"
+    else
+      log "  recheck $url -> $code2 STILL DOWN"
+      append_csv overall_still_down "$name (was $down_code, still $code2)"
+    fi
   fi
 done
 

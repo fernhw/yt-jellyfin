@@ -36,7 +36,7 @@ State file prevents notification spam — a service must transition `OK -> DOWN`
 `SERVICES` is a bash array of `^`-delimited rows (caret chosen because it never appears in commands/URLs):
 
 ```
-name^enabled^type^url^expect^restart_cmd^recheck_after_secs
+name^enabled^type^url^expect^restart_cmd^recheck_after_secs^expect_body
 ```
 
 * `type`: `local` (lsof/launchd/app) or `docker` (`docker restart …`) — informational, used in alert text.
@@ -44,6 +44,7 @@ name^enabled^type^url^expect^restart_cmd^recheck_after_secs
 * `expect`: space-separated list of HTTP codes considered healthy (e.g. `200 302 401`). The script considers anything else (including `000` = unreachable) DOWN.
 * `restart_cmd`: full command to bring it back. **Empty string = no restart, only notify.**
 * `recheck_after_secs`: how long to wait after running `restart_cmd` before re-probing.
+* `expect_body`: OPTIONAL extended-regex matched against the response body (curl follows redirects). Empty = skip. This catches "wrong container is answering on this port" — both Nextcloud and OnlyOffice return `302` for `/`, so HTTP status alone cannot tell them apart.
 
 ```bash
 # === SERVICE CHECKER CONFIG — sourced by serviceCheck.sh ===
@@ -51,41 +52,42 @@ USER_UID="$(id -u)"
 
 SERVICES=(
   # gyra Flask (port 5050) — see /memories/repo/gyra.md "Restart"
-  "gyra^1^local^http://127.0.0.1:5050/^200 302^lsof -iTCP:5050 -sTCP:LISTEN | awk '/Python/{print \$2}' | xargs kill -9 2>/dev/null; sleep 1 && cd /Users/alexander-highground/Projects/yt-jellyfin/gyra && nohup /usr/bin/python3 app.py > /tmp/gyra.log 2>&1 &^6"
+  "gyra^1^local^http://127.0.0.1:5050/^200 302^lsof -iTCP:5050 -sTCP:LISTEN | awk '/Python/{print \$2}' | xargs kill -9 2>/dev/null; sleep 1 && cd /Users/alexander-highground/Projects/yt-jellyfin/gyra && nohup /usr/bin/python3 app.py > /tmp/gyra.log 2>&1 &^6^GYRA"
 
   # Jellyfin desktop app — 302 is normal (redirects to /web)
-  "jellyfin^1^local^http://127.0.0.1:8096/^200 302^open -a Jellyfin^10"
+  "jellyfin^1^local^http://127.0.0.1:8096/^200 302^open -a Jellyfin^10^[Jj]ellyfin"
 
   # report static site server (launchd)
-  "report^1^local^http://127.0.0.1:8765/^200^launchctl kickstart -k gui/${USER_UID}/com.alex.report.serve^4"
+  "report^1^local^http://127.0.0.1:8765/^200^launchctl kickstart -k gui/${USER_UID}/com.alex.report.serve^4^report\\.fernhw\\.com|What to Watch"
 
   # request server (launchd)
-  "request^1^local^http://127.0.0.1:8770/^200^launchctl kickstart -k gui/${USER_UID}/com.fernhw.requestserver^4"
+  "request^1^local^http://127.0.0.1:8770/^200^launchctl kickstart -k gui/${USER_UID}/com.fernhw.requestserver^4^[Rr]equest"
 
   # nginx-local — routes agnos.local/* (port 80). Probe via 'agnos.local' hostname,
   # NOT 127.0.0.1 — Docker Desktop's host-loopback can mis-route raw 127.0.0.1:80 hits
   # on this Mac (see /memories/repo/gyra.md "curl from host to 127.0.0.1:80").
-  "nginx-local^1^docker^http://agnos.local/audiobookshelf/login^200 301 302^docker restart nginx-local^4"
+  # Body check ensures nginx-local is actually serving the ABS proxy (not e.g. default page).
+  "nginx-local^1^docker^http://agnos.local/audiobookshelf/login^200 301 302^docker restart nginx-local^4^[Aa]udiobookshelf"
 
   # Audiobookshelf — see /memories/repo/gyra.md \"Audiobookshelf - DO NOT TOUCH\"
   # DO NOT set ROUTER_BASE_PATH. Default /audiobookshelf prefix is mandatory.
-  "audiobookshelf^1^docker^http://127.0.0.1:13378/^200^docker restart audiobookshelf^4"
+  "audiobookshelf^1^docker^http://127.0.0.1:13378/^200^docker restart audiobookshelf^4^[Aa]udiobookshelf"
 
-  # Nextcloud — OVERWRITEWEBROOT=/drive (set in ~/Projects/nextcloud/docker-compose.yml)
-  "nextcloud^1^docker^http://127.0.0.1:7990/^200 302^docker restart nextcloud-nextcloud-1^6"
+  # Nextcloud — body check catches port-table swap with OnlyOffice (both return 302 for /).
+  "nextcloud^1^docker^http://127.0.0.1:7990/^200 302^docker restart nextcloud-nextcloud-1^6^Server: Apache|Nextcloud|drive\\.fernhw\\.com"
 
-  # OnlyOffice document server
-  "onlyoffice^1^docker^http://127.0.0.1:7991/^200 302^docker restart nextcloud-onlyoffice-1^8"
+  # OnlyOffice document server — opposite of nextcloud check.
+  "onlyoffice^1^docker^http://127.0.0.1:7991/^200 302^docker restart nextcloud-onlyoffice-1^8^ONLYOFFICE|nginx"
 
   # Vaultwarden
-  "vaultwarden^1^docker^http://127.0.0.1:7992/^200^docker restart vaultwarden^4"
+  "vaultwarden^1^docker^http://127.0.0.1:7992/^200^docker restart vaultwarden^4^[Vv]aultwarden"
 
   # Immich — currently off by design. Set enabled=1 if you bring it back.
-  "immich^0^docker^http://127.0.0.1:2283/^200 302^cd /Users/alexander-highground/Projects/yt-jellyfin/docker/immich && docker compose up -d^10"
+  "immich^0^docker^http://127.0.0.1:2283/^200 302^cd /Users/alexander-highground/Projects/yt-jellyfin/docker/immich && docker compose up -d^10^[Ii]mmich"
 
-  # cloudflared tunnel — health-checked by probing the public hostname
-  # (no local port to hit; tunnel itself is restarted via launchd)
-  "cloudflared^1^local^https://abs.fernhw.com/^200 301 302^launchctl kickstart -k gui/${USER_UID}/com.cloudflare.cloudflared^8"
+  # cloudflared tunnel — health-checked by probing the public hostname.
+  # Body match confirms it's actually Audiobookshelf at the other end (not a Cloudflare error page).
+  "cloudflared^1^local^https://abs.fernhw.com/^200 301 302^launchctl kickstart -k gui/${USER_UID}/com.cloudflare.cloudflared^8^[Aa]udiobookshelf"
 )
 # === END CONFIG ===
 ```
