@@ -1,3 +1,15 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Audiobookshelf — port 13378 on host, ABS listens on container :80.
+#
+# Public:    abs.fernhw.com -> cloudflared -> 127.0.0.1:13378
+# LAN:       agnos.local/audiobookshelf -> nginx-local -> host.docker.internal:13378
+# LAN alias: agnos.local/books -> 301 -> /audiobookshelf/
+#
+# DO NOT add ROUTER_BASE_PATH. ABS's Nuxt client has "/audiobookshelf" hardcoded
+# at build time in /app/client/dist/_nuxt/*.js (`n.p="/audiobookshelf/_nuxt/"`).
+# Setting a different prefix causes asset 404 -> SPA fallback -> MIME error.
+# This has bitten us 4 times. See /memories/repo/gyra.md "Audiobookshelf".
+# ─────────────────────────────────────────────────────────────────────────────
 name: audiobookshelf
 
 services:
@@ -14,7 +26,12 @@ services:
       CONFIG_PATH: /config
       METADATA_PATH: /metadata
       SOURCE: docker
-      ROUTER_BASE_PATH: /books
+      # DO NOT set ROUTER_BASE_PATH. The Nuxt client has `/audiobookshelf` hardcoded
+      # at build time (`/app/client/dist/_nuxt/*.js`); setting a different prefix here
+      # causes asset 404 -> SPA fallback -> MIME error. ABS must serve at default
+      # `/audiobookshelf`. nginx is configured to expose this under agnos.local/audiobookshelf
+      # (with agnos.local/books as a 301 alias). cloudflared abs.fernhw.com hits :13378
+      # directly and redirects / -> /audiobookshelf/login.
     volumes:
       - /Volumes/Jellyfin/Books:/audiobooks
       - /Volumes/Jellyfin/Podcasts:/podcasts
