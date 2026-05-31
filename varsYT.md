@@ -1,6 +1,6 @@
-last_scan=1780258177820
+last_scan=1780265060360
 total_videos=2749
-updated=2026-05-31 15:09:37
+updated=2026-05-31 17:04:20
 report_date=2026-05-31
 downloaded_today=18
 deleted_today=8
