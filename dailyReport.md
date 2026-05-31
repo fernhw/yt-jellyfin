@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-05-31
 
-> *Good morning! Here's what landed on Sunday, May 31, 2026 at 11:45 AM.*
-> **YT Mirror:** 598.65 GB used · 1.12 TB free
+> *Good afternoon! Here's what landed on Sunday, May 31, 2026 at 03:10 PM.*
+> **YT Mirror:** 594.84 GB used · 1.13 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **This Controller Was A Terrible Idea** — *Spawn Wave* · downloaded 03:08 PM · not podcastable
+- **They let him out and this happened..** — *Asmongold TV* · downloaded 03:05 PM · not podcastable
 - **Who Are The Big 5?** — *Lessons in Meme Culture* · downloaded 11:43 AM · not podcastable
 - **My Girlfriend asked me why everyone loves Breath of the Wild** — *Boy Meets Girl* · downloaded 11:43 AM · not podcastable
 - **Thick as Thieves, Subnautica 2, Bubsy 4D, and Schrodingers Cat Burglar | Yahtzee Tries** — *Second Wind* · downloaded 11:35 AM · podcastable
