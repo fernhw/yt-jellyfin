@@ -67,11 +67,10 @@ SERVICES=(
   # Start: nohup /usr/bin/python3 web/status/metricsd.py >> /tmp/metricsd.log 2>&1 &
   "metricsd^1^local^http://127.0.0.1:8766/metrics^200^nohup /usr/bin/python3 /Users/alexander-highground/Projects/yt-jellyfin/web/status/metricsd.py >> /tmp/metricsd.log 2>&1 &^2^disk_io|cpu|mem"
 
-  # nginx-local — routes *.fernhw.com + agnos.local/* (ports 80 and 8081).
-  # Probe via port 8081 — agnos.local mDNS on this Mac resolves to a different
-  # nginx (1.29.7) and gives false 404s. Port 8081 maps directly to nginx-local.
-  # Body check ensures nginx-local is serving ABS (not a default page).
-  "nginx-local^1^docker^http://127.0.0.1:8081/audiobookshelf/login^200 301 302^docker restart nginx-local^4^[Aa]udiobookshelf"
+  # nginx — brew service (port 80), routes *.fernhw.com + agnos.local/*.
+  # Probe /audiobookshelf/login directly on port 80 to confirm nginx is routing.
+  # Body check ensures it's serving ABS (not a default page or connection refused).
+  "nginx^1^local^http://127.0.0.1:80/audiobookshelf/login^200 301 302^sudo brew services restart nginx^4^[Aa]udiobookshelf"
 
   # Audiobookshelf — see /memories/repo/gyra.md \"Audiobookshelf - DO NOT TOUCH\"
   # DO NOT set ROUTER_BASE_PATH. Default /audiobookshelf prefix is mandatory.

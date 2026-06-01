@@ -26,7 +26,7 @@ PERF_URLS=(
   "vaultwarden|local|http://127.0.0.1:7992/"
   "report|local|http://127.0.0.1:8765/"
   "request|local|http://127.0.0.1:8770/"
-  "nginx-local|local|http://agnos.local/audiobookshelf/login"
+  "nginx|local|http://127.0.0.1:80/audiobookshelf/login"
   "gyra.fernhw.com|public|https://gyra.fernhw.com/"
   "jellyfin.fernhw.com|public|https://jellyfin.fernhw.com/"
   "drive.fernhw.com|public|https://drive.fernhw.com/"

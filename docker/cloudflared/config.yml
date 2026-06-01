@@ -5,17 +5,17 @@ ingress:
   - hostname: gyra.fernhw.com
     service: http://127.0.0.1:5050
   - hostname: jellyfin.fernhw.com
-    service: http://127.0.0.1:8081
+    service: http://127.0.0.1:80
   - hostname: abs.fernhw.com
     service: http://127.0.0.1:13378
   - hostname: report.fernhw.com
     service: http://127.0.0.1:8765
   - hostname: status.fernhw.com
-    service: http://127.0.0.1:8081
+    service: http://127.0.0.1:80
   - hostname: request.fernhw.com
     service: http://127.0.0.1:8770
   - hostname: drive.fernhw.com
-    service: http://127.0.0.1:8081
+    service: http://127.0.0.1:80
   - hostname: office.fernhw.com
     service: http://127.0.0.1:7991
   - hostname: vault.fernhw.com
