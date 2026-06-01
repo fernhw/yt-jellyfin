@@ -92,29 +92,46 @@ def docker_stats() -> list:
         return list(_docker)
 
 
-# ── VPN detection ─────────────────────────────────────────────────────────────
+# ── VPN detection via public-IP geolocation ──────────────────────────────────
+# VPN is ON if the exit IP is NOT from Ecuador (EC).
+# Result cached for 5 minutes to avoid hammering ip-api.com.
+
+_vpn_cache: dict  = {}
+_vpn_ts:    float = 0.0
+_VPN_TTL    = 300.0   # seconds
 
 def detect_vpn() -> dict:
-    """Detect active VPN by looking for utun / wg / tun interfaces with routable IPs."""
+    """Return VPN status by checking exit-IP country via ip-api.com.
+    If country != EC (Ecuador), the machine is behind a VPN."""
+    global _vpn_cache, _vpn_ts
+    if time.time() - _vpn_ts < _VPN_TTL and _vpn_cache:
+        return _vpn_cache
+
     try:
-        for iface, addrs in sorted(psutil.net_if_addrs().items()):
-            if not any(iface.startswith(p) for p in ("utun", "tun", "wg")):
-                continue
-            for a in addrs:
-                if a.family != socket.AF_INET:
-                    continue
-                if a.address.startswith("169.254"):   # link-local — skip
-                    continue
-                provider = "wireguard" if iface.startswith("wg") else "vpn"
-                return {
-                    "active":    True,
-                    "interface": iface,
-                    "ip":        a.address,
-                    "provider":  provider,
-                }
-    except Exception:
-        pass
-    return {"active": False, "interface": None, "ip": None, "provider": None}
+        from urllib.request import urlopen as _urlopen
+        with _urlopen("http://ip-api.com/json?fields=query,country,countryCode", timeout=5) as r:
+            geo = json.loads(r.read())
+        pub_ip      = geo.get("query", "")
+        country     = geo.get("country", "")
+        country_code = geo.get("countryCode", "")
+        is_vpn      = country_code != "EC"
+        result = {
+            "active":    is_vpn,
+            "interface": None,
+            "ip":        pub_ip,
+            "provider":  country if is_vpn else "ecuador",
+            "country":   country,
+            "country_code": country_code,
+        }
+    except Exception as e:
+        # geo lookup failed — fall back to interface scan
+        result = {"active": False, "interface": None, "ip": None,
+                  "provider": None, "country": None, "country_code": None,
+                  "geo_error": str(e)}
+
+    _vpn_cache = result
+    _vpn_ts    = time.time()
+    return result
 
 
 # ── Core metrics collection ───────────────────────────────────────────────────

@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0e11">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Status">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon.png?v=2">
   <title>Status — fernhw</title>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <script>
@@ -22,7 +22,8 @@
     *{box-sizing:border-box;margin:0;padding:0}
     :root{--bg:#101317;--panel:#171c21;--line:#2a323b;--text:#ecf2f8;--muted:#97a6b4;--warn:#f07f64;--warn-soft:#2b1916;--ok:#4ade80;--chrome-tint:rgba(10,13,16,.86);--chrome-line:rgba(255,255,255,.06)}
     html{background:#05070a;min-height:100%}
-    body{background:linear-gradient(180deg,#05070a 0,#0b0e11 100px,var(--bg) 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding:calc(env(safe-area-inset-top) + 10px) 0 calc(env(safe-area-inset-bottom) + 28px);overflow-x:hidden}
+    body{background:linear-gradient(180deg,#05070a 0,#0b0e11 100px,var(--bg) 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding:calc(env(safe-area-inset-top)+10px) 0 calc(env(safe-area-inset-bottom)+32px);overflow-x:hidden}
+    /* gate */
     #gate{display:none;position:fixed;inset:0;background:#0c0f13;z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:16px}
     #gate h2{color:#fff;font-size:1.2rem;font-weight:500}
     #gate input{background:#151a1f;border:1px solid #303844;color:#fff;padding:10px 16px;border-radius:8px;font-size:1rem;width:220px;text-align:center;outline:none}
@@ -30,52 +31,76 @@
     #gate button{background:#1a2026;border:1px solid #36404c;color:#d0dae3;padding:8px 24px;border-radius:8px;cursor:pointer;font-size:.9rem}
     #gate .err{color:#f07f64;font-size:.85rem;min-height:1.2em}
     #app{display:none}
-    .shell{max-width:1200px;margin:0 auto;padding:0 14px}
-    header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;margin-bottom:14px;background:var(--chrome-tint);border:1px solid var(--chrome-line);border-radius:18px;backdrop-filter:blur(10px)}
-    .kicker{font:600 .65rem/1.2 sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#c2a365}
-    header h1{font-size:1rem;color:#d8e1ea;font-weight:600}
-    .meta-ts{font:500 .74rem/1 sans-serif;color:var(--muted)}
-    .notify-btn{background:transparent;border:1px solid #3b4550;color:#c6d0da;padding:6px 12px;border-radius:999px;cursor:pointer;font:600 .68rem/1 sans-serif;letter-spacing:.06em;text-transform:uppercase;transition:all .2s}
-    .notify-btn:hover{border-color:#c2a365;color:#fff}
-    .sec{margin-bottom:18px}
-    .sec-label{font:600 .65rem/1 sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#92a0af;margin-bottom:9px}
-    /* ── service cards ─────────────────────────────────────────────────── */
-    .svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:7px}
-    .svc-card{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--panel);border:1px solid var(--line);border-radius:11px}
+    /* layout */
+    .shell{max-width:900px;margin:0 auto;padding:0 12px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 13px;margin-bottom:14px;background:var(--chrome-tint);border:1px solid var(--chrome-line);border-radius:18px;backdrop-filter:blur(10px);flex-wrap:wrap}
+    .hdr-left{display:flex;flex-direction:column;gap:1px}
+    .kicker{font:600 .6rem/1.2 sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#c2a365}
+    header h1{font-size:.95rem;color:#d8e1ea;font-weight:600}
+    .hdr-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .meta-ts{font:500 .72rem/1 sans-serif;color:var(--muted)}
+    .notify-btn{background:transparent;border:1px solid #3b4550;color:#c6d0da;padding:5px 11px;border-radius:999px;cursor:pointer;font:600 .65rem/1 sans-serif;letter-spacing:.06em;text-transform:uppercase}
+    .sec{margin-bottom:16px}
+    .sec-label{font:600 .62rem/1 sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#92a0af;margin-bottom:8px}
+    /* divider */
+    .divider{display:flex;align-items:center;gap:8px;margin:6px 0 4px}
+    .div-label{font:600 .58rem/1 sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#3d4f60;flex-shrink:0}
+    .div-line{flex:1;height:1px;background:#1e2830}
+    /* service cards */
+    .svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px}
+    .svc-card{display:flex;align-items:flex-start;gap:8px;padding:8px 11px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
     .svc-card.down{border-color:rgba(240,127,100,.4);background:var(--warn-soft)}
-    .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+    .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
     .ok .dot,.dot.ok{background:var(--ok);box-shadow:0 0 5px #4ade8066}
     .down .dot,.dot.down{background:var(--warn);box-shadow:0 0 5px #f07f6466}
-    .unk .dot,.dot.unk{background:#3d4f60}
-    .svc-group{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-top:4px}
-    .svc-group:first-child{margin-top:0}
-    .svc-group-label{font:600 .6rem/1 sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#3d4f60;flex-shrink:0;padding:2px 0}
-    .svc-group-line{flex:1;height:1px;background:#1e2830}
-    .svc-card{align-items:flex-start}
     .svc-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-    .svc-name{font-size:.84rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .svc-url{font:400 .65rem/1 sans-serif;color:#3d5468;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none}
+    .svc-name{font-size:.82rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .svc-url{font:400 .63rem/1 sans-serif;color:#3d5468;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none}
     .svc-url:hover{color:#7999b5}
-    .svc-ms{font:500 .7rem/1 sans-serif;color:var(--muted);flex-shrink:0;margin-top:2px}
-    .svc-badge{font:600 .58rem/1 sans-serif;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.05);color:#627384;flex-shrink:0;margin-top:2px}
-    /* ── perf graph ────────────────────────────────────────────────────── */
+    .svc-ms{font:500 .67rem/1 sans-serif;color:var(--muted);flex-shrink:0;margin-top:2px}
+    .svc-badge{font:600 .56rem/1 sans-serif;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.05);color:#627384;flex-shrink:0;margin-top:2px}
+    /* vitals */
+    .vitals{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
+    .v-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+    .v-label{font:600 .56rem/1 sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#4a5c6e;margin-bottom:3px}
+    .v-val{font:600 1rem/1.2 sans-serif;color:var(--text)}
+    .v-sub{font:400 .67rem/1.3 sans-serif;color:var(--muted);margin-top:2px}
+    .v-card.warn{border-color:rgba(240,127,100,.4);background:var(--warn-soft)}
+    /* spark rows */
+    .spark-list{display:flex;flex-direction:column;gap:5px}
+    .spark-row{display:flex;align-items:center;gap:9px;padding:6px 11px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+    .spark-name{width:80px;font:500 .78rem/1 sans-serif;flex-shrink:0}
+    .spark-val{width:76px;font:500 .7rem/1 sans-serif;color:var(--muted);text-align:right;flex-shrink:0}
+    .spark-svg{flex:1;min-width:0}
+    .spark-svg svg{display:block;width:100%;height:28px}
+    /* perf */
     .perf-list{display:flex;flex-direction:column;gap:5px}
-    .perf-row{display:flex;align-items:center;gap:10px;padding:6px 12px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
-    .perf-divider{display:flex;align-items:center;gap:8px;margin:4px 0}
-    .perf-divider-label{font:600 .6rem/1 sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#3d4f60;flex-shrink:0}
-    .perf-divider-line{flex:1;height:1px;background:#1e2830}
-    .perf-name{width:170px;font-size:.81rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
-    .perf-badge{font:600 .56rem/1 sans-serif;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.05);color:#627384;width:44px;text-align:center;flex-shrink:0}
-    .perf-ms{width:54px;font:500 .7rem/1 sans-serif;color:var(--muted);text-align:right;flex-shrink:0}
+    .perf-row{display:flex;align-items:center;gap:9px;padding:6px 11px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+    .perf-name{width:150px;font-size:.78rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
+    .perf-badge{font:600 .54rem/1 sans-serif;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.05);color:#627384;width:40px;text-align:center;flex-shrink:0}
+    .perf-ms{width:50px;font:500 .68rem/1 sans-serif;color:var(--muted);text-align:right;flex-shrink:0}
     .perf-spark{flex:1;min-width:0;overflow:hidden}
-    .perf-spark svg{display:block;width:100%;height:28px}
-    @media(max-width:560px){.perf-spark{display:none}.perf-name{width:140px}}
-    /* ── log ───────────────────────────────────────────────────────────── */
-    .log-box{background:var(--panel);border:1px solid var(--line);border-radius:11px;max-height:360px;overflow-y:auto}
-    .log-item{font:400 .73rem/1.55 'SF Mono',Menlo,Consolas,monospace;padding:2px 12px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .perf-spark svg{display:block;width:100%;height:26px}
+    /* disk bars */
+    .disk-list{display:flex;flex-direction:column;gap:5px}
+    .disk-row{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 11px}
+    .disk-top{display:flex;justify-content:space-between;font:500 .76rem/1 sans-serif;margin-bottom:5px}
+    .disk-bg{background:#1e2830;border-radius:3px;height:5px;overflow:hidden}
+    .disk-fg{height:5px;border-radius:3px}
+    .disk-info{font:400 .65rem/1.3 sans-serif;color:var(--muted);margin-top:3px}
+    /* log */
+    .log-box{background:var(--panel);border:1px solid var(--line);border-radius:10px;max-height:260px;overflow-y:auto}
+    .log-item{font:400 .7rem/1.5 'SF Mono',Menlo,Consolas,monospace;padding:2px 11px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .log-item:last-child{border-bottom:none}
     .log-item.log-down{color:#f4b9a5}
-    .refresh-ind{font:400 .65rem/1 sans-serif;color:#2d3b46;text-align:right;margin-top:6px;padding-right:2px}
+    .refresh-ind{font:400 .63rem/1 sans-serif;color:#2d3b46;text-align:right;margin-top:6px}
+    /* mobile tweaks */
+    @media(max-width:480px){
+      .spark-val{display:none}
+      .perf-badge{display:none}
+      .perf-ms{display:none}
+      .perf-name{width:110px}
+    }
   </style>
 </head>
 <body>
@@ -91,85 +116,83 @@
   <div class="shell">
 
     <header>
-      <div><div class="kicker">fernhw</div><h1>Status</h1></div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <a href="sys.html" style="color:#627384;font:.6rem/1 sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;border:1px solid #2a323b;padding:5px 10px;border-radius:8px">System →</a>
+      <div class="hdr-left"><div class="kicker">fernhw</div><h1>Status</h1></div>
+      <div class="hdr-right">
         <span id="check-ts" class="meta-ts"></span>
         <button class="notify-btn" id="notif-btn" onclick="setupNotify()">Notify</button>
       </div>
     </header>
 
+    <!-- services -->
     <div class="sec">
       <div class="sec-label" id="svc-label">Services</div>
       <div class="svc-grid" id="svc-grid"></div>
     </div>
 
+    <!-- system vitals -->
+    <div class="sec">
+      <div class="sec-label" id="sys-label">System</div>
+      <div class="vitals" id="vitals"></div>
+    </div>
+
+    <!-- system sparklines -->
+    <div class="sec" id="sec-sparks" style="display:none">
+      <div class="sec-label" id="sparks-label">System History</div>
+      <div class="spark-list" id="spark-list"></div>
+    </div>
+
+    <!-- response time -->
     <div class="sec">
       <div class="sec-label">Response Time — last 24h</div>
       <div class="perf-list" id="perf-list"></div>
     </div>
 
+    <!-- disk space -->
+    <div class="sec" id="sec-disks" style="display:none">
+      <div class="sec-label">Disk Space</div>
+      <div class="disk-list" id="disk-list"></div>
+    </div>
+
+    <!-- log -->
     <div class="sec">
-      <div class="sec-label">Log <span id="log-count" style="font-weight:400;letter-spacing:0;text-transform:none;color:#3d4f60;font-size:.7rem"></span></div>
+      <div class="sec-label">Log <span id="log-count" style="font-weight:400;letter-spacing:0;text-transform:none;color:#3d4f60;font-size:.68rem"></span></div>
       <div class="log-box" id="log-box"></div>
     </div>
 
     <div class="refresh-ind" id="refresh-ind"></div>
-
   </div>
 </div>
 
 <script src="status.js"></script>
 <script src="perf.js"></script>
+<script src="metrics.js"></script>
 <script>
-/* ── auth — same mechanism as report ────────────────────────────────────── */
 const PW_HASH = "5e7601a1ac99c87a65120283ae1b380901ca55bb402dce34e1a4ec51c20d29bb";
 const COOKIE  = "sauth";
 
 async function sha256hex(s) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
-  return Array.from(new Uint8Array(b)).map(b => b.toString(16).padStart(2,"0")).join("");
+  return Array.from(new Uint8Array(b)).map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 function getCookie(n) {
-  return document.cookie.split(";").map(c=>c.trim()).find(c=>c.startsWith(n+"="))?.slice(n.length+1) || "";
+  return document.cookie.split(";").map(c=>c.trim()).find(c=>c.startsWith(n+"="))?.slice(n.length+1)||"";
 }
-function setCookie(n, v, d) {
-  document.cookie = n+"="+v+";expires="+new Date(Date.now()+d*864e5).toUTCString()+";path=/;SameSite=Strict";
+function setCookie(n,v,d) {
+  document.cookie=n+"="+v+";expires="+new Date(Date.now()+d*864e5).toUTCString()+";path=/;SameSite=Strict";
 }
 async function tryAuth(auto) {
-  const inp = auto || document.getElementById("pw").value;
-  const h = await sha256hex(inp);
-  if (h === PW_HASH) { setCookie(COOKIE, h.slice(0,16), 365); showApp(); }
-  else if (!auto) document.getElementById("err").textContent = "wrong password";
+  const inp = auto||document.getElementById("pw").value;
+  const h   = await sha256hex(inp);
+  if (h===PW_HASH){setCookie(COOKIE,h.slice(0,16),365);showApp();}
+  else if (!auto) document.getElementById("err").textContent="wrong password";
 }
 function showApp() {
-  document.getElementById("gate").style.display = "none";
-  document.getElementById("app").style.display  = "block";
+  document.getElementById("gate").style.display="none";
+  document.getElementById("app").style.display="block";
   render();
 }
-document.getElementById("pw").addEventListener("keydown", e => { if (e.key==="Enter") tryAuth(); });
-(async () => {
-  const stored = getCookie(COOKIE);
-  if (stored && stored === PW_HASH.slice(0,16)) { showApp(); return; }
-  const url = new URL(location.href);
-  const p = url.searchParams.get("p") || url.searchParams.get("password");
-  if (p) {
-    url.searchParams.delete("p"); url.searchParams.delete("password");
-    history.replaceState({}, "", url.toString());
-    await tryAuth(p);
-    if (getCookie(COOKIE)) return;
-  }
-  document.getElementById("gate").style.display = "flex";
-})();
+document.getElementById("pw").addEventListener("keydown",e=>{if(e.key==="Enter")tryAuth();});
 
-/* ── OneSignal ───────────────────────────────────────────────────────────── */
-async function setupNotify() {
-  if (!window.OneSignal) { alert("OneSignal not loaded"); return; }
-  const ok = await window.OneSignal.Notifications.requestPermission();
-  document.getElementById("notif-btn").textContent = ok ? "Notifs on" : "Blocked";
-}
-
-/* ── service URL map (display URLs, not probe URLs) ─────────────────────── */
 const SERVICE_URLS = {
   gyra:           "http://agnos.local/gyra/",
   jellyfin:       "http://agnos.local/tv/",
@@ -180,141 +203,197 @@ const SERVICE_URLS = {
   report:         "http://agnos.local/report/",
   request:        "http://agnos.local/request/",
 };
-// services that should appear in the "public" group
 const PUBLIC_SVCS = new Set(["onlyoffice","vaultwarden","cloudflared"]);
-// services that are infra-only (no user-facing URL)
 const INFRA_SVCS  = new Set(["nginx-local","cloudflared"]);
 
-/* ── helpers ─────────────────────────────────────────────────────────────── */
-function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-function fmtTs(iso) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})
-       + ", " + d.toLocaleDateString([], {month:"short", day:"numeric"});
-}
-
-/* ── sparkline (SVG inline, 24 hourly bars) ─────────────────────────────── */
-function sparkline(vals) {
-  const W = 120, H = 28, n = vals.length;
-  if (!n) return "";
-  const maxMs = Math.max(...vals.map(v => v.ms), 1);
-  const bw = W / n;
-  const bars = vals.map((v, i) => {
-    const pct = v.ok && v.ms > 0 ? v.ms / maxMs : (v.ok ? 0.05 : 1);
-    const h   = Math.max(3, Math.round(pct * (H - 4)));
-    const color = v.ok ? "#4ade80" : "#f07f64";
-    return `<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${(bw-.5).toFixed(1)}" height="${h}" fill="${color}" rx="1"/>`;
-  }).join("");
-  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
-}
-
-/* ── render ──────────────────────────────────────────────────────────────── */
-function render() { renderStatus(); renderPerf(); }
-
-function renderStatus() {
-  const S = window.STATUS;
-  const ts = S?.ts ? fmtTs(S.ts) : "no data";
-  document.getElementById("check-ts").textContent = ts;
-
-  const grid = document.getElementById("svc-grid");
-  const svcs = S?.services || [];
-  const downCount = svcs.filter(s => !s.ok).length;
-
-  // Section label with summary
-  const lbl = document.getElementById("svc-label");
-  lbl.innerHTML = svcs.length
-    ? `Services &nbsp;<span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:.7rem;color:${downCount?"#f07f64":"#4ade80"}">${downCount ? downCount+" down" : "all OK"}</span>`
-    : "Services";
-
-  if (!svcs.length) {
-    grid.innerHTML = '<div style="color:var(--muted);font-size:.84rem;padding:8px 2px">No data yet — serviceCheck.sh will populate this.</div>';
-  } else {
-    const local  = svcs.filter(s => !PUBLIC_SVCS.has(s.name) && !INFRA_SVCS.has(s.name));
-    const pub    = svcs.filter(s =>  PUBLIC_SVCS.has(s.name)  && !INFRA_SVCS.has(s.name));
-    const infra  = svcs.filter(s =>  INFRA_SVCS.has(s.name));
-    function cardHtml(s) {
-      const url = SERVICE_URLS[s.name];
-      const urlEl = url ? `<a class="svc-url" href="${url}" target="_blank">${url.replace(/^https?:\/\//,"")}</a>` : "";
-      return `<div class="svc-card ${s.ok?"ok":"down"}">
-        <span class="dot"></span>
-        <div class="svc-info">
-          <span class="svc-name">${esc(s.name)}</span>
-          ${urlEl}
-        </div>
-        <span class="svc-ms">${s.ms||0}ms</span>
-        <span class="svc-badge">${esc(s.code)}</span>
-      </div>`;
-    }
-    function groupHeader(label) {
-      return `<div class="svc-group"><span class="svc-group-label">${label}</span><span class="svc-group-line"></span></div>`;
-    }
-    const parts = [];
-    if (local.length)  { parts.push(groupHeader("Local — agnos.local")); parts.push(...local.map(cardHtml)); }
-    if (pub.length)    { parts.push(groupHeader("Public")); parts.push(...pub.map(cardHtml)); }
-    if (infra.length)  { parts.push(groupHeader("Infrastructure")); parts.push(...infra.map(cardHtml)); }
-    grid.innerHTML = parts.join("");
+(async()=>{
+  const stored=getCookie(COOKIE);
+  if(stored&&stored===PW_HASH.slice(0,16)){showApp();return;}
+  const url=new URL(location.href);
+  const p=url.searchParams.get("p")||url.searchParams.get("password");
+  if(p){
+    url.searchParams.delete("p");url.searchParams.delete("password");
+    history.replaceState({},"",url.toString());
+    await tryAuth(p);
+    if(getCookie(COOKIE))return;
   }
+  document.getElementById("gate").style.display="flex";
+})();
 
-  // Log
-  const log = (S?.log || []).slice(0, 1024);
-  document.getElementById("log-count").textContent = `(${log.length})`;
-  document.getElementById("log-box").innerHTML = log.length
-    ? log.map(e => `<div class="log-item ${e.msg&&e.msg.includes("DOWN")?"log-down":""}">`
-        + `<span style="color:#2d3b46">[${fmtTs(e.ts)}]</span> ${esc(e.msg||"")}</div>`).join("")
-    : '<div class="log-item">No log entries yet.</div>';
+async function setupNotify() {
+  if(!window.OneSignal){alert("OneSignal not loaded");return;}
+  const ok=await window.OneSignal.Notifications.requestPermission();
+  document.getElementById("notif-btn").textContent=ok?"Notifs on":"Blocked";
 }
 
-function renderPerf() {
-  const P = window.PERF;
-  const list = document.getElementById("perf-list");
-  if (!P?.hours?.length) {
-    list.innerHTML = '<div style="color:var(--muted);font-size:.84rem;padding:8px 2px">No perf data yet — available after the first hourly perfCheck run.</div>';
+/* helpers */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function fmtTs(iso){
+  if(!iso)return"—";
+  const d=new Date(iso);
+  return d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})+", "+d.toLocaleDateString([],{month:"short",day:"numeric"});
+}
+function fmtBytes(b){
+  if(b<1024)return b.toFixed(0)+" B";
+  if(b<1048576)return(b/1024).toFixed(1)+" KB";
+  if(b<1073741824)return(b/1048576).toFixed(1)+" MB";
+  return(b/1073741824).toFixed(1)+" GB";
+}
+function fmtUptime(s){
+  const d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);
+  if(d>0)return d+"d "+h+"h";
+  if(h>0)return h+"h "+m+"m";
+  return m+"m";
+}
+
+/* sparkline for perf (ms-based) */
+function perfSpark(vals){
+  const W=120,H=26,n=vals.length;if(!n)return"";
+  const maxMs=Math.max(...vals.map(v=>v.ms),1);
+  const bw=W/n;
+  const bars=vals.map((v,i)=>{
+    const pct=v.ok&&v.ms>0?v.ms/maxMs:(v.ok?0.05:1);
+    const h=Math.max(3,Math.round(pct*(H-4)));
+    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${v.ok?"#4ade80":"#f07f64"}" rx="1"/>`;
+  }).join("");
+  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
+}
+
+/* sparkline for metrics (numeric values) */
+function metricSpark(vals,fixedMax,color){
+  const W=200,H=28,n=vals.length;if(!n)return"";
+  const max=fixedMax||Math.max(...vals,1);
+  const bw=W/n;
+  const bars=vals.map((v,i)=>{
+    const h=Math.max(2,Math.round((v/max)*(H-2)));
+    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${color}" rx="1"/>`;
+  }).join("");
+  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
+}
+
+/* render all */
+function render(){renderStatus();renderMetrics();renderPerf();}
+
+/* services + log */
+function renderStatus(){
+  const S=window.STATUS;
+  document.getElementById("check-ts").textContent=S?.ts?fmtTs(S.ts):"no data";
+  const svcs=S?.services||[];
+  const down=svcs.filter(s=>!s.ok).length;
+  const lbl=document.getElementById("svc-label");
+  lbl.innerHTML=svcs.length
+    ?`Services &nbsp;<span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:.68rem;color:${down?"#f07f64":"#4ade80"}">${down?down+" down":"all OK"}</span>`
+    :"Services";
+  const grid=document.getElementById("svc-grid");
+  if(!svcs.length){
+    grid.innerHTML='<div style="color:var(--muted);font-size:.82rem;padding:6px 2px">No data yet.</div>';
+  } else {
+    const local=svcs.filter(s=>!PUBLIC_SVCS.has(s.name)&&!INFRA_SVCS.has(s.name));
+    const pub  =svcs.filter(s=> PUBLIC_SVCS.has(s.name)&&!INFRA_SVCS.has(s.name));
+    const infra=svcs.filter(s=> INFRA_SVCS.has(s.name));
+    function card(s){
+      const url=SERVICE_URLS[s.name];
+      const urlEl=url?`<a class="svc-url" href="${url}" target="_blank">${url.replace(/^https?:\/\//,"")}</a>`:"";
+      return`<div class="svc-card ${s.ok?"ok":"down"}"><span class="dot"></span><div class="svc-info"><span class="svc-name">${esc(s.name)}</span>${urlEl}</div><span class="svc-ms">${s.ms||0}ms</span><span class="svc-badge">${esc(s.code)}</span></div>`;
+    }
+    function grp(label){return`<div class="divider" style="grid-column:1/-1"><span class="div-label">${label}</span><span class="div-line"></span></div>`;}
+    const parts=[];
+    if(local.length){parts.push(grp("Local — agnos.local"));parts.push(...local.map(card));}
+    if(pub.length)  {parts.push(grp("Public"));parts.push(...pub.map(card));}
+    if(infra.length){parts.push(grp("Infrastructure"));parts.push(...infra.map(card));}
+    grid.innerHTML=parts.join("");
+  }
+  const log=(S?.log||[]).slice(0,512);
+  document.getElementById("log-count").textContent=`(${log.length})`;
+  document.getElementById("log-box").innerHTML=log.length
+    ?log.map(e=>`<div class="log-item ${e.msg?.includes("DOWN")?"log-down":""}"><span style="color:#2d3b46">[${fmtTs(e.ts)}]</span> ${esc(e.msg||"")}</div>`).join("")
+    :'<div class="log-item">No log entries yet.</div>';
+}
+
+/* system vitals + sparklines + disk */
+function renderMetrics(){
+  const H=window.METRICS_HIST;
+  const sysLbl=document.getElementById("sys-label");
+  if(!H?.length){
+    sysLbl.textContent="System";
+    document.getElementById("vitals").innerHTML='<div style="color:var(--muted);font-size:.82rem;padding:6px 2px">No data yet — metricsCheck.py populates every 5 min.</div>';
     return;
   }
-  const hours  = P.hours.slice(0, 24);
-  const latest = hours[0];
-  const names  = Object.keys(latest.data);
-  const localP  = names.filter(n => !n.includes("."));
-  const publicP = names.filter(n =>  n.includes("."));
-  function perfRowHtml(name) {
-    const vals = hours.map(h => h.data[name] || {ms:0, ok:false});
-    const cur  = vals[0];
-    const scope = name.includes(".") ? "public" : "local";
-    return `<div class="perf-row">
-      <span class="dot ${cur.ok?"ok":"down"}" style="flex-shrink:0"></span>
-      <span class="perf-name">${esc(name)}</span>
-      <span class="perf-badge">${scope}</span>
-      <span class="perf-ms">${cur.ms}ms</span>
-      <span class="perf-spark">${sparkline(vals)}</span>
-    </div>`;
+  const now=H[0];
+  const n=H.length;
+  const hrs=(n*5/60).toFixed(1);
+  sysLbl.innerHTML=`System &nbsp;<span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:.68rem;color:var(--muted)">${fmtTs(now.ts)}</span>`;
+
+  function vCard(label,val,sub,warn){
+    return`<div class="v-card${warn?" warn":""}"><div class="v-label">${label}</div><div class="v-val">${val}</div>${sub?`<div class="v-sub">${sub}</div>`:""}</div>`;
   }
-  const parts = [];
-  if (localP.length) {
-    parts.push(`<div class="perf-divider"><span class="perf-divider-label">Local — agnos.local</span><span class="perf-divider-line"></span></div>`);
-    parts.push(...localP.map(perfRowHtml));
+  document.getElementById("vitals").innerHTML=[
+    vCard("CPU",      now.cpu+"%",              "load "+now.load1,                                   now.cpu>85),
+    vCard("Memory",   now.mem_pct+"%",          now.mem_used+" / "+now.mem_tot+" GB",                now.mem_pct>90),
+    vCard("Swap",     now.swap_pct+"%",         now.swap_used+" / "+now.swap_tot+" GB",              now.swap_pct>80),
+    vCard("VPN",      now.vpn?"ON":"OFF",       now.vpn?(now.vpn_ip+" ("+now.vpn_if+")"):"Ecuador / local",    false),
+    vCard("Uptime",   fmtUptime(now.uptime),    now.procs+" proc",                                   false),
+    vCard("Disk I/O", fmtBytes(now.disk_r+now.disk_w)+"/s", "R "+fmtBytes(now.disk_r)+" W "+fmtBytes(now.disk_w)+"/s", false),
+    vCard("Network",  fmtBytes(now.net_in+now.net_out)+"/s","&#8595; "+fmtBytes(now.net_in)+" &#8593; "+fmtBytes(now.net_out)+"/s",false),
+  ].join("");
+
+  /* sparklines — most recent 48 pts (4h), reversed so newest is on right */
+  const pts=H.slice(0,48).reverse();
+  document.getElementById("sparks-label").textContent="System History — "+n+" snapshots · ~"+hrs+"h";
+  document.getElementById("sec-sparks").style.display="";
+  function sRow(label,vals,fixedMax,color,cur){
+    return`<div class="spark-row"><span class="spark-name">${label}</span><span class="spark-val">${cur}</span><span class="spark-svg">${metricSpark(vals,fixedMax,color)}</span></div>`;
   }
-  if (publicP.length) {
-    parts.push(`<div class="perf-divider"><span class="perf-divider-label">Public — fernhw.com</span><span class="perf-divider-line"></span></div>`);
-    parts.push(...publicP.map(perfRowHtml));
+  document.getElementById("spark-list").innerHTML=[
+    sRow("CPU",      pts.map(p=>p.cpu),               100,"#4ade80", now.cpu+"%"),
+    sRow("Memory",   pts.map(p=>p.mem_pct),           100,"#fb923c", now.mem_pct+"%"),
+    sRow("Disk I/O", pts.map(p=>p.disk_r+p.disk_w),  null,"#60a5fa",fmtBytes(now.disk_r+now.disk_w)+"/s"),
+    sRow("Network",  pts.map(p=>p.net_in+p.net_out),  null,"#34d399",fmtBytes(now.net_in+now.net_out)+"/s"),
+  ].join("");
+
+  /* disk space */
+  const disks=now.disks||[];
+  if(disks.length){
+    document.getElementById("sec-disks").style.display="";
+    document.getElementById("disk-list").innerHTML=disks.map(d=>{
+      const c=d.pct>85?`hsl(${Math.round(15+(100-d.pct)*.5)},80%,55%)`:"#4ade80";
+      return`<div class="disk-row"><div class="disk-top"><span>${esc(d.m)}</span><span style="color:${c}">${d.pct.toFixed(1)}% used</span></div><div class="disk-bg"><div class="disk-fg" style="width:${d.pct.toFixed(1)}%;background:${c}"></div></div><div class="disk-info">${d.used} GB / ${d.tot} GB — ${(d.tot-d.used).toFixed(1)} GB free</div></div>`;
+    }).join("");
   }
-  list.innerHTML = parts.join("");
 }
 
-/* ── auto-refresh status.js every 60s without full page reload ───────────── */
-function reloadData() {
-  const old = document.getElementById("_sd");
-  if (old) old.remove();
-  const s = document.createElement("script");
-  s.id  = "_sd";
-  s.src = "status.js?t=" + Date.now();
-  s.onload = () => {
-    renderStatus();
-    document.getElementById("refresh-ind").textContent = "refreshed " + new Date().toLocaleTimeString();
-  };
+/* perf response times */
+function renderPerf(){
+  const P=window.PERF;
+  const list=document.getElementById("perf-list");
+  if(!P?.hours?.length){
+    list.innerHTML='<div style="color:var(--muted);font-size:.82rem;padding:6px 2px">No perf data yet.</div>';
+    return;
+  }
+  const hours=P.hours.slice(0,24);
+  const names=Object.keys(hours[0].data);
+  const localP=names.filter(n=>!n.includes("."));
+  const publicP=names.filter(n=>n.includes("."));
+  function row(name){
+    const vals=hours.map(h=>h.data[name]||{ms:0,ok:false});
+    const cur=vals[0];
+    return`<div class="perf-row"><span class="dot ${cur.ok?"ok":"down"}" style="flex-shrink:0;margin-top:0"></span><span class="perf-name">${esc(name)}</span><span class="perf-badge">${name.includes(".")?"pub":"local"}</span><span class="perf-ms">${cur.ms}ms</span><span class="perf-spark">${perfSpark(vals)}</span></div>`;
+  }
+  function grp(label){return`<div class="divider"><span class="div-label">${label}</span><span class="div-line"></span></div>`;}
+  const parts=[];
+  if(localP.length) {parts.push(grp("Local — agnos.local"));parts.push(...localP.map(row));}
+  if(publicP.length){parts.push(grp("Public — fernhw.com"));parts.push(...publicP.map(row));}
+  list.innerHTML=parts.join("");
+}
+
+/* reload data files periodically */
+function reloadScript(id,src,cb){
+  const old=document.getElementById(id);if(old)old.remove();
+  const s=document.createElement("script");s.id=id;s.src=src+"?t="+Date.now();s.onload=cb;
   document.head.appendChild(s);
 }
-setInterval(reloadData, 60000);
+setInterval(()=>reloadScript("_sd","status.js",()=>{renderStatus();document.getElementById("refresh-ind").textContent="refreshed "+new Date().toLocaleTimeString();}),60000);
+setInterval(()=>reloadScript("_md","metrics.js",renderMetrics),5*60*1000);
 </script>
 </body>
 </html>
