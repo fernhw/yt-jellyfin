@@ -102,6 +102,13 @@
       .perf-ms{display:none}
       .perf-name{width:110px}
     }
+    /* tooltip */
+    #tip{position:fixed;z-index:9999;pointer-events:none;background:#141b22;border:1px solid #2a3d4d;border-radius:10px;padding:9px 13px;font:400 .72rem/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#d0dae3;max-width:280px;min-width:170px;box-shadow:0 6px 28px rgba(0,0,0,.7);display:none}
+    .tip-time{font:.62rem/1 sans-serif;color:#4d6a7e;margin-bottom:5px;letter-spacing:.04em}
+    .tip-row{display:flex;justify-content:space-between;gap:18px;line-height:1.65}
+    .tip-label{color:#607a8c;white-space:nowrap}
+    .tip-val{color:#e0eaf4;font-weight:500;text-align:right;white-space:nowrap}
+    .tip-sep{height:1px;background:#1d2c38;margin:5px 0}
   </style>
 </head>
 <body>
@@ -112,6 +119,7 @@
   <button onclick="tryAuth()">Enter</button>
   <p class="err" id="err"></p>
 </div>
+<div id="tip"></div>
 
 <div id="app">
   <div class="shell">
@@ -170,6 +178,7 @@
 <script>
 const PW_HASH = "5e7601a1ac99c87a65120283ae1b380901ca55bb402dce34e1a4ec51c20d29bb";
 const COOKIE  = "sauth";
+const TIP_STORE={}; let _tid=0;
 
 async function sha256hex(s) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
@@ -247,33 +256,51 @@ function fmtUptime(s){
   return m+"m";
 }
 
-/* sparkline for perf (ms-based) */
-function perfSpark(vals){
+/* tooltip store — reset each render(), keyed per rect via data-tid attribute */
+
+function storeTip(h){const id=++_tid;TIP_STORE[id]=h;return id;}
+function tipRow(label,val,col){return`<div class="tip-row"><span class="tip-label">${label}</span><span class="tip-val"${col?` style="color:${col}"`:''}>${val}</span></div>`;}
+
+/* sparkline for perf (ms-based) — per-service scale so spikes are visible */
+function perfSpark(vals,sharedMax,tips){
   const W=120,H=26,n=vals.length;if(!n)return"";
-  const maxMs=Math.max(...vals.map(v=>v.ms),1);
+  const maxMs=sharedMax||Math.max(...vals.map(v=>v.ms),1);
   const bw=W/n;
   const bars=vals.map((v,i)=>{
-    const pct=v.ok&&v.ms>0?v.ms/maxMs:(v.ok?0.05:1);
-    const h=Math.max(3,Math.round(pct*(H-4)));
-    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${v.ok?"#4ade80":"#f07f64"}" rx="1"/>`;
+    const ta=tips&&tips[i]!=null?` data-tid="${storeTip(tips[i])}"`:""; 
+    if(v.ok===null){
+      // gap slot — dim stub
+      return`<rect x="${(i*bw).toFixed(1)}" y="${H-3}" width="${Math.max(1,bw-.5).toFixed(1)}" height="3" fill="#2a3040" rx="1"${ta}/>`;
+    }
+    const pct=v.ok&&v.ms>0?v.ms/maxMs:(v.ok?0.02:1);
+    const h=Math.max(2,Math.round(pct*(H-2)));
+    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${v.ok?"#4ade80":"#f07f64"}" rx="1"${ta}/>`;
   }).join("");
   return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
 }
 
-/* sparkline for metrics (numeric values) */
-function metricSpark(vals,fixedMax,color){
+/* sparkline for metrics (numeric values) — null = gap slot → dim stub */
+function metricSpark(vals,fixedMax,color,tips){
   const W=200,H=28,n=vals.length;if(!n)return"";
-  const max=fixedMax||Math.max(...vals,1);
+  const realVals=vals.filter(v=>v!==null&&v!==undefined);
+  const max=fixedMax||Math.max(...realVals,1);
   const bw=W/n;
   const bars=vals.map((v,i)=>{
+    const ta=tips&&tips[i]!=null?` data-tid="${storeTip(tips[i])}"`:""; 
+    if(v===null||v===undefined){
+      return`<rect x="${(i*bw).toFixed(1)}" y="${H-3}" width="${Math.max(1,bw-.5).toFixed(1)}" height="3" fill="#2a3040" rx="1"${ta}/>`;
+    }
     const h=Math.max(2,Math.round((v/max)*(H-2)));
-    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${color}" rx="1"/>`;
+    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${color}" rx="1"${ta}/>`;
   }).join("");
   return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
 }
 
 /* render all */
-function render(){renderStatus();renderMetrics();renderPerf();}
+function render(){
+  Object.keys(TIP_STORE).forEach(k=>delete TIP_STORE[k]);_tid=0;
+  renderStatus();renderMetrics();renderPerf();
+}
 
 /* services + log */
 function renderStatus(){
@@ -345,38 +372,94 @@ function renderMetrics(){
   parts.push(vCard("Network",fmtBytes(now.net_in+now.net_out)+"/s","&#8595; "+fmtBytes(now.net_in)+" &#8593; "+fmtBytes(now.net_out)+"/s",false));
   document.getElementById("vitals").innerHTML=parts.join("");}
 
-  /* sparklines — up to 288 pts (24h), reversed so newest is on right */
-  const pts=H.slice(0,288).reverse();
-  document.getElementById("sparks-label").textContent="System History — "+n+" snapshots · ~"+hrs+"h · 24h window";
+  /* sparklines — 96 bars × 15-min windows (24h), each bar = avg of up to 3 × 5-min snapshots */
+  const BEAT_MS=5*60*1000;
+  const WIN_MS=15*60*1000;   // 3 beats per bar
+  const nowBeat=Math.floor(Date.now()/BEAT_MS)*BEAT_MS;
+  // bucket all entries by their 5-min floor
+  const byBeat={};
+  for(const h of H){
+    const hts=new Date(h.ts).getTime();
+    const beat=Math.floor(hts/BEAT_MS)*BEAT_MS;
+    if(!byBeat[beat]||hts>new Date(byBeat[beat].ts).getTime())byBeat[beat]=h;
+  }
+  // Build 96 averaged 15-min windows; window 0 = most recent, window 95 = 24h ago
+  // Each window covers [winStart, winStart+15min) → 3 × 5-min beats
+  const nowWin=Math.floor(Date.now()/WIN_MS)*WIN_MS;
+  // avgWin returns an object with averaged numeric fields, or null if no beats present
+  function avgWin(winStart){
+    const beats=[byBeat[winStart],byBeat[winStart+BEAT_MS],byBeat[winStart+2*BEAT_MS]].filter(Boolean);
+    if(!beats.length)return null;
+    const avg=k=>beats.reduce((s,b)=>s+(b[k]||0),0)/beats.length;
+    // disk_io: average per disk by name
+    const diskNames=[...new Set(beats.flatMap(b=>(b.disk_io||[]).map(d=>d.n)))];
+    const disk_io=diskNames.map(n=>{
+      const ds=beats.map(b=>(b.disk_io||[]).find(d=>d.n===n)).filter(Boolean);
+      if(!ds.length)return null;
+      const davg=k=>ds.reduce((s,d)=>s+(d[k]||0),0)/ds.length;
+      return{n,l:ds[0].l,r:davg("r"),w:davg("w"),ri:davg("ri"),wi:davg("wi"),
+             mr:ds[0].mr,mw:ds[0].mw,mir:ds[0].mir,miw:ds[0].miw};
+    }).filter(Boolean);
+    return{ts:beats[0].ts,cpu:avg("cpu"),mem_pct:avg("mem_pct"),
+           net_in:avg("net_in"),net_out:avg("net_out"),disk_io};
+  }
+  const slots96=Array.from({length:96},(_,i)=>avgWin(nowWin-i*WIN_MS));
+  const pts=slots96.slice().reverse();
+  // per-bar tooltip HTML indexed same as pts (oldest=0, newest=95)
+  function makeTip(winStart,pt){
+    const d0=new Date(winStart),d1=new Date(winStart+WIN_MS);
+    const t0=d0.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const t1=d1.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const ds=d0.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});
+    let h=`<div class="tip-time">${t0}–${t1} · ${ds}</div>`;
+    if(!pt){h+=`<div style="color:#3d4f60;margin-top:4px;font-size:.68rem">No data</div>`;return h;}
+    h+=`<div class="tip-sep"></div>`;
+    h+=tipRow("CPU",pt.cpu.toFixed(1)+"%",pt.cpu>85?"#f07f64":null);
+    h+=tipRow("Memory",pt.mem_pct.toFixed(1)+"%",pt.mem_pct>90?"#f07f64":null);
+    h+=tipRow("Net ↓",fmtBytes(pt.net_in)+"/s");
+    h+=tipRow("Net ↑",fmtBytes(pt.net_out)+"/s");
+    if(pt.disk_io&&pt.disk_io.length){
+      h+=`<div class="tip-sep"></div>`;
+      pt.disk_io.forEach(d=>{
+        h+=tipRow(esc(d.l||d.n)+" R+W",fmtBytes(d.r+d.w)+"/s");
+        h+=`<div class="tip-row" style="font-size:.65rem"><span class="tip-label" style="padding-left:6px">↑ read</span><span class="tip-val">${fmtBytes(d.r)}/s · ${(d.ri||0).toLocaleString()} iops</span></div>`;
+        h+=`<div class="tip-row" style="font-size:.65rem"><span class="tip-label" style="padding-left:6px">↓ write</span><span class="tip-val">${fmtBytes(d.w)}/s · ${(d.wi||0).toLocaleString()} iops</span></div>`;
+      });
+    }
+    return h;
+  }
+  const winTips=Array.from({length:96},(_,i)=>makeTip(nowWin-(95-i)*WIN_MS,pts[i]));
+  const filledCount=slots96.filter(Boolean).length;
+  document.getElementById("sparks-label").textContent=`System History — 24h window (${filledCount}/96 × 15-min bars)`;
   document.getElementById("sec-sparks").style.display="";
-  function sRow(label,vals,fixedMax,color,cur,sub){
+  function sRow(label,vals,fixedMax,color,cur,sub,tips){
     const subHtml=sub?`<span class="spark-sub">${sub}</span>`:"";
-    return`<div class="spark-row"><span class="spark-name"><span>${label}</span>${subHtml}</span><span class="spark-val">${cur}</span><span class="spark-svg">${metricSpark(vals,fixedMax,color)}</span></div>`;
+    return`<div class="spark-row"><span class="spark-name"><span>${label}</span>${subHtml}</span><span class="spark-val">${cur}</span><span class="spark-svg">${metricSpark(vals,fixedMax,color,tips)}</span></div>`;
   }
   const diskColors=["#60a5fa","#a78bfa","#f472b6","#fb923c","#34d399"];
-  const diskNames=[...new Set(pts.flatMap(p=>(p.disk_io||[]).map(d=>d.n)))];
+  const diskNames=[...new Set(pts.flatMap(p=>p?(p.disk_io||[]).map(d=>d.n):[]))];
   const diskRows=diskNames.flatMap((name,i)=>{
     const cur=(now.disk_io||[]).find(d=>d.n===name);
     const lbl=cur&&cur.l?cur.l:name;
     const col=diskColors[i%diskColors.length];
     // MB/s row
-    const bwVals=pts.map(p=>{const d=(p.disk_io||[]).find(x=>x.n===name);return d?d.r+d.w:0;});
+    const bwVals=pts.map(p=>{if(!p)return null;const d=(p.disk_io||[]).find(x=>x.n===name);return d?d.r+d.w:null;});
     const maxBps=cur?((cur.mr||0)+(cur.mw||0)):0;
     const bwSub=maxBps?"max "+fmtBytes(maxBps)+"/s":null;
-    const bwRow=sRow(lbl,bwVals,maxBps||null,col,cur?fmtBytes(cur.r+cur.w)+"/s":"—",bwSub);
+    const bwRow=sRow(lbl,bwVals,maxBps||null,col,cur?fmtBytes(cur.r+cur.w)+"/s":"—",bwSub,winTips);
     // IOPS row — dimmer tint of same colour
-    const iopsVals=pts.map(p=>{const d=(p.disk_io||[]).find(x=>x.n===name);return d?(d.ri||0)+(d.wi||0):0;});
+    const iopsVals=pts.map(p=>{if(!p)return null;const d=(p.disk_io||[]).find(x=>x.n===name);return d?(d.ri||0)+(d.wi||0):null;});
     const maxIops=cur?((cur.mir||0)+(cur.miw||0)):0;
     const curIops=cur?(cur.ri||0)+(cur.wi||0):0;
     const iopsSub=maxIops?"max "+maxIops.toLocaleString()+" IOPS":null;
-    const iopsRow=sRow(lbl+" IOPS",iopsVals,maxIops||null,col+"99",curIops.toLocaleString()+" IOPS",iopsSub);
+    const iopsRow=sRow(lbl+" IOPS",iopsVals,maxIops||null,col+"99",curIops.toLocaleString()+" IOPS",iopsSub,winTips);
     return[bwRow,iopsRow];
   });
   document.getElementById("spark-list").innerHTML=[
-    sRow("CPU",     pts.map(p=>p.cpu),              100,"#4ade80",now.cpu+"%"),
-    sRow("Memory",  pts.map(p=>p.mem_pct),          100,"#fb923c",now.mem_pct+"%"),
+    sRow("CPU",     pts.map(p=>p?p.cpu:null),              100,"#4ade80",now.cpu+"%",undefined,winTips),
+    sRow("Memory",  pts.map(p=>p?p.mem_pct:null),          100,"#fb923c",now.mem_pct+"%",undefined,winTips),
     ...diskRows,
-    sRow("Network", pts.map(p=>p.net_in+p.net_out), null,"#34d399",fmtBytes(now.net_in+now.net_out)+"/s"),
+    sRow("Network", pts.map(p=>p?p.net_in+p.net_out:null), null,"#34d399",fmtBytes(now.net_in+now.net_out)+"/s",undefined,winTips),
   ].join("");
 
   /* disk space */
@@ -398,21 +481,95 @@ function renderPerf(){
     list.innerHTML='<div style="color:var(--muted);font-size:.82rem;padding:6px 2px">No perf data yet.</div>';
     return;
   }
-  const hours=P.hours.slice(0,24);
-  const names=Object.keys(hours[0].data);
+
+  // ── Build exactly 24 canonical hourly slots ───────────────────────────────
+  // Anchor: floor NOW to the current hour, then go back 23 more hours.
+  // slot 0 = most recent hour, slot 23 = 23h ago.
+  const now=Date.now();
+  const hourMs=3600000;
+  const nowHour=Math.floor(now/hourMs)*hourMs;   // floor to current hour
+
+  // Index all raw entries by their floored-hour (keep only the latest per hour)
+  const byHour={};
+  for(const h of P.hours){
+    const hts=new Date(h.ts).getTime();
+    const slot=Math.floor(hts/hourMs)*hourMs;
+    if(!byHour[slot]||hts>new Date(byHour[slot].ts).getTime()) byHour[slot]=h;
+  }
+
+  // Fixed 24-slot array: index 0 = nowHour, index 23 = nowHour-23h
+  const slots=Array.from({length:24},(_,i)=>{
+    const slotTs=nowHour-i*hourMs;
+    return byHour[slotTs]||null;   // null = no data for that hour
+  });
+
+  // Gather all service names from any slot that has data
+  const names=[...new Set(slots.filter(Boolean).flatMap(s=>Object.keys(s.data)))];
   const localP=names.filter(n=>!n.includes("."));
   const publicP=names.filter(n=>n.includes("."));
+
+  // Latest real entry for current values
+  const latest=slots.find(Boolean);
+
   function row(name){
-    const vals=hours.map(h=>h.data[name]||{ms:0,ok:false});
-    const cur=vals[0];
-    return`<div class="perf-row"><span class="dot ${cur.ok?"ok":"down"}" style="flex-shrink:0;margin-top:0"></span><span class="perf-name">${esc(name)}</span><span class="perf-badge">${name.includes(".")?"|pub":"local"}</span><span class="perf-ms">${cur.ms}ms</span><span class="perf-spark">${perfSpark([...vals].reverse())}</span></div>`;
+    const vals=slots.map(s=>s?(s.data[name]||{ms:0,ok:false}):{ms:0,ok:null});
+    // per-service scale so every service's own spikes are visible
+    const realMs=vals.filter(v=>v.ok!==null).map(v=>v.ms);
+    const localMax=Math.max(...realMs,1);
+    const avgMs=realMs.length?Math.round(realMs.reduce((a,b)=>a+b,0)/realMs.length):0;
+    const p95Ms=realMs.length?(()=>{const s=[...realMs].sort((a,b)=>a-b);return s[Math.floor(s.length*.95)]||s[s.length-1];})():0;
+    // per-bar tips in reversed order (oldest bar first = bar index 0)
+    const tips=vals.slice().reverse().map((v,i)=>{
+      const slotTs=nowHour-(23-i)*hourMs;
+      const d0=new Date(slotTs);
+      const t0=d0.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      const t1=new Date(slotTs+hourMs).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      const ds=d0.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});
+      let h=`<div class="tip-time">${t0}–${t1} · ${ds}</div>`;
+      if(v.ok===null){h+=`<div style="color:#3d4f60;margin-top:4px;font-size:.68rem">No data</div>`;return h;}
+      h+=`<div class="tip-sep"></div>`;
+      h+=tipRow("Response",`<b style="font-size:.9rem">${v.ms}ms</b>`,v.ok?"#4ade80":"#f07f64");
+      h+=tipRow("Status",v.ok?'✓ OK':'✗ FAIL',v.ok?"#4ade80":"#f07f64");
+      h+=`<div class="tip-sep"></div>`;
+      h+=tipRow("24h avg",avgMs+"ms");
+      h+=tipRow("24h p95",p95Ms+"ms");
+      h+=tipRow("24h peak",localMax+"ms");
+      if(v.ms>0)h+=tipRow("% of peak",Math.round(v.ms/localMax*100)+"%",v.ms===localMax?"#f07f64":null);
+      return h;
+    });
+    const cur=(slots.find(s=>s&&s.data[name])||null);
+    const curVal=cur?cur.data[name]:{ms:0,ok:false};
+    const recent=vals.filter(v=>v.ok!==null).slice(0,3);
+    const allOk=recent.length>0&&recent.every(v=>v.ok);
+    return`<div class="perf-row"><span class="dot ${allOk?"ok":"down"}" style="flex-shrink:0;margin-top:0"></span><span class="perf-name">${esc(name)}</span><span class="perf-badge">${name.includes(".")?"|pub":"local"}</span><span class="perf-ms">${curVal.ms}ms</span><span class="perf-spark">${perfSpark([...vals].reverse(),localMax,tips)}</span></div>`;
   }
+
   function grp(label){return`<div class="divider"><span class="div-label">${label}</span><span class="div-line"></span></div>`;}
   const parts=[];
   if(localP.length) {parts.push(grp("Local — agnos.local"));parts.push(...localP.map(row));}
   if(publicP.length){parts.push(grp("Public — fernhw.com"));parts.push(...publicP.map(row));}
   list.innerHTML=parts.join("");
 }
+
+/* tooltip interaction */
+(()=>{
+  const $t=document.getElementById("tip");
+  document.addEventListener("mousemove",e=>{
+    const el=e.target instanceof Element?e.target.closest("[data-tid]"):null;
+    if(!el){$t.style.display="none";return;}
+    const html=TIP_STORE[el.getAttribute("data-tid")];
+    if(!html){$t.style.display="none";return;}
+    $t.innerHTML=html;
+    $t.style.display="block";
+    const tw=$t.offsetWidth,th=$t.offsetHeight,vw=innerWidth,vh=innerHeight;
+    let x=e.clientX+14,y=e.clientY-10;
+    if(x+tw>vw-8)x=e.clientX-tw-14;
+    if(y+th>vh-8)y=vh-th-8;
+    if(y<8)y=8;
+    $t.style.left=x+"px";$t.style.top=y+"px";
+  });
+  document.addEventListener("mouseleave",()=>{$t.style.display="none";});
+})();
 
 /* reload data files periodically */
 function reloadScript(id,src,cb){
