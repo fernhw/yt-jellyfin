@@ -47,6 +47,74 @@ _docker_ts: float = 0.0
 _DOCKER_TTL = 5.0
 _docker_mu  = threading.Lock()
 
+# ── Disk label cache — rebuilt every _DISK_LABEL_TTL seconds ─────────────────
+# Handles dynamic add/remove of disks; scales to any number of drives.
+# Strategy (in priority order):
+#   1. Volume name from psutil mount points  (e.g. disk7s1 → /Volumes/Jellyfin → "Jellyfin")
+#   2. diskutil "Device / Media Name"        (e.g. disk0 → "APPLE SSD AP0256Q" → "SSD")
+#   3. Raw device name as-is (fallback)
+import re as _re
+
+_disk_label_cache: dict  = {}
+_disk_label_ts:   float  = 0.0
+_DISK_LABEL_TTL           = 300.0   # rebuild every 5 minutes
+_DISKUTIL_JUNK            = {"APPLE", "Media", "Disk", "Device"}
+_DISKUTIL_MODEL_RE        = _re.compile(r'^[A-Z0-9]{4,}$')  # strips tokens like AP0256Q
+
+
+def _build_disk_labels() -> dict:
+    """Scan current mounts + diskutil to build disk-name → friendly-label mapping."""
+    labels: dict = {}
+
+    # Pass 1: psutil mount points  (covers external volumes with a volume name)
+    try:
+        for part in psutil.disk_partitions(all=False):
+            raw = part.device.split("/")[-1]           # disk7s1
+            base = _re.sub(r'(s\d+)+$', '', raw)      # disk7
+            if base and base not in labels:
+                mnt = part.mountpoint
+                labels[base] = "system" if mnt == "/" else mnt.split("/")[-1]
+    except Exception:
+        pass
+
+    # Pass 2: diskutil info for disks not yet covered (physical containers / bare disks)
+    # Only called for disks psutil currently sees, so it stays O(#active disks)
+    try:
+        active = set(psutil.disk_io_counters(perdisk=True) or {})
+    except Exception:
+        active = set()
+
+    for name in sorted(active):
+        if name in labels:
+            continue
+        try:
+            out = subprocess.check_output(
+                ["diskutil", "info", name], stderr=subprocess.DEVNULL, timeout=3
+            ).decode()
+            for line in out.splitlines():
+                if "Device / Media Name" in line:
+                    media = line.split(":", 1)[-1].strip()
+                    words = [
+                        w for w in media.split()
+                        if w not in _DISKUTIL_JUNK and not _DISKUTIL_MODEL_RE.match(w)
+                    ]
+                    if words:
+                        labels[name] = " ".join(words[:2])
+                    break
+        except Exception:
+            pass
+
+    return labels
+
+
+def _disk_label(name: str) -> str:
+    """Return a friendly label for a disk device name, refreshing every TTL seconds."""
+    global _disk_label_cache, _disk_label_ts
+    if time.time() - _disk_label_ts >= _DISK_LABEL_TTL:
+        _disk_label_cache = _build_disk_labels()
+        _disk_label_ts    = time.time()
+    return _disk_label_cache.get(name, name)
+
 
 def _refresh_docker() -> None:
     global _docker, _docker_ts
@@ -162,6 +230,7 @@ def collect() -> dict:
         prev = _prev_disk.get(name, c)
         disk_io.append({
             "name":       name,
+            "label":      _disk_label(name),
             "read_bps":   max(0.0, (c.read_bytes  - prev.read_bytes)  / dt),
             "write_bps":  max(0.0, (c.write_bytes - prev.write_bytes) / dt),
             "read_iops":  max(0.0, (c.read_count  - prev.read_count)  / dt),

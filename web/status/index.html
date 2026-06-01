@@ -22,7 +22,7 @@
     *{box-sizing:border-box;margin:0;padding:0}
     :root{--bg:#101317;--panel:#171c21;--line:#2a323b;--text:#ecf2f8;--muted:#97a6b4;--warn:#f07f64;--warn-soft:#2b1916;--ok:#4ade80;--chrome-tint:rgba(10,13,16,.86);--chrome-line:rgba(255,255,255,.06)}
     html{background:#05070a;min-height:100%}
-    body{background:linear-gradient(180deg,#05070a 0,#0b0e11 100px,var(--bg) 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding:calc(env(safe-area-inset-top)+24px) 0 calc(env(safe-area-inset-bottom)+32px);overflow-x:hidden}
+    body{background:linear-gradient(180deg,#05070a 0,#0b0e11 100px,var(--bg) 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding:max(calc(env(safe-area-inset-top) + 16px),64px) 0 calc(env(safe-area-inset-bottom)+32px);overflow-x:hidden}
     /* gate */
     #gate{display:none;position:fixed;inset:0;background:#0c0f13;z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:16px}
     #gate h2{color:#fff;font-size:1.2rem;font-weight:500}
@@ -327,28 +327,39 @@ function renderMetrics(){
   function vCard(label,val,sub,warn){
     return`<div class="v-card${warn?" warn":""}"><div class="v-label">${label}</div><div class="v-val">${val}</div>${sub?`<div class="v-sub">${sub}</div>`:""}</div>`;
   }
-  document.getElementById("vitals").innerHTML=[
-    vCard("CPU",      now.cpu+"%",              "load "+now.load1,                                   now.cpu>85),
-    vCard("Memory",   now.mem_pct+"%",          now.mem_used+" / "+now.mem_tot+" GB",                now.mem_pct>90),
-    vCard("Swap",     now.swap_pct+"%",         now.swap_used+" / "+now.swap_tot+" GB",              now.swap_pct>80),
-    vCard("VPN",      now.vpn?"ON":"OFF",       now.vpn?(now.vpn_ip+" ("+now.vpn_if+")"):"Ecuador / local",    false),
-    vCard("Uptime",   fmtUptime(now.uptime),    now.procs+" proc",                                   false),
-    ...(now.disk_io&&now.disk_io.length?now.disk_io.map(d=>vCard(d.n,fmtBytes(d.r+d.w)+"/s","R "+fmtBytes(d.r)+" W "+fmtBytes(d.w)+"/s",false)):[vCard("Disk I/O",fmtBytes(now.disk_r+now.disk_w)+"/s","R "+fmtBytes(now.disk_r)+" W "+fmtBytes(now.disk_w)+"/s",false)]),
-    vCard("Network",  fmtBytes(now.net_in+now.net_out)+"/s","&#8595; "+fmtBytes(now.net_in)+" &#8593; "+fmtBytes(now.net_out)+"/s",false),
-  ].join("");
+  {const parts=[
+    vCard("CPU",      now.cpu+"%",       "load "+now.load1,                               now.cpu>85),
+    vCard("Memory",  now.mem_pct+"%",   now.mem_used+" / "+now.mem_tot+" GB",            now.mem_pct>90),
+    vCard("Swap",    now.swap_pct+"%",  now.swap_used+" / "+now.swap_tot+" GB",          now.swap_pct>80),
+    vCard("VPN",     now.vpn?"ON":"OFF",now.vpn?(now.vpn_ip+" ("+now.vpn_if+")"):"Ecuador / local",false),
+    vCard("Uptime",  fmtUptime(now.uptime),now.procs+" proc",                            false),
+  ];
+  const dios=now.disk_io&&now.disk_io.length?now.disk_io:null;
+  if(dios)dios.forEach(d=>parts.push(vCard(d.l||d.n,fmtBytes(d.r+d.w)+"/s","R "+fmtBytes(d.r)+" W "+fmtBytes(d.w)+"/s",false)));
+  else parts.push(vCard("Disk I/O",fmtBytes(now.disk_r+now.disk_w)+"/s","R "+fmtBytes(now.disk_r)+" W "+fmtBytes(now.disk_w)+"/s",false));
+  parts.push(vCard("Network",fmtBytes(now.net_in+now.net_out)+"/s","&#8595; "+fmtBytes(now.net_in)+" &#8593; "+fmtBytes(now.net_out)+"/s",false));
+  document.getElementById("vitals").innerHTML=parts.join("");}
 
-  /* sparklines — most recent 48 pts (4h), reversed so newest is on right */
-  const pts=H.slice(0,48).reverse();
-  document.getElementById("sparks-label").textContent="System History — "+n+" snapshots · ~"+hrs+"h";
+  /* sparklines — up to 288 pts (24h), reversed so newest is on right */
+  const pts=H.slice(0,288).reverse();
+  document.getElementById("sparks-label").textContent="System History — "+n+" snapshots · ~"+hrs+"h · 24h window";
   document.getElementById("sec-sparks").style.display="";
   function sRow(label,vals,fixedMax,color,cur){
     return`<div class="spark-row"><span class="spark-name">${label}</span><span class="spark-val">${cur}</span><span class="spark-svg">${metricSpark(vals,fixedMax,color)}</span></div>`;
   }
+  const diskColors=["#60a5fa","#a78bfa","#f472b6","#fb923c","#34d399"];
+  const diskNames=[...new Set(pts.flatMap(p=>(p.disk_io||[]).map(d=>d.n)))];
+  const diskRows=diskNames.map((name,i)=>{
+    const vals=pts.map(p=>{const d=(p.disk_io||[]).find(x=>x.n===name);return d?d.r+d.w:0;});
+    const cur=(now.disk_io||[]).find(d=>d.n===name);
+    const lbl=cur&&cur.l?cur.l:name;
+    return sRow(lbl,vals,null,diskColors[i%diskColors.length],cur?fmtBytes(cur.r+cur.w)+"/s":"—");
+  });
   document.getElementById("spark-list").innerHTML=[
-    sRow("CPU",      pts.map(p=>p.cpu),               100,"#4ade80", now.cpu+"%"),
-    sRow("Memory",   pts.map(p=>p.mem_pct),           100,"#fb923c", now.mem_pct+"%"),
-    sRow("Disk I/O", pts.map(p=>p.disk_r+p.disk_w),  null,"#60a5fa",fmtBytes(now.disk_r+now.disk_w)+"/s"),
-    sRow("Network",  pts.map(p=>p.net_in+p.net_out),  null,"#34d399",fmtBytes(now.net_in+now.net_out)+"/s"),
+    sRow("CPU",     pts.map(p=>p.cpu),              100,"#4ade80",now.cpu+"%"),
+    sRow("Memory",  pts.map(p=>p.mem_pct),          100,"#fb923c",now.mem_pct+"%"),
+    ...diskRows,
+    sRow("Network", pts.map(p=>p.net_in+p.net_out), null,"#34d399",fmtBytes(now.net_in+now.net_out)+"/s"),
   ].join("");
 
   /* disk space */
@@ -377,7 +388,7 @@ function renderPerf(){
   function row(name){
     const vals=hours.map(h=>h.data[name]||{ms:0,ok:false});
     const cur=vals[0];
-    return`<div class="perf-row"><span class="dot ${cur.ok?"ok":"down"}" style="flex-shrink:0;margin-top:0"></span><span class="perf-name">${esc(name)}</span><span class="perf-badge">${name.includes(".")?"pub":"local"}</span><span class="perf-ms">${cur.ms}ms</span><span class="perf-spark">${perfSpark(vals)}</span></div>`;
+    return`<div class="perf-row"><span class="dot ${cur.ok?"ok":"down"}" style="flex-shrink:0;margin-top:0"></span><span class="perf-name">${esc(name)}</span><span class="perf-badge">${name.includes(".")?"|pub":"local"}</span><span class="perf-ms">${cur.ms}ms</span><span class="perf-spark">${perfSpark([...vals].reverse())}</span></div>`;
   }
   function grp(label){return`<div class="divider"><span class="div-label">${label}</span><span class="div-line"></span></div>`;}
   const parts=[];
