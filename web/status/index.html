@@ -12,6 +12,12 @@
   <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
   <title>Status — fernhw</title>
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({ appId: "e16639f2-cd69-4411-8548-ee21f3efd73d" });
+    });
+  </script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     :root{--bg:#101317;--panel:#171c21;--line:#2a323b;--text:#ecf2f8;--muted:#97a6b4;--warn:#f07f64;--warn-soft:#2b1916;--ok:#4ade80;--chrome-tint:rgba(10,13,16,.86);--chrome-line:rgba(255,255,255,.06)}
@@ -41,12 +47,23 @@
     .ok .dot,.dot.ok{background:var(--ok);box-shadow:0 0 5px #4ade8066}
     .down .dot,.dot.down{background:var(--warn);box-shadow:0 0 5px #f07f6466}
     .unk .dot,.dot.unk{background:#3d4f60}
-    .svc-name{flex:1;font-size:.84rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .svc-ms{font:500 .7rem/1 sans-serif;color:var(--muted);flex-shrink:0}
-    .svc-badge{font:600 .58rem/1 sans-serif;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.05);color:#627384;flex-shrink:0}
+    .svc-group{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-top:4px}
+    .svc-group:first-child{margin-top:0}
+    .svc-group-label{font:600 .6rem/1 sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#3d4f60;flex-shrink:0;padding:2px 0}
+    .svc-group-line{flex:1;height:1px;background:#1e2830}
+    .svc-card{align-items:flex-start}
+    .svc-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+    .svc-name{font-size:.84rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .svc-url{font:400 .65rem/1 sans-serif;color:#3d5468;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:none}
+    .svc-url:hover{color:#7999b5}
+    .svc-ms{font:500 .7rem/1 sans-serif;color:var(--muted);flex-shrink:0;margin-top:2px}
+    .svc-badge{font:600 .58rem/1 sans-serif;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.05);color:#627384;flex-shrink:0;margin-top:2px}
     /* ── perf graph ────────────────────────────────────────────────────── */
     .perf-list{display:flex;flex-direction:column;gap:5px}
     .perf-row{display:flex;align-items:center;gap:10px;padding:6px 12px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+    .perf-divider{display:flex;align-items:center;gap:8px;margin:4px 0}
+    .perf-divider-label{font:600 .6rem/1 sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#3d4f60;flex-shrink:0}
+    .perf-divider-line{flex:1;height:1px;background:#1e2830}
     .perf-name{width:170px;font-size:.81rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
     .perf-badge{font:600 .56rem/1 sans-serif;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.05);color:#627384;width:44px;text-align:center;flex-shrink:0}
     .perf-ms{width:54px;font:500 .7rem/1 sans-serif;color:var(--muted);text-align:right;flex-shrink:0}
@@ -76,6 +93,7 @@
     <header>
       <div><div class="kicker">fernhw</div><h1>Status</h1></div>
       <div style="display:flex;align-items:center;gap:10px">
+        <a href="sys.html" style="color:#627384;font:.6rem/1 sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;border:1px solid #2a323b;padding:5px 10px;border-radius:8px">System →</a>
         <span id="check-ts" class="meta-ts"></span>
         <button class="notify-btn" id="notif-btn" onclick="setupNotify()">Notify</button>
       </div>
@@ -145,15 +163,27 @@ document.getElementById("pw").addEventListener("keydown", e => { if (e.key==="En
 })();
 
 /* ── OneSignal ───────────────────────────────────────────────────────────── */
-window.OneSignalDeferred = window.OneSignalDeferred || [];
-OneSignalDeferred.push(async function(OS) {
-  await OS.init({ appId: "c88ae5a3-36df-4301-945f-9da65e63d87c" });
-});
 async function setupNotify() {
   if (!window.OneSignal) { alert("OneSignal not loaded"); return; }
   const ok = await window.OneSignal.Notifications.requestPermission();
   document.getElementById("notif-btn").textContent = ok ? "Notifs on" : "Blocked";
 }
+
+/* ── service URL map (display URLs, not probe URLs) ─────────────────────── */
+const SERVICE_URLS = {
+  gyra:           "http://agnos.local/gyra/",
+  jellyfin:       "http://agnos.local/tv/",
+  audiobookshelf: "http://agnos.local/audiobookshelf/",
+  nextcloud:      "http://agnos.local/drive/",
+  onlyoffice:     "https://office.fernhw.com/",
+  vaultwarden:    "https://vault.fernhw.com/",
+  report:         "http://agnos.local/report/",
+  request:        "http://agnos.local/request/",
+};
+// services that should appear in the "public" group
+const PUBLIC_SVCS = new Set(["onlyoffice","vaultwarden","cloudflared"]);
+// services that are infra-only (no user-facing URL)
+const INFRA_SVCS  = new Set(["nginx-local","cloudflared"]);
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -200,13 +230,30 @@ function renderStatus() {
   if (!svcs.length) {
     grid.innerHTML = '<div style="color:var(--muted);font-size:.84rem;padding:8px 2px">No data yet — serviceCheck.sh will populate this.</div>';
   } else {
-    grid.innerHTML = svcs.map(s => `
-      <div class="svc-card ${s.ok?"ok":"down"}">
+    const local  = svcs.filter(s => !PUBLIC_SVCS.has(s.name) && !INFRA_SVCS.has(s.name));
+    const pub    = svcs.filter(s =>  PUBLIC_SVCS.has(s.name)  && !INFRA_SVCS.has(s.name));
+    const infra  = svcs.filter(s =>  INFRA_SVCS.has(s.name));
+    function cardHtml(s) {
+      const url = SERVICE_URLS[s.name];
+      const urlEl = url ? `<a class="svc-url" href="${url}" target="_blank">${url.replace(/^https?:\/\//,"")}</a>` : "";
+      return `<div class="svc-card ${s.ok?"ok":"down"}">
         <span class="dot"></span>
-        <span class="svc-name">${esc(s.name)}</span>
+        <div class="svc-info">
+          <span class="svc-name">${esc(s.name)}</span>
+          ${urlEl}
+        </div>
         <span class="svc-ms">${s.ms||0}ms</span>
         <span class="svc-badge">${esc(s.code)}</span>
-      </div>`).join("");
+      </div>`;
+    }
+    function groupHeader(label) {
+      return `<div class="svc-group"><span class="svc-group-label">${label}</span><span class="svc-group-line"></span></div>`;
+    }
+    const parts = [];
+    if (local.length)  { parts.push(groupHeader("Local — agnos.local")); parts.push(...local.map(cardHtml)); }
+    if (pub.length)    { parts.push(groupHeader("Public")); parts.push(...pub.map(cardHtml)); }
+    if (infra.length)  { parts.push(groupHeader("Infrastructure")); parts.push(...infra.map(cardHtml)); }
+    grid.innerHTML = parts.join("");
   }
 
   // Log
@@ -228,9 +275,11 @@ function renderPerf() {
   const hours  = P.hours.slice(0, 24);
   const latest = hours[0];
   const names  = Object.keys(latest.data);
-  list.innerHTML = names.map(name => {
-    const vals  = hours.map(h => h.data[name] || {ms:0, ok:false});
-    const cur   = vals[0];
+  const localP  = names.filter(n => !n.includes("."));
+  const publicP = names.filter(n =>  n.includes("."));
+  function perfRowHtml(name) {
+    const vals = hours.map(h => h.data[name] || {ms:0, ok:false});
+    const cur  = vals[0];
     const scope = name.includes(".") ? "public" : "local";
     return `<div class="perf-row">
       <span class="dot ${cur.ok?"ok":"down"}" style="flex-shrink:0"></span>
@@ -239,7 +288,17 @@ function renderPerf() {
       <span class="perf-ms">${cur.ms}ms</span>
       <span class="perf-spark">${sparkline(vals)}</span>
     </div>`;
-  }).join("");
+  }
+  const parts = [];
+  if (localP.length) {
+    parts.push(`<div class="perf-divider"><span class="perf-divider-label">Local — agnos.local</span><span class="perf-divider-line"></span></div>`);
+    parts.push(...localP.map(perfRowHtml));
+  }
+  if (publicP.length) {
+    parts.push(`<div class="perf-divider"><span class="perf-divider-label">Public — fernhw.com</span><span class="perf-divider-line"></span></div>`);
+    parts.push(...publicP.map(perfRowHtml));
+  }
+  list.innerHTML = parts.join("");
 }
 
 /* ── auto-refresh status.js every 60s without full page reload ───────────── */

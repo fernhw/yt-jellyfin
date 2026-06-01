@@ -63,11 +63,15 @@ SERVICES=(
   # request server (launchd)
   "request^1^local^http://127.0.0.1:8770/^200^launchctl kickstart -k gui/${USER_UID}/com.fernhw.requestserver^4^[Rr]equest"
 
-  # nginx-local — routes agnos.local/* (port 80). Probe via 'agnos.local' hostname,
-  # NOT 127.0.0.1 — Docker Desktop's host-loopback can mis-route raw 127.0.0.1:80 hits
-  # on this Mac (see /memories/repo/gyra.md "curl from host to 127.0.0.1:80").
-  # Body check ensures nginx-local is actually serving the ABS proxy (not e.g. default page).
-  "nginx-local^1^docker^http://agnos.local/audiobookshelf/login^200 301 302^docker restart nginx-local^4^[Aa]udiobookshelf"
+  # metricsd — real-time system metrics daemon for sys.html dashboard
+  # Start: nohup /usr/bin/python3 web/status/metricsd.py >> /tmp/metricsd.log 2>&1 &
+  "metricsd^1^local^http://127.0.0.1:8766/metrics^200^nohup /usr/bin/python3 /Users/alexander-highground/Projects/yt-jellyfin/web/status/metricsd.py >> /tmp/metricsd.log 2>&1 &^2^disk_io|cpu|mem"
+
+  # nginx-local — routes *.fernhw.com + agnos.local/* (ports 80 and 8081).
+  # Probe via port 8081 — agnos.local mDNS on this Mac resolves to a different
+  # nginx (1.29.7) and gives false 404s. Port 8081 maps directly to nginx-local.
+  # Body check ensures nginx-local is serving ABS (not a default page).
+  "nginx-local^1^docker^http://127.0.0.1:8081/audiobookshelf/login^200 301 302^docker restart nginx-local^4^[Aa]udiobookshelf"
 
   # Audiobookshelf — see /memories/repo/gyra.md \"Audiobookshelf - DO NOT TOUCH\"
   # DO NOT set ROUTER_BASE_PATH. Default /audiobookshelf prefix is mandatory.

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0e11">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>System — fernhw</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#101317;--panel:#171c21;--line:#2a323b;--text:#ecf2f8;--muted:#97a6b4;--warn:#f07f64;--warn-soft:#2b1916}
+    html{background:#05070a;min-height:100%}
+    body{background:linear-gradient(180deg,#05070a 0,#0b0e11 100px,var(--bg) 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding:calc(env(safe-area-inset-top)+10px) 0 40px;overflow-x:hidden}
+
+    /* ── auth gate ──────────────────────────────────────────────────────────── */
+    #gate{display:none;position:fixed;inset:0;background:#0c0f13;z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:16px}
+    #gate h2{color:#fff;font-size:1.2rem;font-weight:500}
+    #gate input{background:#151a1f;border:1px solid #303844;color:#fff;padding:10px 16px;border-radius:8px;font-size:1rem;width:220px;text-align:center;outline:none}
+    #gate input:focus{border-color:#59687a}
+    #gate button{background:#1a2026;border:1px solid #36404c;color:#d0dae3;padding:8px 24px;border-radius:8px;cursor:pointer;font-size:.9rem}
+    #gate .err{color:#f07f64;font-size:.85rem;min-height:1.2em}
+    #app{display:none}
+
+    /* ── layout ─────────────────────────────────────────────────────────────── */
+    .shell{max-width:1400px;margin:0 auto;padding:0 14px}
+
+    /* ── header ─────────────────────────────────────────────────────────────── */
+    header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 14px;margin-bottom:14px;background:rgba(10,13,16,.86);border:1px solid rgba(255,255,255,.06);border-radius:18px;backdrop-filter:blur(10px)}
+    .kicker{font:600 .65rem/1.2 sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#c2a365}
+    .back-link{color:#627384;font:600 .62rem/1 sans-serif;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;border:1px solid #2a323b;padding:5px 10px;border-radius:8px;white-space:nowrap}
+    .back-link:hover{color:#ecf2f8;border-color:#4a5568}
+    #ref-ind{font:400 .65rem/1 sans-serif;color:#2d3b46}
+
+    /* ── vitals strip ───────────────────────────────────────────────────────── */
+    .vitals{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:7px;margin-bottom:14px}
+    .vital{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+    .vital .vl{font:600 .58rem/1 sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#3d5468;margin-bottom:5px}
+    .vital .vv{font:600 1.1rem/1.2 sans-serif;color:#d8e1ea;white-space:nowrap}
+    .vital .vs{font:400 .7rem/1.3 sans-serif;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .vv.warn{color:#f07f64}
+    .vv.ok  {color:#4ade80}
+    .vv.dim {color:#627384}
+
+    /* ── chart board ────────────────────────────────────────────────────────── */
+    .board{background:var(--panel);border:1px solid var(--line);border-radius:13px;overflow:hidden;margin-bottom:14px}
+    .cpanel{border-bottom:1px solid var(--line);position:relative}
+    .cpanel:last-child{border-bottom:none}
+    .cpanel-head{display:flex;align-items:center;gap:10px;padding:7px 12px 0;pointer-events:none;user-select:none}
+    .ctitle{font:600 .6rem/1 sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#92a0af}
+    .clegend{display:flex;gap:8px;font:.6rem/1 sans-serif;color:#627384}
+    .clegend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:2px;vertical-align:middle}
+    .cpanel canvas{display:block;width:100%;cursor:crosshair}
+    /* per-core bars */
+    #core-row{display:flex;align-items:flex-end;gap:2px;padding:4px 12px 6px;min-height:20px}
+    .cbar{flex:1;max-width:18px;border-radius:2px 2px 0 0;min-height:2px;transition:height .4s,background .4s}
+
+    /* ── shared hover tooltip ───────────────────────────────────────────────── */
+    #tip{position:fixed;pointer-events:none;display:none;background:#0d1117;border:1px solid #2a323b;border-radius:9px;padding:8px 12px;font:.69rem/1.65 'SF Mono',Menlo,monospace;color:#d0dae3;z-index:200;box-shadow:0 6px 24px rgba(0,0,0,.6);min-width:140px}
+    .tip-row{display:flex;align-items:center;gap:6px}
+    .tip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .tip-lbl{color:#627384;width:56px;flex-shrink:0}
+    .tip-val{color:#ecf2f8}
+
+    /* ── bottom grid ────────────────────────────────────────────────────────── */
+    .btm{display:grid;grid-template-columns:1.6fr 1fr;gap:10px}
+    @media(max-width:720px){.btm{grid-template-columns:1fr}}
+    .sec-label{font:600 .65rem/1 sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#92a0af;margin-bottom:9px}
+
+    /* docker table */
+    .dtable{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+    .dtable th{font:600 .6rem/1 sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#3d5468;text-align:left;padding:7px 11px;border-bottom:1px solid var(--line)}
+    .dtable td{font:.77rem/1 sans-serif;padding:7px 11px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--muted);white-space:nowrap}
+    .dtable td:first-child{color:#d0dae3;font-weight:500}
+    .dtable tr:last-child td{border-bottom:none}
+    .cpupct{display:inline-flex;align-items:center;gap:5px}
+    .cpubar{height:4px;border-radius:2px;background:#4ade80;transition:width .4s}
+
+    /* disk space */
+    .disk-list{display:flex;flex-direction:column;gap:7px}
+    .disk-row{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+    .disk-mount{font:.8rem/1 sans-serif;font-weight:500;color:#d0dae3;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .disk-track{height:5px;background:#1a2330;border-radius:3px;overflow:hidden;margin-bottom:5px}
+    .disk-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#4ade80,#60a5fa);transition:width .5s}
+    .disk-fill.hot{background:linear-gradient(90deg,#f97316,#f07f64)}
+    .disk-stats{display:flex;justify-content:space-between;font:.67rem/1 sans-serif;color:#3d5468}
+
+    @media(max-width:560px){.vitals{grid-template-columns:repeat(3,1fr)}.cpanel canvas{height:55px!important}}
+  </style>
+</head>
+<body>
+
+<div id="gate">
+  <h2>System</h2>
+  <input type="password" id="pw" placeholder="password" autocomplete="current-password">
+  <button onclick="tryAuth()">Enter</button>
+  <p class="err" id="err"></p>
+</div>
+
+<div id="app">
+  <div class="shell">
+
+    <header>
+      <div style="display:flex;align-items:center;gap:10px">
+        <a class="back-link" href="./">← Status</a>
+        <div><div class="kicker">fernhw</div><span style="font-size:.95rem;font-weight:600;color:#d8e1ea">System</span></div>
+      </div>
+      <span id="ref-ind"></span>
+    </header>
+
+    <!-- Vitals -->
+    <div class="vitals">
+      <div class="vital"><div class="vl">CPU</div><div class="vv" id="vv-cpu">—</div><div class="vs" id="vs-load">load —</div></div>
+      <div class="vital"><div class="vl">Memory</div><div class="vv" id="vv-mem">—</div><div class="vs" id="vs-mem">—</div></div>
+      <div class="vital"><div class="vl">Swap</div><div class="vv" id="vv-swap">—</div><div class="vs" id="vs-swap">—</div></div>
+      <div class="vital"><div class="vl">VPN</div><div class="vv" id="vv-vpn">—</div><div class="vs" id="vs-vpn">—</div></div>
+      <div class="vital"><div class="vl">Uptime</div><div class="vv" id="vv-uptime">—</div><div class="vs" id="vs-procs">—</div></div>
+      <div class="vital"><div class="vl">Disk I/O</div><div class="vv" id="vv-disk">—</div><div class="vs" id="vs-disk">—</div></div>
+      <div class="vital"><div class="vl">Network</div><div class="vv" id="vv-net">—</div><div class="vs" id="vs-net">—</div></div>
+    </div>
+
+    <!-- Correlated time-series charts — shared hover cursor -->
+    <div class="board" id="board">
+      <div class="cpanel">
+        <div class="cpanel-head">
+          <span class="ctitle">CPU</span>
+          <span class="clegend"><span><i style="background:#4ade80"></i>total</span></span>
+        </div>
+        <canvas id="c-cpu" height="80"></canvas>
+        <div id="core-row"></div>
+      </div>
+      <div class="cpanel">
+        <div class="cpanel-head">
+          <span class="ctitle">Memory</span>
+          <span class="clegend">
+            <span><i style="background:#f97316"></i>used</span>
+            <span><i style="background:#ef4444"></i>swap</span>
+          </span>
+        </div>
+        <canvas id="c-mem" height="80"></canvas>
+      </div>
+      <div class="cpanel">
+        <div class="cpanel-head">
+          <span class="ctitle">Disk I/O</span>
+          <span class="clegend">
+            <span><i style="background:#60a5fa"></i>read</span>
+            <span><i style="background:#a78bfa"></i>write</span>
+          </span>
+        </div>
+        <canvas id="c-disk" height="80"></canvas>
+      </div>
+      <div class="cpanel">
+        <div class="cpanel-head">
+          <span class="ctitle">Network</span>
+          <span class="clegend">
+            <span><i style="background:#34d399"></i>in</span>
+            <span><i style="background:#fbbf24"></i>out</span>
+          </span>
+        </div>
+        <canvas id="c-net" height="80"></canvas>
+      </div>
+    </div>
+
+    <!-- Shared hover tooltip -->
+    <div id="tip"></div>
+
+    <!-- Docker + Disk space -->
+    <div class="btm">
+      <div>
+        <div class="sec-label">Docker <span id="docker-count" style="font-weight:400;letter-spacing:0;text-transform:none;color:#3d5468;font-size:.7rem"></span></div>
+        <table class="dtable">
+          <thead>
+            <tr>
+              <th>Container</th>
+              <th>CPU</th>
+              <th>Mem %</th>
+              <th>Mem</th>
+              <th>Net I/O</th>
+              <th>Block I/O</th>
+            </tr>
+          </thead>
+          <tbody id="dtbody"></tbody>
+        </table>
+      </div>
+      <div>
+        <div class="sec-label">Disk Space</div>
+        <div class="disk-list" id="disk-list"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   Auth — identical to status/index.html
+   ══════════════════════════════════════════════════════════════════════════ */
+const PW_HASH = "5e7601a1ac99c87a65120283ae1b380901ca55bb402dce34e1a4ec51c20d29bb";
+const COOKIE  = "sauth";
+
+async function sha256hex(s) {
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(b)).map(b => b.toString(16).padStart(2,"0")).join("");
+}
+function getCookie(n) {
+  return document.cookie.split(";").map(c=>c.trim()).find(c=>c.startsWith(n+"="))?.slice(n.length+1) || "";
+}
+function setCookie(n, v, d) {
+  document.cookie = n+"="+v+";expires="+new Date(Date.now()+d*864e5).toUTCString()+";path=/;SameSite=Strict";
+}
+async function tryAuth(auto) {
+  const inp = auto || document.getElementById("pw").value;
+  const h   = await sha256hex(inp);
+  if (h === PW_HASH) { setCookie(COOKIE, h.slice(0,16), 365); showApp(); }
+  else if (!auto) document.getElementById("err").textContent = "wrong password";
+}
+function showApp() {
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("app").style.display  = "block";
+  initCharts();
+  startPolling();
+}
+document.getElementById("pw").addEventListener("keydown", e => { if (e.key === "Enter") tryAuth(); });
+(async () => {
+  const stored = getCookie(COOKIE);
+  if (stored && stored === PW_HASH.slice(0,16)) { showApp(); return; }
+  const url = new URL(location.href);
+  const p   = url.searchParams.get("p") || url.searchParams.get("password");
+  if (p) {
+    url.searchParams.delete("p"); url.searchParams.delete("password");
+    history.replaceState({}, "", url.toString());
+    await tryAuth(p);
+    if (getCookie(COOKIE)) return;
+  }
+  document.getElementById("gate").style.display = "flex";
+})();
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Utilities
+   ══════════════════════════════════════════════════════════════════════════ */
+function fmtBytes(b, dec=1) {
+  if (b < 1024)       return b.toFixed(dec) + " B";
+  if (b < 1048576)    return (b / 1024).toFixed(dec) + " KB";
+  if (b < 1073741824) return (b / 1048576).toFixed(dec) + " MB";
+  return (b / 1073741824).toFixed(dec) + " GB";
+}
+function fmtBps(b)  { return fmtBytes(b) + "/s"; }
+function fmtPct(v)  { return v.toFixed(1) + "%"; }
+function fmtUptime(s) {
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+  if (d > 0) return d + "d " + h + "h";
+  if (h > 0) return h + "h " + m + "m";
+  return m + "m";
+}
+function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Chart engine
+   ══════════════════════════════════════════════════════════════════════════
+
+   Each Chart owns one <canvas> and a rolling buffer of MAX_PTS data points.
+   All charts share a single `HOVER` state (0-1 fraction along X axis) and
+   a floating tooltip.  Moving the mouse over ANY chart panel redraws ALL
+   charts with the shared cursor, creating the correlation view.
+   ══════════════════════════════════════════════════════════════════════════ */
+const MAX_PTS   = 120;        // 120 × 2s = 4 minutes of history
+const ALL_CHARTS = [];
+let   HOVER     = null;       // shared 0..1 hover position (null = no hover)
+
+class Chart {
+  /**
+   * @param {string}  canvasId  - id of <canvas> element
+   * @param {Array}   series    - [{key, color, label, unit}]
+   * @param {object}  opts      - {fixedMax?}  fixedMax → fixed Y ceiling (e.g. 100 for %)
+   */
+  constructor(canvasId, series, opts = {}) {
+    this.cv      = document.getElementById(canvasId);
+    this.ctx     = this.cv.getContext("2d");
+    this.series  = series;
+    this.opts    = opts;
+    this.bufs    = Object.fromEntries(series.map(s => [s.key, []]));
+    this._dpr    = window.devicePixelRatio || 1;
+    this.W = 0; this.H = 0;
+
+    new ResizeObserver(() => this._resize()).observe(this.cv.parentElement);
+    this._resize();
+
+    // Shared hover — forward events from this canvas to shared handler
+    this.cv.addEventListener("mousemove", e => {
+      const r   = this.cv.getBoundingClientRect();
+      HOVER     = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+      ALL_CHARTS.forEach(c => c._draw());
+      _showTip(e.clientX, e.clientY);
+    });
+    this.cv.addEventListener("mouseleave", () => {
+      HOVER = null;
+      ALL_CHARTS.forEach(c => c._draw());
+      _hideTip();
+    });
+
+    ALL_CHARTS.push(this);
+  }
+
+  _resize() {
+    const dpr = this._dpr;
+    const W   = this.cv.parentElement.clientWidth;
+    const H   = parseInt(this.cv.getAttribute("height") || 80);
+    this.cv.style.height = H + "px";
+    this.cv.width  = W * dpr;
+    this.cv.height = H * dpr;
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.W = W; this.H = H;
+    this._draw();
+  }
+
+  push(vals) {
+    for (const s of this.series) {
+      this.bufs[s.key].push(vals[s.key] ?? 0);
+      if (this.bufs[s.key].length > MAX_PTS) this.bufs[s.key].shift();
+    }
+    this._draw();
+  }
+
+  _max() {
+    if (this.opts.fixedMax) return this.opts.fixedMax;
+    let m = 0;
+    for (const s of this.series) for (const v of this.bufs[s.key]) m = Math.max(m, v);
+    return m || 1;
+  }
+
+  // Map data index to X pixel.  Newest point = right edge; data fills from
+  // right when buffer is still filling up.
+  _xOf(i, len) { return ((MAX_PTS - len + i) / Math.max(MAX_PTS - 1, 1)) * this.W; }
+  _yOf(v, max) { return this.H - 2 - (v / max) * (this.H - 4); }
+
+  _draw() {
+    const ctx = this.ctx, W = this.W, H = this.H;
+    if (!W || !H) return;
+    ctx.clearRect(0, 0, W, H);
+
+    const maxVal = this._max();
+    const len    = this.bufs[this.series[0].key].length;
+
+    // Horizontal grid lines at 25 / 50 / 75 / 100%
+    ctx.lineWidth = 1;
+    [0.25, 0.5, 0.75, 1].forEach(t => {
+      ctx.strokeStyle = t === 1 ? "#1d2730" : "#161d24";
+      ctx.beginPath();
+      const gy = this._yOf(t * maxVal, maxVal);
+      ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+    });
+
+    // Series fill + stroke
+    for (const s of this.series) {
+      const buf = this.bufs[s.key];
+      if (!buf.length) continue;
+
+      // Filled area under line
+      ctx.beginPath();
+      ctx.moveTo(this._xOf(0, buf.length), H);
+      buf.forEach((v, i) => ctx.lineTo(this._xOf(i, buf.length), this._yOf(v, maxVal)));
+      ctx.lineTo(this._xOf(buf.length - 1, buf.length), H);
+      ctx.closePath();
+      ctx.fillStyle = s.color + "1e";
+      ctx.fill();
+
+      // Stroke line
+      ctx.beginPath();
+      buf.forEach((v, i) => {
+        const x = this._xOf(i, buf.length), y = this._yOf(v, maxVal);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth   = 1.5;
+      ctx.lineJoin    = "round";
+      ctx.stroke();
+    }
+
+    // Value overlay — shows hovered value when hovering, else current value
+    const showIdx = (HOVER !== null && len > 0)
+      ? Math.max(0, Math.min(len - 1, Math.round(HOVER * (len - 1))))
+      : len - 1;
+
+    ctx.font         = "10px 'SF Mono',Menlo,monospace";
+    ctx.textBaseline = "top";
+    this.series.forEach((s, i) => {
+      const v = this.bufs[s.key][showIdx] ?? 0;
+      ctx.fillStyle = s.color + "cc";
+      ctx.fillText(this._fmt(v, s.unit) + "  " + s.label, 6, 3 + i * 13);
+    });
+
+    // Y max label (top-right)
+    ctx.fillStyle = "#27333f";
+    ctx.textAlign = "right";
+    ctx.fillText(this._fmt(maxVal, this.series[0].unit), W - 4, 3);
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+
+    // Hover: dashed vertical cursor + dots on each series
+    if (HOVER !== null && len > 0) {
+      const hIdx = Math.max(0, Math.min(len - 1, Math.round(HOVER * (len - 1))));
+      const hx   = this._xOf(hIdx, len);
+
+      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      ctx.lineWidth   = 1;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(hx, 0); ctx.lineTo(hx, H); ctx.stroke();
+      ctx.setLineDash([]);
+
+      for (const s of this.series) {
+        const v = this.bufs[s.key][hIdx];
+        if (v === undefined) continue;
+        ctx.beginPath();
+        ctx.arc(hx, this._yOf(v, maxVal), 3, 0, Math.PI * 2);
+        ctx.fillStyle = s.color;
+        ctx.fill();
+      }
+    }
+  }
+
+  _fmt(v, unit) {
+    if (!unit || unit === "%") return v.toFixed(1) + "%";
+    if (unit === "B/s")        return fmtBps(v);
+    return v.toFixed(1);
+  }
+
+  // Returns [{label, color, val, unit}] at the current hover position
+  hoverVals() {
+    if (HOVER === null) return [];
+    const len = this.bufs[this.series[0].key].length;
+    const idx = Math.max(0, Math.min(len - 1, Math.round(HOVER * (len - 1))));
+    return this.series.map(s => ({
+      label: s.label, color: s.color, unit: s.unit,
+      val:   this.bufs[s.key][idx] ?? 0,
+    }));
+  }
+}
+
+/* ── Tooltip ─────────────────────────────────────────────────────────────── */
+const tipEl = document.getElementById("tip");
+
+function _showTip(mx, my) {
+  const rows = ALL_CHARTS.flatMap(c => c.hoverVals());
+  if (!rows.length) { tipEl.style.display = "none"; return; }
+
+  tipEl.innerHTML = rows.map(r => {
+    const v = (r.unit === "B/s") ? fmtBps(r.val) : r.val.toFixed(1) + (r.unit || "%");
+    return `<div class="tip-row"><span class="tip-dot" style="background:${r.color}"></span>`
+         + `<span class="tip-lbl">${esc(r.label)}</span><span class="tip-val">${esc(v)}</span></div>`;
+  }).join("");
+
+  const vp = { w: window.innerWidth, h: window.innerHeight };
+  const tw = tipEl.offsetWidth  || 160;
+  const th = tipEl.offsetHeight || 100;
+  const tx = mx + 14 + tw > vp.w ? mx - tw - 14 : mx + 14;
+  const ty = my + 14 + th > vp.h ? my - th - 14 : my + 14;
+  tipEl.style.left    = tx + "px";
+  tipEl.style.top     = ty + "px";
+  tipEl.style.display = "block";
+}
+function _hideTip() { tipEl.style.display = "none"; }
+
+/* ── Chart instances ─────────────────────────────────────────────────────── */
+let cpuChart, memChart, diskChart, netChart;
+
+function initCharts() {
+  cpuChart  = new Chart("c-cpu",  [
+    { key: "pct",  color: "#4ade80", label: "cpu",   unit: "%" },
+  ], { fixedMax: 100 });
+
+  memChart  = new Chart("c-mem",  [
+    { key: "used", color: "#f97316", label: "used",  unit: "%" },
+    { key: "swap", color: "#ef4444", label: "swap",  unit: "%" },
+  ], { fixedMax: 100 });
+
+  diskChart = new Chart("c-disk", [
+    { key: "r",   color: "#60a5fa", label: "read",  unit: "B/s" },
+    { key: "w",   color: "#a78bfa", label: "write", unit: "B/s" },
+  ]);
+
+  netChart  = new Chart("c-net",  [
+    { key: "in",  color: "#34d399", label: "in",    unit: "B/s" },
+    { key: "out", color: "#fbbf24", label: "out",   unit: "B/s" },
+  ]);
+}
+
+/* ── Per-core bars ───────────────────────────────────────────────────────── */
+function updateCores(cores) {
+  const row = document.getElementById("core-row");
+  // Add bar elements if we have more cores than DOM children
+  while (row.children.length < cores.length) {
+    const b = document.createElement("div");
+    b.className = "cbar";
+    row.appendChild(b);
+  }
+  cores.forEach((pct, i) => {
+    const b = row.children[i];
+    if (!b) return;
+    const h    = Math.max(2, Math.round(pct / 100 * 16));
+    const clr  = pct > 75 ? "#f07f64" : pct > 45 ? "#fbbf24" : "#4ade80";
+    b.style.height     = h + "px";
+    b.style.background = clr;
+    b.title = `Core ${i}: ${pct.toFixed(0)}%`;
+  });
+}
+
+/* ── Docker table ────────────────────────────────────────────────────────── */
+function updateDocker(rows) {
+  document.getElementById("docker-count").textContent = rows.length ? `(${rows.length})` : "";
+  const tb = document.getElementById("dtbody");
+  if (!rows.length) {
+    tb.innerHTML = `<tr><td colspan="6" style="color:#3d5468;padding:12px 11px">no containers — docker not running or metricsd can't reach it</td></tr>`;
+    return;
+  }
+  tb.innerHTML = rows.map(r => {
+    const cpuClr = r.cpu_pct > 50 ? "#f07f64" : r.cpu_pct > 20 ? "#fbbf24" : "#4ade80";
+    const barW   = Math.min(100, r.cpu_pct).toFixed(1);
+    return `<tr>
+      <td>${esc(r.name)}</td>
+      <td><div class="cpupct">
+        <div class="cpubar" style="width:${barW}px;max-width:60px;background:${cpuClr}"></div>
+        <span style="color:${cpuClr}">${r.cpu_pct.toFixed(1)}%</span>
+      </div></td>
+      <td>${r.mem_pct.toFixed(1)}%</td>
+      <td style="color:#97a6b4">${esc(r.mem)}</td>
+      <td style="color:#97a6b4">${esc(r.net)}</td>
+      <td style="color:#97a6b4">${esc(r.blk)}</td>
+    </tr>`;
+  }).join("");
+}
+
+/* ── Disk space bars ─────────────────────────────────────────────────────── */
+function updateDisks(disks) {
+  const el = document.getElementById("disk-list");
+  if (!disks.length) {
+    el.innerHTML = `<div style="color:#3d5468;font-size:.8rem;padding:8px">No mount data</div>`;
+    return;
+  }
+  el.innerHTML = disks.map(d => {
+    const hot  = d.pct > 85;
+    const used = fmtBytes(d.used, 1);
+    const tot  = fmtBytes(d.total, 1);
+    const free = fmtBytes(d.free, 1);
+    const mnt  = d.mount.length > 32 ? "…" + d.mount.slice(-30) : d.mount;
+    return `<div class="disk-row">
+      <div class="disk-mount">${esc(mnt)}</div>
+      <div class="disk-track"><div class="disk-fill${hot?" hot":""}" style="width:${d.pct.toFixed(1)}%"></div></div>
+      <div class="disk-stats"><span>${d.pct.toFixed(1)}% used</span><span>${used} / ${tot} &mdash; ${free} free</span></div>
+    </div>`;
+  }).join("");
+}
+
+/* ── Vitals update ───────────────────────────────────────────────────────── */
+function updateVitals(d) {
+  // CPU
+  const cpuPct = d.cpu.pct;
+  document.getElementById("vv-cpu").className  = "vv" + (cpuPct > 80 ? " warn" : cpuPct > 50 ? "" : " ok");
+  document.getElementById("vv-cpu").textContent = fmtPct(cpuPct);
+  document.getElementById("vs-load").textContent = `load ${d.cpu.load[0].toFixed(2)} · ${d.cpu.cores.length} cores`;
+
+  // Memory
+  const memPct = d.mem.pct;
+  const usedGB = (d.mem.used  / 1e9).toFixed(1);
+  const totGB  = (d.mem.total / 1e9).toFixed(1);
+  document.getElementById("vv-mem").className  = "vv" + (memPct > 85 ? " warn" : "");
+  document.getElementById("vv-mem").textContent = fmtPct(memPct);
+  document.getElementById("vs-mem").textContent = `${usedGB} / ${totGB} GB`;
+
+  // Swap
+  const swapPct  = d.mem.swap_pct;
+  const swapUsed = fmtBytes(d.mem.swap_used, 1);
+  const swapTot  = fmtBytes(d.mem.swap_total, 1);
+  document.getElementById("vv-swap").className  = "vv" + (swapPct > 50 ? " warn" : swapPct > 0 ? "" : " dim");
+  document.getElementById("vv-swap").textContent = d.mem.swap_total > 0 ? fmtPct(swapPct) : "—";
+  document.getElementById("vs-swap").textContent = d.mem.swap_total > 0 ? `${swapUsed} / ${swapTot}` : "no swap";
+
+  // VPN
+  const vpn = d.vpn;
+  document.getElementById("vv-vpn").className   = "vv " + (vpn.active ? "ok" : "warn");
+  document.getElementById("vv-vpn").textContent = vpn.active ? "● ON" : "● OFF";
+  document.getElementById("vs-vpn").textContent  = vpn.active ? `${vpn.interface} · ${vpn.ip}` : "no tunnel";
+
+  // Uptime
+  document.getElementById("vv-uptime").textContent = fmtUptime(d.uptime);
+  document.getElementById("vs-procs").textContent   = `${d.procs} proc · ${d.docker.length} ctr`;
+
+  // Disk I/O
+  const totR = d.disk_io.reduce((a, x) => a + x.read_bps,  0);
+  const totW = d.disk_io.reduce((a, x) => a + x.write_bps, 0);
+  document.getElementById("vv-disk").textContent = fmtBps(totR + totW);
+  document.getElementById("vs-disk").textContent = `R ${fmtBps(totR)} · W ${fmtBps(totW)}`;
+
+  // Network
+  const totIn  = d.net_io.reduce((a, x) => a + x.recv_bps, 0);
+  const totOut = d.net_io.reduce((a, x) => a + x.sent_bps, 0);
+  document.getElementById("vv-net").textContent = fmtBps(totIn + totOut);
+  document.getElementById("vs-net").textContent = `↓ ${fmtBps(totIn)} · ↑ ${fmtBps(totOut)}`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Metrics fetch + poll loop
+   ══════════════════════════════════════════════════════════════════════════ */
+// Try /metrics (works when served through nginx).
+// On 404 / network failure, fall back to direct localhost port.
+// After the first successful URL we lock in that URL for subsequent polls.
+let _metricsUrl = "/metrics";
+
+async function fetchMetrics() {
+  const urls = [_metricsUrl, "http://127.0.0.1:8766/metrics"];
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { cache: "no-store" });
+      if (r.ok) {
+        _metricsUrl = url;  // lock in this URL
+        return await r.json();
+      }
+    } catch (_) { /* try next */ }
+  }
+  return null;
+}
+
+function onMetrics(d) {
+  if (!d) return;
+
+  updateVitals(d);
+
+  // Push to charts
+  const totR   = d.disk_io.reduce((a, x) => a + x.read_bps,  0);
+  const totW   = d.disk_io.reduce((a, x) => a + x.write_bps, 0);
+  const totIn  = d.net_io.reduce ((a, x) => a + x.recv_bps,  0);
+  const totOut = d.net_io.reduce ((a, x) => a + x.sent_bps,  0);
+  cpuChart.push ({ pct:  d.cpu.pct });
+  memChart.push ({ used: d.mem.pct,  swap: d.mem.swap_pct });
+  diskChart.push({ r:    totR,       w:    totW  });
+  netChart.push ({ in:   totIn,      out:  totOut });
+
+  updateCores (d.cpu.cores);
+  updateDocker(d.docker);
+  updateDisks (d.disks);
+}
+
+let _errCount = 0;
+function startPolling() {
+  const poll = async () => {
+    const d = await fetchMetrics();
+    if (d) {
+      _errCount = 0;
+      onMetrics(d);
+      document.getElementById("ref-ind").textContent = "updated " + new Date().toLocaleTimeString();
+    } else {
+      _errCount++;
+      document.getElementById("ref-ind").textContent =
+        _errCount > 2 ? "⚠ metricsd unreachable — start it with: nohup /usr/bin/python3 web/status/metricsd.py >> /tmp/metricsd.log 2>&1 &" : "…";
+    }
+  };
+  poll();
+  setInterval(poll, 2000);
+}
+</script>
+</body>
+</html>
