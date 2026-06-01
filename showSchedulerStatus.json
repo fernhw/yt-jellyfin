@@ -1,5 +1,5 @@
 {
-  "updated": "2026-05-31",
+  "updated": "2026-06-01",
   "shows": [
     {
       "show": "The Boys",
@@ -7,10 +7,10 @@
       "downloaded": 7,
       "next_ep": 8,
       "total": 8,
-      "week": "W9 due",
+      "week": "W10 due",
       "status": "complete",
       "release_days": "wed",
-      "days_until": 3,
+      "days_until": 2,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-the-boys.jpg"
     },
@@ -20,10 +20,10 @@
       "downloaded": 10,
       "next_ep": 11,
       "total": 11,
-      "week": "W11 due",
+      "week": "W12 due",
       "status": "complete",
       "release_days": "wed",
-      "days_until": 3,
+      "days_until": 2,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-dorohedoro.jpg"
     },
@@ -33,10 +33,10 @@
       "downloaded": 9,
       "next_ep": 10,
       "total": 12,
-      "week": "W9 \u2713",
+      "week": "W10 due",
       "status": "pending",
       "release_days": "sat",
-      "days_until": 6,
+      "days_until": 5,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-mistress-kanan-is-devilishly-easy.jpg"
     },
@@ -46,10 +46,10 @@
       "downloaded": 9,
       "next_ep": 10,
       "total": 13,
-      "week": "W9 \u2713",
-      "status": "pending",
+      "week": "W10 due",
+      "status": "searching",
       "release_days": "mon",
-      "days_until": 1,
+      "days_until": 0,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-hat-witch-atelier.jpg"
     },
@@ -62,7 +62,7 @@
       "week": "?",
       "status": "searching",
       "release_days": "wed",
-      "days_until": 3,
+      "days_until": 2,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-re-zero-kara-hajimeru-isekai-seikatsu.jpg"
     },
@@ -75,7 +75,7 @@
       "week": "?",
       "status": "searching",
       "release_days": "sat",
-      "days_until": 6,
+      "days_until": 5,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-agents-of-the-four-seasons-dance-of-spring.jpg"
     }

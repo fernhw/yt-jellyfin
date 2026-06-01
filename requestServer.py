@@ -173,6 +173,10 @@ _INST_KEYS = [
 _instances: Dict[str, Dict]  = {}
 _instances_lock = threading.Lock()
 
+# Download concurrency cap — jobs beyond this wait in _pending_queue
+MAX_ACTIVE_DL = 8
+_pending_queue: list = []   # list of (name, magnet, dest) tuples, FIFO
+
 def _aria2_secret() -> str:
     return _load_kv(SECRETS_FILE).get('ARIA2_SECRET', 'aria2rpc2026')
 
@@ -254,7 +258,7 @@ def _start_instance(name: str, magnet: str, dest: str) -> Dict:
         '--rpc-allow-origin-all=false', '--rpc-listen-all=false',
         '--enable-color=false', '--seed-time=0',
         '--max-concurrent-downloads=1',
-        '--file-allocation=falloc', '--allow-overwrite=true',
+        '--file-allocation=none', '--allow-overwrite=true',
         '--auto-file-renaming=false',
         f'--log={os.path.join(log_dir, "aria2.log")}', '--log-level=warn',
         f'--save-session={session_path}', '--save-session-interval=30',
@@ -310,6 +314,57 @@ def _start_instance(name: str, magnet: str, dest: str) -> Dict:
         _instances[token] = inst
     log.info('aria2c instance started  token=%s  port=%d  name=%r', token, port, name)
     return inst
+
+def _enqueue_or_start(name: str, magnet: str, dest: str) -> Dict:
+    """
+    Start the download immediately if fewer than MAX_ACTIVE_DL instances are
+    active; otherwise push it onto the pending queue and return a placeholder
+    dict so callers always get a token back.
+    """
+    with _instances_lock:
+        active_count = sum(
+            1 for i in _instances.values()
+            if i.get('status') not in ('complete', 'removed', 'error')
+        )
+
+    if active_count < MAX_ACTIVE_DL:
+        return _start_instance(name, magnet, dest)
+
+    # Queue it — mint a token so the caller / UI can track it
+    token = os.urandom(4).hex()
+    while True:
+        with _instances_lock:
+            if token not in _instances:
+                break
+        token = os.urandom(4).hex()
+
+    placeholder: Dict = {
+        'token':        token,
+        'port':         0,
+        'name':         name,
+        'magnet':       magnet,
+        'dest':         dest,
+        'proc':         None,
+        'pct':          0,
+        'speed':        '0 B/s',
+        'speed_bytes':  0,
+        'upload':       '0 B/s',
+        'seeds':        0,
+        'peers':        0,
+        'status':       'queued',
+        'size':         '',
+        'done':         '',
+        'total_bytes':  0,
+        'slow':         False,
+        'started_at':   time.time(),
+        'completed_at': 0.0,
+    }
+    with _instances_lock:
+        _instances[token] = placeholder
+        _pending_queue.append(token)
+    log.info('download queued (active=%d/%d)  token=%s  name=%r', active_count, MAX_ACTIVE_DL, token, name)
+    return placeholder
+
 
 def _stop_instance(token: str) -> None:
     """Remove instance from registry, shutdown its aria2c process, clean up tmp dir."""
@@ -413,6 +468,36 @@ def _instance_monitor() -> None:
                         i['name']    = bt_name
             except Exception:
                 pass  # transient RPC error — try again next cycle
+
+        # ── Drain pending queue whenever slots open up ────────────────────
+        while True:
+            with _instances_lock:
+                active_count = sum(
+                    1 for i in _instances.values()
+                    if i.get('status') not in ('complete', 'removed', 'error', 'queued')
+                )
+                if active_count >= MAX_ACTIVE_DL or not _pending_queue:
+                    break
+                next_token = _pending_queue.pop(0)
+                queued_inst = _instances.get(next_token)
+
+            if not queued_inst:
+                continue
+
+            name   = queued_inst['name']
+            magnet = queued_inst['magnet']
+            dest   = queued_inst['dest']
+
+            # Remove placeholder; _start_instance will re-register under same token
+            with _instances_lock:
+                _instances.pop(next_token, None)
+
+            try:
+                _start_instance(name, magnet, dest)
+                log.info('queued download started  token=%s  name=%r  active=%d/%d',
+                         next_token, name, active_count + 1, MAX_ACTIVE_DL)
+            except Exception as e:
+                log.warning('failed to start queued download %r: %s', name, e)
 
 # ── API routes ─────────────────────────────────────────────────────────────────
 
@@ -595,7 +680,7 @@ def show_download_batch():
         if not magnet:
             continue
         try:
-            inst = _start_instance(label, magnet, dest)
+            inst = _enqueue_or_start(label, magnet, dest)
             started.append({'gid': inst['token'], 'label': label})
         except Exception as e:
             log.warning('show_download_batch: failed to start %r: %s', label, e)
@@ -929,8 +1014,8 @@ def add_torrent():
     if not name:
         name = os.path.basename(dest.rstrip('/')) or magnet[:60]
     try:
-        inst = _start_instance(name, magnet, dest)
-        return jsonify({'token': inst['token'], 'port': inst['port']})
+        inst = _enqueue_or_start(name, magnet, dest)
+        return jsonify({'token': inst['token'], 'port': inst['port'], 'status': inst['status']})
     except Exception as e:
         log.exception('add-torrent failed')
         return jsonify({'error': str(e)}), 500
@@ -960,7 +1045,9 @@ def torrent_state():
         'magnet':      inst.get('magnet', ''),
         'started_at':  inst.get('started_at', 0),
     } for inst in snapshot]
-    return jsonify({'downloads': downloads, 'updated': time.time()})
+    with _instances_lock:
+        queue_len = len(_pending_queue)
+    return jsonify({'downloads': downloads, 'updated': time.time(), 'queued': queue_len, 'max_active': MAX_ACTIVE_DL})
 
 @app.route('/api/torrent/<token>/remove', methods=['POST'])
 @_require_auth
@@ -1236,8 +1323,8 @@ def request_music():
         try:
             # Download directly into music_dir — torrent's own folder structure
             # organises the content. Avoids makedirs on the network volume.
-            inst = _start_instance(query or 'Music', magnet, music_dir)
-            return jsonify({'token': inst['token'], 'type': 'torrent'}), 202
+            inst = _enqueue_or_start(query or 'Music', magnet, music_dir)
+            return jsonify({'token': inst['token'], 'type': 'torrent', 'status': inst['status']}), 202
         except Exception as e:
             log.exception('music torrent start failed')
             return jsonify({'error': str(e)}), 500
