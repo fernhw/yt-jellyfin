@@ -74,9 +74,11 @@ def _load_disk_config() -> dict:
             if k.startswith("_"):
                 continue
             out[k] = {
-                "name":     v.get("name", k),
-                "max_r":    int(v.get("max_r", 0)) * 1_000_000,
-                "max_w":    int(v.get("max_w", 0)) * 1_000_000,
+                "name":        v.get("name", k),
+                "max_r":       int(v.get("max_r", 0)) * 1_000_000,
+                "max_w":       int(v.get("max_w", 0)) * 1_000_000,
+                "max_iops_r":  int(v.get("max_iops_r", 0)),
+                "max_iops_w":  int(v.get("max_iops_w", 0)),
             }
         return out
     except Exception:
@@ -125,7 +127,7 @@ def _build_disk_info() -> dict:
         if name in cfg:
             info[name] = cfg[name]
         else:
-            info[name] = {"name": _auto_label(name), "max_r": 0, "max_w": 0}
+            info[name] = {"name": _auto_label(name), "max_r": 0, "max_w": 0, "max_iops_r": 0, "max_iops_w": 0}
     return info
 
 
@@ -135,7 +137,7 @@ def _disk_info(name: str) -> dict:
     if time.time() - _disk_info_ts >= _DISK_LABEL_TTL:
         _disk_info_cache = _build_disk_info()
         _disk_info_ts    = time.time()
-    return _disk_info_cache.get(name, {"name": name, "max_r": 0, "max_w": 0})
+    return _disk_info_cache.get(name, {"name": name, "max_r": 0, "max_w": 0, "max_iops_r": 0, "max_iops_w": 0})
 
 
 def _refresh_docker() -> None:
@@ -256,6 +258,8 @@ def collect() -> dict:
             "label":      di["name"],
             "max_r":      di["max_r"],
             "max_w":      di["max_w"],
+            "max_iops_r": di["max_iops_r"],
+            "max_iops_w": di["max_iops_w"],
             "read_bps":   max(0.0, (c.read_bytes  - prev.read_bytes)  / dt),
             "write_bps":  max(0.0, (c.write_bytes - prev.write_bytes) / dt),
             "read_iops":  max(0.0, (c.read_count  - prev.read_count)  / dt),

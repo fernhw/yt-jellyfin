@@ -1,19 +1,25 @@
 {
-  "_comment": "Disk aliases and rated max speeds in MB/s. Keys are macOS base device names (disk0, disk6, …).",
-  "_comment2": "max_r / max_w are the manufacturer-rated peak read / write speeds (MB/s).",
+  "_comment": "Disk aliases, rated peak throughput (MB/s) and IOPS. Keys = macOS base device names.",
+  "_comment2": "max_iops_r / max_iops_w: manufacturer random-read/write IOPS (4K). 0 = unknown / auto-scale.",
   "disk0": {
     "name": "Internal SSD",
     "max_r": 3700,
-    "max_w": 3000
+    "max_w": 3000,
+    "max_iops_r": 400000,
+    "max_iops_w": 400000
   },
   "disk6": {
     "name": "Darrel 4TB",
     "max_r": 180,
-    "max_w": 180
+    "max_w": 180,
+    "max_iops_r": 150,
+    "max_iops_w": 150
   },
   "disk7": {
     "name": "Jellyfin",
     "max_r": 1050,
-    "max_w": 1000
+    "max_w": 1000,
+    "max_iops_r": 100000,
+    "max_iops_w": 80000
   }
 }
