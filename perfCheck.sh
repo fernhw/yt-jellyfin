@@ -5,7 +5,7 @@
 # Probes each local + public service, measures response time in ms, and
 # appends a timestamped entry to web/status/perf.js (ring-buffer of 48h).
 #
-# Cron (added by setup): 0 * * * *  PATH=... /path/to/perfCheck.sh >> /tmp/perfCheck.log 2>&1
+# Cron (added by setup): */15 * * * *  PATH=... /path/to/perfCheck.sh >> /tmp/perfCheck.log 2>&1
 # ─────────────────────────────────────────────────────────────────────────────
 export PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export LC_ALL=C
@@ -77,26 +77,8 @@ if os.path.exists(pj):
     except Exception:
         pass
 
-# Deduplicate: skip write if we already have an entry for this hour
-import math
-new_hour = math.floor(
-    __import__('datetime').datetime.fromisoformat(ts.replace('Z','+00:00')).timestamp() / 3600
-)
-for h in hours:
-    try:
-        existing_hour = math.floor(
-            __import__('datetime').datetime.fromisoformat(h['ts'].replace('Z','+00:00')).timestamp() / 3600
-        )
-        if existing_hour == new_hour:
-            # Already have data for this hour — overwrite with latest reading
-            h['data'] = entry
-            break
-    except Exception:
-        pass
-else:
-    hours = [{"ts": ts, "data": entry}] + hours
-
-hours = hours[:48]  # 48h ring buffer
+hours = [{"ts": ts, "data": entry}] + hours
+hours = hours[:192]  # 192 × 15-min = 48h ring buffer
 
 js = "window.PERF = " + json.dumps({"hours": hours}, separators=(',',':')) + ";\n"
 fd, tmp = tempfile.mkstemp(dir=os.path.dirname(pj))

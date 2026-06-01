@@ -325,7 +325,7 @@ def collect() -> dict:
         },
         "mem": {
             "total":      vm.total,
-            "used":       vm.used,
+            "used":       vm.total - vm.available,  # matches Activity Monitor (total - available)
             "available":  vm.available,
             "pct":        vm.percent,
             "swap_used":  sw.used,

@@ -69,17 +69,19 @@
     /* spark rows */
     .spark-list{display:flex;flex-direction:column;gap:5px}
     .spark-row{display:flex;align-items:center;gap:9px;padding:6px 11px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
-    .spark-name{width:80px;font:500 .78rem/1 sans-serif;flex-shrink:0;display:flex;flex-direction:column;gap:2px}
-    .spark-val{width:76px;font:500 .7rem/1 sans-serif;color:var(--muted);text-align:right;flex-shrink:0}
+    /* shared: left meta = 38.2%, graph = flex:1 — both rows align */
+    .row-meta{flex:0 0 38.2%;min-width:0;display:flex;align-items:center;gap:9px;overflow:hidden}
+    .spark-name{flex:1;min-width:0;font:500 .78rem/1 sans-serif;display:flex;flex-direction:column;gap:2px}
+    .spark-val{flex-shrink:0;font:500 .7rem/1 sans-serif;color:var(--muted);text-align:right}
     .spark-sub{font:.6rem/1.2 sans-serif;color:var(--muted);opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .spark-svg{flex:1;min-width:0}
     .spark-svg svg{display:block;width:100%;height:28px}
     /* perf */
     .perf-list{display:flex;flex-direction:column;gap:5px}
     .perf-row{display:flex;align-items:center;gap:9px;padding:6px 11px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
-    .perf-name{width:150px;font-size:.78rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0}
-    .perf-badge{font:600 .54rem/1 sans-serif;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.05);color:#627384;width:40px;text-align:center;flex-shrink:0}
-    .perf-ms{width:50px;font:500 .68rem/1 sans-serif;color:var(--muted);text-align:right;flex-shrink:0}
+    .perf-name{flex:1;min-width:0;font-size:.78rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .perf-badge{flex-shrink:0;font:600 .54rem/1 sans-serif;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.05);color:#627384;text-align:center}
+    .perf-ms{flex-shrink:0;font:500 .68rem/1 sans-serif;color:var(--muted);text-align:right}
     .perf-spark{flex:1;min-width:0;overflow:hidden}
     .perf-spark svg{display:block;width:100%;height:26px}
     /* disk bars */
@@ -100,7 +102,6 @@
       .spark-val{display:none}
       .perf-badge{display:none}
       .perf-ms{display:none}
-      .perf-name{width:110px}
     }
     /* cross-highlight + toggle */
     .col-hi{transition:opacity .06s;pointer-events:none}
@@ -150,13 +151,13 @@
 
     <!-- system sparklines -->
     <div class="sec" id="sec-sparks" style="display:none">
-      <div class="sec-label" style="display:flex;justify-content:space-between;align-items:center"><span id="sparks-label">System History</span><button class="spark-toggle-btn" id="sparks-toggle" onclick="toggleSparkWin()">1hr</button></div>
+      <div class="sec-label" style="display:flex;justify-content:space-between;align-items:center"><span id="sparks-label">System History</span><button class="spark-toggle-btn" id="win-toggle" onclick="toggleWin()">1hr</button></div>
       <div class="spark-list" id="spark-list"></div>
     </div>
 
     <!-- response time -->
     <div class="sec">
-      <div class="sec-label">Response Time — last 24h</div>
+      <div class="sec-label"><span id="perf-label">Response Time — 24h</span></div>
       <div class="perf-list" id="perf-list"></div>
     </div>
 
@@ -184,6 +185,7 @@ const PW_HASH = "5e7601a1ac99c87a65120283ae1b380901ca55bb402dce34e1a4ec51c20d29b
 const COOKIE  = "sauth";
 const TIP_STORE={}; let _tid=0;
 window.SPARK_WIN=60;
+window.PERF_WIN=60;
 
 async function sha256hex(s) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
@@ -270,7 +272,8 @@ function tipRow(label,val,col){return`<div class="tip-row"><span class="tip-labe
 function perfSpark(vals,sharedMax,tips){
   const W=120,H=26,n=vals.length;if(!n)return"";
   const maxMs=sharedMax||Math.max(...vals.map(v=>v.ms),1);
-  const bw=W/n;
+  const W2=240;
+  const bw=W2/n;
   const bars=vals.map((v,i)=>{
     const ta=tips&&tips[i]!=null?` data-tid="${storeTip(tips[i])}"`:""; 
     const bi=` data-bar="${i}"`;
@@ -282,7 +285,7 @@ function perfSpark(vals,sharedMax,tips){
     return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${v.ok?"#4ade80":"#f07f64"}" rx="1"${ta}${bi}/>`;
   }).join("");
   const hiRects=vals.map((_,i)=>`<rect class="col-hi" data-bar="${i}" x="${(i*bw).toFixed(1)}" y="0" width="${Math.max(1,bw-.5).toFixed(1)}" height="${H}" fill="rgba(255,255,255,.13)" opacity="0" rx="1"/>`).join("");
-  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}${hiRects}</svg>`;
+  return`<svg viewBox="0 0 ${W2} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}${hiRects}</svg>`;
 }
 
 /* sparkline for metrics (numeric values) — null = gap slot → dim stub */
@@ -290,7 +293,8 @@ function metricSpark(vals,fixedMax,color,tips,warnThresh){
   const W=200,H=28,n=vals.length;if(!n)return"";
   const realVals=vals.filter(v=>v!==null&&v!==undefined);
   const max=fixedMax||Math.max(...realVals,1);
-  const bw=W/n;
+  const W2=240;
+  const bw=W2/n;
   const bars=vals.map((v,i)=>{
     const ta=tips&&tips[i]!=null?` data-tid="${storeTip(tips[i])}"`:""; 
     const bi=` data-bar="${i}"`;
@@ -302,11 +306,13 @@ function metricSpark(vals,fixedMax,color,tips,warnThresh){
     return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${isWarn?"#f07f64":color}" rx="1"${ta}${bi}/>`;
   }).join("");
   const hiRects=vals.map((_,i)=>`<rect class="col-hi" data-bar="${i}" x="${(i*bw).toFixed(1)}" y="0" width="${Math.max(1,bw-.5).toFixed(1)}" height="${H}" fill="rgba(255,255,255,.13)" opacity="0" rx="1"/>`).join("");
-  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}${hiRects}</svg>`;
+  return`<svg viewBox="0 0 ${W2} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}${hiRects}</svg>`;
 }
 
 /* render all */
-function toggleSparkWin(){window.SPARK_WIN=window.SPARK_WIN===60?15:60;renderMetrics();}
+function toggleWin(){window.SPARK_WIN=window.SPARK_WIN===60?15:60;window.PERF_WIN=window.SPARK_WIN;renderMetrics();renderPerf();}
+function toggleSparkWin(){toggleWin();}  // legacy alias
+function togglePerfWin(){toggleWin();}   // legacy alias
 function render(){
   Object.keys(TIP_STORE).forEach(k=>delete TIP_STORE[k]);_tid=0;
   renderStatus();renderMetrics();renderPerf();
@@ -445,11 +451,11 @@ function renderMetrics(){
   const winTips=Array.from({length:NBARS},(_,i)=>makeTip(nowWin-(NBARS-1-i)*WIN_MS,pts[i]));
   const filledCount=slotsN.filter(Boolean).length;
   document.getElementById("sparks-label").textContent=`System History — 24h (${filledCount}/${NBARS} × ${window.SPARK_WIN===15?"15-min":"1-hr"} bars)`;
-  const togBtn=document.getElementById("sparks-toggle");if(togBtn)togBtn.textContent=window.SPARK_WIN===15?"1hr":"15m";
+  const togBtn=document.getElementById("win-toggle");if(togBtn)togBtn.textContent=window.SPARK_WIN===60?"1hr":"15m";
   document.getElementById("sec-sparks").style.display="";
   function sRow(label,vals,fixedMax,color,cur,sub,tips,warnThresh){
     const subHtml=sub?`<span class="spark-sub">${sub}</span>`:"";
-    return`<div class="spark-row"><span class="spark-name"><span>${label}</span>${subHtml}</span><span class="spark-val">${cur}</span><span class="spark-svg">${metricSpark(vals,fixedMax,color,tips,warnThresh)}</span></div>`;
+    return`<div class="spark-row"><span class="row-meta"><span class="spark-name"><span>${label}</span>${subHtml}</span><span class="spark-val">${cur}</span></span><span class="spark-svg">${metricSpark(vals,fixedMax,color,tips,warnThresh)}</span></div>`;
   }
   const diskColors=["#60a5fa","#a78bfa","#f472b6","#fb923c","#34d399"];
   const diskNames=[...new Set(pts.flatMap(p=>p?(p.disk_io||[]).map(d=>d.n):[]))];
@@ -502,66 +508,71 @@ function renderPerf(){
     return;
   }
 
-  // ── Build exactly 24 canonical hourly slots ───────────────────────────────
-  // Anchor: floor NOW to the current hour, then go back 23 more hours.
-  // slot 0 = most recent hour, slot 23 = 23h ago.
-  const now=Date.now();
-  const hourMs=3600000;
-  const nowHour=Math.floor(now/hourMs)*hourMs;   // floor to current hour
-
-  // Index all raw entries by their floored-hour (keep only the latest per hour)
-  const byHour={};
-  for(const h of P.hours){
-    const hts=new Date(h.ts).getTime();
-    const slot=Math.floor(hts/hourMs)*hourMs;
-    if(!byHour[slot]||hts>new Date(byHour[slot].ts).getTime()) byHour[slot]=h;
+  // 1hr mode: dedupe to hourly slots, 24 bars with gap-nulls for missing hours
+  // 15m mode: raw ring-buffer entries, newest-first slice to 96, no empty gaps
+  let slots;
+  if(window.PERF_WIN===60){
+    const hourMs=3600000;
+    const nowHour=Math.floor(Date.now()/hourMs)*hourMs;
+    const byHour={};
+    for(const h of P.hours){
+      const hts=new Date(h.ts).getTime();
+      const slot=Math.floor(hts/hourMs)*hourMs;
+      if(!byHour[slot]||hts>new Date(byHour[slot].ts).getTime()) byHour[slot]=h;
+    }
+    slots=Array.from({length:24},(_,i)=>byHour[nowHour-i*hourMs]||null);
+  } else {
+    // 15m mode: 96 positional slots (same logic as 1hr but 15-min windows)
+    // entries land in their correct time slot — gaps show as null, not missing bars
+    const slotMs=15*60*1000;
+    const nowSlot=Math.floor(Date.now()/slotMs)*slotMs;
+    const by15={};
+    for(const h of P.hours){
+      const hts=new Date(h.ts).getTime();
+      const slot=Math.floor(hts/slotMs)*slotMs;
+      if(!by15[slot]||hts>new Date(by15[slot].ts).getTime()) by15[slot]=h;
+    }
+    slots=Array.from({length:96},(_,i)=>by15[nowSlot-i*slotMs]||null);
   }
 
-  // Fixed 24-slot array: index 0 = nowHour, index 23 = nowHour-23h
-  const slots=Array.from({length:24},(_,i)=>{
-    const slotTs=nowHour-i*hourMs;
-    return byHour[slotTs]||null;   // null = no data for that hour
-  });
+  const perfLbl=document.getElementById("perf-label");
+  if(perfLbl)perfLbl.textContent=`Response Time — 24h (${window.PERF_WIN===60?"1-hr":"15-min"} bars)`;
 
-  // Gather all service names from any slot that has data
   const names=[...new Set(slots.filter(Boolean).flatMap(s=>Object.keys(s.data)))];
   const localP=names.filter(n=>!n.includes("."));
   const publicP=names.filter(n=>n.includes("."));
 
-  // Latest real entry for current values
-  const latest=slots.find(Boolean);
-
   function row(name){
-    const vals=slots.map(s=>s?(s.data[name]||{ms:0,ok:false}):{ms:0,ok:null});
-    // per-service scale so every service's own spikes are visible
+    // valsNewest[0] = most recent; vals (reversed) = oldest first for bar rendering
+    const valsNewest=slots.map(s=>s?(s.data[name]||{ms:0,ok:false}):{ms:0,ok:null});
+    const vals=[...valsNewest].reverse();
     const realMs=vals.filter(v=>v.ok!==null).map(v=>v.ms);
     const localMax=Math.max(...realMs,1);
     const avgMs=realMs.length?Math.round(realMs.reduce((a,b)=>a+b,0)/realMs.length):0;
     const p95Ms=realMs.length?(()=>{const s=[...realMs].sort((a,b)=>a-b);return s[Math.floor(s.length*.95)]||s[s.length-1];})():0;
-    // per-bar tips in reversed order (oldest bar first = bar index 0)
-    const tips=vals.slice().reverse().map((v,i)=>{
-      const slotTs=nowHour-(23-i)*hourMs;
-      const d0=new Date(slotTs);
-      const t0=d0.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-      const t1=new Date(slotTs+hourMs).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-      const ds=d0.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});
-      let h=`<div class="tip-time">${t0}–${t1} · ${ds}</div>`;
+    // tips aligned to vals (oldest first)
+    const tips=vals.map((v,i)=>{
+      const srcIdx=vals.length-1-i; // index into valsNewest
+      const ts=slots[srcIdx]?.ts;
+      const d0=ts?new Date(ts):null;
+      const t0=d0?d0.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):"?";
+      const ds=d0?d0.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'}):"?";
+      let h=`<div class="tip-time">${t0} · ${ds}</div>`;
       if(v.ok===null){h+=`<div style="color:#3d4f60;margin-top:4px;font-size:.68rem">No data</div>`;return h;}
       h+=`<div class="tip-sep"></div>`;
       h+=tipRow("Response",`<b style="font-size:.9rem">${v.ms}ms</b>`,v.ok?"#4ade80":"#f07f64");
       h+=tipRow("Status",v.ok?'✓ OK':'✗ FAIL',v.ok?"#4ade80":"#f07f64");
       h+=`<div class="tip-sep"></div>`;
-      h+=tipRow("24h avg",avgMs+"ms");
-      h+=tipRow("24h p95",p95Ms+"ms");
-      h+=tipRow("24h peak",localMax+"ms");
+      h+=tipRow("avg",avgMs+"ms");
+      h+=tipRow("p95",p95Ms+"ms");
+      h+=tipRow("peak",localMax+"ms");
       if(v.ms>0)h+=tipRow("% of peak",Math.round(v.ms/localMax*100)+"%",v.ms===localMax?"#f07f64":null);
       return h;
     });
-    const cur=(slots.find(s=>s&&s.data[name])||null);
-    const curVal=cur?cur.data[name]:{ms:0,ok:false};
-    const recent=vals.filter(v=>v.ok!==null).slice(0,3);
+    const curVal=valsNewest[0]||{ms:0,ok:false};
+    const recent=valsNewest.filter(v=>v.ok!==null).slice(0,3);
     const allOk=recent.length>0&&recent.every(v=>v.ok);
-    return`<div class="perf-row"><span class="dot ${allOk?"ok":"down"}" style="flex-shrink:0;margin-top:0"></span><span class="perf-name">${esc(name)}</span><span class="perf-badge">${name.includes(".")?"|pub":"local"}</span><span class="perf-ms">${curVal.ms}ms</span><span class="perf-spark">${perfSpark([...vals].reverse(),localMax,tips)}</span></div>`;
+    return`<div class="perf-row"><span class="row-meta"><span class="dot ${allOk?"ok":"down"}" style="flex-shrink:0;margin-top:0"></span><span class="perf-name">${esc(name)}</span><span class="perf-badge">${name.includes(".")? "pub":"local"}</span><span class="perf-ms">${curVal.ms}ms</span></span><span class="perf-spark">${perfSpark(vals,localMax,tips)}</span></div>`;
   }
 
   function grp(label){return`<div class="divider"><span class="div-label">${label}</span><span class="div-line"></span></div>`;}
@@ -611,6 +622,7 @@ function reloadScript(id,src,cb){
 }
 setInterval(()=>reloadScript("_sd","status.js",()=>{renderStatus();document.getElementById("refresh-ind").textContent="refreshed "+new Date().toLocaleTimeString();}),60000);
 setInterval(()=>reloadScript("_md","metrics.js",renderMetrics),5*60*1000);
+setInterval(()=>reloadScript("_pd","perf.js",renderPerf),15*60*1000);
 </script>
 </body>
 </html>
