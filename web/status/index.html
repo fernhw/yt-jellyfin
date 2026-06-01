@@ -22,7 +22,7 @@
     *{box-sizing:border-box;margin:0;padding:0}
     :root{--bg:#101317;--panel:#171c21;--line:#2a323b;--text:#ecf2f8;--muted:#97a6b4;--warn:#f07f64;--warn-soft:#2b1916;--ok:#4ade80;--chrome-tint:rgba(10,13,16,.86);--chrome-line:rgba(255,255,255,.06)}
     html{background:#05070a;min-height:100%}
-    body{background:linear-gradient(180deg,#05070a 0,#0b0e11 100px,var(--bg) 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding:calc(env(safe-area-inset-top)+10px) 0 calc(env(safe-area-inset-bottom)+32px);overflow-x:hidden}
+    body{background:linear-gradient(180deg,#05070a 0,#0b0e11 100px,var(--bg) 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding:calc(env(safe-area-inset-top)+24px) 0 calc(env(safe-area-inset-bottom)+32px);overflow-x:hidden}
     /* gate */
     #gate{display:none;position:fixed;inset:0;background:#0c0f13;z-index:999;justify-content:center;align-items:center;flex-direction:column;gap:16px}
     #gate h2{color:#fff;font-size:1.2rem;font-weight:500}
@@ -333,7 +333,7 @@ function renderMetrics(){
     vCard("Swap",     now.swap_pct+"%",         now.swap_used+" / "+now.swap_tot+" GB",              now.swap_pct>80),
     vCard("VPN",      now.vpn?"ON":"OFF",       now.vpn?(now.vpn_ip+" ("+now.vpn_if+")"):"Ecuador / local",    false),
     vCard("Uptime",   fmtUptime(now.uptime),    now.procs+" proc",                                   false),
-    vCard("Disk I/O", fmtBytes(now.disk_r+now.disk_w)+"/s", "R "+fmtBytes(now.disk_r)+" W "+fmtBytes(now.disk_w)+"/s", false),
+    ...(now.disk_io&&now.disk_io.length?now.disk_io.map(d=>vCard(d.n,fmtBytes(d.r+d.w)+"/s","R "+fmtBytes(d.r)+" W "+fmtBytes(d.w)+"/s",false)):[vCard("Disk I/O",fmtBytes(now.disk_r+now.disk_w)+"/s","R "+fmtBytes(now.disk_r)+" W "+fmtBytes(now.disk_w)+"/s",false)]),
     vCard("Network",  fmtBytes(now.net_in+now.net_out)+"/s","&#8595; "+fmtBytes(now.net_in)+" &#8593; "+fmtBytes(now.net_out)+"/s",false),
   ].join("");
 
