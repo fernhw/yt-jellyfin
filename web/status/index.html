@@ -425,30 +425,43 @@ function renderMetrics(){
   const slotsN=Array.from({length:NBARS},(_,i)=>avgWin(nowWin-i*WIN_MS));
   const pts=slotsN.slice().reverse();
   // per-bar tooltip HTML indexed same as pts (oldest=0, newest=NBARS-1)
-  function makeTip(winStart,pt){
+  // Per-row tip builder — each row shows ONLY its own metric
+  function barTipHeader(winStart){
     const d0=new Date(winStart),d1=new Date(winStart+WIN_MS);
     const t0=d0.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     const t1=d1.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     const ds=d0.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});
-    let h=`<div class="tip-time">${t0}–${t1} · ${ds}</div>`;
-    if(!pt){h+=`<div style="color:#3d4f60;margin-top:4px;font-size:.68rem">No data</div>`;return h;}
-    h+=`<div class="tip-sep"></div>`;
-    h+=tipRow("CPU",pt.cpu.toFixed(1)+"%",pt.cpu>85?"#f07f64":null);
-    h+=tipRow("RAM",(pt.mem_pct||0).toFixed(1)+"% · "+((pt.mem_used||0)).toFixed(1)+" GB",pt.mem_pct>90?"#f07f64":null);
-    if(pt.swap_pct!=null)h+=tipRow("Swap",(pt.swap_pct||0).toFixed(1)+"% · "+((pt.swap_used||0)).toFixed(1)+" GB",pt.swap_pct>80?"#f07f64":null);
-    h+=tipRow("Net ↓",fmtBytes(pt.net_in)+"/s");
-    h+=tipRow("Net ↑",fmtBytes(pt.net_out)+"/s");
-    if(pt.disk_io&&pt.disk_io.length){
-      h+=`<div class="tip-sep"></div>`;
-      pt.disk_io.forEach(d=>{
-        h+=tipRow(esc(d.l||d.n)+" R+W",fmtBytes(d.r+d.w)+"/s");
-        h+=`<div class="tip-row" style="font-size:.65rem"><span class="tip-label" style="padding-left:6px">↑ read</span><span class="tip-val">${fmtBytes(d.r)}/s · ${(d.ri||0).toLocaleString()} iops</span></div>`;
-        h+=`<div class="tip-row" style="font-size:.65rem"><span class="tip-label" style="padding-left:6px">↓ write</span><span class="tip-val">${fmtBytes(d.w)}/s · ${(d.wi||0).toLocaleString()} iops</span></div>`;
-      });
-    }
-    return h;
+    return `<div class="tip-time">${t0}–${t1} · ${ds}</div>`;
   }
-  const winTips=Array.from({length:NBARS},(_,i)=>makeTip(nowWin-(NBARS-1-i)*WIN_MS,pts[i]));
+  function makeTips(nbars, getFn){ // getFn(i,winStart,pt,isNewest) -> html
+    return Array.from({length:nbars},(_,i)=>{
+      const winStart=nowWin-(NBARS-1-i)*WIN_MS;
+      const pt=pts[i];
+      const isNewest=(i===NBARS-1);
+      let h=barTipHeader(winStart);
+      if(!pt){h+=`<div style="color:#3d4f60;margin-top:4px;font-size:.68rem">No data</div>`;return h;}
+      h+=`<div class="tip-sep"></div>`;
+      h+=getFn(pt,isNewest);
+      return h;
+    });
+  }
+  const subRow=(label,val)=>`<div class="tip-row" style="font-size:.65rem"><span class="tip-label" style="padding-left:6px">${label}</span><span class="tip-val">${val}</span></div>`;
+
+  const cpuTips=makeTips(NBARS,(pt,isNewest)=>{
+    let h=tipRow("CPU",pt.cpu.toFixed(1)+"%",pt.cpu>85?"#f07f64":null);
+    if(isNewest)(now.top_cpu||[]).forEach(p=>h+=subRow(esc(p.name),p.cpu.toFixed(1)+"%"));
+    return h;
+  });
+  const ramTips=makeTips(NBARS,(pt,isNewest)=>{
+    let h=tipRow("RAM",(pt.mem_pct||0).toFixed(1)+"% · "+((pt.mem_used||0)).toFixed(1)+" GB",pt.mem_pct>90?"#f07f64":null);
+    if(isNewest)(now.top_mem||[]).forEach(p=>h+=subRow(esc(p.name),p.mem.toFixed(0)+" MB"));
+    return h;
+  });
+  const swapTips=makeTips(NBARS,(pt)=>tipRow("Swap",(pt.swap_pct||0).toFixed(1)+"% · "+((pt.swap_used||0)).toFixed(1)+" GB",pt.swap_pct>80?"#f07f64":null));
+  const netTips=makeTips(NBARS,(pt)=>tipRow("Net ↓",fmtBytes(pt.net_in)+"/s")+tipRow("Net ↑",fmtBytes(pt.net_out)+"/s"));
+  function diskBwTips(dname){return makeTips(NBARS,(pt)=>{const d=(pt.disk_io||[]).find(x=>x.n===dname);if(!d)return`<div style="color:#3d4f60;font-size:.68rem">No data</div>`;return tipRow("R+W",fmtBytes(d.r+d.w)+"/s")+subRow("↑ read",fmtBytes(d.r)+"/s")+subRow("↓ write",fmtBytes(d.w)+"/s");});}
+  function diskIopsTips(dname){return makeTips(NBARS,(pt)=>{const d=(pt.disk_io||[]).find(x=>x.n===dname);if(!d)return`<div style="color:#3d4f60;font-size:.68rem">No data</div>`;return tipRow("IOPS",((d.ri||0)+(d.wi||0)).toLocaleString())+subRow("↑ read",(d.ri||0).toLocaleString())+subRow("↓ write",(d.wi||0).toLocaleString());});}
+
   const filledCount=slotsN.filter(Boolean).length;
   document.getElementById("sparks-label").textContent=`System History — 24h (${filledCount}/${NBARS} × ${window.SPARK_WIN===15?"15-min":"1-hr"} bars)`;
   const togBtn=document.getElementById("win-toggle");if(togBtn)togBtn.textContent=window.SPARK_WIN===60?"1hr":"15m";
@@ -467,13 +480,13 @@ function renderMetrics(){
     const bwVals=pts.map(p=>{if(!p)return null;const d=(p.disk_io||[]).find(x=>x.n===name);return d?d.r+d.w:null;});
     const maxBps=cur?((cur.mr||0)+(cur.mw||0)):0;
     const bwSub=maxBps?"max "+fmtBytes(maxBps)+"/s":null;
-    const bwRow=sRow(lbl,bwVals,maxBps||null,col,cur?fmtBytes(cur.r+cur.w)+"/s":"—",bwSub,winTips);
+    const bwRow=sRow(lbl,bwVals,maxBps||null,col,cur?fmtBytes(cur.r+cur.w)+"/s":"—",bwSub,diskBwTips(name));
     // IOPS row — dimmer tint of same colour
     const iopsVals=pts.map(p=>{if(!p)return null;const d=(p.disk_io||[]).find(x=>x.n===name);return d?(d.ri||0)+(d.wi||0):null;});
     const maxIops=cur?((cur.mir||0)+(cur.miw||0)):0;
     const curIops=cur?(cur.ri||0)+(cur.wi||0):0;
     const iopsSub=maxIops?"max "+maxIops.toLocaleString()+" IOPS":null;
-    const iopsRow=sRow(lbl+" IOPS",iopsVals,maxIops||null,col+"99",curIops.toLocaleString()+" IOPS",iopsSub,winTips);
+    const iopsRow=sRow(lbl+" IOPS",iopsVals,maxIops||null,col+"99",curIops.toLocaleString()+" IOPS",iopsSub,diskIopsTips(name));
     return[bwRow,iopsRow];
   });
   const validPts=pts.filter(Boolean);
@@ -481,11 +494,11 @@ function renderMetrics(){
   const peakRam=validPts.length?Math.max(...validPts.map(p=>p.mem_used||0)):0;
   const peakSwap=validPts.length?Math.max(...validPts.map(p=>p.swap_used||0)):0;
   document.getElementById("spark-list").innerHTML=[
-    sRow("CPU",    pts.map(p=>p?p.cpu:null),             100,                "#4ade80",(now.cpu||0)+"%",                    "peak "+peakCpu.toFixed(1)+"%",                                                   winTips,85),
-    sRow("RAM",    pts.map(p=>p&&p.mem_pct!=null?p.mem_pct:null),   100,            "#fb923c",(now.mem_used||0).toFixed(1)+" GB","/ "+now.mem_tot+" GB  •  peak "+peakRam.toFixed(1)+" GB",                  winTips,90),
-    sRow("Swap",   pts.map(p=>p&&p.swap_pct!=null?p.swap_pct:null),  100,            "#a78bfa",(now.swap_used||0).toFixed(1)+" GB","/ "+(now.swap_tot||"?")+ " GB  •  peak "+peakSwap.toFixed(1)+" GB",winTips,80),
+    sRow("CPU",    pts.map(p=>p?p.cpu:null),                          100,             "#4ade80", (now.cpu||0)+"%",                                                    "peak "+peakCpu.toFixed(1)+"%",                             cpuTips,  85),
+    sRow("RAM",    pts.map(p=>p&&p.mem_pct!=null?p.mem_pct:null),     100,             "#fb923c", (now.mem_used||0).toFixed(1)+" GB",                                  "/ "+now.mem_tot+" GB  •  peak "+peakRam.toFixed(1)+" GB",  ramTips,  90),
+    sRow("Swap",   pts.map(p=>p&&p.swap_pct!=null?p.swap_pct:null),   100,             "#a78bfa", (now.swap_used||0).toFixed(1)+" GB",                                 "/ "+(now.swap_tot||"?")+" GB  •  peak "+peakSwap.toFixed(1)+" GB", swapTips, 80),
     ...diskRows,
-    sRow("Network",pts.map(p=>p?p.net_in+p.net_out:null),null,       "#34d399",fmtBytes(now.net_in+now.net_out)+"/s",undefined,                                                                           winTips),
+    sRow("Network",pts.map(p=>p?p.net_in+p.net_out:null),             null,            "#34d399", fmtBytes(now.net_in+now.net_out)+"/s",                               undefined,                                                  netTips),
   ].join("");
 
   /* disk space */

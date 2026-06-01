@@ -44,6 +44,8 @@ snap = {
     "vpn_ip":    data.get("vpn", {}).get("ip"),
     "uptime":    round(data.get("uptime", 0)),
     "procs":     data.get("procs", 0),
+    "top_cpu":   data.get("top_cpu", []),
+    "top_mem":   data.get("top_mem", []),
     "disks":     [
         {
             "m":   d["mount"],

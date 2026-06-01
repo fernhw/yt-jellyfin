@@ -228,6 +228,24 @@ def detect_vpn() -> dict:
 
 # ── Core metrics collection ───────────────────────────────────────────────────
 
+def _top_procs(sort_by: str, n: int) -> list:
+    """Return top-n processes sorted by cpu_percent or rss."""
+    procs = []
+    for p in psutil.process_iter(["pid", "name", "cpu_percent", "memory_info"]):
+        try:
+            mi = p.info["memory_info"]
+            procs.append({
+                "name": p.info["name"] or "",
+                "cpu":  round(p.info["cpu_percent"] or 0, 1),
+                "mem":  mi.rss if mi else 0,
+            })
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+    key = (lambda x: x["cpu"]) if sort_by == "cpu" else (lambda x: x["mem"])
+    top = sorted(procs, key=key, reverse=True)[:n]
+    return [{"name": t["name"], "cpu": t["cpu"], "mem": round(t["mem"] / 1048576, 1)} for t in top]
+
+
 def collect() -> dict:
     global _prev_disk, _prev_net, _prev_ts
 
@@ -332,13 +350,15 @@ def collect() -> dict:
             "swap_total": sw.total,
             "swap_pct":   sw.percent,
         },
-        "disk_io": disk_io,
-        "net_io":  net_io,
-        "disks":   disks,
-        "vpn":     detect_vpn(),
-        "uptime":  now - psutil.boot_time(),
-        "procs":   len(psutil.pids()),
-        "docker":  docker_stats(),
+        "disk_io":  disk_io,
+        "net_io":   net_io,
+        "disks":    disks,
+        "vpn":      detect_vpn(),
+        "uptime":   now - psutil.boot_time(),
+        "procs":    len(psutil.pids()),
+        "docker":   docker_stats(),
+        "top_cpu":  _top_procs("cpu",  5),
+        "top_mem":  _top_procs("mem",  9),
     }
 
 
