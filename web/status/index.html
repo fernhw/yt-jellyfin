@@ -482,8 +482,8 @@ function renderMetrics(){
   const peakSwap=validPts.length?Math.max(...validPts.map(p=>p.swap_used||0)):0;
   document.getElementById("spark-list").innerHTML=[
     sRow("CPU",    pts.map(p=>p?p.cpu:null),             100,                "#4ade80",(now.cpu||0)+"%",                    "peak "+peakCpu.toFixed(1)+"%",                                                   winTips,85),
-    sRow("RAM",    pts.map(p=>p&&p.mem_used!=null?p.mem_used:null), now.mem_tot||8, "#fb923c",(now.mem_used||0).toFixed(1)+" GB","/ "+now.mem_tot+" GB  •  peak "+peakRam.toFixed(1)+" GB",                  winTips,(now.mem_tot||8)*0.9),
-    sRow("Swap",   pts.map(p=>p&&p.swap_used!=null?p.swap_used:null),now.swap_tot||null,"#a78bfa",(now.swap_used||0).toFixed(1)+" GB","/ "+(now.swap_tot||"?")+ " GB  •  peak "+peakSwap.toFixed(1)+" GB",winTips,now.swap_tot?now.swap_tot*0.8:null),
+    sRow("RAM",    pts.map(p=>p&&p.mem_pct!=null?p.mem_pct:null),   100,            "#fb923c",(now.mem_used||0).toFixed(1)+" GB","/ "+now.mem_tot+" GB  •  peak "+peakRam.toFixed(1)+" GB",                  winTips,90),
+    sRow("Swap",   pts.map(p=>p&&p.swap_pct!=null?p.swap_pct:null),  100,            "#a78bfa",(now.swap_used||0).toFixed(1)+" GB","/ "+(now.swap_tot||"?")+ " GB  •  peak "+peakSwap.toFixed(1)+" GB",winTips,80),
     ...diskRows,
     sRow("Network",pts.map(p=>p?p.net_in+p.net_out:null),null,       "#34d399",fmtBytes(now.net_in+now.net_out)+"/s",undefined,                                                                           winTips),
   ].join("");
