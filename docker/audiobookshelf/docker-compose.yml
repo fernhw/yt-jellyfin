@@ -17,6 +17,8 @@ services:
     image: advplyr/audiobookshelf:latest
     container_name: audiobookshelf
     restart: unless-stopped
+    mem_limit: 512m
+    oom_kill_disable: true
     ports:
       - "13378:80"
     environment:

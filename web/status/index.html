@@ -102,6 +102,10 @@
       .perf-ms{display:none}
       .perf-name{width:110px}
     }
+    /* cross-highlight + toggle */
+    .col-hi{transition:opacity .06s;pointer-events:none}
+    .spark-toggle-btn{background:transparent;border:1px solid #3b4550;color:#7899b5;padding:3px 9px;border-radius:999px;cursor:pointer;font:600 .6rem/1 sans-serif;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;margin-left:6px}
+    .spark-toggle-btn:hover{border-color:#5a7080;color:#a0c0d8}
     /* tooltip */
     #tip{position:fixed;z-index:9999;pointer-events:none;background:#141b22;border:1px solid #2a3d4d;border-radius:10px;padding:9px 13px;font:400 .72rem/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#d0dae3;max-width:280px;min-width:170px;box-shadow:0 6px 28px rgba(0,0,0,.7);display:none}
     .tip-time{font:.62rem/1 sans-serif;color:#4d6a7e;margin-bottom:5px;letter-spacing:.04em}
@@ -146,7 +150,7 @@
 
     <!-- system sparklines -->
     <div class="sec" id="sec-sparks" style="display:none">
-      <div class="sec-label" id="sparks-label">System History</div>
+      <div class="sec-label" style="display:flex;justify-content:space-between;align-items:center"><span id="sparks-label">System History</span><button class="spark-toggle-btn" id="sparks-toggle" onclick="toggleSparkWin()">1hr</button></div>
       <div class="spark-list" id="spark-list"></div>
     </div>
 
@@ -179,6 +183,7 @@
 const PW_HASH = "5e7601a1ac99c87a65120283ae1b380901ca55bb402dce34e1a4ec51c20d29bb";
 const COOKIE  = "sauth";
 const TIP_STORE={}; let _tid=0;
+window.SPARK_WIN=60;
 
 async function sha256hex(s) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
@@ -268,35 +273,40 @@ function perfSpark(vals,sharedMax,tips){
   const bw=W/n;
   const bars=vals.map((v,i)=>{
     const ta=tips&&tips[i]!=null?` data-tid="${storeTip(tips[i])}"`:""; 
+    const bi=` data-bar="${i}"`;
     if(v.ok===null){
-      // gap slot — dim stub
-      return`<rect x="${(i*bw).toFixed(1)}" y="${H-3}" width="${Math.max(1,bw-.5).toFixed(1)}" height="3" fill="#2a3040" rx="1"${ta}/>`;
+      return`<rect x="${(i*bw).toFixed(1)}" y="${H-3}" width="${Math.max(1,bw-.5).toFixed(1)}" height="3" fill="#2a3040" rx="1"${ta}${bi}/>`;
     }
     const pct=v.ok&&v.ms>0?v.ms/maxMs:(v.ok?0.02:1);
     const h=Math.max(2,Math.round(pct*(H-2)));
-    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${v.ok?"#4ade80":"#f07f64"}" rx="1"${ta}/>`;
+    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${v.ok?"#4ade80":"#f07f64"}" rx="1"${ta}${bi}/>`;
   }).join("");
-  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
+  const hiRects=vals.map((_,i)=>`<rect class="col-hi" data-bar="${i}" x="${(i*bw).toFixed(1)}" y="0" width="${Math.max(1,bw-.5).toFixed(1)}" height="${H}" fill="rgba(255,255,255,.13)" opacity="0" rx="1"/>`).join("");
+  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}${hiRects}</svg>`;
 }
 
 /* sparkline for metrics (numeric values) — null = gap slot → dim stub */
-function metricSpark(vals,fixedMax,color,tips){
+function metricSpark(vals,fixedMax,color,tips,warnThresh){
   const W=200,H=28,n=vals.length;if(!n)return"";
   const realVals=vals.filter(v=>v!==null&&v!==undefined);
   const max=fixedMax||Math.max(...realVals,1);
   const bw=W/n;
   const bars=vals.map((v,i)=>{
     const ta=tips&&tips[i]!=null?` data-tid="${storeTip(tips[i])}"`:""; 
+    const bi=` data-bar="${i}"`;
     if(v===null||v===undefined){
-      return`<rect x="${(i*bw).toFixed(1)}" y="${H-3}" width="${Math.max(1,bw-.5).toFixed(1)}" height="3" fill="#2a3040" rx="1"${ta}/>`;
+      return`<rect x="${(i*bw).toFixed(1)}" y="${H-3}" width="${Math.max(1,bw-.5).toFixed(1)}" height="3" fill="#2a3040" rx="1"${ta}${bi}/>`;
     }
+    const isWarn=warnThresh!=null&&v>=warnThresh;
     const h=Math.max(2,Math.round((v/max)*(H-2)));
-    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${color}" rx="1"${ta}/>`;
+    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${isWarn?"#f07f64":color}" rx="1"${ta}${bi}/>`;
   }).join("");
-  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
+  const hiRects=vals.map((_,i)=>`<rect class="col-hi" data-bar="${i}" x="${(i*bw).toFixed(1)}" y="0" width="${Math.max(1,bw-.5).toFixed(1)}" height="${H}" fill="rgba(255,255,255,.13)" opacity="0" rx="1"/>`).join("");
+  return`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}${hiRects}</svg>`;
 }
 
 /* render all */
+function toggleSparkWin(){window.SPARK_WIN=window.SPARK_WIN===60?15:60;renderMetrics();}
 function render(){
   Object.keys(TIP_STORE).forEach(k=>delete TIP_STORE[k]);_tid=0;
   renderStatus();renderMetrics();renderPerf();
@@ -356,9 +366,9 @@ function renderMetrics(){
     return`<div class="v-card${warn?" warn":""}"><div class="v-label">${label}</div><div class="v-val">${val}</div>${sub?`<div class="v-sub">${sub}</div>`:""}</div>`;
   }
   {const parts=[
-    vCard("CPU",      now.cpu+"%",       "load "+now.load1,                               now.cpu>85),
-    vCard("Memory",  now.mem_pct+"%",   now.mem_used+" / "+now.mem_tot+" GB",            now.mem_pct>90),
-    vCard("Swap",    now.swap_pct+"%",  now.swap_used+" / "+now.swap_tot+" GB",          now.swap_pct>80),
+    vCard("CPU",     now.cpu+"%",                          "load "+now.load1,                             now.cpu>85),
+    vCard("RAM",     (now.mem_used||0).toFixed(1)+" GB",   now.mem_pct+"% of "+now.mem_tot+" GB",          now.mem_pct>90),
+    vCard("Swap",    (now.swap_used||0).toFixed(1)+" GB",  now.swap_pct+"% of "+now.swap_tot+" GB",        now.swap_pct>80),
     vCard("VPN",     now.vpn?"ON":"OFF",now.vpn?(now.vpn_ip+" ("+now.vpn_if+")"):"Ecuador / local",false),
     vCard("Uptime",  fmtUptime(now.uptime),now.procs+" proc",                            false),
   ];
@@ -374,7 +384,8 @@ function renderMetrics(){
 
   /* sparklines — 96 bars × 15-min windows (24h), each bar = avg of up to 3 × 5-min snapshots */
   const BEAT_MS=5*60*1000;
-  const WIN_MS=15*60*1000;   // 3 beats per bar
+  const WIN_MS=window.SPARK_WIN*60*1000;
+  const NBARS=Math.round(24*60/window.SPARK_WIN);
   const nowBeat=Math.floor(Date.now()/BEAT_MS)*BEAT_MS;
   // bucket all entries by their 5-min floor
   const byBeat={};
@@ -388,7 +399,8 @@ function renderMetrics(){
   const nowWin=Math.floor(Date.now()/WIN_MS)*WIN_MS;
   // avgWin returns an object with averaged numeric fields, or null if no beats present
   function avgWin(winStart){
-    const beats=[byBeat[winStart],byBeat[winStart+BEAT_MS],byBeat[winStart+2*BEAT_MS]].filter(Boolean);
+    const nBeats=WIN_MS/BEAT_MS;
+    const beats=Array.from({length:nBeats},(_,j)=>byBeat[winStart+j*BEAT_MS]).filter(Boolean);
     if(!beats.length)return null;
     const avg=k=>beats.reduce((s,b)=>s+(b[k]||0),0)/beats.length;
     // disk_io: average per disk by name
@@ -400,12 +412,13 @@ function renderMetrics(){
       return{n,l:ds[0].l,r:davg("r"),w:davg("w"),ri:davg("ri"),wi:davg("wi"),
              mr:ds[0].mr,mw:ds[0].mw,mir:ds[0].mir,miw:ds[0].miw};
     }).filter(Boolean);
-    return{ts:beats[0].ts,cpu:avg("cpu"),mem_pct:avg("mem_pct"),
+    return{ts:beats[0].ts,cpu:avg("cpu"),mem_pct:avg("mem_pct"),mem_used:avg("mem_used"),
+           swap_pct:avg("swap_pct"),swap_used:avg("swap_used"),
            net_in:avg("net_in"),net_out:avg("net_out"),disk_io};
   }
-  const slots96=Array.from({length:96},(_,i)=>avgWin(nowWin-i*WIN_MS));
-  const pts=slots96.slice().reverse();
-  // per-bar tooltip HTML indexed same as pts (oldest=0, newest=95)
+  const slotsN=Array.from({length:NBARS},(_,i)=>avgWin(nowWin-i*WIN_MS));
+  const pts=slotsN.slice().reverse();
+  // per-bar tooltip HTML indexed same as pts (oldest=0, newest=NBARS-1)
   function makeTip(winStart,pt){
     const d0=new Date(winStart),d1=new Date(winStart+WIN_MS);
     const t0=d0.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
@@ -415,7 +428,8 @@ function renderMetrics(){
     if(!pt){h+=`<div style="color:#3d4f60;margin-top:4px;font-size:.68rem">No data</div>`;return h;}
     h+=`<div class="tip-sep"></div>`;
     h+=tipRow("CPU",pt.cpu.toFixed(1)+"%",pt.cpu>85?"#f07f64":null);
-    h+=tipRow("Memory",pt.mem_pct.toFixed(1)+"%",pt.mem_pct>90?"#f07f64":null);
+    h+=tipRow("RAM",(pt.mem_pct||0).toFixed(1)+"% · "+((pt.mem_used||0)).toFixed(1)+" GB",pt.mem_pct>90?"#f07f64":null);
+    if(pt.swap_pct!=null)h+=tipRow("Swap",(pt.swap_pct||0).toFixed(1)+"% · "+((pt.swap_used||0)).toFixed(1)+" GB",pt.swap_pct>80?"#f07f64":null);
     h+=tipRow("Net ↓",fmtBytes(pt.net_in)+"/s");
     h+=tipRow("Net ↑",fmtBytes(pt.net_out)+"/s");
     if(pt.disk_io&&pt.disk_io.length){
@@ -428,13 +442,14 @@ function renderMetrics(){
     }
     return h;
   }
-  const winTips=Array.from({length:96},(_,i)=>makeTip(nowWin-(95-i)*WIN_MS,pts[i]));
-  const filledCount=slots96.filter(Boolean).length;
-  document.getElementById("sparks-label").textContent=`System History — 24h window (${filledCount}/96 × 15-min bars)`;
+  const winTips=Array.from({length:NBARS},(_,i)=>makeTip(nowWin-(NBARS-1-i)*WIN_MS,pts[i]));
+  const filledCount=slotsN.filter(Boolean).length;
+  document.getElementById("sparks-label").textContent=`System History — 24h (${filledCount}/${NBARS} × ${window.SPARK_WIN===15?"15-min":"1-hr"} bars)`;
+  const togBtn=document.getElementById("sparks-toggle");if(togBtn)togBtn.textContent=window.SPARK_WIN===15?"1hr":"15m";
   document.getElementById("sec-sparks").style.display="";
-  function sRow(label,vals,fixedMax,color,cur,sub,tips){
+  function sRow(label,vals,fixedMax,color,cur,sub,tips,warnThresh){
     const subHtml=sub?`<span class="spark-sub">${sub}</span>`:"";
-    return`<div class="spark-row"><span class="spark-name"><span>${label}</span>${subHtml}</span><span class="spark-val">${cur}</span><span class="spark-svg">${metricSpark(vals,fixedMax,color,tips)}</span></div>`;
+    return`<div class="spark-row"><span class="spark-name"><span>${label}</span>${subHtml}</span><span class="spark-val">${cur}</span><span class="spark-svg">${metricSpark(vals,fixedMax,color,tips,warnThresh)}</span></div>`;
   }
   const diskColors=["#60a5fa","#a78bfa","#f472b6","#fb923c","#34d399"];
   const diskNames=[...new Set(pts.flatMap(p=>p?(p.disk_io||[]).map(d=>d.n):[]))];
@@ -455,11 +470,16 @@ function renderMetrics(){
     const iopsRow=sRow(lbl+" IOPS",iopsVals,maxIops||null,col+"99",curIops.toLocaleString()+" IOPS",iopsSub,winTips);
     return[bwRow,iopsRow];
   });
+  const validPts=pts.filter(Boolean);
+  const peakCpu=validPts.length?Math.max(...validPts.map(p=>p.cpu)):0;
+  const peakRam=validPts.length?Math.max(...validPts.map(p=>p.mem_used||0)):0;
+  const peakSwap=validPts.length?Math.max(...validPts.map(p=>p.swap_used||0)):0;
   document.getElementById("spark-list").innerHTML=[
-    sRow("CPU",     pts.map(p=>p?p.cpu:null),              100,"#4ade80",now.cpu+"%",undefined,winTips),
-    sRow("Memory",  pts.map(p=>p?p.mem_pct:null),          100,"#fb923c",now.mem_pct+"%",undefined,winTips),
+    sRow("CPU",    pts.map(p=>p?p.cpu:null),             100,                "#4ade80",(now.cpu||0)+"%",                    "peak "+peakCpu.toFixed(1)+"%",                                                   winTips,85),
+    sRow("RAM",    pts.map(p=>p&&p.mem_used!=null?p.mem_used:null), now.mem_tot||8, "#fb923c",(now.mem_used||0).toFixed(1)+" GB","/ "+now.mem_tot+" GB  •  peak "+peakRam.toFixed(1)+" GB",                  winTips,(now.mem_tot||8)*0.9),
+    sRow("Swap",   pts.map(p=>p&&p.swap_used!=null?p.swap_used:null),now.swap_tot||null,"#a78bfa",(now.swap_used||0).toFixed(1)+" GB","/ "+(now.swap_tot||"?")+ " GB  •  peak "+peakSwap.toFixed(1)+" GB",winTips,now.swap_tot?now.swap_tot*0.8:null),
     ...diskRows,
-    sRow("Network", pts.map(p=>p?p.net_in+p.net_out:null), null,"#34d399",fmtBytes(now.net_in+now.net_out)+"/s",undefined,winTips),
+    sRow("Network",pts.map(p=>p?p.net_in+p.net_out:null),null,       "#34d399",fmtBytes(now.net_in+now.net_out)+"/s",undefined,                                                                           winTips),
   ].join("");
 
   /* disk space */
@@ -551,24 +571,36 @@ function renderPerf(){
   list.innerHTML=parts.join("");
 }
 
-/* tooltip interaction */
+/* tooltip + cross-row highlight (unified data-bar across metrics + perf) */
 (()=>{
   const $t=document.getElementById("tip");
+  let _bar=null;
+  function clearHi(val){if(val===null)return;document.querySelectorAll(`.col-hi[data-bar="${val}"]`).forEach(r=>r.setAttribute("opacity","0"));}
+  function setHi(val){if(val===null)return;document.querySelectorAll(`.col-hi[data-bar="${val}"]`).forEach(r=>r.setAttribute("opacity","1"));}
   document.addEventListener("mousemove",e=>{
     const el=e.target instanceof Element?e.target.closest("[data-tid]"):null;
-    if(!el){$t.style.display="none";return;}
-    const html=TIP_STORE[el.getAttribute("data-tid")];
-    if(!html){$t.style.display="none";return;}
-    $t.innerHTML=html;
-    $t.style.display="block";
-    const tw=$t.offsetWidth,th=$t.offsetHeight,vw=innerWidth,vh=innerHeight;
-    let x=e.clientX+14,y=e.clientY-10;
-    if(x+tw>vw-8)x=e.clientX-tw-14;
-    if(y+th>vh-8)y=vh-th-8;
-    if(y<8)y=8;
-    $t.style.left=x+"px";$t.style.top=y+"px";
+    if(!el){$t.style.display="none";}
+    else{
+      const html=TIP_STORE[el.getAttribute("data-tid")];
+      if(!html){$t.style.display="none";}
+      else{
+        $t.innerHTML=html;$t.style.display="block";
+        const tw=$t.offsetWidth,th=$t.offsetHeight,vw=innerWidth,vh=innerHeight;
+        let x=e.clientX+14,y=e.clientY-10;
+        if(x+tw>vw-8)x=e.clientX-tw-14;
+        if(y+th>vh-8)y=vh-th-8;
+        if(y<8)y=8;
+        $t.style.left=x+"px";$t.style.top=y+"px";
+      }
+    }
+    const barEl=e.target instanceof Element?e.target.closest("[data-bar]"):null;
+    const barIdx=barEl?barEl.getAttribute("data-bar"):null;
+    if(barIdx!==_bar){clearHi(_bar);setHi(barIdx);_bar=barIdx;}
   });
-  document.addEventListener("mouseleave",()=>{$t.style.display="none";});
+  document.addEventListener("mouseleave",()=>{
+    $t.style.display="none";
+    clearHi(_bar);_bar=null;
+  });
 })();
 
 /* reload data files periodically */
