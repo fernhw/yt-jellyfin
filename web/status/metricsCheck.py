@@ -36,7 +36,7 @@ snap = {
     "swap_tot":  round(data["mem"]["swap_total"] / 1073741824, 2),
     "disk_r":    _sum(data.get("disk_io", []), "read_bps"),
     "disk_w":    _sum(data.get("disk_io", []), "write_bps"),
-    "disk_io":   [{"n": d["name"], "l": d.get("label", d["name"]), "r": round(d["read_bps"]), "w": round(d["write_bps"])} for d in data.get("disk_io", [])],
+    "disk_io":   [{"n": d["name"], "l": d.get("label", d["name"]), "r": round(d["read_bps"]), "w": round(d["write_bps"]), "mr": d.get("max_r", 0), "mw": d.get("max_w", 0)} for d in data.get("disk_io", [])],
     "net_in":    _sum(data.get("net_io",  []), "recv_bps"),
     "net_out":   _sum(data.get("net_io",  []), "sent_bps"),
     "vpn":       data.get("vpn", {}).get("active", False),

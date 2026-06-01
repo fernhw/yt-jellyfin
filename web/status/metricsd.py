@@ -47,73 +47,95 @@ _docker_ts: float = 0.0
 _DOCKER_TTL = 5.0
 _docker_mu  = threading.Lock()
 
-# ── Disk label cache — rebuilt every _DISK_LABEL_TTL seconds ─────────────────
-# Handles dynamic add/remove of disks; scales to any number of drives.
-# Strategy (in priority order):
-#   1. Volume name from psutil mount points  (e.g. disk7s1 → /Volumes/Jellyfin → "Jellyfin")
-#   2. diskutil "Device / Media Name"        (e.g. disk0 → "APPLE SSD AP0256Q" → "SSD")
-#   3. Raw device name as-is (fallback)
+# ── Disk config + label resolution ───────────────────────────────────────────
+# disk_config.json (same dir as this file) maps device name → {name, max_r, max_w}
+# Auto-discovery fills in any disk not in the config file.
+# Everything is cached for _DISK_LABEL_TTL seconds so add/remove of disks is
+# picked up without restarting the daemon.
 import re as _re
 
-_disk_label_cache: dict  = {}
-_disk_label_ts:   float  = 0.0
-_DISK_LABEL_TTL           = 300.0   # rebuild every 5 minutes
-_DISKUTIL_JUNK            = {"APPLE", "Media", "Disk", "Device"}
-_DISKUTIL_MODEL_RE        = _re.compile(r'^[A-Z0-9]{4,}$')  # strips tokens like AP0256Q
+_DISK_CFG_PATH   = os.path.join(os.path.dirname(__file__), "disk_config.json")
+_DISK_LABEL_TTL  = 300.0        # rebuild every 5 minutes
+_DISKUTIL_JUNK   = {"APPLE", "Media", "Disk", "Device"}
+_DISKUTIL_RE     = _re.compile(r'^[A-Z0-9]{4,}$')   # strips tokens like AP0256Q
+
+_disk_info_cache: dict  = {}    # name → {label, max_r_bps, max_w_bps}
+_disk_info_ts:    float = 0.0
 
 
-def _build_disk_labels() -> dict:
-    """Scan current mounts + diskutil to build disk-name → friendly-label mapping."""
-    labels: dict = {}
+def _load_disk_config() -> dict:
+    """Load disk_config.json; returns {} if file missing or malformed."""
+    try:
+        with open(_DISK_CFG_PATH) as f:
+            raw = json.load(f)
+        # strip comment keys, convert MB/s → bytes/s
+        out = {}
+        for k, v in raw.items():
+            if k.startswith("_"):
+                continue
+            out[k] = {
+                "name":     v.get("name", k),
+                "max_r":    int(v.get("max_r", 0)) * 1_000_000,
+                "max_w":    int(v.get("max_w", 0)) * 1_000_000,
+            }
+        return out
+    except Exception:
+        return {}
 
-    # Pass 1: psutil mount points  (covers external volumes with a volume name)
+
+def _auto_label(name: str) -> str:
+    """Discover a friendly label for a device via mounts then diskutil."""
+    # 1. psutil mount points
     try:
         for part in psutil.disk_partitions(all=False):
-            raw = part.device.split("/")[-1]           # disk7s1
-            base = _re.sub(r'(s\d+)+$', '', raw)      # disk7
-            if base and base not in labels:
+            raw  = part.device.split("/")[-1]
+            base = _re.sub(r'(s\d+)+$', '', raw)
+            if base == name:
                 mnt = part.mountpoint
-                labels[base] = "system" if mnt == "/" else mnt.split("/")[-1]
+                return "system" if mnt == "/" else mnt.split("/")[-1]
     except Exception:
         pass
+    # 2. diskutil (macOS)
+    try:
+        out = subprocess.check_output(
+            ["diskutil", "info", name], stderr=subprocess.DEVNULL, timeout=3
+        ).decode()
+        for line in out.splitlines():
+            if "Device / Media Name" in line:
+                media = line.split(":", 1)[-1].strip()
+                words = [w for w in media.split()
+                         if w not in _DISKUTIL_JUNK and not _DISKUTIL_RE.match(w)]
+                if words:
+                    return " ".join(words[:2])
+    except Exception:
+        pass
+    return name
 
-    # Pass 2: diskutil info for disks not yet covered (physical containers / bare disks)
-    # Only called for disks psutil currently sees, so it stays O(#active disks)
+
+def _build_disk_info() -> dict:
+    """Return {device: {label, max_r_bps, max_w_bps}} for all currently active disks."""
+    cfg = _load_disk_config()
     try:
         active = set(psutil.disk_io_counters(perdisk=True) or {})
     except Exception:
         active = set()
 
+    info = {}
     for name in sorted(active):
-        if name in labels:
-            continue
-        try:
-            out = subprocess.check_output(
-                ["diskutil", "info", name], stderr=subprocess.DEVNULL, timeout=3
-            ).decode()
-            for line in out.splitlines():
-                if "Device / Media Name" in line:
-                    media = line.split(":", 1)[-1].strip()
-                    words = [
-                        w for w in media.split()
-                        if w not in _DISKUTIL_JUNK and not _DISKUTIL_MODEL_RE.match(w)
-                    ]
-                    if words:
-                        labels[name] = " ".join(words[:2])
-                    break
-        except Exception:
-            pass
-
-    return labels
+        if name in cfg:
+            info[name] = cfg[name]
+        else:
+            info[name] = {"name": _auto_label(name), "max_r": 0, "max_w": 0}
+    return info
 
 
-def _disk_label(name: str) -> str:
-    """Return a friendly label for a disk device name, refreshing every TTL seconds."""
-    global _disk_label_cache, _disk_label_ts
-    if time.time() - _disk_label_ts >= _DISK_LABEL_TTL:
-        _disk_label_cache = _build_disk_labels()
-        _disk_label_ts    = time.time()
-    return _disk_label_cache.get(name, name)
+def _disk_info(name: str) -> dict:
+    """Return cached disk info entry, rebuilding every _DISK_LABEL_TTL seconds."""
+    global _disk_info_cache, _disk_info_ts
+    if time.time() - _disk_info_ts >= _DISK_LABEL_TTL:
+        _disk_info_cache = _build_disk_info()
+        _disk_info_ts    = time.time()
+    return _disk_info_cache.get(name, {"name": name, "max_r": 0, "max_w": 0})
 
 
 def _refresh_docker() -> None:
@@ -228,9 +250,12 @@ def collect() -> dict:
         if any(name.startswith(p) for p in _SKIP_DISK):
             continue
         prev = _prev_disk.get(name, c)
+        di   = _disk_info(name)
         disk_io.append({
             "name":       name,
-            "label":      _disk_label(name),
+            "label":      di["name"],
+            "max_r":      di["max_r"],
+            "max_w":      di["max_w"],
             "read_bps":   max(0.0, (c.read_bytes  - prev.read_bytes)  / dt),
             "write_bps":  max(0.0, (c.write_bytes - prev.write_bytes) / dt),
             "read_iops":  max(0.0, (c.read_count  - prev.read_count)  / dt),

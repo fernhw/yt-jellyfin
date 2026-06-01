@@ -71,6 +71,7 @@
     .spark-row{display:flex;align-items:center;gap:9px;padding:6px 11px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
     .spark-name{width:80px;font:500 .78rem/1 sans-serif;flex-shrink:0}
     .spark-val{width:76px;font:500 .7rem/1 sans-serif;color:var(--muted);text-align:right;flex-shrink:0}
+    .spark-sub{font:.62rem/1 sans-serif;color:var(--muted);opacity:.6;flex-shrink:0;padding-left:4px;white-space:nowrap}
     .spark-svg{flex:1;min-width:0}
     .spark-svg svg{display:block;width:100%;height:28px}
     /* perf */
@@ -335,7 +336,11 @@ function renderMetrics(){
     vCard("Uptime",  fmtUptime(now.uptime),now.procs+" proc",                            false),
   ];
   const dios=now.disk_io&&now.disk_io.length?now.disk_io:null;
-  if(dios)dios.forEach(d=>parts.push(vCard(d.l||d.n,fmtBytes(d.r+d.w)+"/s","R "+fmtBytes(d.r)+" W "+fmtBytes(d.w)+"/s",false)));
+  if(dios)dios.forEach(d=>{
+    const maxBps=(d.mr||0)+(d.mw||0);
+    const maxStr=maxBps?(" · max "+fmtBytes(maxBps)+"/s"):"";
+    parts.push(vCard(d.l||d.n,fmtBytes(d.r+d.w)+"/s","↑"+fmtBytes(d.r)+" ↓"+fmtBytes(d.w)+"/s"+maxStr,false));
+  });
   else parts.push(vCard("Disk I/O",fmtBytes(now.disk_r+now.disk_w)+"/s","R "+fmtBytes(now.disk_r)+" W "+fmtBytes(now.disk_w)+"/s",false));
   parts.push(vCard("Network",fmtBytes(now.net_in+now.net_out)+"/s","&#8595; "+fmtBytes(now.net_in)+" &#8593; "+fmtBytes(now.net_out)+"/s",false));
   document.getElementById("vitals").innerHTML=parts.join("");}
@@ -344,8 +349,9 @@ function renderMetrics(){
   const pts=H.slice(0,288).reverse();
   document.getElementById("sparks-label").textContent="System History — "+n+" snapshots · ~"+hrs+"h · 24h window";
   document.getElementById("sec-sparks").style.display="";
-  function sRow(label,vals,fixedMax,color,cur){
-    return`<div class="spark-row"><span class="spark-name">${label}</span><span class="spark-val">${cur}</span><span class="spark-svg">${metricSpark(vals,fixedMax,color)}</span></div>`;
+  function sRow(label,vals,fixedMax,color,cur,sub){
+    const subHtml=sub?`<span class="spark-sub">${sub}</span>`:"";
+    return`<div class="spark-row"><span class="spark-name">${label}</span><span class="spark-val">${cur}</span>${subHtml}<span class="spark-svg">${metricSpark(vals,fixedMax,color)}</span></div>`;
   }
   const diskColors=["#60a5fa","#a78bfa","#f472b6","#fb923c","#34d399"];
   const diskNames=[...new Set(pts.flatMap(p=>(p.disk_io||[]).map(d=>d.n)))];
@@ -353,7 +359,10 @@ function renderMetrics(){
     const vals=pts.map(p=>{const d=(p.disk_io||[]).find(x=>x.n===name);return d?d.r+d.w:0;});
     const cur=(now.disk_io||[]).find(d=>d.n===name);
     const lbl=cur&&cur.l?cur.l:name;
-    return sRow(lbl,vals,null,diskColors[i%diskColors.length],cur?fmtBytes(cur.r+cur.w)+"/s":"—");
+    const maxBps=cur?((cur.mr||0)+(cur.mw||0)):0;
+    const fixedMax=maxBps||null;
+    const sub=maxBps?"max "+fmtBytes(maxBps)+"/s":null;
+    return sRow(lbl,vals,fixedMax,diskColors[i%diskColors.length],cur?fmtBytes(cur.r+cur.w)+"/s":"—",sub);
   });
   document.getElementById("spark-list").innerHTML=[
     sRow("CPU",     pts.map(p=>p.cpu),              100,"#4ade80",now.cpu+"%"),
