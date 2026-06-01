@@ -104,7 +104,7 @@
       .perf-ms{display:none}
     }
     /* cross-highlight + toggle */
-    .col-hi{transition:opacity .06s;pointer-events:none}
+    .col-hi{transition:opacity .06s}
     .spark-toggle-btn{background:transparent;border:1px solid #3b4550;color:#7899b5;padding:3px 9px;border-radius:999px;cursor:pointer;font:600 .6rem/1 sans-serif;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;margin-left:6px}
     .spark-toggle-btn:hover{border-color:#5a7080;color:#a0c0d8}
     /* tooltip */
@@ -275,16 +275,18 @@ function perfSpark(vals,sharedMax,tips){
   const W2=240;
   const bw=W2/n;
   const bars=vals.map((v,i)=>{
-    const ta=tips&&tips[i]!=null?` data-tid="${storeTip(tips[i])}"`:""; 
     const bi=` data-bar="${i}"`;
     if(v.ok===null){
-      return`<rect x="${(i*bw).toFixed(1)}" y="${H-3}" width="${Math.max(1,bw-.5).toFixed(1)}" height="3" fill="#2a3040" rx="1"${ta}${bi}/>`;
+      return`<rect x="${(i*bw).toFixed(1)}" y="${H-3}" width="${Math.max(1,bw-.5).toFixed(1)}" height="3" fill="#2a3040" rx="1"${bi}/>`;
     }
     const pct=v.ok&&v.ms>0?v.ms/maxMs:(v.ok?0.02:1);
     const h=Math.max(2,Math.round(pct*(H-2)));
-    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${v.ok?"#4ade80":"#f07f64"}" rx="1"${ta}${bi}/>`;
+    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${v.ok?"#4ade80":"#f07f64"}" rx="1"${bi}/>`;
   }).join("");
-  const hiRects=vals.map((_,i)=>`<rect class="col-hi" data-bar="${i}" x="${(i*bw).toFixed(1)}" y="0" width="${Math.max(1,bw-.5).toFixed(1)}" height="${H}" fill="rgba(255,255,255,.13)" opacity="0" rx="1"/>`).join("");
+  const hiRects=vals.map((_,i)=>{
+    const ta=tips&&tips[i]!=null?` data-tid="${storeTip(tips[i])}"`:"";
+    return`<rect class="col-hi" data-bar="${i}" x="${(i*bw).toFixed(1)}" y="0" width="${Math.max(1,bw-.5).toFixed(1)}" height="${H}" fill="rgba(255,255,255,.13)" opacity="0" rx="1"${ta}/>`;
+  }).join("");
   return`<svg viewBox="0 0 ${W2} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}${hiRects}</svg>`;
 }
 
@@ -296,16 +298,18 @@ function metricSpark(vals,fixedMax,color,tips,warnThresh){
   const W2=240;
   const bw=W2/n;
   const bars=vals.map((v,i)=>{
-    const ta=tips&&tips[i]!=null?` data-tid="${storeTip(tips[i])}"`:""; 
     const bi=` data-bar="${i}"`;
     if(v===null||v===undefined){
-      return`<rect x="${(i*bw).toFixed(1)}" y="${H-3}" width="${Math.max(1,bw-.5).toFixed(1)}" height="3" fill="#2a3040" rx="1"${ta}${bi}/>`;
+      return`<rect x="${(i*bw).toFixed(1)}" y="${H-3}" width="${Math.max(1,bw-.5).toFixed(1)}" height="3" fill="#2a3040" rx="1"${bi}/>`;
     }
     const isWarn=warnThresh!=null&&v>=warnThresh;
     const h=Math.max(2,Math.round((v/max)*(H-2)));
-    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${isWarn?"#f07f64":color}" rx="1"${ta}${bi}/>`;
+    return`<rect x="${(i*bw).toFixed(1)}" y="${H-h}" width="${Math.max(1,bw-.5).toFixed(1)}" height="${h}" fill="${isWarn?"#f07f64":color}" rx="1"${bi}/>`;
   }).join("");
-  const hiRects=vals.map((_,i)=>`<rect class="col-hi" data-bar="${i}" x="${(i*bw).toFixed(1)}" y="0" width="${Math.max(1,bw-.5).toFixed(1)}" height="${H}" fill="rgba(255,255,255,.13)" opacity="0" rx="1"/>`).join("");
+  const hiRects=vals.map((_,i)=>{
+    const ta=tips&&tips[i]!=null?` data-tid="${storeTip(tips[i])}"`:"";
+    return`<rect class="col-hi" data-bar="${i}" x="${(i*bw).toFixed(1)}" y="0" width="${Math.max(1,bw-.5).toFixed(1)}" height="${H}" fill="rgba(255,255,255,.13)" opacity="0" rx="1"${ta}/>`;
+  }).join("");
   return`<svg viewBox="0 0 ${W2} ${H}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">${bars}${hiRects}</svg>`;
 }
 
@@ -418,9 +422,12 @@ function renderMetrics(){
       return{n,l:ds[0].l,r:davg("r"),w:davg("w"),ri:davg("ri"),wi:davg("wi"),
              mr:ds[0].mr,mw:ds[0].mw,mir:ds[0].mir,miw:ds[0].miw};
     }).filter(Boolean);
+    // use proc list from the newest beat in the window
+    const newest=beats.reduce((a,b)=>new Date(a.ts)>new Date(b.ts)?a:b);
     return{ts:beats[0].ts,cpu:avg("cpu"),mem_pct:avg("mem_pct"),mem_used:avg("mem_used"),
            swap_pct:avg("swap_pct"),swap_used:avg("swap_used"),
-           net_in:avg("net_in"),net_out:avg("net_out"),disk_io};
+           net_in:avg("net_in"),net_out:avg("net_out"),disk_io,
+           top_cpu:newest.top_cpu||[],top_mem:newest.top_mem||[]};
   }
   const slotsN=Array.from({length:NBARS},(_,i)=>avgWin(nowWin-i*WIN_MS));
   const pts=slotsN.slice().reverse();
@@ -447,14 +454,14 @@ function renderMetrics(){
   }
   const subRow=(label,val)=>`<div class="tip-row" style="font-size:.65rem"><span class="tip-label" style="padding-left:6px">${label}</span><span class="tip-val">${val}</span></div>`;
 
-  const cpuTips=makeTips(NBARS,(pt,isNewest)=>{
+  const cpuTips=makeTips(NBARS,(pt)=>{
     let h=tipRow("CPU",pt.cpu.toFixed(1)+"%",pt.cpu>85?"#f07f64":null);
-    if(isNewest)(now.top_cpu||[]).forEach(p=>h+=subRow(esc(p.name),p.cpu.toFixed(1)+"%"));
+    (pt.top_cpu||[]).forEach(p=>h+=subRow(esc(p.name),p.cpu.toFixed(1)+"%"));
     return h;
   });
-  const ramTips=makeTips(NBARS,(pt,isNewest)=>{
+  const ramTips=makeTips(NBARS,(pt)=>{
     let h=tipRow("RAM",(pt.mem_pct||0).toFixed(1)+"% · "+((pt.mem_used||0)).toFixed(1)+" GB",pt.mem_pct>90?"#f07f64":null);
-    if(isNewest)(now.top_mem||[]).forEach(p=>h+=subRow(esc(p.name),p.mem.toFixed(0)+" MB"));
+    (pt.top_mem||[]).forEach(p=>h+=subRow(esc(p.name),p.mem.toFixed(0)+" MB"));
     return h;
   });
   const swapTips=makeTips(NBARS,(pt)=>tipRow("Swap",(pt.swap_pct||0).toFixed(1)+"% · "+((pt.swap_used||0)).toFixed(1)+" GB",pt.swap_pct>80?"#f07f64":null));
