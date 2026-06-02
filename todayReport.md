@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-02
 
-> *Good morning! Here's what landed on Tuesday, June 02, 2026 at 11:37 AM.*
-> **YT Mirror:** 600.80 GB used · 0.91 TB free
+> *Good afternoon! Here's what landed on Tuesday, June 02, 2026 at 03:08 PM.*
+> **YT Mirror:** 601.05 GB used · 0.91 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,9 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **Nintendo Music – Announcement Trailer** — *Nintendo of America* · downloaded 03:07 PM · not podcastable
+- **NO ONE saw this coming..** — *Asmongold TV* · downloaded 03:06 PM · not podcastable
+- **This is concerning..** — *Asmongold TV* · downloaded 03:05 PM · not podcastable
 - **AMD Pretends to Care** — *Gamers Nexus* · downloaded 11:35 AM · not podcastable
 - **He’s shocked this actually happened..** — *Asmongold TV* · downloaded 11:34 AM · not podcastable
 - **PVZ Tree Vs Yeti Ruined My Algorithm** — *Lessons in Meme Culture* · downloaded 09:38 AM · not podcastable
