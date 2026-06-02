@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-01
 
-> *Good evening! Here's what landed on Monday, June 01, 2026 at 08:06 PM.*
-> **YT Mirror:** 602.36 GB used · 0.76 TB free
+> *Good evening! Here's what landed on Monday, June 01, 2026 at 09:09 PM.*
+> **YT Mirror:** 602.21 GB used · 0.77 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **Nvidia Actually Did It** — *TechLinked* · downloaded 09:07 PM · podcastable
+- **Nintendo Music – New Updates Trailer** — *Nintendo of America* · downloaded 09:06 PM · not podcastable
 - **Lian Li's Double-Barrel Crossflow Fan | Lancool 207XL, Lancool 4, & USB Engineering, ft. CEO** — *Gamers Nexus* · downloaded 07:05 PM · not podcastable
 - **'Backrooms' is a big deal...** — *Karsten Runquist* · downloaded 03:11 PM · not podcastable
 - **What the F*CK is happening in Paris??** — *Asmongold TV* · downloaded 03:10 PM · not podcastable
