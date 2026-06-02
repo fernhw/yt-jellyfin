@@ -1,14 +1,14 @@
-last_scan=1780402121741
-total_videos=2777
-updated=2026-06-02 07:08:41
+last_scan=1780411187751
+total_videos=2781
+updated=2026-06-02 09:39:47
 report_date=2026-06-02
-downloaded_today=4
-deleted_today=3
+downloaded_today=8
+deleted_today=6
 skipped_today=1
 channels_scanned=93
 channels_total=93
 errors_last_run=0
 errors_list=
-downloaded_list=Big A:Hollywood Is Panicking|Internet Today:America's Birthday Canceled After Trump Throws Tantrum?!|TechDweeb:A Tiny Escape From Reality|Asmongold TV  :Holy f***ing sh*t..
-deleted_list=InternetToday:The_Truth_Might_Not_Be_Out_There_S26E17|AsmongoldTV:This_was_a_fing_fever_dream_S26E172|TechDweeb:Chill_Gaming_for_Busy_Adults_S26E02
+downloaded_list=Big A:Hollywood Is Panicking|Internet Today:America's Birthday Canceled After Trump Throws Tantrum?!|TechDweeb:A Tiny Escape From Reality|Asmongold TV  :Holy f***ing sh*t..|Lessons in Meme Culture:PVZ Tree Vs Yeti Ruined My Algorithm|Digital Foundry:Final Fantasy 7 Rebirth - Switch 2/Xbox Series X|S Tech Review - Switch 2 FPS Boosted Over the Demo!|Nintendo of America:Star Fox — Overview Trailer — Nintendo Switch 2|Skill Up:Austin strongly recommends: Lego Batman - Legacy of the Dark Knight (Review)
+deleted_list=InternetToday:The_Truth_Might_Not_Be_Out_There_S26E17|AsmongoldTV:This_was_a_fing_fever_dream_S26E172|TechDweeb:Chill_Gaming_for_Busy_Adults_S26E02|DigitalFoundry:DF_Direct_QA_Sony_Tightens_Grip_on_Exclusivity_FSR_4_on_Xbox_What_Is_The_Immense_S26E30|SkillUp:We_asked_the_Mixtape_devs_how_they_made_2026s_highest_rated_game_Friends_Per_Sec_S26E11|NintendoofAmerica:The_Splatoon_3_North_American_League_Show_2026_Episode_7_S26E45
 skipped_list=members-only:https://www.youtube.com/watch?v=NOfRf59hw8o
