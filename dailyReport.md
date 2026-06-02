@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-02
 
-> *Good morning! Here's what landed on Tuesday, June 02, 2026 at 09:40 AM.*
-> **YT Mirror:** 601.17 GB used · 0.77 TB free
+> *Good morning! Here's what landed on Tuesday, June 02, 2026 at 11:37 AM.*
+> **YT Mirror:** 600.80 GB used · 0.91 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **AMD Pretends to Care** — *Gamers Nexus* · downloaded 11:35 AM · not podcastable
+- **He’s shocked this actually happened..** — *Asmongold TV* · downloaded 11:34 AM · not podcastable
 - **PVZ Tree Vs Yeti Ruined My Algorithm** — *Lessons in Meme Culture* · downloaded 09:38 AM · not podcastable
 - **Final Fantasy 7 Rebirth - Switch 2/Xbox Series X|S Tech Review - Switch 2 FPS Boosted Over the Demo!** — *Digital Foundry* · downloaded 09:37 AM · not podcastable
 - **Star Fox — Overview Trailer — Nintendo Switch 2** — *Nintendo of America* · downloaded 09:36 AM · not podcastable
