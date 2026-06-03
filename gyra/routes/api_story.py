@@ -18,74 +18,9 @@ from db import (create_addon, create_notification, delete_addon,
                 update_addon_content, user_in_project)
 from routes.helpers import (allowed_image, bold_verb_in_title,
                              build_story_title, count_words)
-from routes.api_container import container_payload
 
 
 def register(app) -> None:
-
-    def _cascade_container_status(conn, story_id, old_status_id, new_status_id, actor_id, actor_name):
-        """When a CONTAINER story's done-state flips, notify assignees of all
-        attached stories that they (un)became Integrate stories."""
-        if old_status_id == new_status_id:
-            return
-        row = conn.execute(
-            "SELECT box_type, title FROM stories WHERE id=?", (story_id,)
-        ).fetchone()
-        if not row or not row["box_type"]:
-            return  # not a container
-        def _is_done(sid):
-            if not sid: return False
-            r = conn.execute("SELECT is_done FROM statuses WHERE id=?", (sid,)).fetchone()
-            return bool(r and r["is_done"])
-        was_done = _is_done(old_status_id)
-        now_done = _is_done(new_status_id)
-        if was_done == now_done:
-            return
-        attached = conn.execute(
-            "SELECT id, title, status_id FROM stories WHERE attached_to=?", (story_id,)
-        ).fetchall()
-        if not attached:
-            return
-        ts = int(time.time())
-        for att in attached:
-            assignees = conn.execute(
-                "SELECT user_id FROM story_users WHERE story_id=?", (att["id"],)
-            ).fetchall()
-            for a in assignees:
-                # Do NOT skip the actor here. The actor moved the *container*;
-                # the *dependent* story they're assigned to just had its scope
-                # auto-changed and they need a notification + badge for that
-                # specific story too.
-                if now_done:
-                    msg = (f"{actor_name} closed container '{row['title'][:40]}' — "
-                           f"your story '{att['title'][:40]}' is now an Integrate task")
-                    ntype = "integrate_ready"
-                else:
-                    msg = (f"{actor_name} reopened container '{row['title'][:40]}' — "
-                           f"your story '{att['title'][:40]}' is no longer Integrate")
-                    ntype = "integrate_undone"
-                conn.execute(
-                    "INSERT INTO notifications "
-                    "(user_id,type,message,story_id,from_user,created_at) "
-                    "VALUES (?,?,?,?,?,?)",
-                    (a["user_id"], ntype, msg, att["id"], actor_id, ts),
-                )
-            # System comment on in-flight (not-done) attached stories only,
-            # so contributors mid-work see why their scope just changed.
-            if now_done and not _is_done(att["status_id"]):
-                sys_body = (
-                    f"⚙️ Scope auto-changed: container "
-                    f"\u201C{row['title']}\u201D was just closed by {actor_name}, "
-                    f"so this story now needs the integrate step. "
-                    f"Story points already account for collaboration — if this "
-                    f"was already in flight, sorry for the late additions."
-                )
-                conn.execute(
-                    "INSERT INTO comments "
-                    "(story_id, user_id, content, created_at, is_system) "
-                    "VALUES (?,?,?,?,1)",
-                    (att["id"], actor_id, sys_body, ts),
-                )
 
     # ── B1: project-membership guard for every per-story endpoint ────────────
     def _require_story_access(story_id):
@@ -117,18 +52,13 @@ def register(app) -> None:
     @app.route("/api/story-templates")
     @login_required
     def api_story_templates():
-        from story_templates import TEMPLATES, BLOCKS, TYPES, DOMAINS
-        # Public-safe — static catalogue, no PII.
-        return jsonify(
-            templates=TEMPLATES,
-            blocks=BLOCKS,
-            types=TYPES,
-            domains=DOMAINS,
-        )
+        from story_templates import TEMPLATES
+        # Return public-safe copy. Strip nothing — these are static, no PII.
+        return jsonify(templates=TEMPLATES)
 
     # ── Single-story read ──────────────────────────────────────────────────────
 
-    @app.route("/api/story/<storyref:story_id>/detail")
+    @app.route("/api/story/<int:story_id>/detail")
     @login_required
     def api_story_detail(story_id):
         if not _require_story_access(story_id):
@@ -160,7 +90,7 @@ def register(app) -> None:
             acceptance_criteria=row["acceptance_criteria"] or "",
         )
 
-    @app.route("/api/story/<storyref:story_id>/card")
+    @app.route("/api/story/<int:story_id>/card")
     @login_required
     def api_story_card(story_id):
         """Card-level snapshot — used by the board to refresh a card after an edit."""
@@ -187,7 +117,7 @@ def register(app) -> None:
             ],
         )
 
-    @app.route("/api/story/<storyref:story_id>/full")
+    @app.route("/api/story/<int:story_id>/full")
     @login_required
     def api_story_full(story_id):
         s = _require_story_access(story_id)
@@ -208,18 +138,6 @@ def register(app) -> None:
             (story_id,),
         ).fetchall()
         conn.close()
-        uid = session.get("user_id")
-        role = session.get("role")
-        comments_out = []
-        for c in comments:
-            cd = dict(c)
-            cd["is_system"] = bool(cd.get("is_system"))
-            cd["can_delete"] = (
-                role in ("admin", "super_user")
-                or cd["user_id"] == uid
-                or cd["is_system"]
-            )
-            comments_out.append(cd)
         return jsonify(
             ok=True,
             story=dict(s),
@@ -233,19 +151,18 @@ def register(app) -> None:
                 for img in images
             ],
             addons=[dict(a) for a in addons],
-            comments=comments_out,
+            comments=[dict(c) for c in comments],
             history=[dict(h) for h in history],
             statuses=[dict(st) for st in statuses],
             all_users=[dict(u) for u in all_users],
             story_types=[dict(t) for t in story_types],
             epics=[dict(e) for e in get_epics(s["project_id"])],
             creator_name=s["creator_name"] or "",
-            container=container_payload(s),
         )
 
     # ── Story mutation ──────────────────────────────────────────────────────────
 
-    @app.route("/api/story/<storyref:story_id>/split", methods=["POST"])
+    @app.route("/api/story/<int:story_id>/split", methods=["POST"])
     @login_required
     def api_split_story(story_id):
         enforce_csrf()
@@ -283,26 +200,21 @@ def register(app) -> None:
             "FROM stories WHERE project_id=?",
             (orig["project_id"],),
         ).fetchone()
-        snum_row = conn.execute(
-            "SELECT COALESCE(MAX(story_number),0)+1 AS nxt "
-            "FROM stories WHERE project_id=?",
-            (orig["project_id"],),
-        ).fetchone()
         now = int(time.time())
         cur = conn.execute(
             """INSERT INTO stories
                (project_id,title,description,acceptance_criteria,story_points,
                 status_id,sprint,order_index,created_at,created_by,updated_at,
                 story_actor,story_verb,story_z,story_x,story_for,story_y,
-                story_type,priority,epic_id,story_number)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                story_type,priority,epic_id)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (orig["project_id"], b_title, b_desc,
              b_ac,
              int(b_points), orig["status_id"], orig["sprint"],
              order_row["nxt"], now, session["user_id"], now,
              orig["story_actor"], orig["story_verb"], orig["story_z"],
              orig["story_x"], orig["story_for"], orig["story_y"],
-             orig["story_type"], b_priority, orig["epic_id"], snum_row["nxt"]),
+             orig["story_type"], b_priority, orig["epic_id"]),
         )
         new_id = cur.lastrowid
 
@@ -324,7 +236,7 @@ def register(app) -> None:
         conn.close()
         return jsonify(ok=True, id=new_id)
 
-    @app.route("/api/story/<storyref:story_id>/move", methods=["POST"])
+    @app.route("/api/story/<int:story_id>/move", methods=["POST"])
     @login_required
     def api_move_story(story_id):
         enforce_csrf()
@@ -371,15 +283,11 @@ def register(app) -> None:
                          f"{session['display_name']} moved a story to {st_name}",
                          story_id, session["user_id"], int(time.time())),
                     )
-            _cascade_container_status(
-                conn, story_id, old["status_id"], status_id,
-                session["user_id"], session["display_name"],
-            )
         conn.commit()
         conn.close()
         return jsonify(ok=True)
 
-    @app.route("/api/story/<storyref:story_id>/sprint", methods=["POST"])
+    @app.route("/api/story/<int:story_id>/sprint", methods=["POST"])
     @login_required
     def api_move_to_sprint(story_id):
         enforce_csrf()
@@ -417,7 +325,7 @@ def register(app) -> None:
         conn.close()
         return jsonify(ok=True)
 
-    @app.route("/api/story/<storyref:story_id>", methods=["PATCH"])
+    @app.route("/api/story/<int:story_id>", methods=["PATCH"])
     @login_required
     def api_update_story(story_id):
         enforce_csrf()
@@ -482,15 +390,6 @@ def register(app) -> None:
         uid = session["user_id"]
         log_story_change(story_id, uid, "Status",
                          old.get("status_id"), status_id)
-        # Cascade integrate notifications if this is a container that flipped done-state
-        if old.get("status_id") != status_id:
-            _cascade_conn = get_db()
-            _cascade_container_status(
-                _cascade_conn, story_id, old.get("status_id"), status_id,
-                uid, session["display_name"],
-            )
-            _cascade_conn.commit()
-            _cascade_conn.close()
         log_story_change(story_id, uid, "Sprint",
                          old.get("sprint"), sprint)
         log_story_change(story_id, uid, "Priority",
@@ -561,7 +460,7 @@ def register(app) -> None:
         )
 
     # ── Quick-update: single-field patch for the right-click context menu ──
-    @app.route("/api/story/<storyref:story_id>/quick-update", methods=["POST"])
+    @app.route("/api/story/<int:story_id>/quick-update", methods=["POST"])
     @login_required
     def api_quick_update_story(story_id):
         """Apply a single targeted mutation to a story.
@@ -736,7 +635,7 @@ def register(app) -> None:
         finally:
             conn.close()
 
-    @app.route("/api/story/<storyref:story_id>", methods=["DELETE"])
+    @app.route("/api/story/<int:story_id>", methods=["DELETE"])
     @login_required
     def api_delete_story(story_id):
         enforce_csrf()
@@ -754,7 +653,7 @@ def register(app) -> None:
 
     # ── Images ────────────────────────────────────────────────────────────────
 
-    @app.route("/api/story/<storyref:story_id>/image", methods=["POST"])
+    @app.route("/api/story/<int:story_id>/image", methods=["POST"])
     @login_required
     def api_upload_story_image(story_id):
         enforce_csrf()
@@ -796,7 +695,7 @@ def register(app) -> None:
                        med_url=url_for("story_image", filename="med_" + filename),
                        thumb_url=url_for("story_image", filename="thumb_" + filename))
 
-    @app.route("/api/story/<storyref:story_id>/image/<int:image_id>",
+    @app.route("/api/story/<int:story_id>/image/<int:image_id>",
                methods=["DELETE"])
     @login_required
     def api_delete_story_image(story_id, image_id):
@@ -827,7 +726,7 @@ def register(app) -> None:
 
     # ── Comments ──────────────────────────────────────────────────────────────
 
-    @app.route("/api/story/<storyref:story_id>/comment", methods=["POST"])
+    @app.route("/api/story/<int:story_id>/comment", methods=["POST"])
     @login_required
     def api_create_comment(story_id):
         enforce_csrf()
@@ -861,41 +760,7 @@ def register(app) -> None:
                              f"'{s['title'][:50]}'"),
                     story_id=story_id, from_user=commenter,
                 )
-        out = dict(row)
-        out["is_system"] = bool(out.get("is_system"))
-        out["can_delete"] = True  # author can always delete their own
-        return jsonify(ok=True, comment=out)
-
-    @app.route("/api/comment/<int:comment_id>", methods=["DELETE"])
-    @login_required
-    def api_delete_comment(comment_id):
-        enforce_csrf()
-        conn = get_db()
-        c = conn.execute(
-            "SELECT id, story_id, user_id, is_system FROM comments WHERE id=?",
-            (comment_id,),
-        ).fetchone()
-        if not c:
-            conn.close()
-            return jsonify(ok=False), 404
-        # Must have access to the host story (project membership).
-        if not _require_story_access(c["story_id"]):
-            conn.close()
-            return jsonify(ok=False), 404
-        uid  = session.get("user_id")
-        role = session.get("role")
-        is_sys = bool(c["is_system"])
-        # Allowed: admins, the author, or anyone with access if it's a
-        # system-generated comment.
-        if not (role in ("admin", "super_user")
-                or c["user_id"] == uid
-                or is_sys):
-            conn.close()
-            return jsonify(ok=False, error="forbidden"), 403
-        conn.execute("DELETE FROM comments WHERE id=?", (comment_id,))
-        conn.commit()
-        conn.close()
-        return jsonify(ok=True)
+        return jsonify(ok=True, comment=dict(row))
 
     # ── Bulk operations ───────────────────────────────────────────────────────
 
@@ -940,11 +805,6 @@ def register(app) -> None:
             return jsonify(ok=False, error="invalid ids"), 400
         ph   = ",".join("?" * len(story_ids))
         conn = get_db()
-        # Snapshot old status per story so we can detect container done-state flips
-        old_rows = conn.execute(
-            f"SELECT id, status_id FROM stories WHERE id IN ({ph})", story_ids
-        ).fetchall()
-        old_status_map = {r["id"]: r["status_id"] for r in old_rows}
         # Only update sprint if explicitly provided — omitting it must NOT null it out
         # (stories with sprint=NULL are hidden from the board entirely)
         if "sprint" in data:
@@ -958,12 +818,6 @@ def register(app) -> None:
                 f"UPDATE stories SET status_id=?,updated_at=? "
                 f"WHERE id IN ({ph})",
                 [int(status_id), int(time.time())] + story_ids,
-            )
-        # Cascade integrate notifications for any container that flipped done-state
-        for sid in story_ids:
-            _cascade_container_status(
-                conn, sid, old_status_map.get(sid), int(status_id),
-                session["user_id"], session["display_name"],
             )
         conn.commit()
         conn.close()
@@ -1102,7 +956,7 @@ def register(app) -> None:
 
     # ── Addons (mini-waterfall tasks) ─────────────────────────────────────────
 
-    @app.route("/api/story/<storyref:story_id>/addons", methods=["GET"])
+    @app.route("/api/story/<int:story_id>/addons", methods=["GET"])
     @login_required
     def api_get_addons(story_id):
         if not _require_story_access(story_id):
@@ -1110,7 +964,7 @@ def register(app) -> None:
         addons = get_story_addons(story_id, session["user_id"])
         return jsonify([dict(a) for a in addons])
 
-    @app.route("/api/story/<storyref:story_id>/addons", methods=["POST"])
+    @app.route("/api/story/<int:story_id>/addons", methods=["POST"])
     @login_required
     def api_create_addon(story_id):
         enforce_csrf()

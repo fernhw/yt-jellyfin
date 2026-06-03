@@ -48,7 +48,7 @@
     <nav class="sidebar-nav">
       {% for p in projects %}
       {% set is_current = project is defined and project and project.id == p.id %}
-      {% set sub_endpoints = ['backlog','grooming','standup','dailies','retro','archive','bulk_add','prioritizer','initiatives_index','initiative_new','initiative_detail','epics_manage'] %}
+      {% set sub_endpoints = ['backlog','grooming','standup','dailies','retro','archive','bulk_add'] %}
       {% set more_open = is_current and request.endpoint in sub_endpoints %}
       <div class="sidebar-section{% if is_current %} is-current{% endif %}" data-proj-id="{{ p.id }}">
         <div class="sidebar-proj-head">
@@ -68,16 +68,6 @@
             </svg>
           </button>
           <div class="sidebar-more-menu">
-            <a class="sidebar-link sidebar-link-sm{% if request.endpoint in ('initiatives_index','initiative_new','initiative_detail') and is_current %} active{% endif %}"
-               href="{{ url_for('initiatives_index', project_id=p.id) }}">
-              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1.5l2.6 5.3 5.9.86-4.25 4.14 1 5.86L10 14.9l-5.27 2.77 1-5.86L1.5 7.66l5.9-.86L10 1.5z"/></svg>
-              Initiatives
-            </a>
-            <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'epics_manage' and is_current %} active{% endif %}"
-               href="{{ url_for('epics_manage', project_id=p.id) }}">
-              <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 3h6v2H7V7zm0 4h6v2H7v-2z"/></svg>
-              Manage Epics
-            </a>
             <a class="sidebar-link sidebar-link-sm{% if request.endpoint == 'backlog' and is_current %} active{% endif %}"
                href="{{ url_for('backlog', project_id=p.id) }}">
               <svg viewBox="0 0 20 20" fill="currentColor"><rect x="2" y="4" width="16" height="2" rx="1"/><rect x="2" y="9" width="16" height="2" rx="1"/><rect x="2" y="14" width="10" height="2" rx="1"/></svg>
@@ -146,19 +136,8 @@
           {% endif %}
           <span>{{ session.display_name }}</span>
         </a>
-        <button class="sidebar-bell-btn" id="gyra-bell-btn" title="Notifications" aria-label="Notifications" type="button">
-          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path d="M10 2a1 1 0 011 1v.6a5 5 0 014 4.9V11l1.3 2.6a1 1 0 01-.9 1.4H4.6a1 1 0 01-.9-1.4L5 11V8.5a5 5 0 014-4.9V3a1 1 0 011-1zm-2 14a2 2 0 104 0H8z"/>
-          </svg>
-          <span class="bell-count" id="gyra-bell-count" hidden>0</span>
-        </button>
         <button class="sidebar-help-btn" id="gyra-help-open" title="GYRA Guide — Scrum for Indies" aria-label="Open GYRA Guide">?</button>
       </div>
-
-      <a class="sidebar-link" href="{{ url_for('account_totp') }}">
-        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 1a5 5 0 00-5 5v2H4a2 2 0 00-2 2v7a2 2 0 002 2h12a2 2 0 002-2v-7a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm3 7V6a3 3 0 10-6 0v2h6z" clip-rule="evenodd"/></svg>
-        Security &amp; 2FA
-      </a>
 
       <a class="sidebar-link" href="{{ url_for('logout') }}">
         <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V5h10v10H4a1 1 0 100 2h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm9.293 4.293a1 1 0 011.414 1.414L12.414 10l1.293 1.293a1 1 0 01-1.414 1.414l-2-2a1 1 0 010-1.414l2-2z" clip-rule="evenodd"/></svg>
@@ -220,7 +199,6 @@
           <a href="#gh-scrum">What is Scrum?</a>
           <a href="#gh-stories">User Stories</a>
           <a href="#gh-points">Story Points</a>
-          <a href="#gh-refine">Refinement (Grooming)</a>
           <a href="#gh-poker">Planning Poker</a>
           <a href="#gh-iterate">Why Iterate</a>
           <a href="#gh-multi">Slice of Cake</a>
@@ -258,92 +236,42 @@
 
           <section id="gh-stories">
             <h3>User Stories &mdash; GYRA's Format</h3>
-
-            <p>A user story is one sentence. It says who gets something, where they do it, and what changes for them when it works.</p>
-
-            <p>That is the whole point: a person who has never seen the project can read a single card and understand who it is for and why it exists. If a card needs a meeting to explain it, it is not a story yet.</p>
-
-            <p>Forget &ldquo;As a / I want / so that&rdquo; &mdash; nobody talks that way. GYRA gives you six slots. Fill them like a sentence.</p>
-
-            <blockquote class="gh-quote"><strong>[actor]</strong> &nbsp;[needs]&nbsp; <strong>[this]</strong> &nbsp;[where]&nbsp; [to&nbsp;/&nbsp;for] &nbsp;<strong>[what]</strong></blockquote>
-
-            <h4>The six slots</h4>
+            <p>Forget &ldquo;As a / I want / so that&rdquo;. GYRA enforces a tighter sentence, built from six parts. Dropdowns where the words are fixed. Free text where they need to be specific.</p>
+            <blockquote class="gh-quote"><strong>[Actor]</strong> &nbsp;[needs/wants/must]&nbsp; <strong>[Action&nbsp;Word]</strong> &nbsp;[what]&nbsp; [to/because/so&nbsp;they] &nbsp;[outcome]</blockquote>
+            <h4>The six parts</h4>
             <table class="gh-table">
-              <thead><tr><th>Slot</th><th>What goes here</th></tr></thead>
+              <thead><tr><th>Field</th><th>Type</th><th>What goes here</th></tr></thead>
               <tbody>
-                <tr><td><strong>actor</strong></td><td>Who <em>receives</em> the value. <code>User</code> or <code>Admin</code>. That is it.</td></tr>
-                <tr><td>needs</td><td>The desire word. <em>needs, wants, must, can, should be able to&hellip;</em></td></tr>
-                <tr><td><strong>this</strong></td><td>A single observable action &mdash; a verb. <em>crawl, press button, save, jump.</em> What the user actually does.</td></tr>
-                <tr><td>where</td><td>Where in the product it happens. <em>Main Menu, Combat Sandbox, Settings page.</em></td></tr>
-                <tr><td>to&nbsp;/&nbsp;for</td><td>The connector. <code>to</code> for outcomes, <code>for</code> for purposes. <code>because</code>, <code>so they</code>, <code>so we</code>, <code>in order to</code> also work for longer phrasing.</td></tr>
-                <tr><td><strong>what</strong></td><td>The outcome &mdash; what is different for the user once this works.</td></tr>
+                <tr><td>Actor</td><td>Dropdown</td><td><code>User</code>, <code>Developer</code>, <code>Admin</code>, <code>Guest</code>, <code>Manager</code></td></tr>
+                <tr><td>Verb</td><td>Free text</td><td><em>needs</em>, <em>wants</em>, <em>must</em></td></tr>
+                <tr><td>Action Word</td><td>One word, enforced</td><td>A gerund. The verb of the feature. <em>Walking</em>, <em>Uploading</em>, <em>Deleting</em>, <em>Living</em>.</td></tr>
+                <tr><td>What</td><td>Free text</td><td>What the action applies to. <em>character</em>, <em>receipts</em>, <em>save file</em>.</td></tr>
+                <tr><td>Connector</td><td>Dropdown</td><td><code>to</code>, <code>because</code>, <code>so they</code></td></tr>
+                <tr><td>Outcome</td><td>Free text</td><td>Why it matters. <em>game feels alive</em>, <em>recover without support</em>.</td></tr>
               </tbody>
             </table>
-
-            <h4>The user&apos;s perspective &mdash; the most important rule</h4>
-            <p>A story is always written from the side of the person who <em>receives</em> the value. Never the person who builds it.</p>
-            <p>This sounds obvious until you write one. Then everyone does this:</p>
+            <h4>Real examples &mdash; the way the system reads them</h4>
             <ul>
-              <li>&ldquo;Designer needs to tune enemy damage&rdquo; &mdash; <strong>wrong</strong>. The designer is on the team. The story has no user.</li>
-              <li>&ldquo;Developer needs a save endpoint&rdquo; &mdash; <strong>wrong</strong>. The endpoint is plumbing. Who is it actually for?</li>
+              <li><em>User needs <strong>Living</strong> Character to have a game</em></li>
+              <li><em>Player wants <strong>Saving</strong> progress to not lose a run</em></li>
+              <li><em>Admin must <strong>Banning</strong> accounts to clean up after attacks</em></li>
+              <li><em>User wants <strong>Resetting</strong> password to recover without writing to support</em></li>
             </ul>
-            <p>Rewrite from the receiver:</p>
+            <p>The Action Word is the spine of the sentence. GYRA bolds it on every card so you can read a column at a glance: <em>Living, Saving, Banning, Resetting</em>. That bold word is also the test for whether a story is small enough. If the action is too big to live in one gerund, the story is too big to live in one sprint &mdash; split it.</p>
+            <h4>Hard rules</h4>
             <ul>
-              <li><em>User needs fight tuned enemies, Combat Sandbox, for balanced game combat.</em> &mdash; <strong>right</strong>. You can tell if it shipped.</li>
-              <li><em>User needs save progress, Main Menu, to choose what to do later.</em> &mdash; <strong>right</strong>. A person feels the result.</li>
+              <li>Action Word is <strong>one word</strong>. No spaces. The server rejects it.</li>
+              <li>Full sentence: <strong>19 words max</strong>.</li>
+              <li>All six parts required.</li>
+              <li>If you cannot say it in this shape, the idea is not a story yet.</li>
             </ul>
-            <p>If the only person affected by a story is someone on the team, it is a <em>task</em>, not a story. Put it in the description, not the title. The one exception: a tool genuinely built for another staff member &mdash; then that staffer is the user. Otherwise the actor is <code>User</code> or <code>Admin</code>.</p>
-
-            <h4>Real examples</h4>
-            <ul>
-              <li><em>User needs save progress, Main Menu Demo Version, to choose what to do later.</em></li>
-              <li><em>User needs fight tuned enemies, Combat Sandbox, for balanced game combat.</em></li>
-              <li><em>Admin needs ban accounts, Moderator Console, to clean up after attacks.</em></li>
-              <li><em>User wants reset password, Login Screen, to recover without writing to support.</em></li>
-            </ul>
-
-            <h4>How GYRA helps you write better &mdash; the gentle nudges</h4>
-            <p>GYRA will not block a sloppy story. It saves it and warns you. The warnings come from decades of teams making the same mistakes:</p>
-            <ul>
-              <li><strong>Solutioning.</strong> &ldquo;this&rdquo; starts with <em>add, create, build, implement, design, refactor, wire, integrate, deploy&hellip;</em> &mdash; that is build work, not a user action. The user does not &ldquo;add a button.&rdquo; The user <em>presses</em> a button.</li>
-              <li><strong>Two stories in one.</strong> &ldquo;this&rdquo; or &ldquo;what&rdquo; contains <em>and</em>, &amp;, or a comma. Split it. Small stories ship; bundled ones rot.</li>
-              <li><strong>Vague outcome.</strong> &ldquo;what&rdquo; says <em>make it work, nice ux, better, stuff, reasons</em>. That is filler. Say what actually changes for the user.</li>
-              <li><strong>Circular.</strong> The outcome just restates the action: <em>save progress / to save their progress</em>. The outcome should explain <em>why</em>, not repeat <em>what</em>.</li>
-              <li><strong>Too big.</strong> Over 8 points triggers a warning. See the Story Points section &mdash; if you cannot size it, split it.</li>
-              <li><strong>Untestable.</strong> A story sized 3+ with no description has no way to know it is done. Add at least one &ldquo;done when&hellip;&rdquo; line.</li>
-              <li><strong>Noun where a verb belongs.</strong> &ldquo;this&rdquo; starting with <em>a, the, tuning, tuned&hellip;</em> is usually a noun phrase pretending to be an action. Lead with the verb.</li>
-            </ul>
-
-            <h4>Hard rules (these block the save)</h4>
-            <ul>
-              <li>Actor must be <code>User</code> or <code>Admin</code>. Anything else is rejected.</li>
-              <li>All six slots required.</li>
-              <li>Full sentence: <strong>19 words max</strong> across all six slots together.</li>
-              <li>If you cannot say it in this shape, the idea is not a story yet &mdash; it is research, a task, or a wish. Put it somewhere else.</li>
-            </ul>
-
-            <div class="gh-callout">
-              <strong>The test:</strong> read the card to someone who has never seen the project. If they understand who it is for and what changes for that person when it ships, the story works. If you have to explain it, rewrite it.
-            </div>
           </section>
 
           <section id="gh-points">
             <h3>Story Points</h3>
-
-            <p>Points are not hours. Points are <em>sizes</em>, compared to each other.</p>
-
-            <p>If you have never seen this before, here is the shift:</p>
-
-            <p>People are bad at guessing how long work will take. Decades of evidence. &ldquo;This will take four hours&rdquo; is almost always wrong. It ignores interruptions, edge cases, the bug you find halfway in, and the optimism you applied before touching the code.</p>
-
-            <p>People are <em>good</em> at comparing two things side by side. Which apple is bigger? Easy. Which of these two stories is the bigger lift? Also easy &mdash; even when you have no clue how many hours either will take.</p>
-
-            <p>That is the whole trick: <strong>stop guessing time, start comparing sizes</strong>. The team picks one story everyone agrees on as a baseline, calls it a 3. Every other story is sized by asking <em>&ldquo;is this bigger or smaller than that one, and by how much?&rdquo;</em></p>
-
-            <p>After a few sprints the team learns roughly how many points fit in a sprint. That number is honest, because it came from real shipping &mdash; not from optimism. You plan with it.</p>
-
-            <h4>The scale</h4>
-            <p>Use modified Fibonacci. The gaps grow on purpose, so you cannot pretend a 5 and a 6 are different things. You either round down or admit it is the next size up.</p>
+            <p>Points are not hours. Repeat that until it sticks.</p>
+            <p>&ldquo;This will take four hours&rdquo; is almost always wrong. It ignores interruptions, edge cases, the bug you find halfway in, and the optimism you apply before touching the code. &ldquo;This is about the same size as the login screen we shipped last sprint&rdquo; is honest and gets more accurate over time.</p>
+            <p>Use modified Fibonacci. The gaps grow on purpose, to kill false precision.</p>
             <table class="gh-table">
               <thead><tr><th>Points</th><th>What it means</th></tr></thead>
               <tbody>
@@ -351,61 +279,15 @@
                 <tr><td>2</td><td>Small. A button. A query. A component.</td></tr>
                 <tr><td>3</td><td>Medium. A form with validation. An endpoint. A modal.</td></tr>
                 <tr><td>5</td><td>Large. A feature with multiple states and edge cases.</td></tr>
-                <tr><td>8</td><td>Very large. A subsystem. An integration. A new screen. <em>The biggest a story should be when it enters a sprint.</em></td></tr>
-                <tr><td>13</td><td>Too big &mdash; GYRA warns you. Split it before it enters the sprint.</td></tr>
+                <tr><td>8</td><td>Very large. A subsystem. An integration. A new screen.</td></tr>
+                <tr><td>13</td><td>Too big. Split it before it enters the sprint.</td></tr>
                 <tr><td>21</td><td>You do not understand it well enough yet. Stop. Break it down.</td></tr>
               </tbody>
             </table>
-            <p>A 5 is not five hours. A 5 is bigger than a 3 and smaller than an 8. That is all you need.</p>
-
-            <h4>Why comparing works when guessing does not</h4>
-            <ul>
-              <li>It takes the time pressure out of the estimate. Nobody is being asked &ldquo;will you finish today?&rdquo;</li>
-              <li>It surfaces disagreement. If one person says 2 and another says 8, you have just found a hidden assumption. Talk about it (see Planning Poker).</li>
-              <li>It gets more accurate over time. After three sprints your point-per-sprint number is real, not a hope.</li>
-              <li>It catches stories that are too big. An &ldquo;I do not know&rdquo; is itself information &mdash; that story needs to be split or researched first.</li>
-            </ul>
-
+            <p>A 5 is not five hours. A 5 is bigger than a 3 and smaller than an 8. That is enough.</p>
             <div class="gh-callout">
-              <strong>Velocity</strong> is total points your team finishes in a sprint. It is a planning number. Not a grade. Never use it to compare people or pressure the team.
+              <strong>Velocity</strong> is total points your team finishes in a sprint. It is a planning number. Not a grade. Never use it to compare people.
             </div>
-          </section>
-
-          <section id="gh-refine">
-            <h3>Refinement &mdash; Why You Should Not Fill Points or Priority Alone</h3>
-
-            <p>When you import stories from a spreadsheet, GYRA tells you to leave the <strong>points</strong> and <strong>priority</strong> columns blank. That is on purpose.</p>
-
-            <p>Both numbers are <em>conversations</em>, not facts. They only mean something when the team agrees on them together. A points value you typed alone in a spreadsheet at 1am is just your guess wearing a costume.</p>
-
-            <h4>What refinement is, in plain words</h4>
-            <p>The team sits down for fifteen or thirty minutes, walks through new stories one at a time, and for each one decides three things together:</p>
-            <ol>
-              <li><strong>Is the story clear?</strong> Does everyone understand who it is for and what changes when it ships? If not, rewrite or split.</li>
-              <li><strong>How big is it?</strong> Size it by comparison (see Story Points). Everyone votes at once; disagreement is information.</li>
-              <li><strong>How important is it?</strong> The Product Owner sets priority while the team explains the cost. Both halves of that picture are needed.</li>
-            </ol>
-            <p>A story is &ldquo;ready&rdquo; once it is clear, sized, prioritised, and has at least one &ldquo;done when&hellip;&rdquo; line. Stories that are not ready do not enter the sprint. That single rule kills 80% of sprint pain.</p>
-
-            <h4>GYRA's Grooming view &mdash; built for this exact moment</h4>
-            <p>Open <strong>Grooming</strong> in the sidebar. It is a real-time, multi-player room: every teammate sees the same story, casts a points vote at the same time, and watches the others land. No one anchors the vote. Disagreements surface immediately. Talk for thirty seconds, re-vote, move on.</p>
-            <p>Everything updates live across every screen. The Product Owner can shuffle priority while the team is voting on size, and both numbers settle together. When the story is ready, one click pushes it into the sprint backlog.</p>
-            <p>This is the one part of the tool we are most proud of. Most teams have never had it. They use a spreadsheet, or a Zoom call where everyone takes turns saying numbers, or a plugin bolted onto another tracker that is worse than both. Grooming in GYRA is in the box and built so a five-person studio can refine a sprint's worth of stories in a single coffee.</p>
-
-            <div class="gh-callout">
-              <strong>Why we built this:</strong> Jira is an advanced tool aimed at teams that already know Scrum cold. Most teams do not &mdash; they pick up Jira and inherit forty fields, twelve states, and zero context for any of it. GYRA is the opposite. The tool teaches the practice. Grooming is the most concentrated dose of that idea: a single screen that makes the right behaviour the path of least resistance.
-            </div>
-
-            <h4>What &ldquo;ready&rdquo; actually looks like</h4>
-            <ul>
-              <li>Six story slots filled and the sentence makes sense out loud.</li>
-              <li>Points set by team vote &mdash; not one person, not the loudest person, not last sprint's leftover.</li>
-              <li>Priority set by the Product Owner, in the open, while the team watches.</li>
-              <li>At least one acceptance line (&ldquo;done when the user can press X and see Y&rdquo;).</li>
-              <li>No &ldquo;and&rdquo; smashing two stories together. If there is, split first, refine after.</li>
-            </ul>
-
-            <p>That is it. Refinement is not a meeting people dread. Done right, it is the cheapest insurance the team buys all sprint.</p>
           </section>
 
           <section id="gh-poker">
@@ -435,7 +317,7 @@
           <section id="gh-multi">
             <h3>Multiple Assignees &mdash; The Slice of Cake</h3>
             <p>A real feature is a slice of cake. Top to bottom. Every layer.</p>
-            <p>&ldquo;Make Character&rdquo; is not a story. It is a project. A real story is <em>User needs control a living character, in the Open World, to feel like they are inside the game</em>. That story needs concept design, modeling, texturing, rigging, animation, code to load the model, code to drive it, sound for the footsteps, and someone to test that it all works together. No single person ships that. A Jira ticket assigned to one person ships none of it.</p>
+            <p>&ldquo;Make Character&rdquo; is not a story. It is a project. A real story is <em>User needs <strong>Living</strong> Character to have a game</em>. That story needs concept design, modeling, texturing, rigging, animation, code to load the model, code to drive it, sound for the footsteps, and someone to test that it all works together. No single person ships that. A Jira ticket assigned to one person ships none of it.</p>
             <p>GYRA assigns the team to the slice. The slice is the unit. Everyone on the slice iterates together: the rigger sees the animator's tests, the animator sees the code wiring, the coder sees the design intent. The story does not move forward in a relay race &mdash; it moves forward as a body.</p>
             <p>This is the mini-waterfall: each story is its own little top-to-bottom delivery. Inside the sprint, you have many of these slices running in parallel, each with its own small team. Iteration becomes the default. Working together becomes the default. The team is the unit of work, not the individual.</p>
             <div class="gh-callout">
@@ -463,7 +345,7 @@
             <p>Users are human. Every line of GYRA is built around that fact.</p>
             <p>A card lives on the board for weeks. You stand in front of it every morning. You look at it. Eventually you stop seeing it. That is a failure of the tool, not the team. GYRA fights that.</p>
             <h4>Cards look like post-its because they are post-its</h4>
-            <p>Slight rotation. Warm paper colors. A small shadow underneath. The actor and the action read first. They stack. They tilt. They look used.</p>
+            <p>Slight rotation. Warm paper colors. A small shadow underneath. The Action Word in bold. They stack. They tilt. They look used.</p>
             <p>That is not nostalgia. That is utility. A post-it gives the card a body. You remember where it sits, what it looks like, how long it has been there. A flat row in a database gives you none of that.</p>
             <h4>Stickers</h4>
             <p>Pull the sticker menu from the top of the board: <em>Alert, Arrow, Question, Star, Fire, Review, Done, Blocked, Escalate, Note</em>. Slap them on a card. Pin them anywhere on the wall. Add a label. Drag them around.</p>
@@ -502,10 +384,6 @@
 {% endif %}
 
 <script src="{{ url_for('static', filename='js/gyra.js') }}"></script>
-{% if session.user_id %}
-  {% include '_epic_modal.html' %}
-  <script src="{{ url_for('static', filename='js/epic_modal.js') }}"></script>
-{% endif %}
 <script>
 // Sidebar collapse toggle
 (function () {
@@ -590,359 +468,6 @@
   });
 }());
 </script>
-
-{% if session.user_id %}
-<!-- ── Notification bell dropdown panel ── -->
-<div id="gyra-bell-panel" class="gyra-bell-panel" hidden role="dialog" aria-label="Notifications">
-  <div class="gyra-bell-hdr">
-    <span>Notifications</span>
-    <div style="display:flex; align-items:center; gap:6px;">
-      <button type="button" id="gyra-bell-mark" class="gyra-bell-mark">Mark all read</button>
-      <button type="button" id="gyra-bell-close" class="gyra-bell-close" title="Close" aria-label="Close notifications">×</button>
-    </div>
-  </div>
-  <div class="gyra-bell-list" id="gyra-bell-list">
-    <div class="gyra-bell-empty">Loading…</div>
-  </div>
-</div>
-
-<script>
-/* Notification bell — polls /api/notifications every 30s */
-(function () {
-  var btn   = document.getElementById('gyra-bell-btn');
-  var panel = document.getElementById('gyra-bell-panel');
-  var list  = document.getElementById('gyra-bell-list');
-  var count = document.getElementById('gyra-bell-count');
-  var mark  = document.getElementById('gyra-bell-mark');
-  var closeBtn = document.getElementById('gyra-bell-close');
-  if (!btn || !panel) return;
-
-  var appRoot = (document.querySelector('meta[name="app-root"]') || {}).content || '';
-  var csrf    = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
-  var POLL_MS = 8000;
-  var PAGE_SIZE = 20;
-  var lastData = { notifications: [], unread: 0, has_more: false };
-  // All loaded notifications, oldest fetches appended to the bottom. The
-  // poll() refresh only ever rewrites the FIRST page (newest items); any
-  // older pages the user paged into stay in the list below.
-  var loaded   = [];
-  var loadedMore = false;        // user clicked "Load more" at least once
-  var olderHasMore = false;      // older-pages exhaustion flag
-
-  function relTime(ts) {
-    if (!ts) return '';
-    var d = Math.max(0, Math.floor(Date.now()/1000) - ts);
-    if (d < 60)    return d + 's';
-    if (d < 3600)  return Math.floor(d/60)  + 'm';
-    if (d < 86400) return Math.floor(d/3600)+ 'h';
-    return Math.floor(d/86400) + 'd';
-  }
-
-  function escHtml(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  }
-
-  function itemHtml(n) {
-    var avatar = n.from_avatar
-      ? '<img src="' + appRoot + '/avatars/' + encodeURIComponent(n.from_avatar) + '" class="avatar-xs" alt="">'
-      : '<span class="avatar-initial-xs">' + escHtml((n.from_name || '?').charAt(0).toUpperCase()) + '</span>';
-    var link = n.story_id ? (appRoot + '/story/' + n.story_id) : '#';
-    return ''
-      + '<a class="gyra-bell-item' + (n.is_read ? '' : ' is-unread') + '" href="' + link + '">'
-      +   '<div class="gyra-bell-avatar">' + avatar + '</div>'
-      +   '<div class="gyra-bell-body">'
-      +     '<div class="gyra-bell-msg">' + escHtml(n.message || '') + '</div>'
-      +     (n.story_title
-              ? '<div class="gyra-bell-story">' + escHtml(n.story_title) + '</div>'
-              : '')
-      +     '<div class="gyra-bell-time">' + relTime(n.created_at) + ' ago</div>'
-      +   '</div>'
-      + '</a>';
-  }
-
-  function renderList() {
-    if (!loaded.length) {
-      list.innerHTML = '<div class="gyra-bell-empty">No notifications yet.</div>';
-      return;
-    }
-    var html = loaded.map(itemHtml).join('');
-    // Show "Load more" if either the latest poll says there are more pages
-    // beyond what we've shown, or the older-pages cursor still has more.
-    var showMore = (lastData && lastData.has_more) || olderHasMore;
-    if (showMore) {
-      html += '<button type="button" class="gyra-bell-more" id="gyra-bell-more">Load more</button>';
-    } else if (loaded.length >= PAGE_SIZE) {
-      html += '<div class="gyra-bell-end">— end —</div>';
-    }
-    list.innerHTML = html;
-    var moreBtn = document.getElementById('gyra-bell-more');
-    if (moreBtn) moreBtn.addEventListener('click', loadMore);
-  }
-
-  function mergeFirstPage(items) {
-    // Replace the leading slice of `loaded` (everything up to the oldest id
-    // in this page) with the freshly-fetched page. Older paged-in items
-    // (with id smaller than the smallest in `items`) are preserved.
-    if (!items || !items.length) { loaded = []; return; }
-    var minId = items[items.length - 1].id;
-    var tail  = loaded.filter(function (x) { return x.id < minId; });
-    loaded = items.concat(tail);
-  }
-
-  function loadMore() {
-    var moreBtn = document.getElementById('gyra-bell-more');
-    if (moreBtn) { moreBtn.disabled = true; moreBtn.textContent = 'Loading…'; }
-    var off = loaded.length;
-    fetch(appRoot + '/api/notifications?limit=' + PAGE_SIZE + '&offset=' + off,
-          { credentials: 'same-origin' })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d) { if (moreBtn) { moreBtn.disabled = false; moreBtn.textContent = 'Load more'; } return; }
-        loadedMore = true;
-        olderHasMore = !!d.has_more;
-        // Append, dedupe by id.
-        var seen = {};
-        loaded.forEach(function (x) { seen[x.id] = 1; });
-        (d.notifications || []).forEach(function (x) {
-          if (!seen[x.id]) loaded.push(x);
-        });
-        renderList();
-      })
-      .catch(function(){
-        if (moreBtn) { moreBtn.disabled = false; moreBtn.textContent = 'Load more'; }
-      });
-  }
-
-  function updateCount(n) {
-    if (n > 0) {
-      count.hidden = false;
-      count.textContent = n > 99 ? '99+' : String(n);
-      btn.classList.add('has-unread');
-    } else {
-      count.hidden = true;
-      btn.classList.remove('has-unread');
-    }
-  }
-
-  function poll() {
-    fetch(appRoot + '/api/notifications?limit=' + PAGE_SIZE + '&offset=0',
-          { credentials: 'same-origin' })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d) return;
-        lastData = d;
-        mergeFirstPage(d.notifications || []);
-        updateCount(d.unread || 0);
-        if (!panel.hidden) renderList();
-      })
-      .catch(function(){});
-  }
-
-  function openPanel() {
-    panel.hidden = false;
-    renderList();
-    // Position panel next to the bell button
-    var r = btn.getBoundingClientRect();
-    panel.style.left = (r.right + 8) + 'px';
-    panel.style.bottom = (window.innerHeight - r.bottom - 4) + 'px';
-  }
-  function closePanel() { panel.hidden = true; }
-
-  btn.addEventListener('click', function (e) {
-    e.stopPropagation();
-    if (panel.hidden) { openPanel(); poll(); }
-    else closePanel();
-  });
-  if (closeBtn) closeBtn.addEventListener('click', function (e) {
-    e.stopPropagation();
-    closePanel();
-  });
-  document.addEventListener('click', function (e) {
-    if (panel.hidden) return;
-    if (panel.contains(e.target) || btn.contains(e.target)) return;
-    closePanel();
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && !panel.hidden) closePanel();
-  });
-
-  mark.addEventListener('click', function () {
-    fetch(appRoot + '/api/notifications/mark-read', {
-      method: 'POST',
-      headers: { 'X-CSRF-Token': csrf, 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: '{}'
-    })
-    .then(function () { updateCount(0); poll(); });
-  });
-
-  // Initial fetch + interval
-  poll();
-  setInterval(poll, POLL_MS);
-  // Re-poll immediately when the tab regains focus / visibility, so the
-  // badge updates as soon as the user comes back instead of waiting up to
-  // POLL_MS for the next tick.
-  document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible') poll();
-  });
-  window.addEventListener('focus', poll);
-}());
-</script>
-{% endif %}
-
 {% block scripts %}{% endblock %}
-
-{# ── Global invite-link copy handler (delegated; works in flash toasts
-     and in the admin users table without needing per-page wiring). ── #}
-<script>
-(function () {
-  function flashCopied(btn) {
-    var prev = btn.textContent;
-    btn.textContent = 'Copied!';
-    btn.classList.add('is-copied');
-    btn.disabled = true;
-    setTimeout(function () {
-      btn.textContent = prev;
-      btn.classList.remove('is-copied');
-      btn.disabled = false;
-    }, 1500);
-  }
-  function fallbackCopy(url, btn) {
-    var ta = document.createElement('textarea');
-    ta.value = url;
-    ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    try { document.execCommand('copy'); flashCopied(btn); }
-    catch (e) { window.prompt('Copy this link:', url); }
-    document.body.removeChild(ta);
-  }
-  document.addEventListener('click', function (ev) {
-    var btn = ev.target.closest('.invite-copy-btn, [data-invite-url]');
-    if (!btn) return;
-    var url = btn.getAttribute('data-invite-url');
-    if (!url) {
-      // Older inline buttons might pass URL via a sibling input.
-      var input = btn.parentElement && btn.parentElement.querySelector('.invite-toast-input');
-      if (input) url = input.value;
-    }
-    if (!url) return;
-    ev.preventDefault();
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(
-        function () { flashCopied(btn); },
-        function () { fallbackCopy(url, btn); }
-      );
-    } else {
-      fallbackCopy(url, btn);
-    }
-  }, false);
-  // Back-compat shim for templates still calling copyInvite(btn, url) inline.
-  window.copyInvite = function (btn, url) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(
-        function () { flashCopied(btn); },
-        function () { fallbackCopy(url, btn); }
-      );
-    } else {
-      fallbackCopy(url, btn);
-    }
-  };
-})();
-</script>
-
-{# ── First-login welcome modal (set by routes/auth.py on initial sign-in) ── #}
-{% if session.user_id and session._show_welcome %}
-<div id="gyra-welcome-modal" class="gw-modal-bg" role="dialog" aria-modal="true" aria-labelledby="gw-welcome-title">
-  <div class="gw-modal-card">
-    <div class="gw-modal-emoji" aria-hidden="true">👋</div>
-    <h2 id="gw-welcome-title" class="gw-modal-title">
-      Welcome to Gyra, {{ session.display_name or session.username }}.
-    </h2>
-    <p class="gw-modal-lede">
-      Gyra is a small, opinionated workspace for humans who actually make things.
-    </p>
-    <ul class="gw-modal-list">
-      <li><strong>Projects</strong> hold the work — pick one from the sidebar to dive in.</li>
-      <li><strong>Initiatives &amp; Epics</strong> group big bets into something steerable.</li>
-      <li><strong>Stories</strong> are the day-to-day units: tasks, acceptance criteria, points.</li>
-      <li><strong>The Board</strong> is where stories move from <em>idea</em> to <em>shipped</em>.</li>
-    </ul>
-    <p class="gw-modal-foot">
-      No spammy notifications. No "AI insights" pestering you. Just your stuff,
-      where you left it.
-    </p>
-    <div class="gw-modal-actions">
-      <button type="button" id="gw-welcome-dismiss" class="btn btn-primary">Let's go</button>
-    </div>
-  </div>
-</div>
-<style>
-.gw-modal-bg {
-  position:fixed; inset:0; background:rgba(0,0,0,.55);
-  z-index:60000; display:flex; align-items:center; justify-content:center;
-  padding:20px; animation:gw-fade .25s ease-out;
-}
-.gw-modal-card {
-  background:var(--c-gray-50,#F9F5EE); border-radius:12px;
-  max-width:520px; width:100%; padding:28px 30px;
-  box-shadow:0 20px 60px rgba(0,0,0,.35);
-  border:1.5px solid var(--c-gray-200,#DDD0B8);
-  animation:gw-pop .3s cubic-bezier(.2,.9,.3,1.2);
-}
-.gw-modal-emoji { font-size:42px; line-height:1; margin-bottom:8px; }
-.gw-modal-title {
-  font-size:22px; font-weight:900; color:var(--c-gray-900,#1A1208);
-  margin:0 0 10px; line-height:1.2;
-}
-.gw-modal-lede {
-  font-size:14px; color:var(--c-gray-700,#3D2E1A);
-  margin:0 0 14px;
-}
-.gw-modal-list {
-  list-style:none; padding:0; margin:0 0 14px;
-  display:flex; flex-direction:column; gap:6px;
-  font-size:13px; color:var(--c-gray-700,#3D2E1A);
-}
-.gw-modal-list li {
-  padding:6px 10px; background:#fff;
-  border:1.5px solid var(--c-gray-200,#DDD0B8); border-radius:6px;
-}
-.gw-modal-list strong { color:var(--c-purple-500,#7C4A1E); }
-.gw-modal-foot {
-  font-size:12px; color:var(--c-gray-500,#7A6A52);
-  font-style:italic; margin:0 0 18px;
-}
-.gw-modal-actions { display:flex; justify-content:flex-end; }
-@keyframes gw-fade { from { opacity:0; } to { opacity:1; } }
-@keyframes gw-pop  { from { opacity:0; transform:translateY(10px) scale(.97); }
-                     to   { opacity:1; transform:translateY(0)    scale(1);   } }
-</style>
-<script>
-(function () {
-  var modal = document.getElementById('gyra-welcome-modal');
-  var btn   = document.getElementById('gw-welcome-dismiss');
-  if (!modal || !btn) return;
-
-  function close() {
-    modal.style.display = 'none';
-    fetch("{{ url_for('account_welcome_dismiss') }}", {
-      method: 'POST',
-      headers: { 'X-CSRF-Token': "{{ csrf_token() }}" },
-      credentials: 'same-origin'
-    }).catch(function () { /* best-effort */ });
-  }
-
-  btn.addEventListener('click', close);
-  modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && modal.style.display !== 'none') close();
-  });
-  btn.focus();
-}());
-</script>
-{% endif %}
 </body>
 </html>

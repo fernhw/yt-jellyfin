@@ -2,7 +2,7 @@
 {% if mode == 'new' %}
   {% set page_title = 'New Story — Gyra' %}
 {% else %}
-  {% set page_title = story.project_key ~ '-' ~ (story.story_number if story.story_number is not none else story.id) ~ ' — Gyra' %}
+  {% set page_title = story.project_key ~ '-' ~ story.id ~ ' — Gyra' %}
 {% endif %}
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -15,7 +15,7 @@
     <div class="story-breadcrumb">
       <a href="{{ url_for('board', project_id=story.project_id) }}">{{ story.project_name }}</a>
       <span>/</span>
-      <span class="story-key">{{ story.project_key }}-{{ story.story_number if story.story_number is not none else story.id }}</span>
+      <span class="story-key">{{ story.project_key }}-{{ story.id }}</span>
     </div>
     {% endif %}
 
@@ -72,25 +72,21 @@
       {% if mode == 'new' %}
       <input type="hidden" name="project_id" value="{{ project_id }}">
 
-      <!-- ── Story template picker (opens 3-pane modal) ──────────────── -->
+      <!-- ── Story template picker ──────────────────────── -->
       <div class="story-template-card">
+        <label class="story-template-label" for="story-template-sel">
+          Start from a template <span class="story-template-hint">(optional — fills the form for you)</span>
+        </label>
         <div class="story-template-row">
-          <button type="button" id="story-tpl-open" class="btn btn-secondary">
-            📋 Pick a template…
-          </button>
-          <span class="story-template-hint">
-            Templates fill grammar, description, ACs and tasks. Skip to start blank.
-          </span>
+          <select id="story-template-sel" class="form-input">
+            <option value="">— Blank story —</option>
+          </select>
+          <button type="button" id="story-template-apply" class="btn btn-secondary btn-sm" disabled>Use template</button>
         </div>
       </div>
       {% endif %}
 
       <!-- ── User-story builder ─────────────────────── -->
-      <div class="story-guidance">
-        <strong>Write from the receiver's perspective.</strong>
-        <em>User</em> = the person who gets value from the product. <em>Admin</em> = an internal user of our tools.
-        Never write the story from the builder's perspective. &ldquo;Designer needs to tune enemies&rdquo; is wrong &mdash; the User needs tuned enemies.
-      </div>
       <div class="story-builder-card">
         <div class="story-builder-label">User Story</div>
         <div class="story-builder-row">
@@ -156,18 +152,12 @@
 
       <div class="form-group mt-4">
         <label>Description</label>
-        <div class="story-guidance story-guidance-sm tpl-only-hint" style="display:none">
-          Templates are starting points, not gospel. Edit anything that doesn't fit your story.
-        </div>
         <textarea name="description" rows="4" class="form-input"
                   placeholder="More context…">{{ story.description if story else '' }}</textarea>
       </div>
 
       <div class="form-group">
         <label>Acceptance Criteria</label>
-        <div class="story-guidance story-guidance-sm tpl-only-hint" style="display:none">
-          Check this list covers every outcome we'll verify. Add anything missing, remove anything that doesn't apply.
-        </div>
         <textarea name="acceptance_criteria" id="ac-hidden" style="display:none">{{ story.acceptance_criteria if story else '' }}</textarea>
         <div id="ac-list" class="ac-list"></div>
         <button type="button" id="ac-add-btn" class="btn btn-secondary btn-sm ac-add-btn">+ Add criterion</button>
@@ -176,9 +166,6 @@
       {% if mode == 'new' %}
       <div class="story-tasks-section mt-4">
         <div class="tasks-header"><h3>Tasks</h3></div>
-        <div class="story-guidance story-guidance-sm tpl-only-hint" style="display:none">
-          Move, remove or add any task to cover the actual work. Tasks are <strong>BINARY</strong> — done or not done.
-        </div>
         <div id="new-tasks-list" class="tasks-list"></div>
         <div class="task-add-row">
           <input type="text" id="new-task-input" class="form-input"
@@ -277,24 +264,15 @@
       <!-- Comments pane -->
       <div id="tab-comments" class="tab-pane active">
         {% for c in comments %}
-        {% set _can_del = (session.role in ('admin','super_user')) or (c.user_id == session.user_id) or c.is_system %}
-        <div class="comment{% if c.is_system %} is-system{% endif %}" data-cid="{{ c.id }}">
+        <div class="comment">
           <div class="comment-meta">
-            {% if c.is_system %}
-              <span class="comment-sys-badge" title="System-generated">⚙️</span>
-              <strong>System</strong>
+            {% if c.avatar %}
+              <img src="{{ url_for('avatar', filename=c.avatar) }}" class="avatar-xs" alt="">
             {% else %}
-              {% if c.avatar %}
-                <img src="{{ url_for('avatar', filename=c.avatar) }}" class="avatar-xs" alt="">
-              {% else %}
-                <span class="avatar-initial-xs">{{ c.display_name[0]|upper }}</span>
-              {% endif %}
-              <strong>{{ c.display_name }}</strong>
+              <span class="avatar-initial-xs">{{ c.display_name[0]|upper }}</span>
             {% endif %}
+            <strong>{{ c.display_name }}</strong>
             <time>{{ c.created_at | datetimeformat }}</time>
-            {% if _can_del %}
-            <button type="button" class="comment-del-btn js-del-comment" title="Delete comment" aria-label="Delete">×</button>
-            {% endif %}
           </div>
           <p class="comment-body">{{ c.content }}</p>
         </div>
@@ -344,25 +322,16 @@
         {% for entry in all_items | sort(attribute='ts') %}
           {% if entry.type == 'comment' %}
           {% set c = entry.item %}
-          {% set _can_del = (session.role in ('admin','super_user')) or (c.user_id == session.user_id) or c.is_system %}
-          <div class="comment{% if c.is_system %} is-system{% endif %}" data-cid="{{ c.id }}">
+          <div class="comment">
             <div class="comment-meta">
-              {% if c.is_system %}
-                <span class="comment-sys-badge" title="System-generated">⚙️</span>
-                <strong>System</strong>
+              {% if c.avatar %}
+                <img src="{{ url_for('avatar', filename=c.avatar) }}" class="avatar-xs" alt="">
               {% else %}
-                {% if c.avatar %}
-                  <img src="{{ url_for('avatar', filename=c.avatar) }}" class="avatar-xs" alt="">
-                {% else %}
-                  <span class="avatar-initial-xs">{{ c.display_name[0]|upper }}</span>
-                {% endif %}
-                <strong>{{ c.display_name }}</strong>
+                <span class="avatar-initial-xs">{{ c.display_name[0]|upper }}</span>
               {% endif %}
+              <strong>{{ c.display_name }}</strong>
               <time>{{ c.created_at | datetimeformat }}</time>
               <span class="form-hint-inline" style="font-size:9px;opacity:.6">comment</span>
-              {% if _can_del %}
-              <button type="button" class="comment-del-btn js-del-comment" title="Delete comment" aria-label="Delete">×</button>
-              {% endif %}
             </div>
             <p class="comment-body">{{ c.content }}</p>
           </div>
@@ -1105,574 +1074,141 @@
 {% endif %}
 
 {% if mode == 'new' %}
-<!-- ──────────────────────────────────────────────────────────────────────
-     Story Template picker — 3-pane modal (Type rail / Domain rail / cards)
-     ────────────────────────────────────────────────────────────────────── -->
-<div id="tpl-picker" class="tpl-picker" style="display:none"
-     role="dialog" aria-modal="true">
-  <div class="tpl-picker-dialog">
-    <div class="tpl-picker-hdr">
-      <strong>Pick a template</strong>
-      <input type="search" id="tpl-picker-search" class="form-input"
-             placeholder="Filter…">
-      <button type="button" class="tpl-picker-close" id="tpl-picker-close"
-              aria-label="Close">×</button>
-    </div>
-    <div class="tpl-picker-body">
-      <aside class="tpl-pane tpl-pane-types">
-        <h4>Type</h4>
-        <ul id="tpl-type-list"></ul>
-      </aside>
-      <aside class="tpl-pane tpl-pane-domains">
-        <h4>Domain</h4>
-        <ul id="tpl-domain-list"></ul>
-      </aside>
-      <section class="tpl-pane tpl-pane-cards">
-        <h4 id="tpl-cards-heading">All templates</h4>
-        <div id="tpl-cards"></div>
-        <p id="tpl-cards-empty" class="tpl-empty" style="display:none">
-          No templates match — try a different type or domain.
-        </p>
-      </section>
-    </div>
-  </div>
-</div>
-
-<!-- ─── Tiny question prompt — only shown when the template has inline
-     {question?} placeholders. Same exact question text = asked once. ── -->
-<div id="tpl-questions" class="tpl-modal" style="display:none"
-     role="dialog" aria-modal="true">
-  <div class="tpl-modal-dialog" style="max-width:520px">
+<!-- ── Story Template picker — question modal ──────────────────────────── -->
+<div id="tpl-modal" class="tpl-modal" style="display:none" role="dialog" aria-modal="true">
+  <div class="tpl-modal-dialog">
     <div class="tpl-modal-hdr">
-      <strong id="tpl-q-title">Template</strong>
-      <button type="button" class="tpl-modal-close" id="tpl-q-close"
-              aria-label="Close">×</button>
+      <strong id="tpl-modal-title">Template</strong>
+      <button type="button" class="tpl-modal-close" id="tpl-modal-close" aria-label="Close">×</button>
     </div>
     <div class="tpl-modal-body">
-      <div class="tpl-q-why">
-        <div class="tpl-q-why-label">What this template makes</div>
-        <div class="tpl-q-why-desc" id="tpl-q-desc"></div>
-      </div>
-      <div class="tpl-q-preview">
-        <div class="tpl-q-preview-label">Your user story (updates as you type)</div>
-        <div class="tpl-q-preview-text" id="tpl-q-preview"></div>
-      </div>
-      <div id="tpl-q-fields"></div>
+      <p class="tpl-modal-hint" id="tpl-modal-hint"></p>
+      <div id="tpl-modal-questions"></div>
     </div>
     <div class="tpl-modal-footer">
-      <button type="button" class="btn btn-secondary btn-sm"
-              id="tpl-q-back">← Back</button>
-      <button type="button" class="btn btn-primary btn-sm"
-              id="tpl-q-go">Fill story</button>
+      <button type="button" class="btn btn-secondary btn-sm" id="tpl-modal-cancel">Cancel</button>
+      <button type="button" class="btn btn-primary btn-sm" id="tpl-modal-go">Fill story</button>
     </div>
   </div>
 </div>
-
-<style>
-/* ── Picker modal ─────────────────────────────────────────────────────── */
-.tpl-picker {
-  position:fixed; inset:0; background:rgba(0,0,0,.55);
-  z-index:35001; display:flex; align-items:center; justify-content:center;
-}
-.tpl-picker-dialog {
-  background:var(--c-gray-50,#F9F5EE); border-radius:10px;
-  width:96vw; max-width:1100px; height:82vh; display:flex; flex-direction:column;
-  box-shadow:var(--shadow-md, 0 8px 32px rgba(0,0,0,.25));
-  border:1.5px solid var(--c-gray-200,#DDD0B8);
-}
-.tpl-picker-hdr {
-  display:flex; align-items:center; gap:12px;
-  padding:12px 18px; border-bottom:1.5px solid var(--c-gray-200,#DDD0B8);
-  background:var(--c-gray-100,#EDE4D0); border-radius:10px 10px 0 0;
-}
-.tpl-picker-hdr strong { font-size:16px; flex-shrink:0; }
-.tpl-picker-hdr input { flex:1; max-width:300px; }
-.tpl-picker-close {
-  width:32px; height:32px; border-radius:50%;
-  border:1.5px solid var(--c-gray-300,#C4B49A); background:#fff;
-  cursor:pointer; font-size:18px; line-height:1;
-  display:flex; align-items:center; justify-content:center;
-}
-.tpl-picker-close:hover {
-  background:var(--c-red,#DC2626); color:#fff;
-  border-color:var(--c-red,#DC2626);
-}
-.tpl-picker-body { flex:1; display:flex; overflow:hidden; }
-.tpl-pane { overflow-y:auto; padding:12px 14px; }
-.tpl-pane h4 {
-  font-size:11px; font-weight:800; text-transform:uppercase;
-  letter-spacing:.6px; color:var(--c-gray-500,#7A6A52);
-  margin:0 0 8px; padding-bottom:6px;
-  border-bottom:1.5px solid var(--c-gray-200,#DDD0B8);
-}
-.tpl-pane ul { list-style:none; padding:0; margin:0; }
-.tpl-pane li {
-  padding:7px 10px; border-radius:5px; cursor:pointer;
-  font-size:13px; color:var(--c-gray-900,#1A1208);
-  display:flex; justify-content:space-between; align-items:center; gap:6px;
-}
-.tpl-pane li:hover { background:var(--c-gray-100,#EDE4D0); }
-.tpl-pane li.is-active {
-  background:var(--c-purple-500,#7C4A1E); color:#fff; font-weight:700;
-}
-.tpl-pane li .tpl-count {
-  font-size:10px; font-weight:700; opacity:.7;
-  background:rgba(0,0,0,.08); padding:1px 6px; border-radius:8px;
-}
-.tpl-pane li.is-active .tpl-count {
-  background:rgba(255,255,255,.2); opacity:1;
-}
-.tpl-pane-types    { width:180px; flex-shrink:0;
-                     border-right:1.5px solid var(--c-gray-200,#DDD0B8); }
-.tpl-pane-domains  { width:180px; flex-shrink:0;
-                     border-right:1.5px solid var(--c-gray-200,#DDD0B8); }
-.tpl-pane-cards    { flex:1; }
-
-#tpl-cards {
-  display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
-  gap:10px;
-}
-.tpl-card {
-  background:#fff; border:1.5px solid var(--c-gray-200,#DDD0B8);
-  border-radius:8px; padding:12px 14px; cursor:pointer;
-  transition:transform .1s, box-shadow .1s, border-color .1s;
-  display:flex; flex-direction:column; gap:6px;
-}
-.tpl-card:hover {
-  transform:translateY(-2px);
-  box-shadow:var(--shadow-sm, 0 4px 12px rgba(0,0,0,.12));
-  border-color:var(--c-purple-500,#7C4A1E);
-}
-.tpl-card-name { font-weight:700; color:var(--c-gray-900,#1A1208); font-size:14px; }
-.tpl-card-desc { font-size:12px; color:var(--c-gray-700,#3D2E1A); line-height:1.35; }
-.tpl-card-tags {
-  display:flex; gap:6px; flex-wrap:wrap; margin-top:auto; padding-top:4px;
-}
-.tpl-card-tag {
-  font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px;
-  padding:2px 7px; border-radius:9px;
-  background:var(--c-gray-100,#EDE4D0); color:var(--c-gray-700,#3D2E1A);
-}
-.tpl-card-tag.tpl-tag-type { background:#DBEAFE; color:#1E40AF; }
-.tpl-card-tag.tpl-tag-domain { background:#FEF3C7; color:#92400E; }
-.tpl-empty {
-  padding:24px; text-align:center; color:var(--c-gray-500,#7A6A52); font-size:13px;
-}
-
-/* ── Apply modal (re-uses tpl-modal-* base; add block toggles + sections) ── */
-.tpl-apply-section { margin-top:14px; }
-.tpl-apply-section-title {
-  font-size:11px; font-weight:800; text-transform:uppercase;
-  letter-spacing:.6px; color:var(--c-gray-700,#3D2E1A); margin-bottom:8px;
-}
-.tpl-block-row {
-  display:flex; gap:10px; padding:9px 11px; margin-bottom:6px;
-  background:#fff; border:1.5px solid var(--c-gray-200,#DDD0B8);
-  border-radius:6px; cursor:pointer; align-items:flex-start;
-  transition:border-color .1s, background .1s;
-}
-.tpl-block-row:hover { border-color:var(--c-purple-500,#7C4A1E); }
-.tpl-block-row.is-on { background:#EFF6FF; border-color:#3B82F6; }
-.tpl-block-row input[type=checkbox] { margin-top:2px; flex-shrink:0; }
-.tpl-block-info { flex:1; min-width:0; }
-.tpl-block-name {
-  font-weight:700; font-size:13px; color:var(--c-gray-900,#1A1208);
-}
-.tpl-block-desc {
-  font-size:11px; color:var(--c-gray-500,#7A6A52); margin-top:2px;
-  font-style:italic;
-}
-.tpl-block-acs {
-  margin:6px 0 0; padding-left:18px; font-size:11px;
-  color:var(--c-gray-700,#3D2E1A); line-height:1.5;
-}
-</style>
 
 <script>
 (function () {
-  var openBtn   = document.getElementById('story-tpl-open');
-  var picker    = document.getElementById('tpl-picker');
-  var pickClose = document.getElementById('tpl-picker-close');
-  var pickSearch= document.getElementById('tpl-picker-search');
-  var typeList  = document.getElementById('tpl-type-list');
-  var domList   = document.getElementById('tpl-domain-list');
-  var cardsWrap = document.getElementById('tpl-cards');
-  var cardsHead = document.getElementById('tpl-cards-heading');
-  var cardsEmpty= document.getElementById('tpl-cards-empty');
-
-  var qModal  = document.getElementById('tpl-questions');
-  var qTitle  = document.getElementById('tpl-q-title');
-  var qDesc   = document.getElementById('tpl-q-desc');
-  var qPrev   = document.getElementById('tpl-q-preview');
-  var qFields = document.getElementById('tpl-q-fields');
-  var qBack   = document.getElementById('tpl-q-back');
-  var qClose  = document.getElementById('tpl-q-close');
-  var qGo     = document.getElementById('tpl-q-go');
-
-  if (!openBtn) return;
+  var sel       = document.getElementById('story-template-sel');
+  var applyBtn  = document.getElementById('story-template-apply');
+  var modal     = document.getElementById('tpl-modal');
+  var titleEl   = document.getElementById('tpl-modal-title');
+  var hintEl    = document.getElementById('tpl-modal-hint');
+  var qWrap     = document.getElementById('tpl-modal-questions');
+  var goBtn     = document.getElementById('tpl-modal-go');
+  var closeBtn  = document.getElementById('tpl-modal-close');
+  var cancelBtn = document.getElementById('tpl-modal-cancel');
+  if (!sel) return;
 
   var TEMPLATES = [];
-  var BLOCKS    = {};
-  var TYPES     = [];
-  var DOMAINS   = [];
-  var STORY_TYPES = [
+  var TYPES = [
     {% for t in story_types %}{ id: {{ t.id }}, name: {{ t.name|tojson }} },{% endfor %}
   ];
 
-  var selType = null;   // null = all
-  var selDom  = null;   // null = all
-  var search  = '';
-  var currentTpl = null;
-
-  // ── Load catalogue ────────────────────────────────────────────────────
   fetch('/api/story-templates', { credentials: 'same-origin' })
-    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (r) { return r.ok ? r.json() : { templates: [] }; })
     .then(function (d) {
-      if (!d) return;
       TEMPLATES = d.templates || [];
-      BLOCKS    = d.blocks    || {};
-      TYPES     = d.types     || [];
-      DOMAINS   = d.domains   || [];
-      renderTypes();
-      renderDomains();
-      renderCards();
+      var byCat = {};
+      TEMPLATES.forEach(function (t) {
+        (byCat[t.category] = byCat[t.category] || []).push(t);
+      });
+      Object.keys(byCat).forEach(function (cat) {
+        var og = document.createElement('optgroup');
+        og.label = cat;
+        byCat[cat].forEach(function (t) {
+          var o = document.createElement('option');
+          o.value = t.id;
+          o.textContent = t.name;
+          og.appendChild(o);
+        });
+        sel.appendChild(og);
+      });
     })
     .catch(function () {});
 
-  function counts(axis, value) {
-    var n = 0;
-    TEMPLATES.forEach(function (t) {
-      if (axis === 'type'   && t.type   !== value) return;
-      if (axis === 'domain' && t.domain !== value) return;
-      n++;
-    });
-    return n;
-  }
-
-  function renderTypes() {
-    typeList.innerHTML = '';
-    var all = liItem('All', null, TEMPLATES.length, function () {
-      selType = null; refreshActive(); renderCards();
-    });
-    if (selType === null) all.classList.add('is-active');
-    typeList.appendChild(all);
-    TYPES.forEach(function (t) {
-      var n = counts('type', t.id);
-      if (n === 0) return;
-      var li = liItem(t.name, t.id, n, function () {
-        selType = t.id; refreshActive(); renderCards();
-      });
-      if (selType === t.id) li.classList.add('is-active');
-      typeList.appendChild(li);
-    });
-  }
-
-  function renderDomains() {
-    domList.innerHTML = '';
-    var all = liItem('All', null, TEMPLATES.length, function () {
-      selDom = null; refreshActive(); renderCards();
-    });
-    if (selDom === null) all.classList.add('is-active');
-    domList.appendChild(all);
-    DOMAINS.forEach(function (d) {
-      var n = counts('domain', d.id);
-      if (n === 0) return;
-      var li = liItem(d.name, d.id, n, function () {
-        selDom = d.id; refreshActive(); renderCards();
-      });
-      if (selDom === d.id) li.classList.add('is-active');
-      domList.appendChild(li);
-    });
-  }
-
-  function liItem(label, value, count, onClick) {
-    var li = document.createElement('li');
-    var sp = document.createElement('span'); sp.textContent = label;
-    var cn = document.createElement('span'); cn.className = 'tpl-count'; cn.textContent = count;
-    li.appendChild(sp); li.appendChild(cn);
-    li.dataset.value = value == null ? '' : value;
-    li.addEventListener('click', onClick);
-    return li;
-  }
-
-  function refreshActive() {
-    [typeList, domList].forEach(function (ul, i) {
-      var cur = i === 0 ? selType : selDom;
-      Array.prototype.forEach.call(ul.children, function (li) {
-        var v = li.dataset.value || null;
-        li.classList.toggle('is-active', v === (cur || ''));
-      });
-    });
-  }
-
-  function renderCards() {
-    cardsWrap.innerHTML = '';
-    var q = search.trim().toLowerCase();
-    var matches = TEMPLATES.filter(function (t) {
-      if (selType && t.type   !== selType) return false;
-      if (selDom  && t.domain !== selDom)  return false;
-      if (q) {
-        var hay = (t.name + ' ' + t.description + ' ' + (t.blocks || []).join(' ')).toLowerCase();
-        if (hay.indexOf(q) < 0) return false;
-      }
-      return true;
-    });
-    cardsHead.textContent =
-      (selType ? typeName(selType) : 'All') +
-      ' · ' +
-      (selDom  ? domainName(selDom) : 'All') +
-      '  (' + matches.length + ')';
-    cardsEmpty.style.display = matches.length ? 'none' : 'block';
-    matches.forEach(function (t) {
-      var card = document.createElement('div');
-      card.className = 'tpl-card';
-      card.innerHTML =
-        '<div class="tpl-card-name"></div>' +
-        '<div class="tpl-card-desc"></div>' +
-        '<div class="tpl-card-tags">' +
-          '<span class="tpl-card-tag tpl-tag-type"></span>' +
-          '<span class="tpl-card-tag tpl-tag-domain"></span>' +
-        '</div>';
-      card.querySelector('.tpl-card-name').textContent = t.name;
-      card.querySelector('.tpl-card-desc').textContent = humanizePlaceholders(t.description || '');
-      card.querySelector('.tpl-tag-type').textContent   = typeName(t.type);
-      card.querySelector('.tpl-tag-domain').textContent = domainName(t.domain);
-      card.addEventListener('click', function () { openApply(t); });
-      cardsWrap.appendChild(card);
-    });
-  }
-
-  function typeName(id) {
-    var f = TYPES.find(function (x) { return x.id === id; });
-    return f ? f.name : id;
-  }
-  function domainName(id) {
-    var f = DOMAINS.find(function (x) { return x.id === id; });
-    return f ? f.name : id;
-  }
-
-  // ── Open / close picker ───────────────────────────────────────────────
-  openBtn.addEventListener('click', function () {
-    picker.style.display = 'flex';
-    setTimeout(function () { pickSearch.focus(); }, 50);
-  });
-  function closePicker() { picker.style.display = 'none'; }
-  pickClose.addEventListener('click', closePicker);
-  picker.addEventListener('click', function (e) {
-    if (e.target === picker) closePicker();
-  });
-  pickSearch.addEventListener('input', function () {
-    search = pickSearch.value || ''; renderCards();
+  sel.addEventListener('change', function () {
+    applyBtn.disabled = !sel.value;
   });
 
-  // ── Apply: auto-use the template's blocks; only prompt for inline
-  //         {question?} placeholders (if any). No block-picker screen. ───
-  function openApply(tpl) {
-    currentTpl = tpl;
-    var qs = (tpl.inline_questions || []).slice();
-    if (!qs.length && !tpl.os_field && !tpl.version_field) {
-      // Nothing to ask — fill immediately.
-      fillStory(tpl, {});
-      closePicker();
-      return;
-    }
-    qTitle.textContent = tpl.name;
-    qDesc.innerHTML = humanizePlaceholders(tpl.description || '');
-    var updatePreview = function () {
-      var answers = {};
-      qFields.querySelectorAll('input').forEach(function (i) {
-        answers[i.dataset.key] = i.value.trim();
-      });
-      var z = fillPlaceholdersSoft(tpl.z || '', answers);
-      var x = fillPlaceholdersSoft(tpl.x || '', answers);
-      var y = fillPlaceholdersSoft(tpl.y || '', answers);
-      qPrev.innerHTML = [tpl.actor, tpl.verb, z, x, tpl.for_conn, y]
-        .filter(Boolean).join(' ');
-    };
-    qFields.innerHTML = '';
-    qs.forEach(function (qText) {
+  function findTpl(id) {
+    for (var i = 0; i < TEMPLATES.length; i++) if (TEMPLATES[i].id === id) return TEMPLATES[i];
+    return null;
+  }
+
+  applyBtn.addEventListener('click', function () {
+    var tpl = findTpl(sel.value);
+    if (!tpl) return;
+    titleEl.textContent = tpl.name;
+    hintEl.textContent  = 'Answer these and GYRA will fill the whole story.';
+    qWrap.innerHTML = '';
+    (tpl.questions || []).forEach(function (q) {
       var row = document.createElement('div');
       row.className = 'tpl-q-row';
       var lab = document.createElement('label');
-      // Strip the trailing ? and capitalize first letter for a clean label.
-      var clean = qText.replace(/\?\s*$/, '').trim();
-      lab.textContent = clean.charAt(0).toUpperCase() + clean.slice(1);
-      lab.innerHTML += ' <span class="tpl-q-req">*</span>';
+      lab.textContent = q.label;
+      lab.setAttribute('for', 'tplq-' + q.key);
       var inp = document.createElement('input');
-      inp.type = 'text'; inp.className = 'form-input';
-      inp.dataset.key = qText;
-      inp.required = true;
-      inp.placeholder = exampleFor(qText);
-      inp.addEventListener('input', updatePreview);
+      inp.type = 'text';
+      inp.className = 'form-input';
+      inp.id = 'tplq-' + q.key;
+      inp.dataset.key = q.key;
+      inp.placeholder = q.placeholder || '';
       row.appendChild(lab); row.appendChild(inp);
-      qFields.appendChild(row);
+      qWrap.appendChild(row);
     });
-    updatePreview();
     if (tpl.os_field) {
-      var row = document.createElement('div'); row.className = 'tpl-q-row';
-      row.innerHTML = '<label>OS / Platform</label>' +
-        '<input type="text" data-key="__os" class="form-input" ' +
-        'placeholder="e.g. Windows 11, macOS 14.5, PS5">';
-      qFields.appendChild(row);
+      var row = document.createElement('div');
+      row.className = 'tpl-q-row';
+      row.innerHTML = '<label for="tplq-os">OS / Platform</label>' +
+        '<input type="text" id="tplq-os" data-key="__os" class="form-input" placeholder="e.g. Windows 11, macOS 14.5, PS5">';
+      qWrap.appendChild(row);
     }
     if (tpl.version_field) {
-      var row = document.createElement('div'); row.className = 'tpl-q-row';
-      row.innerHTML = '<label>Software Version</label>' +
-        '<input type="text" data-key="__ver" class="form-input" ' +
-        'placeholder="e.g. 0.8.2-rc3">';
-      qFields.appendChild(row);
+      var row = document.createElement('div');
+      row.className = 'tpl-q-row';
+      row.innerHTML = '<label for="tplq-ver">Software Version</label>' +
+        '<input type="text" id="tplq-ver" data-key="__ver" class="form-input" placeholder="e.g. 0.8.2-rc3">';
+      qWrap.appendChild(row);
     }
-    picker.style.display = 'none';
-    qModal.style.display = 'flex';
-    setTimeout(function () {
-      var f = qFields.querySelector('input'); if (f) f.focus();
-    }, 50);
-  }
-
-  function closeQuestions() { qModal.style.display = 'none'; currentTpl = null; }
-  qClose.addEventListener('click', closeQuestions);
-  qBack.addEventListener('click', function () {
-    closeQuestions(); picker.style.display = 'flex';
-  });
-  qModal.addEventListener('click', function (e) {
-    if (e.target === qModal) closeQuestions();
+    modal.style.display = 'flex';
+    var first = qWrap.querySelector('input'); if (first) first.focus();
   });
 
+  function closeModal() { modal.style.display = 'none'; }
+  closeBtn.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
   document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape') return;
-    if (qModal.style.display === 'flex')      closeQuestions();
-    else if (picker.style.display === 'flex') closePicker();
+    if (e.key === 'Escape' && modal.style.display === 'flex') closeModal();
   });
 
-  // ── Substitution + form fill ─────────────────────────────────────────
-  // Render placeholders as human-readable hints (no raw braces or "?").
-  // Used for read-only previews so users never see "{prop name?}" verbatim.
-  function humanizePlaceholders(s) {
-    if (!s) return '';
-    return String(s)
-      .replace(/\{([^{}]+?\?)\}/g, function (m, k) {
-        return '<' + k.replace(/\?\s*$/, '').trim() + '>';
-      })
-      .replace(/\{(\w+)\}/g, function (m, k) { return '<' + k + '>'; });
-  }
-  // Example values shown as input placeholders so users know what to type.
-  var EXAMPLES = {
-    'character name?':           'e.g. Amy',
-    'prop name?':                'e.g. Brass lantern',
-    'kit name?':                 'e.g. Victorian interior kit',
-    'target area?':              'e.g. Sub-basement levels',
-    'effect name?':              'e.g. Lantern flare',
-    'trigger?':                  'e.g. on pickup',
-    'sound name?':               'e.g. Lantern pickup',
-    'how many variations?':      'e.g. 4',
-    'how many tris for model?':  'e.g. 8000',
-    'video name?':               'e.g. Episode 1 teaser',
-    'screen name?':              'e.g. Settings',
-    'mechanic name?':            'e.g. Wall-run',
-    'level name?':               'e.g. Sub-Basement 02',
-    'system to rebalance?':      'e.g. Enemy damage curve',
-    'symptom we are fixing?':    'e.g. boss too easy after wave 3',
-    'what is broken?':           'e.g. save fails on macOS 14',
-    'customer impact?':          'e.g. paying users locked out',
-    'page path or name?':        'e.g. /pricing',
-    'component name?':           'e.g. PrimaryButton',
-    'HTTP method?':              'e.g. POST',
-    'endpoint path?':            'e.g. /api/users',
-    'table or collection?':      'e.g. users',
-    'pipeline step name?':       'e.g. Lint',
-    'pipeline name?':            'e.g. asset build',
-    'check name?':               'e.g. Unit tests',
-    'environment name?':         'e.g. staging',
-    'what are we alerting on?':  'e.g. p95 latency > 500ms',
-    'incident name or date?':    'e.g. INC-2026-05-12',
-    'asset name?':               'e.g. Logo dark variant',
-    'where will this be used?':  'e.g. social headers',
-    'what are we trying to learn?':'e.g. why trial users drop on day 3',
-    'timebox in days?':          'e.g. 3',
-    'area to refactor?':         'e.g. auth/session module',
-    'dependency?':               'e.g. flask',
-    'target version?':           'e.g. 3.1.0',
-    'doc topic?':                'e.g. API auth',
-    'role or team?':             'e.g. backend engineer',
-    'campaign name?':            'e.g. Spring launch',
-    'what does success look like?':'e.g. 10k landing-page visits',
-    'series name?':              'e.g. Behind the build',
-    'what should the screen let the player do?':'e.g. change controls',
-    'what should the level make the player feel?':'e.g. tense, hunted',
-    'what should the reader be able to do?':'e.g. wire up OAuth',
-    'what should the video sell?':'e.g. the new boss fight'
-  };
-  function exampleFor(qText) {
-    return EXAMPLES[qText] || 'Type your answer';
-  }
-  // Soft fill: empty answers render as a faded <hint> so the preview stays
-  // readable while the user types instead of dropping in [bracketed] keys.
-  function fillPlaceholdersSoft(s, answers) {
-    if (!s) return '';
-    return String(s).replace(/\{([^{}]+?\?)\}/g, function (m, k) {
-      var v = answers[k];
-      if (v && v.length) return '<strong>' + escapeHtmlSafe(v) + '</strong>';
-      return '<span class="tpl-q-prev-blank">&lt;' +
-        escapeHtmlSafe(k.replace(/\?\s*$/, '').trim()) + '&gt;</span>';
-    });
-  }
-  function escapeHtmlSafe(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-    });
-  }
-  // Replace {Question text?} tokens (inline syntax) AND legacy {key} tokens.
   function fillPlaceholders(s, answers) {
     if (!s) return '';
-    return String(s)
-      // Inline {Question text?} — answers keyed by the full text incl. ?
-      .replace(/\{([^{}]+?\?)\}/g, function (m, k) {
-        var v = answers[k];
-        return (v && v.length) ? v : '[' + k.replace(/\?\s*$/, '') + ']';
-      })
-      // Legacy {key} — answers keyed by the bare key (older templates).
-      .replace(/\{(\w+)\}/g, function (m, k) {
-        var v = answers[k];
-        return (v && v.length) ? v : '[' + k + ']';
-      });
+    return String(s).replace(/\{(\w+)\}/g, function (m, k) {
+      var v = answers[k];
+      return (v && v.length) ? v : '[' + k + ']';
+    });
   }
+
   function setVal(id, v) {
-    var el = document.getElementById(id);
-    if (el) {
-      el.value = v;
-      el.dispatchEvent(new Event('input'));
-      el.dispatchEvent(new Event('change'));
-    }
+    var el = document.getElementById(id); if (el) { el.value = v; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); }
   }
 
-  qGo.addEventListener('click', function () {
-    var tpl = currentTpl; if (!tpl) return;
+  goBtn.addEventListener('click', function () {
+    var tpl = findTpl(sel.value);
+    if (!tpl) return;
     var answers = {};
-    var missing = [];
-    qFields.querySelectorAll('input').forEach(function (i) {
-      var v = i.value.trim();
-      answers[i.dataset.key] = v;
-      if (i.required && !v) {
-        missing.push(i);
-        i.classList.add('is-invalid');
-      } else {
-        i.classList.remove('is-invalid');
-      }
+    qWrap.querySelectorAll('input').forEach(function (i) {
+      answers[i.dataset.key] = i.value.trim();
     });
-    if (missing.length) {
-      missing[0].focus();
-      return;
-    }
-    fillStory(tpl, answers);
-    closeQuestions();
-  });
 
-  function fillStory(tpl, answers) {
-    // Template has been applied — reveal the template-related editing hints.
-    document.querySelectorAll('.tpl-only-hint').forEach(function (el) {
-      el.style.display = '';
-    });
-    // Grammar
+    // Grammar fields
     setVal('sb-actor', tpl.actor || 'User');
     setVal('sb-verb',  tpl.verb  || 'needs');
     setVal('sb-z',     fillPlaceholders(tpl.z,        answers));
@@ -1684,30 +1220,18 @@
     var descEl = document.querySelector('textarea[name="description"]');
     if (descEl) descEl.value = fillPlaceholders(tpl.description || '', answers);
 
-    // AC list — always include every block listed on the template (auto).
-    var acList = [];
-    var seen = new Set();
-    (tpl.blocks || []).forEach(function (bid) {
-      var b = BLOCKS[bid]; if (!b) return;
-      (b.acs || []).forEach(function (raw) {
-        var ac = fillPlaceholders(raw, answers);
-        if (seen.has(ac)) return;
-        seen.add(ac); acList.push(ac);
-      });
-    });
-
-    var hidden  = document.getElementById('ac-hidden');
-    var listEl  = document.getElementById('ac-list');
-    function syncAc() {
-      if (!hidden || !listEl) return;
-      hidden.value = Array.from(listEl.querySelectorAll('.ac-item-input'))
-        .map(function (i) { return i.value; }).filter(Boolean).join('\n');
-    }
+    // Acceptance criteria — populate the AC list
+    var acList = (tpl.acceptance || []).map(function (a) { return fillPlaceholders(a, answers); });
+    var hidden = document.getElementById('ac-hidden');
     if (hidden) hidden.value = acList.join('\n');
-    if (listEl) {
+    if (window.renderAcList) window.renderAcList(); // optional helper if defined
+
+    // Manually render AC items as inputs if list rendering helper isn't exposed
+    var listEl = document.getElementById('ac-list');
+    if (listEl && acList.length) {
       listEl.innerHTML = '';
       acList.forEach(function (txt) {
-        var row = document.createElement('div'); row.className = 'ac-item-row';
+        var row = document.createElement('div'); row.className = 'ac-item';
         var inp = document.createElement('input');
         inp.type = 'text'; inp.className = 'ac-item-input form-input'; inp.value = txt;
         var del = document.createElement('button');
@@ -1719,29 +1243,21 @@
       });
       syncAc();
     }
+    function syncAc() {
+      if (!hidden) return;
+      hidden.value = Array.from(listEl.querySelectorAll('.ac-item-input'))
+        .map(function (i) { return i.value; }).filter(Boolean).join('\n');
+    }
 
-    // Tasks — block tasks first (the actual hands-on steps), then any
-    // extras the template itself ships. De-dupe after substitution.
+    // Tasks
     var taskList = document.getElementById('new-tasks-list');
     if (taskList) {
-      var taskTexts = [];
-      var seenT = new Set();
-      function pushTask(raw) {
-        var t = fillPlaceholders(raw, answers);
-        if (seenT.has(t)) return;
-        seenT.add(t); taskTexts.push(t);
-      }
-      (tpl.blocks || []).forEach(function (bid) {
-        var b = BLOCKS[bid]; if (!b) return;
-        (b.tasks || []).forEach(pushTask);
-      });
-      (tpl.tasks || tpl.subtasks || []).forEach(pushTask);
-      taskTexts.forEach(function (t) {
+      (tpl.subtasks || []).forEach(function (txt) {
+        var t = fillPlaceholders(txt, answers);
         var wrap = document.createElement('div'); wrap.className = 'task-item';
         var hid = document.createElement('input');
         hid.type = 'hidden'; hid.name = 'new_task'; hid.value = t;
-        var span = document.createElement('span');
-        span.className = 'task-content'; span.textContent = t;
+        var span = document.createElement('span'); span.className = 'task-content'; span.textContent = t;
         var del = document.createElement('button');
         del.type = 'button'; del.className = 'task-del'; del.textContent = '✕';
         del.addEventListener('click', function () { wrap.remove(); });
@@ -1750,52 +1266,24 @@
       });
     }
 
-    // Story type — match by name.
+    // Story type — match by name
     var typeSel = document.getElementById('sb-type-sel');
     if (typeSel && tpl.type_hint) {
       var hint = tpl.type_hint.toLowerCase();
-      var match = STORY_TYPES.find(function (t) {
-        return t.name.toLowerCase() === hint;
-      });
+      var match = TYPES.find(function (t) { return t.name.toLowerCase() === hint; });
       if (match) typeSel.value = match.id;
     }
 
-    // OS / version side fields
-    if (answers.__os  && document.getElementById('ss-os'))
+    // OS / version
+    if (answers.__os && document.getElementById('ss-os'))
       document.getElementById('ss-os').value = answers.__os;
     if (answers.__ver && document.getElementById('ss-software-version'))
       document.getElementById('ss-software-version').value = answers.__ver;
 
-    closePicker();
-  }
-}());
-</script>
-
-<script>
-(function () {
-  // Delete-comment handler (own comments + system comments).
-  var CSRF = (document.querySelector('meta[name="csrf-token"]') || {content:''}).content;
-  var ROOT = (document.querySelector('meta[name="app-root"]') || {getAttribute:function(){return '';}}).getAttribute('content') || '';
-  document.addEventListener('click', function (ev) {
-    var btn = ev.target.closest && ev.target.closest('.js-del-comment');
-    if (!btn) return;
-    var card = btn.closest('.comment');
-    var cid  = card && card.dataset.cid;
-    if (!cid) return;
-    if (!confirm('Delete this comment?')) return;
-    fetch(ROOT + '/api/comment/' + cid, {
-      method: 'DELETE', credentials: 'same-origin',
-      headers: {'X-CSRF-Token': CSRF}
-    }).then(function (r) { return r.json(); }).then(function (d) {
-      if (d && d.ok) {
-        // Remove all rendered copies of this comment (Comments + All tabs).
-        document.querySelectorAll('.comment[data-cid="' + cid + '"]').forEach(function (n) { n.remove(); });
-      } else {
-        alert((d && d.error) || 'Could not delete.');
-      }
-    });
+    closeModal();
   });
 }());
 </script>
 {% endif %}
+
 {% endblock %}
