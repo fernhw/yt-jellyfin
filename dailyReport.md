@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-02
 
-> *Good evening! Here's what landed on Tuesday, June 02, 2026 at 06:05 PM.*
-> **YT Mirror:** 601.06 GB used · 0.91 TB free
+> *Good evening! Here's what landed on Tuesday, June 02, 2026 at 07:14 PM.*
+> **YT Mirror:** 601.37 GB used · 0.91 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **Noctua AIO Engineering and Thermosiphon Cooler, ft. Technical Discussion** — *Gamers Nexus* · downloaded 07:12 PM · not podcastable
+- **So About That Sony State of Play...** — *Spawn Wave* · downloaded 07:10 PM · not podcastable
 - **Nintendo Music – Announcement Trailer** — *Nintendo of America* · downloaded 03:07 PM · not podcastable
 - **NO ONE saw this coming..** — *Asmongold TV* · downloaded 03:06 PM · not podcastable
 - **This is concerning..** — *Asmongold TV* · downloaded 03:05 PM · not podcastable
