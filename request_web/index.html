@@ -2187,7 +2187,7 @@ async function pollDownloads() {
     const pctEl = document.getElementById('dl-nav-pct');
 
     const torrents = downloads.filter(dl =>
-      ['active', 'waiting', 'paused'].includes(dl.status)
+      ['active', 'waiting', 'paused', 'queued'].includes(dl.status)
     );
 
     // Torrents we can actually display: real name, or metadata with a stored label
@@ -2242,6 +2242,28 @@ async function pollDownloads() {
       const size   = dl.size   || '';
       const done   = dl.done   || '';
       const status = dl.status || 'active';
+
+      // ── Queued items: render minimal card and skip the rest ───────────────
+      if (status === 'queued') {
+        const qPos = dl.queue_pos || '?';
+        const qCard = document.createElement('div');
+        qCard.className = 'dl-card-row';
+        qCard.dataset.gid = gid;
+        qCard.style.opacity = '0.55';
+        qCard.innerHTML =
+          '<div class="dl-eta-panel"><div class="dl-eta-value" style="font-size:.8rem;font-weight:800;color:var(--muted)">#' + qPos + '</div><div class="dl-eta-label">in queue</div></div>' +
+          '<div class="dl-card-body">' +
+            '<div class="dl-card-top">' +
+              '<div class="dl-card-name" title="' + _esc(name) + '">' + _esc(name) + '</div>' +
+              '<div class="dl-card-pct" style="font-size:.65rem;color:var(--muted)">queued</div>' +
+            '</div>' +
+            '<div class="dl-card-actions">' +
+              '<button class="dl-act-btn remove" title="Remove from queue" onclick="removeDl(\'' + gid + '\')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14H6L5,6"/><path d="M10,11v6M14,11v6"/><path d="M9,6V4h6v2"/></svg></button>' +
+            '</div>' +
+          '</div>';
+        body.appendChild(qCard);
+        return;
+      }
 
       const card = document.createElement('div');
       card.className = 'dl-card-row';

@@ -328,7 +328,7 @@ def _enqueue_or_start(name: str, magnet: str, dest: str) -> Dict:
     with _instances_lock:
         active_count = sum(
             1 for i in _instances.values()
-            if i.get('status') not in ('complete', 'removed', 'error')
+            if i.get('status') not in ('complete', 'removed', 'error', 'queued')
         )
 
     if active_count < MAX_ACTIVE_DL:
@@ -402,6 +402,45 @@ def _stop_instance(token: str) -> None:
         except Exception:
             pass
     log.info('aria2c instance stopped  token=%s  port=%d', token, port)
+
+
+def _drain_queue_bg() -> None:
+    """Spawn a background thread to immediately promote the next queued download."""
+    def _try() -> None:
+        with _instances_lock:
+            active_count = sum(
+                1 for i in _instances.values()
+                if i.get('status') not in ('complete', 'removed', 'error', 'queued')
+            )
+            if active_count >= MAX_ACTIVE_DL or not _pending_queue:
+                return
+            next_token = _pending_queue.pop(0)
+            queued_inst = _instances.get(next_token)
+        if not queued_inst:
+            return
+        name       = queued_inst['name']
+        magnet     = queued_inst['magnet']
+        dest       = queued_inst['dest']
+        started_at = queued_inst.get('started_at', time.time())
+        with _instances_lock:
+            _instances.pop(next_token, None)
+        try:
+            _start_instance(name, magnet, dest, _token=next_token)
+            log.info('queued download promoted (on-demand)  token=%s  name=%r', next_token, name)
+        except Exception as e:
+            log.warning('failed to start queued (on-demand) %r: %s — re-queuing', name, e)
+            with _instances_lock:
+                _instances[next_token] = {
+                    'token': next_token, 'port': 0, 'name': name,
+                    'magnet': magnet, 'dest': dest, 'proc': None,
+                    'pct': 0, 'speed': '0 B/s', 'speed_bytes': 0,
+                    'upload': '0 B/s', 'seeds': 0, 'peers': 0,
+                    'status': 'queued', 'size': '', 'done': '',
+                    'total_bytes': 0, 'slow': False,
+                    'started_at': started_at, 'completed_at': 0.0,
+                }
+                _pending_queue.insert(0, next_token)  # restore at front
+    threading.Thread(target=_try, daemon=True).start()
 
 
 def _instance_monitor() -> None:
@@ -1070,6 +1109,10 @@ def torrent_state():
     } for inst in snapshot]
     with _instances_lock:
         queue_len = len(_pending_queue)
+        queue_positions = {tok: idx + 1 for idx, tok in enumerate(_pending_queue)}
+    for dl in downloads:
+        if dl['status'] == 'queued':
+            dl['queue_pos'] = queue_positions.get(dl['gid'], 0)
     return jsonify({'downloads': downloads, 'updated': time.time(), 'queued': queue_len, 'max_active': MAX_ACTIVE_DL})
 
 @app.route('/api/torrent/<token>/remove', methods=['POST'])
@@ -1103,6 +1146,8 @@ def torrent_remove(token: str):
 
     # Stop instance (removes from registry, kills process, cleans tmp dir)
     _stop_instance(token)
+    # Immediately try to promote the next queued download into the freed slot
+    _drain_queue_bg()
 
     # Delete downloaded files
     to_delete: set = set()
