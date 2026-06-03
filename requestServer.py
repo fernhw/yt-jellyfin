@@ -225,11 +225,12 @@ def _alloc_port() -> int:
             return p
     raise RuntimeError('no free aria2c ports available')
 
-def _start_instance(name: str, magnet: str, dest: str) -> Dict:
+def _start_instance(name: str, magnet: str, dest: str, _token: Optional[str] = None) -> Dict:
     """
     Spawn a dedicated aria2c process for a single download.
     Returns the instance dict (token, port, live status fields).
     Raises RuntimeError if aria2c fails to start or the magnet cannot be added.
+    Pass _token to reuse an existing queued token (preserves UI tracking).
     """
     aria2c_bin = (
         shutil.which('aria2c')
@@ -241,9 +242,12 @@ def _start_instance(name: str, magnet: str, dest: str) -> Dict:
 
     with _instances_lock:
         port  = _alloc_port()
-        token = os.urandom(4).hex()
-        while token in _instances:
+        if _token and _token not in _instances:
+            token = _token
+        else:
             token = os.urandom(4).hex()
+            while token in _instances:
+                token = os.urandom(4).hex()
         # Reserve slot so concurrent calls don't take the same port
         _instances[token] = {'token': token, 'port': port, 'status': 'starting', 'name': name}
 
@@ -370,6 +374,11 @@ def _stop_instance(token: str) -> None:
     """Remove instance from registry, shutdown its aria2c process, clean up tmp dir."""
     with _instances_lock:
         inst = _instances.pop(token, None)
+        # Also remove from pending queue if it was queued
+        try:
+            _pending_queue.remove(token)
+        except ValueError:
+            pass
     if inst is None:
         return
     port    = inst.get('port', 0)
@@ -484,20 +493,34 @@ def _instance_monitor() -> None:
             if not queued_inst:
                 continue
 
-            name   = queued_inst['name']
-            magnet = queued_inst['magnet']
-            dest   = queued_inst['dest']
+            name       = queued_inst['name']
+            magnet     = queued_inst['magnet']
+            dest       = queued_inst['dest']
+            started_at = queued_inst.get('started_at', time.time())
 
-            # Remove placeholder; _start_instance will re-register under same token
+            # Remove placeholder; _start_instance will re-register under the same token
             with _instances_lock:
                 _instances.pop(next_token, None)
 
             try:
-                _start_instance(name, magnet, dest)
+                _start_instance(name, magnet, dest, _token=next_token)
                 log.info('queued download started  token=%s  name=%r  active=%d/%d',
                          next_token, name, active_count + 1, MAX_ACTIVE_DL)
             except Exception as e:
-                log.warning('failed to start queued download %r: %s', name, e)
+                log.warning('failed to start queued download %r: %s — re-queuing', name, e)
+                # Restore the item so it can be retried next cycle
+                with _instances_lock:
+                    _instances[next_token] = {
+                        'token': next_token, 'port': 0, 'name': name,
+                        'magnet': magnet, 'dest': dest, 'proc': None,
+                        'pct': 0, 'speed': '0 B/s', 'speed_bytes': 0,
+                        'upload': '0 B/s', 'seeds': 0, 'peers': 0,
+                        'status': 'queued', 'size': '', 'done': '',
+                        'total_bytes': 0, 'slow': False,
+                        'started_at': started_at, 'completed_at': 0.0,
+                    }
+                    _pending_queue.append(next_token)
+                break  # stop draining this cycle; retry next monitor tick
 
 # ── API routes ─────────────────────────────────────────────────────────────────
 
