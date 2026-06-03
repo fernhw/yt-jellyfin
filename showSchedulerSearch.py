@@ -631,7 +631,8 @@ def score_torrent_relaxed(
 
     score: float = min(seeds, 500) * 0.3
     if '2160p' in t or '4k' in t:
-        score += 80
+        score += 30   # shows: 4K is penalised vs 1080p (huge files, no benefit on most displays)
+        warnings_out.append('4k')
     elif '1080p' in t or '1080i' in t:
         score += 50
     if 'bluray' in t or 'bdrip' in t or 'bd ' in t or 'bd.' in t:
@@ -1255,20 +1256,22 @@ def process_show(row: dict, locations: dict,
                         row['status']       = 'complete'
                         row['search_start'] = ''
                         row['search_end']   = ''
+                        row['_remove']      = True
                         log.warning(
                             f"  {label}: no result after {SEARCH_DAYS} days"
-                            f" (open-ended total) → auto-withdrawn as complete"
+                            f" (open-ended total) → auto-withdrawn as complete + removed"
                         )
                         onesignal_push(
-                            f"✅ {show_name} — auto-complete",
-                            f"No new episode found after {SEARCH_DAYS} days — assumed season ended at ep {episode - 1}.",
+                            f"✅ {show_name} — auto-complete (removed)",
+                            f"No new episode found after {SEARCH_DAYS} days — assumed season ended at ep {episode - 1}. Removed from schedule.",
                         )
                     else:
                         row['status'] = 'missed'
-                        log.warning(f"  {label}: search window expired → missed")
+                        row['_remove'] = True
+                        log.warning(f"  {label}: search window expired → missed + removed")
                         onesignal_push(
-                            f"⚠ {show_name} not found",
-                            f"{label} — no result after {SEARCH_DAYS} days. Check manually.",
+                            f"⚠ {show_name} not found (removed)",
+                            f"{label} — no result after {SEARCH_DAYS} days. Removed from schedule — check manually.",
                         )
             except ValueError:
                 pass
@@ -1300,10 +1303,11 @@ def process_show(row: dict, locations: dict,
             row['status']       = 'complete'
             row['search_start'] = ''
             row['search_end']   = ''
-            log.info(f"  {show_name}: all {total} episodes done")
+            row['_remove']      = True
+            log.info(f"  {show_name}: all {total} episodes done → removed from schedule")
             onesignal_push(
-                f"✅ {show_name} — Season {season} complete",
-                f"All {total} episodes downloaded.",
+                f"✅ {show_name} — Season {season} complete (removed)",
+                f"All {total} episodes downloaded. Removed from schedule.",
             )
         else:
             row['next_episode'] = str(episode + 1)
@@ -1441,11 +1445,18 @@ def main() -> None:
         new_row = process_show(row, locations,
                                dry_run=args.dry_run,
                                force=args.force)
-        updated[i] = new_row
+        if new_row.get('_remove'):
+            log.info(f"  {new_row.get('show_name')}: removed from schedule (status={new_row.get('status')})")
+            updated[i] = None
+        else:
+            updated[i] = new_row
         # Write after every show so a crash / kill mid-run never loses progress.
         # The search window opening and download state are both persisted immediately.
         if not args.dry_run:
-            write_schedule(updated)
+            write_schedule([r for r in updated if r is not None])
+
+    # Drop rows flagged for removal before status JSON / summary
+    updated = [r for r in updated if r is not None]
 
     if not args.dry_run:
         write_status_json(updated, locations)
