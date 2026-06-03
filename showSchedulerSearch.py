@@ -283,6 +283,14 @@ def check_window(row: Dict, today: Optional[datetime.date] = None) -> Tuple[bool
     if today.weekday() in release_days:
         return True, True
 
+    # Early-open (timezone slack): we run at GMT-5, so episodes released on the
+    # release day (often UTC-anchored) may actually drop the prior afternoon
+    # local time. If tomorrow is a release day and it's already noon or later
+    # locally, open the window early so we don't miss those earlier releases.
+    tomorrow = today + datetime.timedelta(days=1)
+    if tomorrow.weekday() in release_days and datetime.datetime.now().hour >= 12:
+        return True, True
+
     return False, False
 
 # ── Quality filters & scoring ──────────────────────────────────────────────────
