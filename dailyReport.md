@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-04
 
-> *Good morning! Here's what landed on Thursday, June 04, 2026 at 07:13 AM.*
-> **YT Mirror:** 601.62 GB used · 0.91 TB free
+> *Good morning! Here's what landed on Thursday, June 04, 2026 at 09:47 AM.*
+> **YT Mirror:** 602.12 GB used · 0.91 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,9 @@
 
 ### Non-Priority Videos
 
+- **Who Is Cheesy Michael?** — *Lessons in Meme Culture* · downloaded 09:44 AM · not podcastable
+- **I used to PRAY for times like these..** — *Asmongold TV* · downloaded 09:44 AM · not podcastable
+- **All the biggest news and reveals from the 2026 Sony State of Play | This Week in Videogames** — *Skill Up* · downloaded 09:42 AM · not podcastable
 - **Corsair Warthog Case Brings Back the C70** — *Gamers Nexus* · downloaded 07:10 AM · not podcastable
 - **Gaming is f*cked..** — *Asmongold TV* · downloaded 03:39 AM · not podcastable
 - **George Santos is BACK to Scamming** — *Internet Today* · downloaded 03:37 AM · not podcastable
