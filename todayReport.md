@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-04
 
-> *Good afternoon! Here's what landed on Thursday, June 04, 2026 at 03:22 PM.*
-> **YT Mirror:** 595.64 GB used · 0.91 TB free
+> *Good evening! Here's what landed on Thursday, June 04, 2026 at 05:07 PM.*
+> **YT Mirror:** 596.78 GB used · 0.90 TB free
 
 ## Priority Videos
 
@@ -12,6 +12,7 @@
 
 ## Non-Priority Videos
 
+- **The Money Ran Out: Game Development Is In Freefall** — *Bellular News* · downloaded 05:05 PM · podcastable
 - **007 First Light Review - The Xbox Series X|S Experience vs PlayStation 5** — *Digital Foundry* · downloaded 03:17 PM · not podcastable
 - **So I Tried Fatekeeper..** — *Asmongold TV* · downloaded 03:16 PM · not podcastable
 - **She just DROVE through a CROWD..** — *Asmongold TV* · downloaded 03:08 PM · not podcastable
