@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-03
 
-> *Good evening! Here's what landed on Wednesday, June 03, 2026 at 06:10 PM.*
-> **YT Mirror:** 602.00 GB used · 0.91 TB free
+> *Good evening! Here's what landed on Wednesday, June 03, 2026 at 07:06 PM.*
+> **YT Mirror:** 601.58 GB used · 0.91 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **The Obsession with Game Reviews** — *Scott's Stash* · downloaded 07:04 PM · not podcastable
 - **Games Just Don’t Do This In 2026** — *Spawn Wave* · downloaded 06:07 PM · not podcastable
 - **The Guy Behind Steam Labs Has a Warning for Valve** — *Bellular News* · downloaded 05:10 PM · podcastable
 - **The Fake Horse Girl Hobby...** — *Papa Meat* · downloaded 05:08 PM · not podcastable
