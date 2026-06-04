@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-03
 
-> *Good evening! Here's what landed on Wednesday, June 03, 2026 at 09:05 PM.*
-> **YT Mirror:** 601.63 GB used · 0.91 TB free
+> *Good evening! Here's what landed on Wednesday, June 03, 2026 at 10:07 PM.*
+> **YT Mirror:** 601.87 GB used · 0.91 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **Extremely Radicalizing Interview** — *Big A* · downloaded 10:05 PM · not podcastable
+- **Microsoft Just Can’t Help Itself** — *TechLinked* · downloaded 10:04 PM · podcastable
 - **The Obsession with Game Reviews** — *Scott's Stash* · downloaded 07:04 PM · not podcastable
 - **Games Just Don’t Do This In 2026** — *Spawn Wave* · downloaded 06:07 PM · not podcastable
 - **The Guy Behind Steam Labs Has a Warning for Valve** — *Bellular News* · downloaded 05:10 PM · podcastable
