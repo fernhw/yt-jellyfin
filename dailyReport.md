@@ -2,17 +2,19 @@
 
 ## What to Watch — 2026-06-05
 
-> *Good afternoon! Here's what landed on Friday, June 05, 2026 at 03:12 PM.*
-> **YT Mirror:** 597.38 GB used · 0.91 TB free
+> *Good evening! Here's what landed on Friday, June 05, 2026 at 05:13 PM.*
+> **YT Mirror:** 599.45 GB used · 0.90 TB free
 
 ### Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **Southeast Asia Broke Our Boy | Trash Taste #311** — *Trash Taste* · downloaded 05:06 PM · podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **This changes everything..** — *Asmongold TV* · downloaded 05:09 PM · not podcastable
+- **I've Never Failed An Anime Quiz This Badly...** — *Garnt* · downloaded 05:07 PM · not podcastable
 - **Apple Fanboy in Crisis Over New Siri** — *SAMTIME* · downloaded 03:08 PM · not podcastable
 - **be quiet! Pure Base 803 ATX & Micro-ATX / Mini-ITX Boom, ft. CEO** — *Gamers Nexus* · downloaded 03:07 PM · not podcastable
 - **The Splatoon 3 North American League Show 2026 – Episode 10** — *Nintendo of America* · downloaded 03:06 PM · not podcastable
