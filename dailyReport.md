@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-05
 
-> *Good morning! Here's what landed on Friday, June 05, 2026 at 09:44 AM.*
-> **YT Mirror:** 599.39 GB used · 0.90 TB free
+> *Good morning! Here's what landed on Friday, June 05, 2026 at 11:38 AM.*
+> **YT Mirror:** 599.21 GB used · 0.90 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **The End of Destiny | Unpacked** — *Second Wind* · downloaded 11:35 AM · podcastable
+- **Race to the Bottom: $18 CPU Air Cooler Gives Thermalright Competition** — *Gamers Nexus* · downloaded 11:34 AM · not podcastable
 - **People Are Larping YouTubers Now** — *Lessons in Meme Culture* · downloaded 09:41 AM · not podcastable
 - **DF Direct Q+A: Can Switch 2 Handle 60FPS Call of Duty? Custom PC vs Steam Machine, Nvidia RTX Spark** — *Digital Foundry* · downloaded 09:40 AM · not podcastable
 - **He's suing his own fans now..** — *Asmongold TV* · downloaded 09:38 AM · not podcastable
