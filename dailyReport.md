@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-04
 
-> *Good evening! Here's what landed on Thursday, June 04, 2026 at 09:04 PM.*
-> **YT Mirror:** 596.75 GB used · 0.91 TB free
+> *Good evening! Here's what landed on Thursday, June 04, 2026 at 10:06 PM.*
+> **YT Mirror:** 597.29 GB used · 0.91 TB free
 
 ### Priority Videos
 
@@ -14,6 +14,7 @@
 
 ### Non-Priority Videos
 
+- **Gamers, We’re Eatin’ Good** — *GameLinked* · downloaded 10:04 PM · podcastable
 - **EA SPORTS FC 26 – World’s Game Update Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 07:04 PM · not podcastable
 - **The Money Ran Out: Game Development Is In Freefall** — *Bellular News* · downloaded 05:05 PM · podcastable
 - **007 First Light Review - The Xbox Series X|S Experience vs PlayStation 5** — *Digital Foundry* · downloaded 03:17 PM · not podcastable
