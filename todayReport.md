@@ -1,16 +1,17 @@
 # What to Watch — 2026-06-06
 
-> *Good afternoon! Here's what landed on Saturday, June 06, 2026 at 03:13 PM.*
-> **YT Mirror:** 600.49 GB used · 0.90 TB free
+> *Good evening! Here's what landed on Saturday, June 06, 2026 at 05:07 PM.*
+> **YT Mirror:** 600.13 GB used · 0.90 TB free
 
 ## Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **they really HATE you..** — *FLEEKAZOID* · downloaded 05:04 PM · not podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **Citizen Sleeper 2: Starward Vector – Nintendo Switch 2 Edition – Release Date Trailer** — *Nintendo of America* · downloaded 05:04 PM · not podcastable
 - **Nintendo Switch 2 - Year One - The Digital Foundry Verdict** — *Digital Foundry* · downloaded 03:10 PM · not podcastable
 - **Fortnite: Runners – Chapter 7 Season 3 Gameplay Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:08 PM · not podcastable
 - **Cozy Grove: Camp Spirit – Announcement Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:08 PM · not podcastable
