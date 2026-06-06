@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-05
 
-> *Good evening! Here's what landed on Friday, June 05, 2026 at 07:07 PM.*
-> **YT Mirror:** 599.22 GB used · 0.90 TB free
+> *Good evening! Here's what landed on Friday, June 05, 2026 at 08:14 PM.*
+> **YT Mirror:** 601.48 GB used · 0.90 TB free
 
 ## Priority Videos
 
@@ -12,6 +12,8 @@
 
 ## Non-Priority Videos
 
+- **We Need To Talk About That Summer Game Fest Show...** — *Spawn Wave* · downloaded 08:10 PM · not podcastable
+- **I watched the 2026 Summer Game Fest..** — *Asmongold TV* · downloaded 08:09 PM · not podcastable
 - **Alvin and the Chipmunks (Wii) - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
 - **This changes everything..** — *Asmongold TV* · downloaded 05:09 PM · not podcastable
 - **I've Never Failed An Anime Quiz This Badly...** — *Garnt* · downloaded 05:07 PM · not podcastable
