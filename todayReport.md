@@ -1,10 +1,11 @@
 # What to Watch — 2026-06-05
 
-> *Good evening! Here's what landed on Friday, June 05, 2026 at 08:14 PM.*
-> **YT Mirror:** 601.48 GB used · 0.90 TB free
+> *Good evening! Here's what landed on Friday, June 05, 2026 at 09:09 PM.*
+> **YT Mirror:** 602.54 GB used · 0.90 TB free
 
 ## Priority Videos
 
+- **How The Impossible Mario Maker Levels Were Finally Beaten** — *Summoning Salt* · downloaded 09:06 PM · not podcastable · *59 days since their last upload*
 - **I'll Make a Man Out of You Reanimated** — *Schaffrillas Productions* · downloaded 07:04 PM · podcastable
 - **Southeast Asia Broke Our Boy | Trash Taste #311** — *Trash Taste* · downloaded 05:06 PM · podcastable
 
@@ -12,6 +13,7 @@
 
 ## Non-Priority Videos
 
+- **This Summer’s Lookin’ Steamy** — *TechLinked* · downloaded 09:07 PM · podcastable
 - **We Need To Talk About That Summer Game Fest Show...** — *Spawn Wave* · downloaded 08:10 PM · not podcastable
 - **I watched the 2026 Summer Game Fest..** — *Asmongold TV* · downloaded 08:09 PM · not podcastable
 - **Alvin and the Chipmunks (Wii) - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
