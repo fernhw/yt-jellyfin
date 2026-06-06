@@ -1,14 +1,14 @@
-last_scan=1780720444718
-total_videos=2860
-updated=2026-06-05 23:34:04
-report_date=2026-06-05
-downloaded_today=26
-deleted_today=17
-skipped_today=2
+last_scan=1780724159231
+total_videos=2861
+updated=2026-06-06 00:35:59
+report_date=2026-06-06
+downloaded_today=1
+deleted_today=0
+skipped_today=0
 channels_scanned=93
 channels_total=93
 errors_last_run=0
 errors_list=
-downloaded_list=LGR:Obscure $3,000 Laptop From 1993: Compaq LTE Lite 4/25E|TechDweeb:Overlooked (but Awesome) Genesis GEMS!|Asmongold TV  :The unredacted footage is even worse..|Lessons in Meme Culture:People Are Larping YouTubers Now|Digital Foundry:DF Direct Q+A: Can Switch 2 Handle 60FPS Call of Duty? Custom PC vs Steam Machine, Nvidia RTX Spark|Asmongold TV  :He's suing his own fans now..|Retro Game Corps:Designing My Dream Retro Handheld|Internet Today:This Year's Dumbest Cool Crime So Far? - News Dump|Legendary Drops:You aren't the audience anymore|Second Wind:The End of Destiny | Unpacked|Gamers Nexus:Race to the Bottom: $18 CPU Air Cooler Gives Thermalright Competition|SAMTIME:Apple Fanboy in Crisis Over New Siri|Gamers Nexus:be quiet! Pure Base 803 ATX & Micro-ATX / Mini-ITX Boom, ft. CEO|Nintendo of America:The Splatoon 3 North American League Show 2026 – Episode 10|Nintendo of America:A Quick Rundown on the Splatoon Series|Asmongold TV  :This is the most horrifying thing I've heard..|Asmongold TV  :Streamer represents himself in court and WINS|Asmongold TV  :This changes everything..|Garnt:I've Never Failed An Anime Quiz This Badly...|Trash Taste:Southeast Asia Broke Our Boy | Trash Taste #311|Scott's Stash:Alvin and the Chipmunks (Wii) - Scott, Sam, Eric and the Worst Year Ever|Schaffrillas Productions:I'll Make a Man Out of You Reanimated|Spawn Wave:We Need To Talk About That Summer Game Fest Show...|Asmongold TV  :I watched the 2026 Summer Game Fest..|TechLinked:This Summer’s Lookin’ Steamy|Summoning Salt:How The Impossible Mario Maker Levels Were Finally Beaten
-deleted_list=AsmongoldTV:He_just_destroyed_his_own_life_S26E186|TechDweeb:This_is_the_Most_Popular_Retro_Handheld_on_Amazon_S26E03|AsmongoldTV:They_let_him_out_and_this_happened_S26E187|RetroGameCorps:Steam_Controller_In-Depth_Review_S26E29|DigitalFoundry:007_First_Light_PS5_PS5_Pro_Review_-_Performance_Features_Mode_More_S26E34|InternetToday:FBI_Director_Kash_Patel_Likes_Watersports_-_Weekly_Weird_News_S26E19|GamersNexus:12_VHPWR_Bomb_Has_Been_Planted_Cooler_Master_Fix_HAF_II_500_220mm_Fans_New_Hyper_S26E22|SecondWind:Adaptations_Dont_Need_to_be_Overly_Faithful_They_Just_Need_to_be_Good_The_Backdr_S26E31|AsmongoldTV:Everyone_is_talking_about_this_S26E188|AsmongoldTV:THIS_IS_INSANE_S26E189|GamersNexus:NVIDIA_Would_Never_Accept_a_Mistake_-_Wire_View_Pro_Noctua_Edition_PVD_Coating_f_S26E23|NintendoofAmerica:The_Splatoon_3_North_American_League_Show_2026_Episode_8_S26E50|NintendoofAmerica:STARSEEKER_Release_Date_Trailer_Nintendo_Switch_2_S26E51|AsmongoldTV:I_already_know_this_will_make_people_mad_S26E190|ScottsStash:The_Ultimate_Video_Game_Trivia_Showdown_S26E16|AsmongoldTV:What_the_FCK_is_happening_in_Paris_S26E191|TechLinked:You_Can_Turn_Them_OFF_S26E03
-skipped_list=members-only:https://www.youtube.com/watch?v=pkndFYSTr0Y|members-only:https://www.youtube.com/watch?v=Rpfp90bL-qo
+downloaded_list=Atrioc:The Worst Summer Games Fest
+deleted_list=
+skipped_list=
