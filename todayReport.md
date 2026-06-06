@@ -1,16 +1,18 @@
 # What to Watch — 2026-06-05
 
-> *Good evening! Here's what landed on Friday, June 05, 2026 at 06:05 PM.*
-> **YT Mirror:** 599.45 GB used · 0.91 TB free
+> *Good evening! Here's what landed on Friday, June 05, 2026 at 07:07 PM.*
+> **YT Mirror:** 599.22 GB used · 0.90 TB free
 
 ## Priority Videos
 
+- **I'll Make a Man Out of You Reanimated** — *Schaffrillas Productions* · downloaded 07:04 PM · podcastable
 - **Southeast Asia Broke Our Boy | Trash Taste #311** — *Trash Taste* · downloaded 05:06 PM · podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **Alvin and the Chipmunks (Wii) - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
 - **This changes everything..** — *Asmongold TV* · downloaded 05:09 PM · not podcastable
 - **I've Never Failed An Anime Quiz This Badly...** — *Garnt* · downloaded 05:07 PM · not podcastable
 - **Apple Fanboy in Crisis Over New Siri** — *SAMTIME* · downloaded 03:08 PM · not podcastable
