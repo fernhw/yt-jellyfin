@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-06
 
-> *Good evening! Here's what landed on Saturday, June 06, 2026 at 09:04 PM.*
-> **YT Mirror:** 600.37 GB used · 0.90 TB free
+> *Good evening! Here's what landed on Saturday, June 06, 2026 at 10:14 PM.*
+> **YT Mirror:** 603.50 GB used · 0.90 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@
 
 ### Non-Priority Videos
 
+- **What Just Happened** — *Big A* · downloaded 10:11 PM · not podcastable
+- **Who are these games made for??** — *Asmongold TV* · downloaded 10:09 PM · not podcastable
 - **No One Saw This Announcement Coming & Huge Game Reveals Set For The Xbox Showcase** — *Spawn Wave* · downloaded 07:04 PM · not podcastable
 - **Citizen Sleeper 2: Starward Vector – Nintendo Switch 2 Edition – Release Date Trailer** — *Nintendo of America* · downloaded 05:04 PM · not podcastable
 - **Nintendo Switch 2 - Year One - The Digital Foundry Verdict** — *Digital Foundry* · downloaded 03:10 PM · not podcastable
