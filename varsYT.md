@@ -1,14 +1,14 @@
-last_scan=1780850415927
-total_videos=2883
-updated=2026-06-07 11:40:16
+last_scan=1780863199789
+total_videos=2886
+updated=2026-06-07 15:13:19
 report_date=2026-06-07
-downloaded_today=7
-deleted_today=5
+downloaded_today=10
+deleted_today=6
 skipped_today=1
 channels_scanned=93
 channels_total=93
 errors_last_run=0
 errors_list=
-downloaded_list=Internet Today:Are UFOs Actually DEMONS? - Weekly Weird News|TechDweeb:So… gaming phones, huh?|Asmongold TV  :This CEO just destroyed his own company..|RedLetterMedia:Half in the Bag: Masters of the Universe (2026)|Lessons in Meme Culture:Among Us Show Is 6 Years Too Late|Asmongold TV  :The games industry is f*cked..|Corridor Crew:Can Modern VFX Artists use 90s Software?
-deleted_list=InternetToday:Donald_Trump_is_Ridiculously_Corrupt_S26E20|AsmongoldTV:NO_ONE_saw_this_coming_S26E195|TechDweeb:The_EASY_Mini_PC_Steam_Retro_Console_S26E04|AsmongoldTV:Sony_just_dropped_a_nuke_S26E196|CorridorCrew:VFX_Artists_React_to_Bad_Great_CGi_225_S26E09
+downloaded_list=Internet Today:Are UFOs Actually DEMONS? - Weekly Weird News|TechDweeb:So… gaming phones, huh?|Asmongold TV  :This CEO just destroyed his own company..|RedLetterMedia:Half in the Bag: Masters of the Universe (2026)|Lessons in Meme Culture:Among Us Show Is 6 Years Too Late|Asmongold TV  :The games industry is f*cked..|Corridor Crew:Can Modern VFX Artists use 90s Software?|Spawn Wave:This Changes Everything For Xbox...|Nintendo of America:Demi and the Fractured Dream – Gameplay Trailer – Nintendo Switch 2|ConnorDawg:We Tried Speedrunning Super Mario 64
+deleted_list=InternetToday:Donald_Trump_is_Ridiculously_Corrupt_S26E20|AsmongoldTV:NO_ONE_saw_this_coming_S26E195|TechDweeb:The_EASY_Mini_PC_Steam_Retro_Console_S26E04|AsmongoldTV:Sony_just_dropped_a_nuke_S26E196|CorridorCrew:VFX_Artists_React_to_Bad_Great_CGi_225_S26E09|NintendoofAmerica:Pictonico_Launch_Trailer_S26E55
 skipped_list=members-only:https://www.youtube.com/watch?v=pslodI0Mh_0
