@@ -1,14 +1,14 @@
-last_scan=1780843012448
-total_videos=2881
-updated=2026-06-07 09:36:52
+last_scan=1780850415927
+total_videos=2883
+updated=2026-06-07 11:40:16
 report_date=2026-06-07
-downloaded_today=5
-deleted_today=3
+downloaded_today=7
+deleted_today=5
 skipped_today=1
 channels_scanned=93
 channels_total=93
 errors_last_run=0
 errors_list=
-downloaded_list=Internet Today:Are UFOs Actually DEMONS? - Weekly Weird News|TechDweeb:So… gaming phones, huh?|Asmongold TV  :This CEO just destroyed his own company..|RedLetterMedia:Half in the Bag: Masters of the Universe (2026)|Lessons in Meme Culture:Among Us Show Is 6 Years Too Late
-deleted_list=InternetToday:Donald_Trump_is_Ridiculously_Corrupt_S26E20|AsmongoldTV:NO_ONE_saw_this_coming_S26E195|TechDweeb:The_EASY_Mini_PC_Steam_Retro_Console_S26E04
+downloaded_list=Internet Today:Are UFOs Actually DEMONS? - Weekly Weird News|TechDweeb:So… gaming phones, huh?|Asmongold TV  :This CEO just destroyed his own company..|RedLetterMedia:Half in the Bag: Masters of the Universe (2026)|Lessons in Meme Culture:Among Us Show Is 6 Years Too Late|Asmongold TV  :The games industry is f*cked..|Corridor Crew:Can Modern VFX Artists use 90s Software?
+deleted_list=InternetToday:Donald_Trump_is_Ridiculously_Corrupt_S26E20|AsmongoldTV:NO_ONE_saw_this_coming_S26E195|TechDweeb:The_EASY_Mini_PC_Steam_Retro_Console_S26E04|AsmongoldTV:Sony_just_dropped_a_nuke_S26E196|CorridorCrew:VFX_Artists_React_to_Bad_Great_CGi_225_S26E09
 skipped_list=members-only:https://www.youtube.com/watch?v=pslodI0Mh_0
