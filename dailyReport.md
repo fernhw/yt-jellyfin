@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-07
 
-> *Good afternoon! Here's what landed on Sunday, June 07, 2026 at 03:15 PM.*
-> **YT Mirror:** 604.47 GB used · 0.90 TB free
+> *Good evening! Here's what landed on Sunday, June 07, 2026 at 05:12 PM.*
+> **YT Mirror:** 604.45 GB used · 0.90 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@
 
 ### Non-Priority Videos
 
+- **Minecraft Dungeons II – Pre-order Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:07 PM · not podcastable
 - **This Changes Everything For Xbox...** — *Spawn Wave* · downloaded 03:11 PM · not podcastable
 - **Demi and the Fractured Dream – Gameplay Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:10 PM · not podcastable
 - **We Tried Speedrunning Super Mario 64** — *ConnorDawg* · downloaded 03:09 PM · not podcastable
