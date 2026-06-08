@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-08
 
-> *Good evening! Here's what landed on Monday, June 08, 2026 at 05:06 PM.*
-> **YT Mirror:** 597.07 GB used · 0.91 TB free
+> *Good evening! Here's what landed on Monday, June 08, 2026 at 06:11 PM.*
+> **YT Mirror:** 599.12 GB used · 0.90 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **The Games Industry Is Finally Accepting Reality** — *Bellular News* · downloaded 06:08 PM · podcastable
+- **Nintendo Direct Confirmed...And They're Not Messing Around** — *Spawn Wave* · downloaded 06:05 PM · not podcastable
 - **Xbox Showcase 2026: An Excellent Show - Gears E-Day, Halo, Senua, Metro 2039 Reaction + More** — *Digital Foundry* · downloaded 03:09 PM · not podcastable
 - **Second Wind Channel Update - 100M Views, Patreon, and More!** — *Second Wind* · downloaded 03:06 PM · podcastable
 - **She got a FELONY for $90..** — *Asmongold TV* · downloaded 03:05 PM · not podcastable
