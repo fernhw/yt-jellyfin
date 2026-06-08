@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-07
 
-> *Good evening! Here's what landed on Sunday, June 07, 2026 at 07:11 PM.*
-> **YT Mirror:** 606.36 GB used · 0.90 TB free
+> *Good evening! Here's what landed on Sunday, June 07, 2026 at 08:17 PM.*
+> **YT Mirror:** 607.62 GB used · 0.90 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@
 
 ### Non-Priority Videos
 
+- **Are we finally back??** — *Asmongold TV* · downloaded 08:14 PM · not podcastable
 - **Spyro: A Realm Beyond – Announcement Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 06:18 PM · not podcastable
 - **PC Gaming Show was actually pretty good** — *Asmongold TV* · downloaded 06:17 PM · not podcastable
 - **Minecraft Dungeons II – Pre-order Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:07 PM · not podcastable
