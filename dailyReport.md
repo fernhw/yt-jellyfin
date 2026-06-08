@@ -2,7 +2,7 @@
 
 ## What to Watch — 2026-06-08
 
-> *Good morning! Here's what landed on Monday, June 08, 2026 at 12:35 AM.*
+> *Good morning! Here's what landed on Monday, June 08, 2026 at 03:35 AM.*
 > **YT Mirror:** 607.95 GB used · 0.90 TB free
 
 ### Priority Videos
