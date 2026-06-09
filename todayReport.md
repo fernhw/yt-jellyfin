@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-09
 
-> *Good afternoon! Here's what landed on Tuesday, June 09, 2026 at 03:29 PM.*
-> **YT Mirror:** 597.88 GB used · 0.91 TB free
+> *Good evening! Here's what landed on Tuesday, June 09, 2026 at 05:14 PM.*
+> **YT Mirror:** 600.63 GB used · 0.90 TB free
 
 ## Priority Videos
 
@@ -13,6 +13,8 @@
 
 ## Non-Priority Videos
 
+- **Destiny 2 Development Dies Today. Its Players Won't Let It.** — *Bellular News* · downloaded 05:10 PM · podcastable
+- **Karmelo Anthony got a verdict in court..** — *Asmongold TV* · downloaded 05:06 PM · not podcastable
 - **Apple’s AI Slop Moment is Here** — *SAMTIME* · downloaded 03:22 PM · not podcastable
 - **DF Direct Weekly #267: Resi Evil Veronica, FF7 Revelation, Stellar Blade 2 - The Big SGF Video** — *Digital Foundry* · downloaded 03:21 PM · not podcastable
 - **Euphoria Is Over...What Was The Point?** — *Karsten Runquist* · downloaded 03:15 PM · not podcastable
