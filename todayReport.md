@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-08
 
-> *Good evening! Here's what landed on Monday, June 08, 2026 at 08:05 PM.*
-> **YT Mirror:** 599.12 GB used · 0.90 TB free
+> *Good evening! Here's what landed on Monday, June 08, 2026 at 09:06 PM.*
+> **YT Mirror:** 599.22 GB used · 0.90 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **She’s FINALLY Here** — *TechLinked* · downloaded 09:05 PM · podcastable
 - **The Games Industry Is Finally Accepting Reality** — *Bellular News* · downloaded 06:08 PM · podcastable
 - **Nintendo Direct Confirmed...And They're Not Messing Around** — *Spawn Wave* · downloaded 06:05 PM · not podcastable
 - **Xbox Showcase 2026: An Excellent Show - Gears E-Day, Halo, Senua, Metro 2039 Reaction + More** — *Digital Foundry* · downloaded 03:09 PM · not podcastable
