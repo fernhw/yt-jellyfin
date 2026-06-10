@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-09
 
-> *Good evening! Here's what landed on Tuesday, June 09, 2026 at 10:04 PM.*
-> **YT Mirror:** 600.63 GB used · 0.90 TB free
+> *Good evening! Here's what landed on Tuesday, June 09, 2026 at 11:37 PM.*
+> **YT Mirror:** 600.91 GB used · 0.90 TB free
 
 ## Priority Videos
 
@@ -13,6 +13,7 @@
 
 ## Non-Priority Videos
 
+- **Xbox Actually Admitted It** — *Big A* · downloaded 11:35 PM · not podcastable
 - **Destiny 2 Development Dies Today. Its Players Won't Let It.** — *Bellular News* · downloaded 05:10 PM · podcastable
 - **Karmelo Anthony got a verdict in court..** — *Asmongold TV* · downloaded 05:06 PM · not podcastable
 - **Apple’s AI Slop Moment is Here** — *SAMTIME* · downloaded 03:22 PM · not podcastable
