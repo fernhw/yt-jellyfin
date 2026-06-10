@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-10
 
-> *Good morning! Here's what landed on Wednesday, June 10, 2026 at 11:43 AM.*
-> **YT Mirror:** 601.80 GB used · 0.90 TB free
+> *Good afternoon! Here's what landed on Wednesday, June 10, 2026 at 03:40 PM.*
+> **YT Mirror:** 606.93 GB used · 0.89 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,11 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **Unfortunately, I Was Right** — *The PrimeTime* · downloaded 03:36 PM · podcastable
+- **I bought a mighty machine and it cost me $0** — *jakkuh* · downloaded 03:32 PM · not podcastable
+- **FINAL FANTASY XIV – Gameplay Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:29 PM · not podcastable
+- **I am BEATING this game..** — *Asmongold TV* · downloaded 03:29 PM · not podcastable
+- **The Horrors Of Backyard Wrestling** — *Papa Meat* · downloaded 03:06 PM · not podcastable
 - **007 First Light | Fully Ramblomatic** — *Second Wind* · downloaded 11:39 AM · podcastable
 - **Enough.** — *Asmongold TV* · downloaded 11:38 AM · not podcastable
 - **Why Is Robin Brushing His Teeth?** — *Lessons in Meme Culture* · downloaded 09:48 AM · not podcastable
