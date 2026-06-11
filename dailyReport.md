@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-10
 
-> *Good evening! Here's what landed on Wednesday, June 10, 2026 at 06:05 PM.*
-> **YT Mirror:** 607.49 GB used · 0.90 TB free
+> *Good evening! Here's what landed on Wednesday, June 10, 2026 at 07:07 PM.*
+> **YT Mirror:** 607.39 GB used · 0.90 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **The Scourge of the Sideways Wii Remote** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
 - **You KNOW it’s gonna be some BULLSH*T..** — *Asmongold TV* · downloaded 05:05 PM · not podcastable
 - **Unfortunately, I Was Right** — *The PrimeTime* · downloaded 03:36 PM · podcastable
 - **I bought a mighty machine and it cost me $0** — *jakkuh* · downloaded 03:32 PM · not podcastable
