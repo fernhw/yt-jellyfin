@@ -2,17 +2,21 @@
 
 ## What to Watch — 2026-06-11
 
-> *Good morning! Here's what landed on Thursday, June 11, 2026 at 11:38 AM.*
-> **YT Mirror:** 592.46 GB used · 0.91 TB free
+> *Good afternoon! Here's what landed on Thursday, June 11, 2026 at 03:20 PM.*
+> **YT Mirror:** 596.55 GB used · 0.90 TB free
 
 ### Priority Videos
 
+- **Steam Controller Review: Now You're Playing with Power** — *Nerrel* · downloaded 03:16 PM · not podcastable · *42 days since their last upload*
+- **Anthropic begged the world to stop AI… then shipped this** — *Fireship* · downloaded 03:04 PM · podcastable
 - **Is the Among Us show good or nah?** — *Schaffrillas Productions* · downloaded 11:34 AM · podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **what i watched in may (2026)** — *Karsten Runquist* · downloaded 03:17 PM · not podcastable
+- **Rise of the Tomb Raider: 20 Year Celebration – Out Now Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:17 PM · not podcastable
 - **Microsoft Reacts to macOS Golden Gate** — *SAMTIME* · downloaded 11:35 AM · not podcastable
 - **“Play It Three Days Early” Needs to Stop** — *Second Wind* · downloaded 11:35 AM · podcastable
 - **I Love Du Bist Gut Genug** — *Lessons in Meme Culture* · downloaded 09:38 AM · not podcastable
