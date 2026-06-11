@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-11
 
-> *Good evening! Here's what landed on Thursday, June 11, 2026 at 05:10 PM.*
-> **YT Mirror:** 597.85 GB used · 0.90 TB free
+> *Good evening! Here's what landed on Thursday, June 11, 2026 at 06:06 PM.*
+> **YT Mirror:** 598.06 GB used · 0.90 TB free
 
 ### Priority Videos
 
@@ -15,6 +15,7 @@
 
 ### Non-Priority Videos
 
+- **Things Just Got Messy Between Xbox & PlayStation** — *Spawn Wave* · downloaded 06:04 PM · not podcastable
 - **XBOX Are Love-Bombing You, And It's Working** — *Bellular News* · downloaded 05:07 PM · podcastable
 - **STARSEEKER: Astroneer Expeditions – Launch Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:05 PM · not podcastable
 - **Nintendo Treehouse Plays Beatspell in Rhythm Heaven Groove – Nintendo Switch** — *Nintendo of America* · downloaded 05:05 PM · not podcastable
