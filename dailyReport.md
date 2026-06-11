@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-11
 
-> *Good afternoon! Here's what landed on Thursday, June 11, 2026 at 03:20 PM.*
-> **YT Mirror:** 596.55 GB used · 0.90 TB free
+> *Good evening! Here's what landed on Thursday, June 11, 2026 at 05:10 PM.*
+> **YT Mirror:** 597.85 GB used · 0.90 TB free
 
 ### Priority Videos
 
@@ -15,6 +15,9 @@
 
 ### Non-Priority Videos
 
+- **XBOX Are Love-Bombing You, And It's Working** — *Bellular News* · downloaded 05:07 PM · podcastable
+- **STARSEEKER: Astroneer Expeditions – Launch Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:05 PM · not podcastable
+- **Nintendo Treehouse Plays Beatspell in Rhythm Heaven Groove – Nintendo Switch** — *Nintendo of America* · downloaded 05:05 PM · not podcastable
 - **what i watched in may (2026)** — *Karsten Runquist* · downloaded 03:17 PM · not podcastable
 - **Rise of the Tomb Raider: 20 Year Celebration – Out Now Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:17 PM · not podcastable
 - **Microsoft Reacts to macOS Golden Gate** — *SAMTIME* · downloaded 11:35 AM · not podcastable
