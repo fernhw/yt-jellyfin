@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-10
 
-> *Good evening! Here's what landed on Wednesday, June 10, 2026 at 09:07 PM.*
-> **YT Mirror:** 607.44 GB used · 0.90 TB free
+> *Good evening! Here's what landed on Wednesday, June 10, 2026 at 10:06 PM.*
+> **YT Mirror:** 607.55 GB used · 0.89 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **Reckless Ben is in LEGAL trouble..** — *Asmongold TV* · downloaded 10:05 PM · not podcastable
 - **Buckle Up, Windows Users** — *TechLinked* · downloaded 09:05 PM · podcastable
 - **The Scourge of the Sideways Wii Remote** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
 - **You KNOW it’s gonna be some BULLSH*T..** — *Asmongold TV* · downloaded 05:05 PM · not podcastable
