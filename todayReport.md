@@ -1,10 +1,11 @@
 # What to Watch — 2026-06-11
 
-> *Good evening! Here's what landed on Thursday, June 11, 2026 at 07:05 PM.*
-> **YT Mirror:** 598.06 GB used · 0.89 TB free
+> *Good evening! Here's what landed on Thursday, June 11, 2026 at 08:52 PM.*
+> **YT Mirror:** 603.77 GB used · 0.87 TB free
 
 ## Priority Videos
 
+- **Murder Becomes a Habit | Re:ZERO Season 4 Episode 10 Reaction/Analysis** — *Echidnut* · downloaded 08:04 PM · not podcastable
 - **Steam Controller Review: Now You're Playing with Power** — *Nerrel* · downloaded 03:16 PM · not podcastable · *42 days since their last upload*
 - **Anthropic begged the world to stop AI… then shipped this** — *Fireship* · downloaded 03:04 PM · podcastable
 - **Is the Among Us show good or nah?** — *Schaffrillas Productions* · downloaded 11:34 AM · podcastable
@@ -13,6 +14,8 @@
 
 ## Non-Priority Videos
 
+- **It Doesn’t Look Dead…** — *GameLinked* · downloaded 08:48 PM · podcastable
+- **HAPPY BIRTHDAY DENIA... 3.3 SEGUE REACTION | Wuthering Waves** — *Yessenia* · downloaded 08:46 PM · not podcastable
 - **Things Just Got Messy Between Xbox & PlayStation** — *Spawn Wave* · downloaded 06:04 PM · not podcastable
 - **XBOX Are Love-Bombing You, And It's Working** — *Bellular News* · downloaded 05:07 PM · podcastable
 - **STARSEEKER: Astroneer Expeditions – Launch Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:05 PM · not podcastable
