@@ -1,6 +1,6 @@
 # What to Watch — 2026-06-12
 
-> *Good evening! Here's what landed on Friday, June 12, 2026 at 05:13 PM.*
+> *Good evening! Here's what landed on Friday, June 12, 2026 at 06:05 PM.*
 > **YT Mirror:** 604.05 GB used · 0.72 TB free
 
 ## Priority Videos
