@@ -1,16 +1,22 @@
 # What to Watch — 2026-06-12
 
-> *Good morning! Here's what landed on Friday, June 12, 2026 at 11:39 AM.*
-> **YT Mirror:** 601.21 GB used · 0.73 TB free
+> *Good afternoon! Here's what landed on Friday, June 12, 2026 at 03:13 PM.*
+> **YT Mirror:** 600.99 GB used · 0.72 TB free
 
 ## Priority Videos
 
+- **gaming isn't for YOU anymore** — *FLEEKAZOID* · downloaded 03:04 PM · not podcastable
+- **Notorious (dunkview)** — *videogamedunkey* · downloaded 03:04 PM · not podcastable
 - **Wet Hot American Summer - re:View** — *RedLetterMedia* · downloaded 09:37 AM · podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **DF Direct Q+A: The Big "Xbox Reset" Memo Discussion - What Happens Next?** — *Digital Foundry* · downloaded 03:08 PM · not podcastable
+- **Everbloom – Announcement Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:07 PM · not podcastable
+- **FINAL FANTASY VII REVELATION – Reveal Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:06 PM · not podcastable
+- **SHE'S THE WHOLE PACKAGE!! LUCILLA RESONATOR SHOWCASE TRAILER REACTION! | Wuthering Waves** — *Yessenia* · downloaded 03:06 PM · not podcastable
 - **Game Studios Keep Dropping the Ball on AI | Unpacked** — *Second Wind* · downloaded 11:37 AM · podcastable
 - **This is the most ridiculous video I've watched in a long time** — *Asmongold TV* · downloaded 11:36 AM · not podcastable
 - **Chud Song Is Everywhere** — *Lessons in Meme Culture* · downloaded 09:44 AM · not podcastable
