@@ -1,14 +1,14 @@
-last_scan=1781239013377
+last_scan=1781242454532
 total_videos=2991
-updated=2026-06-11 23:36:53
-report_date=2026-06-11
-downloaded_today=21
-deleted_today=10
-skipped_today=1
+updated=2026-06-12 00:34:14
+report_date=2026-06-12
+downloaded_today=0
+deleted_today=0
+skipped_today=0
 channels_scanned=93
 channels_total=93
 errors_last_run=0
 errors_list=
-downloaded_list=Big A:Insanely Smug Fake Cowboy|Internet Today:Elon Musk is Fanning the Flames of Far-Right Violence in the UK|Yessenia :OMG MORAN?! SKINS, PATCH NOTES & ARK RANGER BLACK KIT REACTION | Goddess of Victory: NIKKE VOD|Lessons in Meme Culture:I Love Du Bist Gut Genug|Digital Foundry:Halo Campaign Evolved First Look - Xbox/PC/Ally X - OG vs New Game, Performance + More|Gamers Nexus:AMD Gaslights Security Researcher, Changes Rules Retroactively|Asmongold TV  :Why Africa is a waste of our money|SAMTIME:Microsoft Reacts to macOS Golden Gate|Second Wind:“Play It Three Days Early” Needs to Stop|Schaffrillas Productions:Is the Among Us show good or nah?|Karsten Runquist:what i watched in may (2026)|Nintendo of America:Rise of the Tomb Raider: 20 Year Celebration – Out Now Trailer – Nintendo Switch 2|Nerrel:Steam Controller Review: Now You're Playing with Power|Fireship:Anthropic begged the world to stop AI… then shipped this|Bellular News:XBOX Are Love-Bombing You, And It's Working|Nintendo of America:STARSEEKER: Astroneer Expeditions – Launch Trailer – Nintendo Switch 2|Nintendo of America:Nintendo Treehouse Plays Beatspell in Rhythm Heaven Groove – Nintendo Switch|Spawn Wave:Things Just Got Messy Between Xbox & PlayStation|GameLinked:It Doesn’t Look Dead…|Yessenia :HAPPY BIRTHDAY DENIA... 3.3 SEGUE REACTION | Wuthering Waves|Echidnut:Murder Becomes a Habit | Re:ZERO Season 4 Episode 10 Reaction/Analysis
-deleted_list=Yessenia:THEYVE_COME_SO_FAR_STAR_ANIS_STORY_1_2_REACTION_PLAYTHROUGH_Goddess_of_Victory_N_S26E13|InternetToday:Bonesmasher_Clavicular_Out-Mogged_By_Hunky_Judge_-_Weekly_Weird_News_S26E22|AsmongoldTV:This_changes_everything_S26E210|DigitalFoundry:DF_Retro_Super_Show_015_James_Bond_007_-_The_Classic_EA_PS2_Era_Revisited_S26E38|GamersNexus:RIP_AMD_ROG_Ally_Intel_Handheld_G3_Technical_Discussion_ft_Tom_Petersen_S26E24|SecondWind:The_Mandalorian_and_Grogu_Is_Content_to_be_Content_The_Backdrop_S26E36|NintendoofAmerica:DRAGON_QUEST_MONSTERS_The_Withered_World_Announcement_Trailer_Nintendo_Switch_2_S26E84|NintendoofAmerica:Pikuniku_2_Reveal_Trailer_Nintendo_Switch_2_S26E85|NintendoofAmerica:FINAL_FANTASY_RESONANCE_Announcement_Trailer_Nintendo_Switch_2_S26E86|Yessenia:SHES_AN_ABSOLUTE_NEED_FOR_ME_HIYUKI_RESONATOR_SHOWCASE_TRAILER_REACTION_Wutherin_S26E14
-skipped_list=members-only:https://www.youtube.com/watch?v=Q3jdCmEPT78
+downloaded_list=
+deleted_list=
+skipped_list=
