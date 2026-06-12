@@ -2,11 +2,12 @@
 
 ## What to Watch — 2026-06-12
 
-> *Good afternoon! Here's what landed on Friday, June 12, 2026 at 03:13 PM.*
-> **YT Mirror:** 600.99 GB used · 0.72 TB free
+> *Good evening! Here's what landed on Friday, June 12, 2026 at 05:13 PM.*
+> **YT Mirror:** 604.05 GB used · 0.72 TB free
 
 ### Priority Videos
 
+- **We Defended the Hottest Takes of All Time | Trash Taste #312** — *Trash Taste* · downloaded 05:07 PM · podcastable
 - **gaming isn't for YOU anymore** — *FLEEKAZOID* · downloaded 03:04 PM · not podcastable
 - **Notorious (dunkview)** — *videogamedunkey* · downloaded 03:04 PM · not podcastable
 - **Wet Hot American Summer - re:View** — *RedLetterMedia* · downloaded 09:37 AM · podcastable
@@ -15,6 +16,8 @@
 
 ### Non-Priority Videos
 
+- **She’s About to Pull the Trigger** — *Bellular News* · downloaded 05:11 PM · podcastable
+- **Anime Episode Ratings Make No Sense** — *Garnt* · downloaded 05:08 PM · not podcastable
 - **DF Direct Q+A: The Big "Xbox Reset" Memo Discussion - What Happens Next?** — *Digital Foundry* · downloaded 03:08 PM · not podcastable
 - **Everbloom – Announcement Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:07 PM · not podcastable
 - **FINAL FANTASY VII REVELATION – Reveal Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:06 PM · not podcastable
