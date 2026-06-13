@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-12
 
-> *Good evening! Here's what landed on Friday, June 12, 2026 at 06:05 PM.*
-> **YT Mirror:** 604.05 GB used · 0.72 TB free
+> *Good evening! Here's what landed on Friday, June 12, 2026 at 07:07 PM.*
+> **YT Mirror:** 604.29 GB used · 0.72 TB free
 
 ## Priority Videos
 
@@ -14,6 +14,8 @@
 
 ## Non-Priority Videos
 
+- **Wii Music - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
+- **This Just Got Really Weird For Xbox** — *Spawn Wave* · downloaded 07:04 PM · not podcastable
 - **She’s About to Pull the Trigger** — *Bellular News* · downloaded 05:11 PM · podcastable
 - **Anime Episode Ratings Make No Sense** — *Garnt* · downloaded 05:08 PM · not podcastable
 - **DF Direct Q+A: The Big "Xbox Reset" Memo Discussion - What Happens Next?** — *Digital Foundry* · downloaded 03:08 PM · not podcastable
