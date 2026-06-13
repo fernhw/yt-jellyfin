@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-13
 
-> *Good morning! Here's what landed on Saturday, June 13, 2026 at 03:37 AM.*
-> **YT Mirror:** 604.09 GB used · 0.72 TB free
+> *Good morning! Here's what landed on Saturday, June 13, 2026 at 07:15 AM.*
+> **YT Mirror:** 604.10 GB used · 0.72 TB free
 
 ## Priority Videos
 
