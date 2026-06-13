@@ -2,12 +2,12 @@
 
 ## What to Watch — 2026-06-13
 
-> *Good evening! Here's what landed on Saturday, June 13, 2026 at 05:05 PM.*
-> **YT Mirror:** 609.67 GB used · 0.71 TB free
+> *Good evening! Here's what landed on Saturday, June 13, 2026 at 06:05 PM.*
+> **YT Mirror:** 609.83 GB used · 0.71 TB free
 
 ### Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **Disclosure Day - Does Spielberg still got it?** — *Schaffrillas Productions* · downloaded 06:04 PM · podcastable
 
 ---
 
