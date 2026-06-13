@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-12
 
-> *Good evening! Here's what landed on Friday, June 12, 2026 at 10:05 PM.*
-> **YT Mirror:** 605.96 GB used · 0.71 TB free
+> *Good evening! Here's what landed on Friday, June 12, 2026 at 11:36 PM.*
+> **YT Mirror:** 606.44 GB used · 0.71 TB free
 
 ## Priority Videos
 
@@ -14,6 +14,7 @@
 
 ## Non-Priority Videos
 
+- **If Not Corruption, Why Corruption Shaped?** — *Gamers Nexus* · downloaded 11:35 PM · not podcastable
 - **Ranking Nintendo Accessories** — *Scott's Stash* · downloaded 09:11 PM · not podcastable
 - **This is Going to Be Great** — *TechLinked* · downloaded 09:05 PM · podcastable
 - **Wii Music - Scott, Sam, Eric and the Worst Year Ever** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
