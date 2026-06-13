@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-13
 
-> *Good morning! Here's what landed on Saturday, June 13, 2026 at 11:37 AM.*
-> **YT Mirror:** 608.61 GB used · 0.71 TB free
+> *Good afternoon! Here's what landed on Saturday, June 13, 2026 at 03:13 PM.*
+> **YT Mirror:** 609.67 GB used · 0.71 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,11 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **'Disclosure Day' Is Genuinely Bizarre...** — *Karsten Runquist* · downloaded 03:10 PM · not podcastable
+- **Old School Puzzle Dungeon | Adventure Is Nigh! - The Slow Walk Home | Ep. 3** — *Second Wind* · downloaded 03:09 PM · podcastable
+- **So Nintendo Quietly Added Achievements...** — *Spawn Wave* · downloaded 03:07 PM · not podcastable
+- **How are people this f*cking stupid..** — *Asmongold TV* · downloaded 03:07 PM · not podcastable
+- **The Stalking Disease...** — *Papa Meat* · downloaded 03:05 PM · not podcastable
 - **VFX Artists React to Bad & Great CGi 229** — *Corridor Crew* · downloaded 11:35 AM · not podcastable
 - **Pomni In Fortnite Is Kinda…** — *Lessons in Meme Culture* · downloaded 10:10 AM · not podcastable
 - **Onimusha: Way of the Sword Demo - PS5/Xbox + PS5 Pro RT/PSSR Upgrades Tested** — *Digital Foundry* · downloaded 10:09 AM · not podcastable
