@@ -1,11 +1,11 @@
 # What to Watch — 2026-06-14
 
-> *Good afternoon! Here's what landed on Sunday, June 14, 2026 at 04:03 PM.*
-> **YT Mirror:** 627.60 GB used · 0.68 TB free
+> *Good evening! Here's what landed on Sunday, June 14, 2026 at 05:06 PM.*
+> **YT Mirror:** 627.98 GB used · 0.68 TB free
 
 ## Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **HOMM Olden Era Review** — *SsethTzeentach* · downloaded 05:04 PM · not podcastable · *95 days since their last upload*
 
 ---
 
