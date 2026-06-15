@@ -2,17 +2,19 @@
 
 ## What to Watch — 2026-06-15
 
-> *Good morning! Here's what landed on Monday, June 15, 2026 at 11:41 AM.*
-> **YT Mirror:** 619.47 GB used · 0.60 TB free
+> *Good afternoon! Here's what landed on Monday, June 15, 2026 at 03:06 PM.*
+> **YT Mirror:** 619.25 GB used · 0.60 TB free
 
 ### Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **One man just liberated Fable... and now it’s illegal** — *Fireship* · downloaded 03:04 PM · podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **Apple Just Released Another Stupid Product** — *SAMTIME* · downloaded 03:05 PM · not podcastable
+- **Tales of Eternia Remastered – Announcement Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:04 PM · not podcastable
 - **DF Direct Weekly #268: Ocarina of Time Remake, Nintendo Direct, Fable Gameplay, RTX 3060 Returns** — *Digital Foundry* · downloaded 11:38 AM · not podcastable
 - **Competing for a Minimum Wage Job at Sony | Game Arcadia** — *Second Wind* · downloaded 11:36 AM · podcastable
 - **Big Walk – Release Date Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 11:34 AM · not podcastable
