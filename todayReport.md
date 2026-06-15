@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-14
 
-> *Good evening! Here's what landed on Sunday, June 14, 2026 at 09:05 PM.*
-> **YT Mirror:** 628.35 GB used · 0.68 TB free
+> *Good evening! Here's what landed on Sunday, June 14, 2026 at 10:06 PM.*
+> **YT Mirror:** 628.25 GB used · 0.68 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@
 
 ## Non-Priority Videos
 
+- **No one saw this coming..** — *Asmongold TV* · downloaded 10:05 PM · not podcastable
 - **HW News - DRAM Companies Hit Trillions of Dollars, Bambu Open Source, NVIDIA Spark Concerns** — *Gamers Nexus* · downloaded 08:07 PM · not podcastable
 - **Gaming Just Got Completely Out Of Control For 2026** — *Spawn Wave* · downloaded 03:58 PM · not podcastable
 - **I'm tired of dealing with this..** — *Asmongold TV* · downloaded 03:56 PM · not podcastable
