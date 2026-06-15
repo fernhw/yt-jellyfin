@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-15
 
-> *Good morning! Here's what landed on Monday, June 15, 2026 at 09:35 AM.*
-> **YT Mirror:** 619.26 GB used · 0.60 TB free
+> *Good morning! Here's what landed on Monday, June 15, 2026 at 11:41 AM.*
+> **YT Mirror:** 619.47 GB used · 0.60 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,9 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **DF Direct Weekly #268: Ocarina of Time Remake, Nintendo Direct, Fable Gameplay, RTX 3060 Returns** — *Digital Foundry* · downloaded 11:38 AM · not podcastable
+- **Competing for a Minimum Wage Job at Sony | Game Arcadia** — *Second Wind* · downloaded 11:36 AM · podcastable
+- **Big Walk – Release Date Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 11:34 AM · not podcastable
 - **Oliver Tree Passed Away At 32** — *Lessons in Meme Culture* · downloaded 09:34 AM · not podcastable
 - **Pimpin' an Amiga 1200 in 2026 - 060 , Mechanical Keyboard, New Case!** — *Modern Vintage Gamer* · downloaded 07:10 AM · not podcastable
 - **WTF is happening in New York City?** — *Asmongold TV* · downloaded 07:09 AM · not podcastable
