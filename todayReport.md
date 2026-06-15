@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-15
 
-> *Good afternoon! Here's what landed on Monday, June 15, 2026 at 03:06 PM.*
-> **YT Mirror:** 619.25 GB used · 0.60 TB free
+> *Good evening! Here's what landed on Monday, June 15, 2026 at 05:08 PM.*
+> **YT Mirror:** 619.52 GB used · 0.60 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,8 @@
 
 ## Non-Priority Videos
 
+- **The Games Industry Is Done With Employees** — *Bellular News* · downloaded 05:07 PM · podcastable
+- **We are so unbelievably f*cked..** — *Asmongold TV* · downloaded 05:04 PM · not podcastable
 - **Apple Just Released Another Stupid Product** — *SAMTIME* · downloaded 03:05 PM · not podcastable
 - **Tales of Eternia Remastered – Announcement Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:04 PM · not podcastable
 - **DF Direct Weekly #268: Ocarina of Time Remake, Nintendo Direct, Fable Gameplay, RTX 3060 Returns** — *Digital Foundry* · downloaded 11:38 AM · not podcastable
