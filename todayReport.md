@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-15
 
-> *Good evening! Here's what landed on Monday, June 15, 2026 at 10:05 PM.*
-> **YT Mirror:** 619.69 GB used · 0.60 TB free
+> *Good evening! Here's what landed on Monday, June 15, 2026 at 11:36 PM.*
+> **YT Mirror:** 619.05 GB used · 0.60 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,8 @@
 
 ## Non-Priority Videos
 
+- **The Kumar Method Is A Lie** — *Lessons in Meme Culture* · downloaded 11:34 PM · not podcastable
+- **This is the most pathetic video I've seen..** — *Asmongold TV* · downloaded 11:34 PM · not podcastable
 - **Who Could Have Predicted This** — *TechLinked* · downloaded 09:04 PM · podcastable
 - **They're trying to destroy his life..** — *Asmongold TV* · downloaded 08:04 PM · not podcastable
 - **The Games Industry Is Done With Employees** — *Bellular News* · downloaded 05:07 PM · podcastable
