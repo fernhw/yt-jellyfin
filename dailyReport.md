@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-15
 
-> *Good evening! Here's what landed on Monday, June 15, 2026 at 07:04 PM.*
-> **YT Mirror:** 619.52 GB used · 0.60 TB free
+> *Good evening! Here's what landed on Monday, June 15, 2026 at 08:05 PM.*
+> **YT Mirror:** 619.59 GB used · 0.60 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@
 
 ### Non-Priority Videos
 
+- **They're trying to destroy his life..** — *Asmongold TV* · downloaded 08:04 PM · not podcastable
 - **The Games Industry Is Done With Employees** — *Bellular News* · downloaded 05:07 PM · podcastable
 - **We are so unbelievably f*cked..** — *Asmongold TV* · downloaded 05:04 PM · not podcastable
 - **Apple Just Released Another Stupid Product** — *SAMTIME* · downloaded 03:05 PM · not podcastable
