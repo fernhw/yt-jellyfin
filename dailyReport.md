@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-16
 
-> *Good morning! Here's what landed on Tuesday, June 16, 2026 at 11:37 AM.*
-> **YT Mirror:** 619.66 GB used · 0.60 TB free
+> *Good afternoon! Here's what landed on Tuesday, June 16, 2026 at 03:12 PM.*
+> **YT Mirror:** 621.84 GB used · 0.60 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,9 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **Minecraft – Chaos Cubed Trailer – Nintendo Switch** — *Nintendo of America* · downloaded 03:09 PM · not podcastable
+- **The Most Interesting Displays In The World!** — *Marques Brownlee* · downloaded 03:09 PM · not podcastable
+- **This is Belgium right now.** — *Asmongold TV* · downloaded 03:06 PM · not podcastable
 - **In Toy Story 5, Pixar Defiantly Refuses to Grow Up | The Backdrop** — *Second Wind* · downloaded 11:35 AM · podcastable
 - **Bloodborne PS5: Big Resolution Boosts, 120Hz, VRR - Today's Mod, Tomorrow's New Feature?** — *Digital Foundry* · downloaded 10:02 AM · not podcastable
 - **The Craziest Coding Contest Ever** — *The PrimeTime* · downloaded 10:00 AM · podcastable
