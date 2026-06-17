@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-17
 
-> *Good afternoon! Here's what landed on Wednesday, June 17, 2026 at 03:28 PM.*
-> **YT Mirror:** 620.81 GB used · 0.59 TB free
+> *Good evening! Here's what landed on Wednesday, June 17, 2026 at 05:12 PM.*
+> **YT Mirror:** 620.79 GB used · 0.59 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,8 @@
 
 ## Non-Priority Videos
 
+- **Disney Dreamlight Valley – Honeyglow Woods Adventure Pack Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:10 PM · not podcastable
+- **BINGO Is The Worst...** — *Papa Meat* · downloaded 05:10 PM · not podcastable
 - **The Music Industry is Broken** — *Drew Gooden* · downloaded 03:25 PM · podcastable · *75 days since their last upload*
 - **DF Direct Q+A: Xbox Reboot Studio Closure Reports, RTX 50-Series Super Returns? ARM ML Rendering** — *Digital Foundry* · downloaded 03:22 PM · not podcastable
 - **Trine 6: Together in Time – Announcement Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:17 PM · not podcastable
