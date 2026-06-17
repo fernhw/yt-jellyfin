@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-16
 
-> *Good evening! Here's what landed on Tuesday, June 16, 2026 at 06:05 PM.*
-> **YT Mirror:** 621.90 GB used · 0.60 TB free
+> *Good evening! Here's what landed on Tuesday, June 16, 2026 at 07:06 PM.*
+> **YT Mirror:** 621.97 GB used · 0.60 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **Overwatch – Season 3: Into the Tiger's Den Official Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 07:05 PM · not podcastable
 - **Digimon Story Time Stranger – How to Play Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:04 PM · not podcastable
 - **Minecraft – Chaos Cubed Trailer – Nintendo Switch** — *Nintendo of America* · downloaded 03:09 PM · not podcastable
 - **The Most Interesting Displays In The World!** — *Marques Brownlee* · downloaded 03:09 PM · not podcastable
