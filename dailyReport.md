@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-17
 
-> *Good evening! Here's what landed on Wednesday, June 17, 2026 at 08:06 PM.*
-> **YT Mirror:** 622.96 GB used · 0.59 TB free
+> *Good evening! Here's what landed on Wednesday, June 17, 2026 at 09:06 PM.*
+> **YT Mirror:** 622.86 GB used · 0.59 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@
 
 ### Non-Priority Videos
 
+- **You Thought Steam Was Safe…** — *TechLinked* · downloaded 09:04 PM · podcastable
 - **This Game Blows! Youtooz Available for Pre-Order + Some Updates!** — *Scott The Woz* · downloaded 07:06 PM · not podcastable
 - **I Always Wanted Super Smash Bros. DS** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
 - **The Xbox Purge Has Only Just Begun** — *Bellular News* · downloaded 06:09 PM · podcastable
