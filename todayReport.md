@@ -1,16 +1,23 @@
 # What to Watch — 2026-06-18
 
-> *Good morning! Here's what landed on Thursday, June 18, 2026 at 11:45 AM.*
-> **YT Mirror:** 620.92 GB used · 0.59 TB free
+> *Good afternoon! Here's what landed on Thursday, June 18, 2026 at 03:17 PM.*
+> **YT Mirror:** 620.50 GB used · 0.59 TB free
 
 ## Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **Kirby and The Disturbing Powers** — *videogamedunkey* · downloaded 03:04 PM · not podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **Going to TooManyGames 2026** — *Scott's Stash* · downloaded 03:14 PM · not podcastable
+- **He Actually Said It...** — *Big A* · downloaded 03:13 PM · not podcastable
+- **Microsoft Just Got Sued, But It's Valve's Fault** — *Bellular News* · downloaded 03:13 PM · podcastable
+- **The Splatoon 3 North American League Show 2026 – Episode 11** — *Nintendo of America* · downloaded 03:09 PM · not podcastable
+- **The Adventures of Elliot: The Millennium Tales – Launch Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:08 PM · not podcastable
+- **They're lying to you.** — *Asmongold TV* · downloaded 03:07 PM · not podcastable
+- **EVERYONE got replaced..** — *Asmongold TV* · downloaded 03:05 PM · not podcastable
 - **James Bond Needs Therapy | Semi-Ramblomatic** — *Second Wind* · downloaded 11:42 AM · podcastable
 - **"Are We All Actually F'd?" - ft. Hardware Unboxed** — *Gamers Nexus* · downloaded 11:41 AM · not podcastable
 - **Most unhinged crashout I’ve ever watched..** — *Asmongold TV* · downloaded 11:38 AM · not podcastable
