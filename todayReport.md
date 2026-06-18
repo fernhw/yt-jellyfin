@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-18
 
-> *Good afternoon! Here's what landed on Thursday, June 18, 2026 at 03:17 PM.*
-> **YT Mirror:** 620.50 GB used · 0.59 TB free
+> *Good evening! Here's what landed on Thursday, June 18, 2026 at 05:08 PM.*
+> **YT Mirror:** 620.58 GB used · 0.59 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,8 @@
 
 ## Non-Priority Videos
 
+- **We're building this** — *jakkuh* · downloaded 05:06 PM · not podcastable
+- **Rocket League – Season 23 Launch Trailer – Nintendo Switch** — *Nintendo of America* · downloaded 05:05 PM · not podcastable
 - **Going to TooManyGames 2026** — *Scott's Stash* · downloaded 03:14 PM · not podcastable
 - **He Actually Said It...** — *Big A* · downloaded 03:13 PM · not podcastable
 - **Microsoft Just Got Sued, But It's Valve's Fault** — *Bellular News* · downloaded 03:13 PM · podcastable
