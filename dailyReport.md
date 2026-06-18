@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-17
 
-> *Good evening! Here's what landed on Wednesday, June 17, 2026 at 06:11 PM.*
-> **YT Mirror:** 622.37 GB used · 0.59 TB free
+> *Good evening! Here's what landed on Wednesday, June 17, 2026 at 07:08 PM.*
+> **YT Mirror:** 622.96 GB used · 0.59 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@
 
 ### Non-Priority Videos
 
+- **This Game Blows! Youtooz Available for Pre-Order + Some Updates!** — *Scott The Woz* · downloaded 07:06 PM · not podcastable
+- **I Always Wanted Super Smash Bros. DS** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
 - **The Xbox Purge Has Only Just Begun** — *Bellular News* · downloaded 06:09 PM · podcastable
 - **I’m not taking this back.** — *Asmongold TV* · downloaded 06:07 PM · not podcastable
 - **Disney Dreamlight Valley – Honeyglow Woods Adventure Pack Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:10 PM · not podcastable
