@@ -1,16 +1,18 @@
 # What to Watch — 2026-06-17
 
-> *Good evening! Here's what landed on Wednesday, June 17, 2026 at 09:06 PM.*
-> **YT Mirror:** 622.86 GB used · 0.59 TB free
+> *Good evening! Here's what landed on Wednesday, June 17, 2026 at 10:07 PM.*
+> **YT Mirror:** 623.38 GB used · 0.59 TB free
 
 ## Priority Videos
 
+- **Subaru is BACK | Re:Zero Season 4 Episode 11 Reaction/Analysis** — *Echidnut* · downloaded 10:04 PM · not podcastable
 - **I read every major CS paper of the last 100 years...** — *Fireship* · downloaded 11:34 AM · podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **We Finally Got A Deal** — *Big A* · downloaded 10:06 PM · not podcastable
 - **You Thought Steam Was Safe…** — *TechLinked* · downloaded 09:04 PM · podcastable
 - **This Game Blows! Youtooz Available for Pre-Order + Some Updates!** — *Scott The Woz* · downloaded 07:06 PM · not podcastable
 - **I Always Wanted Super Smash Bros. DS** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
