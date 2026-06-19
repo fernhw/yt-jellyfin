@@ -2,11 +2,12 @@
 
 ## What to Watch — 2026-06-19
 
-> *Good afternoon! Here's what landed on Friday, June 19, 2026 at 03:14 PM.*
-> **YT Mirror:** 629.23 GB used · 0.58 TB free
+> *Good evening! Here's what landed on Friday, June 19, 2026 at 05:10 PM.*
+> **YT Mirror:** 630.93 GB used · 0.58 TB free
 
 ### Priority Videos
 
+- **The Hardest Questions We've Answered... | Trash Taste #313** — *Trash Taste* · downloaded 05:08 PM · podcastable
 - **Toy Story 5 - Is It Good or Nah?** — *Schaffrillas Productions* · downloaded 03:08 PM · podcastable
 - **Half in the Bag: 2026 Mid-year Catch-up (part 1)** — *RedLetterMedia* · downloaded 03:05 PM · podcastable
 - **Aesthetic Deception** — *Matthewmatosis* · downloaded 09:35 AM · not podcastable · *177 days since their last upload*
