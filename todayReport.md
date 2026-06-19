@@ -1,16 +1,21 @@
 # What to Watch — 2026-06-19
 
-> *Good morning! Here's what landed on Friday, June 19, 2026 at 11:39 AM.*
-> **YT Mirror:** 628.26 GB used · 0.58 TB free
+> *Good afternoon! Here's what landed on Friday, June 19, 2026 at 03:14 PM.*
+> **YT Mirror:** 629.23 GB used · 0.58 TB free
 
 ## Priority Videos
 
+- **Toy Story 5 - Is It Good or Nah?** — *Schaffrillas Productions* · downloaded 03:08 PM · podcastable
+- **Half in the Bag: 2026 Mid-year Catch-up (part 1)** — *RedLetterMedia* · downloaded 03:05 PM · podcastable
 - **Aesthetic Deception** — *Matthewmatosis* · downloaded 09:35 AM · not podcastable · *177 days since their last upload*
 
 ---
 
 ## Non-Priority Videos
 
+- **I Bought a 23 Year Old MacBook** — *SAMTIME* · downloaded 03:11 PM · not podcastable
+- **Video Games Have Never Respected Death** — *Second Wind* · downloaded 03:10 PM · podcastable
+- **EA SPORTS Madden NFL 27 – Official Reveal Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:09 PM · not podcastable
 - **This Is Getting Absurd** — *Big A* · downloaded 11:37 AM · not podcastable
 - **Microsoft Has Screwed the Employees of Xbox Yet Again | Unpacked** — *Second Wind* · downloaded 11:34 AM · podcastable
 - **GTA 6 Shuts Down Entire Company** — *Lessons in Meme Culture* · downloaded 09:40 AM · not podcastable
