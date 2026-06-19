@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-18",
+  "updated": "2026-06-19",
   "shows": [
     {
       "show": "Kanan sama",
@@ -10,7 +10,7 @@
       "week": "W12 due",
       "status": "pending",
       "release_days": "sat",
-      "days_until": 2,
+      "days_until": 1,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-mistress-kanan-is-devilishly-easy.jpg"
     },
@@ -23,7 +23,7 @@
       "week": "W12 \u2713",
       "status": "pending",
       "release_days": "mon",
-      "days_until": 4,
+      "days_until": 3,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-hat-witch-atelier.jpg"
     },
@@ -36,7 +36,7 @@
       "week": "?",
       "status": "searching",
       "release_days": "wed",
-      "days_until": 6,
+      "days_until": 5,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-re-zero-kara-hajimeru-isekai-seikatsu.jpg"
     },
@@ -49,7 +49,7 @@
       "week": "?",
       "status": "searching",
       "release_days": "sat",
-      "days_until": 2,
+      "days_until": 1,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-agents-of-the-four-seasons-dance-of-spring.jpg"
     }
