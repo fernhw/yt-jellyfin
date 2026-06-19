@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-19
 
-> *Good morning! Here's what landed on Friday, June 19, 2026 at 09:43 AM.*
-> **YT Mirror:** 627.26 GB used · 0.58 TB free
+> *Good morning! Here's what landed on Friday, June 19, 2026 at 11:39 AM.*
+> **YT Mirror:** 628.26 GB used · 0.58 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,8 @@
 
 ## Non-Priority Videos
 
+- **This Is Getting Absurd** — *Big A* · downloaded 11:37 AM · not podcastable
+- **Microsoft Has Screwed the Employees of Xbox Yet Again | Unpacked** — *Second Wind* · downloaded 11:34 AM · podcastable
 - **GTA 6 Shuts Down Entire Company** — *Lessons in Meme Culture* · downloaded 09:40 AM · not podcastable
 - **Xbox is abandoning some of its most talented studios (again) | This Week in Videogames** — *Skill Up* · downloaded 09:40 AM · not podcastable
 - **They actually thought this would work** — *Legendary Drops* · downloaded 09:38 AM · not podcastable
