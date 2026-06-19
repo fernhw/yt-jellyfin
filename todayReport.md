@@ -1,10 +1,11 @@
 # What to Watch — 2026-06-19
 
-> *Good evening! Here's what landed on Friday, June 19, 2026 at 05:10 PM.*
-> **YT Mirror:** 630.93 GB used · 0.58 TB free
+> *Good evening! Here's what landed on Friday, June 19, 2026 at 06:08 PM.*
+> **YT Mirror:** 631.87 GB used · 0.58 TB free
 
 ## Priority Videos
 
+- **THE AMAZING DIGITAL CIRCUS - Ep 9: Remember** — *GLITCH* · downloaded 06:05 PM · not podcastable
 - **The Hardest Questions We've Answered... | Trash Taste #313** — *Trash Taste* · downloaded 05:08 PM · podcastable
 - **Toy Story 5 - Is It Good or Nah?** — *Schaffrillas Productions* · downloaded 03:08 PM · podcastable
 - **Half in the Bag: 2026 Mid-year Catch-up (part 1)** — *RedLetterMedia* · downloaded 03:05 PM · podcastable
@@ -14,6 +15,7 @@
 
 ## Non-Priority Videos
 
+- **"There's a Secret Backdoor in Netgear" Routers, ft. Wendell of Level1 Techs** — *Gamers Nexus* · downloaded 06:06 PM · not podcastable
 - **I Bought a 23 Year Old MacBook** — *SAMTIME* · downloaded 03:11 PM · not podcastable
 - **Video Games Have Never Respected Death** — *Second Wind* · downloaded 03:10 PM · podcastable
 - **EA SPORTS Madden NFL 27 – Official Reveal Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:09 PM · not podcastable
