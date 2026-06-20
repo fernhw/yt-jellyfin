@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-20
 
-> *Good afternoon! Here's what landed on Saturday, June 20, 2026 at 12:18 PM.*
-> **YT Mirror:** 637.64 GB used · 0.57 TB free
+> *Good afternoon! Here's what landed on Saturday, June 20, 2026 at 03:13 PM.*
+> **YT Mirror:** 639.60 GB used · 0.57 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,9 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **Jack and Marty's Breath of the Wild Lockout Bingo Super Cut** — *Second Wind* · downloaded 03:10 PM · podcastable
+- **The AAA Drought Is Ending. It Will Kill Studios.** — *Bellular News* · downloaded 03:09 PM · podcastable
+- **The Internet’s Worst Food Hacks** — *Papa Meat* · downloaded 03:05 PM · not podcastable
 - **This Is Their Solution To The Video Game Crash?** — *Spawn Wave* · downloaded 12:12 PM · not podcastable
 - **VFX Artists React to Bad & Great CGi 230 (ft. Alec Gillis)** — *Corridor Crew* · downloaded 12:11 PM · not podcastable
 - **The Best World Cup Moments... So Far! - Weekly Weird News** — *Internet Today* · downloaded 12:09 PM · not podcastable
