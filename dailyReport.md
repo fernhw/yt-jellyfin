@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-19
 
-> *Good evening! Here's what landed on Friday, June 19, 2026 at 06:08 PM.*
-> **YT Mirror:** 631.87 GB used · 0.58 TB free
+> *Good evening! Here's what landed on Friday, June 19, 2026 at 07:08 PM.*
+> **YT Mirror:** 632.06 GB used · 0.58 TB free
 
 ### Priority Videos
 
@@ -17,6 +17,7 @@
 
 ### Non-Priority Videos
 
+- **Life of Black Tiger (PS4) - Scott, Sam, Eric, Dom, Justin and the Worst Year Ever** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
 - **"There's a Secret Backdoor in Netgear" Routers, ft. Wendell of Level1 Techs** — *Gamers Nexus* · downloaded 06:06 PM · not podcastable
 - **I Bought a 23 Year Old MacBook** — *SAMTIME* · downloaded 03:11 PM · not podcastable
 - **Video Games Have Never Respected Death** — *Second Wind* · downloaded 03:10 PM · podcastable
