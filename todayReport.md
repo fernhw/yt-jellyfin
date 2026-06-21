@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-21
 
-> *Good morning! Here's what landed on Sunday, June 21, 2026 at 09:46 AM.*
-> **YT Mirror:** 640.14 GB used · 0.57 TB free
+> *Good morning! Here's what landed on Sunday, June 21, 2026 at 11:41 AM.*
+> **YT Mirror:** 640.00 GB used · 0.57 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,10 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **'Toy Story 5' Wasn't Meant To Happen...Does It Still Work?** — *Karsten Runquist* · downloaded 11:38 AM · not podcastable
+- **So I Walked Past Your Game at a Con...** — *Second Wind* · downloaded 11:38 AM · podcastable
+- **This might actually save him..** — *Asmongold TV* · downloaded 11:36 AM · not podcastable
+- **We Rank SPIDER-MAN CGi** — *Corridor Crew* · downloaded 11:35 AM · not podcastable
 - **Who Is YBG Wallace?** — *Lessons in Meme Culture* · downloaded 09:43 AM · not podcastable
 - **DF Direct Weekly #269: GTA 6 News Reaction, UE5 Upgrades, UE6, Gears E-Day Tech Demo** — *Digital Foundry* · downloaded 09:43 AM · not podcastable
 - **The honeymoon is over as Xbox prepares to close multiple studios | Friends Per Second #97** — *Skill Up* · downloaded 09:40 AM · not podcastable
