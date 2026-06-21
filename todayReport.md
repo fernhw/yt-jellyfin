@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-21
 
-> *Good morning! Here's what landed on Sunday, June 21, 2026 at 07:07 AM.*
-> **YT Mirror:** 639.98 GB used · 0.57 TB free
+> *Good morning! Here's what landed on Sunday, June 21, 2026 at 09:46 AM.*
+> **YT Mirror:** 640.14 GB used · 0.57 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,9 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **Who Is YBG Wallace?** — *Lessons in Meme Culture* · downloaded 09:43 AM · not podcastable
+- **DF Direct Weekly #269: GTA 6 News Reaction, UE5 Upgrades, UE6, Gears E-Day Tech Demo** — *Digital Foundry* · downloaded 09:43 AM · not podcastable
+- **The honeymoon is over as Xbox prepares to close multiple studios | Friends Per Second #97** — *Skill Up* · downloaded 09:40 AM · not podcastable
 - **What Kind of Android Handheld Is Best for PC Games?** — *TechDweeb* · downloaded 07:05 AM · podcastable
 - **He opened his mouth. It backfired..** — *Asmongold TV* · downloaded 07:04 AM · not podcastable
 - **Moscow Is Burning** — *Big A* · downloaded 12:34 AM · not podcastable
