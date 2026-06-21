@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-21
 
-> *Good morning! Here's what landed on Sunday, June 21, 2026 at 11:41 AM.*
-> **YT Mirror:** 640.00 GB used · 0.57 TB free
+> *Good afternoon! Here's what landed on Sunday, June 21, 2026 at 03:11 PM.*
+> **YT Mirror:** 640.80 GB used · 0.57 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,9 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **They’re STILL MAD about this.** — *Asmongold TV* · downloaded 03:08 PM · not podcastable
+- **We cannot coexist with these people..** — *Asmongold TV* · downloaded 03:07 PM · not podcastable
+- **I Sold EVERYTHING I Own** — *ConnorDawg* · downloaded 03:06 PM · not podcastable
 - **'Toy Story 5' Wasn't Meant To Happen...Does It Still Work?** — *Karsten Runquist* · downloaded 11:38 AM · not podcastable
 - **So I Walked Past Your Game at a Con...** — *Second Wind* · downloaded 11:38 AM · podcastable
 - **This might actually save him..** — *Asmongold TV* · downloaded 11:36 AM · not podcastable
