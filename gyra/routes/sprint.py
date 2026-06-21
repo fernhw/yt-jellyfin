@@ -83,9 +83,7 @@ def register(app) -> None:
             status_id = first_status["id"] if first_status else None
             now       = int(time.time())
             created   = 0
-            skipped   = 0
-            row_errors = []   # list[(row_num, [messages])]
-            row_warnings = [] # list[(row_num, [messages])]
+            row_warnings = []
 
             for i in range(n):
                 actor    = at(actors, i)
@@ -95,33 +93,21 @@ def register(app) -> None:
                 for_conn = at(fors, i)
                 y        = at(ys, i)
 
-                # Skip totally-empty rows silently (no Action Word, no What,
-                # no Outcome — clearly a placeholder row the user never filled in).
                 if not (z or x or y):
                     continue
 
-                errors, warnings = validate_story_parts(
+                _errors, warnings = validate_story_parts(
                     actor, verb, z, x, for_conn, y,
                     points=(_parse_points(at(points_list, i))[0]
                             if at(points_list, i) else None),
                     description=at(descs, i),
                 )
-                row_num = i + 1
-                if errors:
-                    row_errors.append((row_num, errors))
-                    skipped += 1
-                    continue
                 if warnings:
-                    row_warnings.append((row_num, warnings))
+                    row_warnings.append((i + 1, warnings))
 
                 title = build_story_title(actor, verb, z, x, for_conn, y)
-
                 pts_raw = at(points_list, i)
-                pts, pts_err = _parse_points(pts_raw)
-                if pts_err:
-                    row_errors.append((row_num, [pts_err]))
-                    skipped += 1
-                    continue
+                pts, _  = _parse_points(pts_raw)
                 prio    = at(priorities, i) or None
                 desc    = at(descs, i)
                 a_raw   = at(assignees, i)
@@ -162,17 +148,8 @@ def register(app) -> None:
             conn.commit()
             conn.close()
 
-            # Build flash messages — keep them readable per-row.
-            if row_errors:
-                lines = ["<strong>{} row(s) rejected.</strong>".format(skipped)]
-                for row_num, errs in row_errors:
-                    lines.append("<br><strong>Row {}:</strong>".format(row_num))
-                    for e in errs:
-                        lines.append("<br>&nbsp;&nbsp;• " + str(escape(e)))
-                flash(Markup("".join(lines)), "error")
-
             if row_warnings:
-                wlines = ["<strong>Warnings:</strong>"]
+                wlines = ["<strong>Warnings (stories still created):</strong>"]
                 for row_num, warns in row_warnings:
                     wlines.append("<br><strong>Row {}:</strong>".format(row_num))
                     for w in warns:
@@ -181,19 +158,30 @@ def register(app) -> None:
 
             if created:
                 flash(f"{created} {'story' if created == 1 else 'stories'} created.", "success")
-            elif not row_errors:
+            else:
                 flash("Nothing to create — all rows were empty.", "warning")
 
-            # If everything succeeded, send the user to the backlog. Otherwise
-            # stay on the bulk-add page so they can fix the rejected rows.
-            if created and not row_errors:
+            if created:
                 return redirect(url_for("backlog", project_id=project_id))
             return redirect(url_for("bulk_add", project_id=project_id))
 
         users       = get_all_active_users()
         story_types = get_story_types(project_id)
         epics       = get_epics(project_id)
-        prefill_rows = session.pop("bulk_prefill", None)
+        prefill_rows = None
+        _token = session.pop("bulk_prefill_token", None)
+        if _token:
+            import json as _json
+            _conn = get_db()
+            _row  = _conn.execute(
+                "SELECT payload FROM bulk_import_staging WHERE token=? AND user_id=?",
+                (_token, session["user_id"]),
+            ).fetchone()
+            _conn.execute("DELETE FROM bulk_import_staging WHERE token=?", (_token,))
+            _conn.commit()
+            _conn.close()
+            if _row:
+                prefill_rows = _json.loads(_row["payload"])
         return render_template("bulk_add.html", project=project, users=users,
                                story_types=story_types, epics=epics,
                                prefill_rows=prefill_rows)
@@ -430,7 +418,21 @@ def register(app) -> None:
             flash("File had no usable rows.", "warning")
             return redirect(url_for("bulk_add", project_id=project_id))
 
-        session["bulk_prefill"] = prefill
+        import json as _json, secrets as _secrets
+        _token = _secrets.token_urlsafe(32)
+        _conn  = get_db()
+        _conn.execute(
+            "INSERT INTO bulk_import_staging (token, user_id, payload, created_at) VALUES (?,?,?,?)",
+            (_token, session["user_id"], _json.dumps(prefill), int(time.time())),
+        )
+        # Purge staging rows older than 2 hours for this user
+        _conn.execute(
+            "DELETE FROM bulk_import_staging WHERE user_id=? AND created_at < ?",
+            (session["user_id"], int(time.time()) - 7200),
+        )
+        _conn.commit()
+        _conn.close()
+        session["bulk_prefill_token"] = _token
         kind_label = "XLSX" if is_xlsx else "CSV"
 
         # ── Always-on import report ────────────────────────────────────────

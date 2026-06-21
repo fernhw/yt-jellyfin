@@ -119,7 +119,21 @@ def set_no_cache(response):
 # ── Register all route modules ────────────────────────────────────────────────
 
 register_all(app)
+# ── Error handlers ───────────────────────────────────────────────────────────
 
+@app.errorhandler(413)
+def request_entity_too_large(e):
+    from flask import flash, redirect, request, url_for
+    flash(
+        "File too large — maximum upload size is 64 MB. "
+        "Try splitting the sheet into smaller batches.",
+        "error",
+    )
+    # Best-effort redirect back to wherever the upload came from.
+    referrer = request.referrer
+    if referrer:
+        return redirect(referrer), 413
+    return redirect(url_for("dashboard")), 413
 # ── Entry-point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":

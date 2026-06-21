@@ -112,24 +112,24 @@ def validate_story_parts(actor, verb, z, x, for_conn, y,
     y_ = (y or '').strip()
 
     if not a:
-        errors.append("Actor is missing — pick who RECEIVES the value "
-                      "(User, Admin).")
+        warnings.append("Actor is missing — pick who RECEIVES the value "
+                        "(User, Admin).")
     elif a.lower() not in {opt.lower() for opt in ACTOR_OPTIONS}:
-        errors.append(
-            f"Actor \"{a}\" is not allowed. "
-            f"Use one of: {', '.join(ACTOR_OPTIONS)}."
+        warnings.append(
+            f"Actor \"{a}\" is not in the standard list. "
+            f"Suggested: {', '.join(ACTOR_OPTIONS)}."
         )
     if not v:
-        errors.append("Needs phrase is missing — pick one (needs, wants, must…).")
+        warnings.append("Needs phrase is missing — pick one (needs, wants, must…).")
     elif v.lower() not in {opt.lower() for opt in VERB_OPTIONS}:
-        errors.append(
+        warnings.append(
             f"Needs phrase \"{v}\" is not in the allowed list. "
             f"Use one of: {', '.join(VERB_OPTIONS)}."
         )
 
     if not z_:
-        errors.append("This is missing — name a single observable action "
-                      "(verb), e.g. crawl, press button, save, jump.")
+        warnings.append("This is missing — name a single observable action "
+                        "(verb), e.g. crawl, press button, save, jump.")
     else:
         # Soft nudge — encourage a verb/observable action over a noun phrase.
         first = z_.split()[0].lower().rstrip('.,;:')
@@ -150,22 +150,22 @@ def validate_story_parts(actor, verb, z, x, for_conn, y,
             )
 
     if not x_:
-        errors.append("Where is missing — where does this happen?")
+        warnings.append("Where is missing — where does this happen?")
 
     if not fc:
-        errors.append("To is missing — pick to, because, or so they.")
+        warnings.append("To is missing — pick to, because, or so they.")
     elif fc.lower() not in {c.lower() for c in CONNECTOR_OPTIONS}:
-        errors.append(
-            f"To \"{fc}\" is not allowed. "
+        warnings.append(
+            f"To \"{fc}\" is not in the standard list. "
             f"Use one of: {', '.join(CONNECTOR_OPTIONS)}."
         )
 
     if not y_:
-        errors.append("What is missing — what result does the Actor need?")
+        warnings.append("What is missing — what result does the Actor need?")
 
     wc = count_words(a, v, z_, x_, fc, y_)
     if wc > 19:
-        errors.append(
+        warnings.append(
             f"Story is {wc} words — max is 19. "
             "Tighten the language or split the story."
         )

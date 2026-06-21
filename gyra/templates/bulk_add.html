@@ -198,7 +198,16 @@
   addBtn.addEventListener('click', addNewRow);
   Array.from(rowsWrap.querySelectorAll('.bulk-row')).forEach(wireRow);
 
-  form.addEventListener('submit', function () {
+  form.addEventListener('submit', function (e) {
+    var rows = rowsWrap.querySelectorAll('.bulk-row');
+    var count = 0;
+    rows.forEach(function (r) {
+      var z = r.querySelector('.bulk-z'), x = r.querySelector('.bulk-x'), y = r.querySelector('.bulk-y');
+      if ((z && z.value.trim()) || (x && x.value.trim()) || (y && y.value.trim())) count++;
+    });
+    if (count === 0) return; // let server handle empty
+    var ok = window.confirm('Import ' + count + ' ' + (count === 1 ? 'story' : 'stories') + ' into this project?\n\nThis cannot be undone.');
+    if (!ok) { e.preventDefault(); return; }
     document.getElementById('bulk-submit').disabled = true;
   });
 })();

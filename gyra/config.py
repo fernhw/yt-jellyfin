@@ -26,7 +26,7 @@ class Config:
     # ── Avatars ─────────────────────────────────────────────────────────────
     UPLOAD_FOLDER        = os.path.join(BASE_DIR, "static", "avatars")
     STORY_IMAGES_FOLDER  = os.path.join(BASE_DIR, "static", "story-images")
-    MAX_CONTENT_LENGTH   = 8 * 1024 * 1024  # 8 MB (covers story images)
+    MAX_CONTENT_LENGTH   = 64 * 1024 * 1024  # 64 MB (covers story images + large xlsx bulk-imports)
     # ── Session hardening ────────────────────────────────────────────────────
     SESSION_COOKIE_HTTPONLY  = True
     SESSION_COOKIE_SAMESITE  = "Lax"

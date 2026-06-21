@@ -47,10 +47,13 @@ def register(app) -> None:
             p = (s["priority"] or "").upper()
             key = p if p in VALID_PRIORITIES else "UN"
             buckets[key].append({
-                "id":     s["id"],
-                "title":  s["title"],
-                "points": s["story_points"] or 0,
-                "priority": p or "",
+                "id":         s["id"],
+                "title":      s["title"],
+                "points":     s["story_points"] or 0,
+                "priority":   p or "",
+                "story_number": s["story_number"],
+                "epic_title": s["epic_title"] or "",
+                "epic_color": s["epic_color"] or "",
             })
 
         total = sum(len(v) for v in buckets.values())

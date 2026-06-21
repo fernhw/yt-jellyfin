@@ -49,38 +49,66 @@
 </div>
 {% endif %}
 
+<div class="bl-sort-bar">
+  <span>Sort:</span>
+  <select id="bl-sort-select">
+    <option value="manual">Manual order</option>
+    <option value="priority">Priority (VH → VL)</option>
+    <option value="points-desc">Points (high → low)</option>
+    <option value="points-asc">Points (low → high)</option>
+    <option value="number">Story number</option>
+    <option value="title">Title A–Z</option>
+  </select>
+  <span id="bl-sep-sort-opts" style="display:none">
+    <span class="bl-sep-pipe">&nbsp;|&nbsp;</span> Separators:
+    <select id="bl-sep-behavior">
+      <option value="ignore">Ignore separators (sort across all)</option>
+      <option value="within">Sort within sections</option>
+    </select>
+  </span>
+  <button class="btn btn-sm btn-primary" id="bl-apply-sort" style="display:none">✔ Apply Sort Order</button>
+  {% if session.role != 'viewer' %}
+  <button class="btn btn-sm btn-secondary bl-add-sep-btn" id="bl-add-sep" style="margin-left:auto">+ Add Separator</button>
+  {% endif %}
+</div>
+
 <div class="backlog-list" id="backlog-list">
-  {% for story in stories %}
-  <div class="backlog-row" data-story-id="{{ story.id }}" data-order-index="{{ story.order_index }}" draggable="true">
-    {% if session.role != 'viewer' %}<input type="checkbox" class="bl-row-check" value="{{ story.id }}" aria-label="Select story">{% endif %}
-    <span class="bl-drag-handle" title="Drag to reorder">⠿</span>
-    <span class="bl-id">{{ project.key }}-{{ story.story_number if story.story_number is not none else story.id }}</span>
-    <a class="bl-title" href="{{ url_for('story_view', story_id=story.id) }}">
-      {{ story.title }}
-    </a>
-    {% if story.story_points %}
-    <span class="card-points">{{ story.story_points }}pt</span>
-    {% endif %}
-    <div class="bl-assignees">
-      {% for a in story.assignees %}
-        {% if a.avatar %}
-          <img src="{{ url_for('avatar', filename=a.avatar) }}"
-               class="avatar-xs" title="{{ a.display_name }}" alt="">
-        {% else %}
-          <span class="avatar-initial-xs" title="{{ a.display_name }}">
-            {{ a.display_name[0]|upper }}
-          </span>
-        {% endif %}
-      {% endfor %}
+  {% for item in merged %}
+    {% if item._type == 'sep' %}
+    <div class="bl-separator" draggable="true" data-sep-id="{{ item.id }}" data-is-sep="1">
+      <span class="bl-drag-handle" title="Drag to reorder">⠿</span>
+      <span contenteditable="true" class="bl-sep-label" spellcheck="false">{{ item.label }}</span>
+      {% if session.role != 'viewer' %}<button class="bl-sep-delete" title="Delete separator">✕</button>{% endif %}
     </div>
-    {% if session.role != 'viewer' %}
-    <button class="btn btn-sm btn-secondary move-to-sprint"
-            data-story-id="{{ story.id }}"
-            data-sprint="1">
-      → Sprint
-    </button>
+    {% else %}
+    <div class="backlog-row" data-story-id="{{ item.id }}" data-order-index="{{ item.order_index }}" data-priority="{{ item.priority or '' }}" data-points="{{ item.story_points or 0 }}" data-number="{{ item.story_number or item.id }}" data-title="{{ item.title|lower }}" data-epic="{{ item.epic_title|lower if item.epic_title else '' }}" draggable="true">
+      {% if session.role != 'viewer' %}<input type="checkbox" class="bl-row-check" value="{{ item.id }}" aria-label="Select story">{% endif %}
+      <span class="bl-drag-handle" title="Drag to reorder">⠿</span>
+      <span class="bl-id">{{ project.key }}-{{ item.story_number if item.story_number is not none else item.id }}</span>
+      {% if item.priority %}
+      <span class="bl-prio bl-prio-{{ item.priority }}">{{ item.priority }}</span>
+      {% endif %}
+      {% if item.epic_title %}
+      <span class="bl-epic" style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;flex-shrink:0;background:{{ item.epic_color or '#6B7280' }};color:#fff" title="Epic: {{ item.epic_title }}">{{ item.epic_title }}</span>
+      {% endif %}
+      <a class="bl-title" href="{{ url_for('story_view', story_id=item.id) }}">{{ item.title }}</a>
+      {% if item.story_points %}
+      <span class="card-points">{{ item.story_points }}pt</span>
+      {% endif %}
+      <div class="bl-assignees">
+        {% for a in item.assignees %}
+          {% if a.avatar %}
+            <img src="{{ url_for('avatar', filename=a.avatar) }}" class="avatar-xs" title="{{ a.display_name }}" alt="">
+          {% else %}
+            <span class="avatar-initial-xs" title="{{ a.display_name }}">{{ a.display_name[0]|upper }}</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% if session.role != 'viewer' %}
+      <button class="btn btn-sm btn-secondary move-to-sprint" data-story-id="{{ item.id }}" data-sprint="1">→ Sprint</button>
+      {% endif %}
+    </div>
     {% endif %}
-  </div>
   {% endfor %}
 </div>
 {% else %}
@@ -105,6 +133,7 @@
 (function () {
   var CSRF = (document.querySelector('meta[name="csrf-token"]') || {content: ''}).content;
   var ROOT = (document.querySelector('meta[name="app-root"]') || {getAttribute: function(){return '';}}).getAttribute('content') || '';
+  var PROJECT_ID = {{ project.id }};
 
   // ── Bulk select ──────────────────────────────────────────────────────────
   var checkAll  = document.getElementById('bl-check-all');
@@ -112,106 +141,252 @@
   var hiddenIds = document.getElementById('bulk-sprint-story-ids');
 
   function syncBulkBtn() {
+    if (!sprintBtn) return;
     var checked = Array.from(document.querySelectorAll('.bl-row-check:checked'));
     sprintBtn.disabled = checked.length === 0;
     hiddenIds.innerHTML = '';
     checked.forEach(function (cb) {
       var inp = document.createElement('input');
-      inp.type  = 'hidden';
-      inp.name  = 'story_ids[]';
-      inp.value = cb.value;
+      inp.type = 'hidden'; inp.name = 'story_ids[]'; inp.value = cb.value;
       hiddenIds.appendChild(inp);
     });
   }
-
   if (checkAll) {
     checkAll.addEventListener('change', function () {
-      document.querySelectorAll('.bl-row-check').forEach(function (cb) {
-        cb.checked = checkAll.checked;
-      });
+      document.querySelectorAll('.bl-row-check').forEach(function (cb) { cb.checked = checkAll.checked; });
       syncBulkBtn();
     });
   }
-
   document.addEventListener('change', function (e) {
     if (e.target.classList.contains('bl-row-check')) syncBulkBtn();
   });
 
   // ── Move-to-sprint buttons ───────────────────────────────────────────────
-  document.querySelectorAll('.move-to-sprint').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var storyId = btn.dataset.storyId;
-      var sprint  = parseInt(btn.dataset.sprint, 10);
-      fetch(ROOT + '/api/story/' + storyId + '/sprint', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
-        body: JSON.stringify({ sprint: sprint }),
-      }).then(function (r) { if (r.ok) btn.closest('.backlog-row').remove(); });
-    });
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.move-to-sprint');
+    if (!btn) return;
+    fetch(ROOT + '/api/story/' + btn.dataset.storyId + '/sprint', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+      body: JSON.stringify({ sprint: parseInt(btn.dataset.sprint, 10) }),
+    }).then(function (r) { if (r.ok) btn.closest('.backlog-row').remove(); });
   });
+
+  // ── Separator: add / save / delete ──────────────────────────────────────
+  var addSepBtn = document.getElementById('bl-add-sep');
+  var list      = document.getElementById('backlog-list');
+
+  function wireSeparator(div) {
+    div.querySelector('.bl-sep-label').addEventListener('blur', function () { saveSeparator(div); });
+    div.querySelector('.bl-sep-label').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+    });
+    var delBtn = div.querySelector('.bl-sep-delete');
+    if (delBtn) delBtn.addEventListener('click', function () {
+      var sid = div.dataset.sepId;
+      if (sid && sid.indexOf('new-') !== 0) {
+        fetch(ROOT + '/api/project/' + PROJECT_ID + '/backlog/separator/' + sid, {
+          method: 'DELETE', headers: { 'X-CSRF-Token': CSRF }
+        });
+      }
+      div.remove();
+      saveOrder();
+    });
+  }
+
+  // Wire existing server-rendered separators
+  if (list) {
+    list.querySelectorAll('.bl-separator').forEach(wireSeparator);
+  }
+
+  if (addSepBtn && list) {
+    addSepBtn.addEventListener('click', function () {
+      var div = document.createElement('div');
+      div.className = 'bl-separator';
+      div.draggable = true;
+      div.dataset.sepId = 'new-' + Date.now();
+      div.dataset.isSep = '1';
+      div.innerHTML = '<span class="bl-drag-handle" title="Drag to reorder">⠿</span>' +
+        '<span contenteditable="true" class="bl-sep-label" spellcheck="false">Section</span>' +
+        '<button class="bl-sep-delete" title="Delete separator">✕</button>';
+      wireSeparator(div);
+      list.insertBefore(div, list.firstChild);
+      var lbl = div.querySelector('.bl-sep-label');
+      lbl.focus();
+      var rng = document.createRange(); rng.selectNodeContents(lbl);
+      window.getSelection().removeAllRanges(); window.getSelection().addRange(rng);
+      saveOrder();
+    });
+  }
+
+  function saveSeparator(div) {
+    var sid = div.dataset.sepId;
+    var label = div.querySelector('.bl-sep-label').textContent.trim() || 'Section';
+    if (sid && sid.indexOf('new-') !== 0) {
+      fetch(ROOT + '/api/project/' + PROJECT_ID + '/backlog/separator/' + sid, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+        body: JSON.stringify({ label: label }),
+      });
+    }
+  }
+
+  // ── Sort ─────────────────────────────────────────────────────────────────
+  var PRIO_ORDER = { 'VH': 0, 'H': 1, 'M': 2, 'L': 3, 'VL': 4 };
+  function prioVal(el) {
+    var p = el.dataset.priority;
+    return (p && PRIO_ORDER.hasOwnProperty(p)) ? PRIO_ORDER[p] : 99;
+  }
+
+  function getSortFn(mode) {
+    return function (a, b) {
+      if (a.dataset.isSep || b.dataset.isSep) return 0;
+      switch (mode) {
+        case 'priority':    return prioVal(a) - prioVal(b);
+        case 'points-desc': return parseInt(b.dataset.points||0) - parseInt(a.dataset.points||0);
+        case 'points-asc':  return parseInt(a.dataset.points||0) - parseInt(b.dataset.points||0);
+        case 'number':      return parseInt(a.dataset.number||0) - parseInt(b.dataset.number||0);
+        case 'title':       return (a.dataset.title||'').localeCompare(b.dataset.title||'');
+        default: return 0;
+      }
+    };
+  }
+
+  var sortSel   = document.getElementById('bl-sort-select');
+  var sepOpts   = document.getElementById('bl-sep-sort-opts');
+  var sepBehave = document.getElementById('bl-sep-behavior');
+  var applyBtn  = document.getElementById('bl-apply-sort');
+
+  // Snapshot manual DOM order on load
+  var manualOrder = list ? Array.from(list.children) : [];
+
+  function applySort() {
+    if (!list) return;
+    var mode = sortSel ? sortSel.value : 'manual';
+    if (sepOpts)  sepOpts.style.display  = (mode !== 'manual') ? '' : 'none';
+    if (applyBtn) applyBtn.style.display = (mode !== 'manual') ? '' : 'none';
+
+    if (mode === 'manual') {
+      manualOrder.forEach(function (el) { list.appendChild(el); });
+      return;
+    }
+
+    var behavior = (sepBehave && sepBehave.value) || 'ignore';
+    var allItems = Array.from(list.children);
+
+    if (behavior === 'ignore') {
+      var rows = allItems.filter(function (el) { return !el.dataset.isSep; });
+      rows.sort(getSortFn(mode));
+      var ri = 0;
+      allItems.forEach(function (el) { if (!el.dataset.isSep) list.insertBefore(rows[ri++], el); });
+    } else {
+      // Sort within sections — sections are defined by separators
+      // Build sections: gather runs of rows between separators
+      var sections = [];
+      var cur = { sep: null, rows: [] };
+      Array.from(list.children).forEach(function (el) {
+        if (el.dataset.isSep) {
+          sections.push(cur);
+          cur = { sep: el, rows: [] };
+        } else {
+          cur.rows.push(el);
+        }
+      });
+      sections.push(cur);
+      // Re-append each section in order: pre-separator rows first, then each sep+rows
+      var firstSection = sections.shift();
+      firstSection.rows.sort(getSortFn(mode));
+      firstSection.rows.forEach(function (r) { list.appendChild(r); });
+      sections.forEach(function (sec) {
+        if (sec.sep) list.appendChild(sec.sep);
+        sec.rows.sort(getSortFn(mode));
+        sec.rows.forEach(function (r) { list.appendChild(r); });
+      });
+    }
+    // visual only — DB not touched until Apply is clicked
+  }
+
+  if (sortSel) {
+    sortSel.addEventListener('change', applySort);
+    if (sepBehave) sepBehave.addEventListener('change', applySort);
+  }
+
+  if (applyBtn) {
+    applyBtn.addEventListener('click', function () {
+      var label = sortSel ? sortSel.options[sortSel.selectedIndex].text : '';
+      var count = list ? list.querySelectorAll('.backlog-row').length : 0;
+      if (!confirm('Apply "' + label + '" as the new manual order for ' + count + ' stories?\n\nThis overwrites your current manual order and cannot be undone.')) return;
+      saveOrder();
+      manualOrder = Array.from(list.children);
+      sortSel.value = 'manual';
+      applyBtn.style.display = 'none';
+      if (sepOpts) sepOpts.style.display = 'none';
+    });
+  }
 
   // ── Drag-to-reorder ──────────────────────────────────────────────────────
-  var list    = document.getElementById('backlog-list');
   if (!list) return;
-  var draggingRow = null;
+  var dragging = null;
 
   list.addEventListener('dragstart', function (e) {
-    var row = e.target.closest('.backlog-row');
+    var row = e.target.closest('.backlog-row, .bl-separator');
     if (!row) return;
-    draggingRow = row;
-    row.classList.add('bl-dragging');
+    dragging = row; row.classList.add('bl-dragging');
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', row.dataset.storyId);
+    e.dataTransfer.setData('text/plain', row.dataset.storyId || row.dataset.sepId || '');
   });
-
   list.addEventListener('dragend', function () {
-    if (draggingRow) draggingRow.classList.remove('bl-dragging');
-    draggingRow = null;
+    if (dragging) dragging.classList.remove('bl-dragging');
+    dragging = null;
     list.querySelectorAll('.bl-drag-over').forEach(function (r) { r.classList.remove('bl-drag-over'); });
   });
-
   list.addEventListener('dragover', function (e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    var row = e.target.closest('.backlog-row');
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+    var row = e.target.closest('.backlog-row, .bl-separator');
     list.querySelectorAll('.bl-drag-over').forEach(function (r) { r.classList.remove('bl-drag-over'); });
-    if (row && row !== draggingRow) row.classList.add('bl-drag-over');
+    if (row && row !== dragging) row.classList.add('bl-drag-over');
   });
-
   list.addEventListener('dragleave', function (e) {
-    if (!list.contains(e.relatedTarget)) {
+    if (!list.contains(e.relatedTarget))
       list.querySelectorAll('.bl-drag-over').forEach(function (r) { r.classList.remove('bl-drag-over'); });
-    }
   });
-
   list.addEventListener('drop', function (e) {
     e.preventDefault();
-    var target = e.target.closest('.backlog-row');
-    if (!target || !draggingRow || target === draggingRow) return;
+    var target = e.target.closest('.backlog-row, .bl-separator');
+    if (!target || !dragging || target === dragging) return;
     target.classList.remove('bl-drag-over');
-
-    // Insert draggingRow before or after target depending on mouse position
     var rect = target.getBoundingClientRect();
-    var mid  = rect.top + rect.height / 2;
-    if (e.clientY < mid) {
-      list.insertBefore(draggingRow, target);
-    } else {
-      list.insertBefore(draggingRow, target.nextSibling);
-    }
-
+    list.insertBefore(dragging, e.clientY < rect.top + rect.height / 2 ? target : target.nextSibling);
     saveOrder();
   });
 
   function saveOrder() {
-    var rows  = Array.from(list.querySelectorAll('.backlog-row'));
-    var items = rows.map(function (r, i) {
-      return { id: parseInt(r.dataset.storyId, 10), order_index: i, subcol_index: 0 };
+    var items = [], idx = 0;
+    Array.from(list.children).forEach(function (el) {
+      if (el.dataset.isSep) {
+        items.push({ type: 'sep', id: el.dataset.sepId, order_index: idx++,
+          label: (el.querySelector('.bl-sep-label') || {}).textContent || 'Section' });
+      } else if (el.dataset.storyId) {
+        items.push({ type: 'story', id: parseInt(el.dataset.storyId, 10), order_index: idx++, subcol_index: 0 });
+      }
     });
     fetch(ROOT + '/api/stories/reorder', {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
-      body:    JSON.stringify({ items: items }),
+      body: JSON.stringify({ items: items.filter(function(it){ return it.type==='story'; }) }),
     });
+    var seps = items.filter(function(it){ return it.type==='sep'; });
+    if (seps.length) {
+      fetch(ROOT + '/api/project/' + PROJECT_ID + '/backlog/separators/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+        body: JSON.stringify({ separators: seps }),
+      }).then(function(r){ if(!r.ok) return; r.json().then(function(d){
+        (d.ids||[]).forEach(function(pair){
+          list.querySelectorAll('[data-sep-id="'+pair.old+'"]').forEach(function(el){ el.dataset.sepId = pair.id; });
+        });
+      }); });
+    }
   }
 }());
 </script>

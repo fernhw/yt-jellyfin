@@ -838,6 +838,82 @@ body.is-fullscreen    .fs-pill { display: flex; }  /* JS-class fallback */
 .bl-title { flex: 1; font-weight: 600; font-size: 13px; color: var(--c-gray-900); }
 .bl-assignees { display: flex; gap: 4px; }
 
+/* ── Backlog priority badge ── */
+.bl-prio { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; letter-spacing: .04em; flex-shrink: 0; }
+.bl-prio-VH { background: #FEE2E2; color: #991B1B; }
+.bl-prio-H  { background: #FFEDD5; color: #9A3412; }
+.bl-prio-M  { background: #FEF9C3; color: #854D0E; }
+.bl-prio-L  { background: #DCFCE7; color: #166534; }
+.bl-prio-VL { background: #F1F5F9; color: #475569; }
+
+/* ── Backlog sort bar ── */
+.bl-sort-bar {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  font-size: 12px; color: var(--c-gray-500);
+}
+.bl-sort-bar select { font-size: 12px; padding: 3px 6px; border: 1px solid var(--c-gray-300); border-radius: 4px; background: #fff; }
+.bl-sort-bar label  { display: flex; align-items: center; gap: 4px; }
+
+/* ── Backlog separator ── */
+.bl-separator {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: var(--r-sm);
+  background: var(--c-gray-100); border: 1px dashed var(--c-gray-300);
+  font-size: 12px; font-weight: 700; color: var(--c-gray-500);
+  cursor: default; user-select: none;
+}
+.bl-separator.bl-dragging { opacity: .4; }
+.bl-separator.bl-drag-over { border-color: var(--c-purple-400); background: var(--c-purple-100); }
+.bl-sep-label { flex: 1; outline: none; background: transparent; border: none; font: inherit; color: inherit; }
+.bl-sep-label:focus { color: var(--c-gray-900); }
+.bl-sep-delete { background: none; border: none; cursor: pointer; color: var(--c-gray-400); font-size: 14px; padding: 0 2px; line-height: 1; }
+.bl-sep-delete:hover { color: #DC2626; }
+.bl-add-sep-btn { font-size: 11px; }
+
+/* ── Backlog: responsive / mobile ─────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Sort bar: wrap to two rows, full-width selects */
+  .bl-sort-bar {
+    flex-wrap: wrap;
+    gap: 6px 8px;
+  }
+  .bl-sort-bar select { font-size: 13px; padding: 5px 7px; flex: 1; min-width: 0; }
+  #bl-sep-sort-opts { display: flex !important; align-items: center; gap: 6px; width: 100%; flex-wrap: wrap; }
+  #bl-sep-sort-opts .bl-sep-pipe { display: none; }
+  #bl-sep-sort-opts > select { flex: 1; }
+  #bl-apply-sort { width: 100%; justify-content: center; }
+  .bl-add-sep-btn { margin-left: 0 !important; }
+
+  /* Rows: two-line layout */
+  .backlog-row {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    padding: 10px 10px;
+    align-items: flex-start;
+  }
+  /* hide drag handle — can't drag on touch */
+  .backlog-row .bl-drag-handle { display: none; }
+  .bl-separator .bl-drag-handle { display: none; }
+
+  /* Line 1: checkbox + ID + priority + epic */
+  .bl-row-check  { order: 1; align-self: center; flex-shrink: 0; }
+  .bl-id         { order: 2; }
+  .bl-prio       { order: 3; }
+  .bl-epic       { order: 4; }
+  /* Line 2: title full-width */
+  .bl-title      { order: 5; flex-basis: 100%; flex: none; width: 100%; font-size: 13px; }
+  /* Line 3: points + assignees + sprint button */
+  .card-points   { order: 6; }
+  .bl-assignees  { order: 7; }
+  .move-to-sprint {
+    order: 8;
+    margin-left: auto;
+    padding: 6px 14px;
+    font-size: 12px;
+    min-height: 36px;
+  }
+}
+
 /* ── Story layout ── */
 .story-layout { display: grid; grid-template-columns: 1fr 290px; gap: 28px; max-width: 1200px; }
 .story-main   { min-width: 0; }
@@ -2358,7 +2434,7 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
   border-radius: 10px;
   background: #1f2330;
   border: 1px solid #2d3344;
-  overflow: hidden;
+  /* no overflow:hidden — move-to dropdown must escape the bucket */
   color: #E5E7EB;
 }
 .prio-bucket.prio-drop-target {
@@ -2477,6 +2553,116 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
   font-weight: 600;
   font-size: .9rem;
   padding-left: 6px;
+}
+
+/* ── Prioritizer: move-to dropdown ──────────────────────────────── */
+.prio-move-wrap {
+  position: relative;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.prio-move-btn {
+  background: rgba(99,102,241,.18);
+  border: 1px solid #3d4460;
+  color: #94A3B8;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: .8rem;
+  cursor: pointer;
+  line-height: 1.6;
+  transition: background .12s, color .12s;
+  white-space: nowrap;
+}
+.prio-move-btn:hover { background: rgba(99,102,241,.38); color: #E0E7FF; }
+.prio-move-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 200;
+  background: #1a1d2b;
+  border: 1px solid #3d4460;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  min-width: 140px;
+}
+.prio-move-menu li {
+  padding: 7px 14px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: #CBD5E1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .1s, color .1s;
+}
+.prio-move-menu li:hover { background: rgba(99,102,241,.28); color: #FFF; }
+.prio-move-menu li[data-move-to="VH"] { color: #F87171; }
+.prio-move-menu li[data-move-to="H"]  { color: #FB923C; }
+.prio-move-menu li[data-move-to="M"]  { color: #FBBF24; }
+.prio-move-menu li[data-move-to="L"]  { color: #4ADE80; }
+.prio-move-menu li[data-move-to="VL"] { color: #94A3B8; }
+.prio-move-menu li[data-move-to=""]   { color: #64748B; }
+
+/* ── Prioritizer: responsive / mobile ──────────────────────────── */
+@media (max-width: 640px) {
+  /* Hide drag handle — can't drag on mobile */
+  .prio-card-handle { display: none; }
+
+  /* Cards wrap to two lines: [id] [epic] [⇕]  /  [title]  /  [pts] */
+  .prio-card {
+    flex-wrap: wrap;
+    cursor: default;
+    gap: 4px 8px;
+    padding: 10px 10px;
+  }
+  .prio-card[draggable] { cursor: default; }
+  .prio-card-id    { order: 1; }
+  /* epic badge has no wrapper class — target via style trick already uses prio-card-epic */
+  .prio-card-epic  { order: 2; }
+  .prio-move-wrap  { order: 3; margin-left: auto; }
+  .prio-card-title { order: 4; flex-basis: 100%; flex: none; width: 100%; font-size: .88rem; }
+  .prio-card-pts   { order: 5; }
+  .prio-card-changed { order: 6; }
+
+  /* Larger tap target for ⇕ */
+  .prio-move-btn {
+    padding: 7px 16px;
+    font-size: .95rem;
+    min-height: 38px;
+    min-width: 44px;
+  }
+
+  /* Dropdown opens upward when near bottom of screen — handled by flipping class in JS;
+     default: open downward but scroll-friendly */
+  .prio-move-menu {
+    min-width: 160px;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  /* Bucket header wraps gracefully */
+  .prio-bucket-head { flex-wrap: wrap; gap: 4px; }
+  .prio-bucket-sub  { display: none; }
+  .prio-bucket-name { font-size: .9rem; }
+  .prio-bucket-key  { font-size: .9rem; padding: 2px 7px; }
+
+  /* Intro less verbose feel on small screens */
+  .prio-intro { font-size: .82rem; padding: 8px 12px; }
+  .prio-stats { font-size: .82rem; }
+
+  /* Action bar: full width pill at bottom */
+  .prio-actionbar {
+    left: 10px;
+    right: 10px;
+    transform: none;
+    border-radius: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+  }
 }
 
 /* ── Initiatives ──────────────────────────────────────────────────── */

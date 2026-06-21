@@ -192,6 +192,14 @@ CREATE TABLE IF NOT EXISTS project_members (
     PRIMARY KEY (project_id, user_id)
 );
 
+-- Backlog separators (visual dividers; persisted with order_index)
+CREATE TABLE IF NOT EXISTS backlog_separators (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    label       TEXT    NOT NULL DEFAULT 'Section',
+    order_index REAL    NOT NULL DEFAULT 0
+);
+
 -- Grooming: queued stories, current voting state, per-user votes
 CREATE TABLE IF NOT EXISTS grooming_queue (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -252,6 +260,13 @@ CREATE TABLE IF NOT EXISTS initiative_history (
     old_value     TEXT    DEFAULT NULL,
     new_value     TEXT    DEFAULT NULL,
     created_at    INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS bulk_import_staging (
+    token      TEXT    PRIMARY KEY,
+    user_id    INTEGER NOT NULL,
+    payload    TEXT    NOT NULL,
+    created_at INTEGER NOT NULL
 );
 """
 
@@ -363,6 +378,16 @@ def _migrate_db() -> None:
         ("epics",   "is_archived", "INTEGER DEFAULT 0"),
     ]
     conn = get_db()
+    # Ensure bulk_import_staging table exists (added after initial schema)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS bulk_import_staging (
+            token      TEXT    PRIMARY KEY,
+            user_id    INTEGER NOT NULL,
+            payload    TEXT    NOT NULL,
+            created_at INTEGER NOT NULL
+        )
+    """)
+    conn.commit()
     for table, col, col_def in new_cols:
         try:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_def}")
@@ -821,9 +846,11 @@ def get_board_stories(project_id: int):
 def get_backlog_stories(project_id: int):
     conn = get_db()
     rows = conn.execute(
-        """SELECT s.*, st.name AS status_name, st.color AS status_color
+        """SELECT s.*, st.name AS status_name, st.color AS status_color,
+                  e.title AS epic_title, e.color AS epic_color
            FROM stories s
            LEFT JOIN statuses st ON s.status_id = st.id
+           LEFT JOIN epics e ON s.epic_id = e.id
            WHERE s.project_id = ? AND s.sprint IS NULL AND s.is_archived = 0
            ORDER BY s.order_index""",
         (project_id,),

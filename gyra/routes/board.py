@@ -1,5 +1,5 @@
 """routes/board.py — Core project views: index, board, backlog, and WIP stubs."""
-from flask import (abort, redirect, render_template,
+from flask import (abort, jsonify, redirect, render_template,
                    request, session, url_for)
 
 from auth import login_required
@@ -161,7 +161,21 @@ def register(app) -> None:
         for s in raw_stories:
             d = dict(s)
             d["assignees"] = get_story_users(s["id"])
+            d["_type"] = "story"
             stories.append(d)
+
+        # Load saved separators and merge into one ordered list
+        conn = get_db()
+        sep_rows = conn.execute(
+            "SELECT id, label, order_index FROM backlog_separators WHERE project_id=? ORDER BY order_index",
+            (project_id,),
+        ).fetchall()
+        conn.close()
+
+        merged = list(stories)
+        for sep in sep_rows:
+            merged.append({"_type": "sep", "id": sep["id"], "label": sep["label"], "order_index": sep["order_index"]})
+        merged.sort(key=lambda x: float(x.get("order_index") or 0))
 
         statuses = get_statuses(project_id)
 
@@ -169,8 +183,63 @@ def register(app) -> None:
             "backlog.html",
             project=project,
             stories=stories,
+            merged=merged,
             statuses=statuses,
         )
+
+    # ── Backlog separator CRUD ─────────────────────────────────────────────────
+
+    @app.route("/api/project/<int:project_id>/backlog/separators/order", methods=["POST"])
+    @login_required
+    def backlog_separators_order(project_id):
+        from auth import enforce_csrf
+        from db import get_db
+        enforce_csrf()
+        if session.get("role") != "admin" and not user_in_project(session["user_id"], project_id):
+            abort(403)
+        data = request.get_json(silent=True) or {}
+        separators = data.get("separators", [])
+        conn = get_db()
+        id_map = []
+        for sep in separators:
+            sid   = sep.get("id", "")
+            label = (sep.get("label") or "Section").strip()[:120]
+            oidx  = float(sep.get("order_index", 0))
+            if str(sid).startswith("new-") or not str(sid).isdigit():
+                cur = conn.execute(
+                    "INSERT INTO backlog_separators (project_id, label, order_index) VALUES (?,?,?)",
+                    (project_id, label, oidx),
+                )
+                id_map.append({"old": sid, "id": cur.lastrowid})
+            else:
+                conn.execute(
+                    "UPDATE backlog_separators SET label=?, order_index=? WHERE id=? AND project_id=?",
+                    (label, oidx, int(sid), project_id),
+                )
+                id_map.append({"old": sid, "id": int(sid)})
+        conn.commit()
+        conn.close()
+        return jsonify({"ok": True, "ids": id_map})
+
+    @app.route("/api/project/<int:project_id>/backlog/separator/<int:sep_id>", methods=["PATCH", "DELETE"])
+    @login_required
+    def backlog_separator_detail(project_id, sep_id):
+        from auth import enforce_csrf
+        from db import get_db
+        enforce_csrf()
+        if session.get("role") != "admin" and not user_in_project(session["user_id"], project_id):
+            abort(403)
+        conn = get_db()
+        if request.method == "DELETE":
+            conn.execute("DELETE FROM backlog_separators WHERE id=? AND project_id=?", (sep_id, project_id))
+        else:
+            data  = request.get_json(silent=True) or {}
+            label = (data.get("label") or "Section").strip()[:120]
+            conn.execute("UPDATE backlog_separators SET label=? WHERE id=? AND project_id=?",
+                         (label, sep_id, project_id))
+        conn.commit()
+        conn.close()
+        return jsonify({"ok": True})
 
     # ── WIP placeholder pages ──────────────────────────────────────────────────
 

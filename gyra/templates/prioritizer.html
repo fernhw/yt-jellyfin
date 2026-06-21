@@ -73,9 +73,21 @@
           data-origin="{{ s.priority }}">
         <span class="prio-card-handle">⠿</span>
         <span class="prio-card-id">{{ project.key }}-{{ s.story_number if s.story_number is not none else s.id }}</span>
+        {% if s.epic_title %}<span class="prio-card-epic" style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;flex-shrink:0;background:{{ s.epic_color or '#6B7280' }};color:#fff">{{ s.epic_title }}</span>{% endif %}
         <span class="prio-card-title">{{ s.title }}</span>
         {% if s.points %}<span class="prio-card-pts">{{ s.points }}pt</span>{% endif %}
         <span class="prio-card-changed" hidden>changed</span>
+        <div class="prio-move-wrap">
+          <button class="prio-move-btn" type="button" title="Move to…" draggable="false">⇕</button>
+          <ul class="prio-move-menu" hidden>
+            <li data-move-to="VH">VH — Very High</li>
+            <li data-move-to="H">H — High</li>
+            <li data-move-to="M">M — Medium</li>
+            <li data-move-to="L">L — Low</li>
+            <li data-move-to="VL">VL — Very Low</li>
+            <li data-move-to="">UN — Unset</li>
+          </ul>
+        </div>
       </li>
       {% endfor %}
     </ul>
@@ -168,9 +180,49 @@
     buckets.forEach(function (b) { b.classList.remove('prio-drop-target'); });
   }
 
+  function findBucketByKey(key) {
+    return buckets.find(function (b) { return (b.dataset.priority || '') === (key || ''); });
+  }
+
   function wireCard(card) {
     card.addEventListener('dragstart', onDragStart);
     card.addEventListener('dragend', onDragEnd);
+
+    var btn  = card.querySelector('.prio-move-btn');
+    var menu = card.querySelector('.prio-move-menu');
+    if (!btn || !menu) return;
+
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      // Close any other open menus first.
+      root.querySelectorAll('.prio-move-menu:not([hidden])').forEach(function (m) {
+        if (m !== menu) m.hidden = true;
+      });
+      menu.hidden = !menu.hidden;
+      if (!menu.hidden) {
+        // Flip upward if menu would overflow viewport bottom.
+        var rect = menu.getBoundingClientRect();
+        if (rect.bottom > window.innerHeight - 8) {
+          menu.style.top = 'auto';
+          menu.style.bottom = 'calc(100% + 4px)';
+        } else {
+          menu.style.top = '';
+          menu.style.bottom = '';
+        }
+      }
+    });
+
+    Array.from(menu.querySelectorAll('li[data-move-to]')).forEach(function (item) {
+      item.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var target = findBucketByKey(item.dataset.moveTo);
+        if (!target) { menu.hidden = true; return; }
+        var list = target.querySelector('[data-list]');
+        list.appendChild(card);
+        menu.hidden = true;
+        recompute();
+      });
+    });
   }
 
   function placeRelativeTo(targetList, clientY) {
@@ -275,6 +327,13 @@
     .catch(function (err) {
       alert('Network error: ' + err);
       applyBtn.disabled = false;
+    });
+  });
+
+  // Close move menus when clicking outside.
+  document.addEventListener('click', function () {
+    root.querySelectorAll('.prio-move-menu:not([hidden])').forEach(function (m) {
+      m.hidden = true;
     });
   });
 
