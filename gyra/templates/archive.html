@@ -73,7 +73,7 @@
       ? '<span class="card-type-badge">' + _esc(item.story_type_name) + '</span>'
       : '';
 
-    var cardId = '<span class="card-id">' + _esc(item.project_key || '') + '-' + item.id + '</span>';
+    var cardId = '<span class="card-id">' + _esc(item.project_key || '') + '-' + (item.story_number != null ? item.story_number : item.id) + '</span>';
 
     // html_title comes pre-rendered from the server (with <strong> for the verb)
     var titleHtml = item.html_title || _esc(item.title || '');
@@ -133,7 +133,7 @@
       + skHtml
       + '</div>'
       + '<div class="archive-preview-actions">'
-      + '<a class="btn btn-sm btn-secondary" href="' + ROOT + '/story/' + item.id + '">✏ Edit</a>'
+      + '<a class="btn btn-sm btn-secondary" href="' + ROOT + '/story/' + ((item.project_key && item.story_number != null) ? (item.project_key + '-' + item.story_number) : item.id) + '">✏ Edit</a>'
       + '<button class="btn btn-sm btn-primary archive-readd-btn" data-id="' + item.id + '">↩ Return to sprint</button>'
       + '</div>'
       + '</div>';
@@ -153,7 +153,7 @@
       ? '<span class="archive-row-dot" style="background:' + _esc(item.story_type_color) + '"></span>'
       : '<span class="archive-row-dot"></span>';
 
-    var key = '<span class="archive-row-key">' + _esc(item.project_key || '') + '-' + item.id + '</span>';
+    var key = '<span class="archive-row-key">' + _esc(item.project_key || '') + '-' + (item.story_number != null ? item.story_number : item.id) + '</span>';
 
     var title = '<span class="archive-row-title">' + _esc(item.title) + '</span>';
 

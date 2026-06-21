@@ -55,23 +55,17 @@ def register(app) -> None:
             conn.execute(
                 """INSERT INTO users
                    (username,email,display_name,role,setup_token_hash,
-                    setup_token_expires,setup_token_plain,
-                    created_at,created_by)
-                   VALUES (?,?,?,?,?,?,?,?,?)""",
+                    setup_token_expires,created_at,created_by)
+                   VALUES (?,?,?,?,?,?,?,?)""",
                 (username, email, display_name, role,
-                 token_hash, expires, raw_token,
-                 int(time.time()), session["user_id"]),
+                 token_hash, expires, int(time.time()), session["user_id"]),
             )
             conn.commit()
             conn.close()
-            setup_url = url_for("setup_account", token=raw_token, _external=True)
+            setup_url = url_for("setup_totp", token=raw_token, _external=True)
             flash(
-                f'User <strong>{username}</strong> created. '
-                f'Send them this signup link (also shown in the user row):'
-                f'<div class="invite-toast">'
-                f'<input class="invite-toast-input" type="text" readonly value="{setup_url}" onclick="this.select()">'
-                f'<button type="button" class="invite-copy-btn" data-invite-url="{setup_url}">Copy</button>'
-                f'</div>',
+                f"User <strong>{username}</strong> created. "
+                f"One-time setup link (copy now):<br><code>{setup_url}</code>",
                 "success",
             )
         except Exception as exc:
@@ -99,34 +93,20 @@ def register(app) -> None:
     @app.route("/admin/users/<int:user_id>/reset-totp", methods=["POST"])
     @admin_required
     def admin_reset_totp(user_id):
-        """Reset the user's auth: clears password + TOTP, issues a fresh
-        signup link. The plaintext token is stored so the admin can re-copy
-        it from the users table until the invitee finishes setup."""
         enforce_csrf()
         raw_token, token_hash = generate_setup_token()
-        expires = int(time.time()) + 86400 * 7
+        expires = int(time.time()) + 86400 * 2
         conn = get_db()
         conn.execute(
-            """UPDATE users
-                  SET totp_secret_enc=NULL,
-                      totp_confirmed=0,
-                      password_hash=NULL,
-                      setup_complete=0,
-                      setup_token_hash=?,
-                      setup_token_expires=?,
-                      setup_token_plain=?
-                WHERE id=?""",
-            (token_hash, expires, raw_token, user_id),
+            """UPDATE users SET totp_secret_enc=NULL, totp_confirmed=0,
+               setup_token_hash=?, setup_token_expires=? WHERE id=?""",
+            (token_hash, expires, user_id),
         )
         conn.commit()
         conn.close()
-        setup_url = url_for("setup_account", token=raw_token, _external=True)
+        setup_url = url_for("setup_totp", token=raw_token, _external=True)
         flash(
-            f'Account reset. New signup link:'
-            f'<div class="invite-toast">'
-            f'<input class="invite-toast-input" type="text" readonly value="{setup_url}" onclick="this.select()">'
-            f'<button type="button" class="invite-copy-btn" data-invite-url="{setup_url}">Copy</button>'
-            f'</div>',
+            f"TOTP reset. New setup link (copy now):<br><code>{setup_url}</code>",
             "success",
         )
         return redirect(url_for("admin_users"))

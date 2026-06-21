@@ -55,6 +55,7 @@
     </a>
     {% endif %}
     {% if session.role in ('admin', 'super_user') %}
+    <a class="btn btn-sm btn-secondary" href="{{ url_for('prioritizer', project_id=project.id, scope='board') }}" title="Drag-and-drop priority balancer (Pareto 20% per bucket)">🎯 Prioritize</a>
     <form method="post" action="{{ url_for('end_sprint', project_id=project.id) }}" style="display:inline">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
       <button type="submit" class="btn btn-sm btn-warning"
@@ -90,6 +91,7 @@
     {% for status in statuses %}
     <div class="board-column"
          data-status-id="{{ status.id }}"
+         data-status-is-done="{{ 1 if status.is_done else 0 }}"
          data-sprint="1"
          style="--col-color:{{ status.color }}">
 
@@ -98,6 +100,7 @@
         <span class="col-name">{{ status.name }}</span>
         <span class="col-count">{{ board_map.get(status.id, []) | list | length }}</span>
         {% set _col_eps = column_epics.get(status.id, []) %}
+        <button type="button" class="col-sort-btn" title="Organize">⇅</button>
         {% if _col_eps %}
         <span class="col-epics" title="Epics with stories in this column">
           {% for ep in _col_eps %}
@@ -129,9 +132,14 @@
              data-story-id="{{ story.id }}"
              data-order-index="{{ story.order_index }}"
              data-subcol-index="{{ story.subcol_index or 0 }}"
-             data-href="{{ url_for('story_view', story_id=story.id) }}"
+             data-href="{{ request.script_root }}/story/{{ project.key }}-{{ story.story_number if story.story_number is not none else story.id }}"
              data-assignee-ids="{{ story.assignees | map(attribute='id') | join(',') }}"
              data-epic-id="{{ story.epic_id or '' }}"
+             data-box-type="{{ story.box_type or '' }}"
+             data-attached-to="{{ story.attached_to or '' }}"
+             data-parent-box-type="{{ story.parent_box_type or '' }}"
+             data-parent-is-done="{{ 1 if story.parent_is_done else 0 }}"
+             data-status-is-done="{{ 1 if story.status_is_done else 0 }}"
              style="--rot:{{ rot }}deg; --card-bg:{{ card_bg }}; --card-accent:{{ card_accent }}">
 
           {# select hit area — intercepts clicks so card nav doesn't fire #}
@@ -149,16 +157,43 @@
           <span class="card-type-badge">{{ story.story_type_name }}</span>
           {% endif %}
           {# Card ID — top-right #}
-          <span class="card-id">{{ project.key }}-{{ story.id }}</span>
+          <span class="card-id">{{ project.key }}-{{ story.story_number if story.story_number is not none else story.id }}</span>
 
           <div class="card-title">{{ story.html_title }}</div>
 
           {% if story.images %}
           <div class="card-images">
             {% for fname in story.images[:5] %}
-            <div class="card-image-item"><img src="{{ url_for('story_image', filename='thumb_' + fname) }}" alt="" loading="lazy"></div>
+            <div class="card-image-item"><img src="{{ url_for('story_image', filename='thumb_' + fname) }}" alt="" loading="lazy" draggable="false"></div>
             {% endfor %}
           </div>
+          {% endif %}
+
+          {# ── Container / Attachment badges (rendered BEFORE the absolute
+             footer so they don't visually butt against the points row) ── #}
+          {# A story can be BOTH a container AND an attachment. Container badge always first. #}
+          {% set _box_labels = {'whitebox':'WhiteBox','greybox':'GreyBox','blackbox':'BlackBox','featurebox':'FeatureBox'} %}
+          {% if story.box_type and not story.status_is_done %}
+            <div class="card-box-badge is-container"
+                 title="This story contains other stories (dynamic container)">
+              (Container)
+            </div>
+          {% endif %}
+          {% if story.attached_to and not story.status_is_done %}
+            {% if story.parent_is_done %}
+              {# Parent container already done → this dependent needs integration #}
+              <div class="card-box-badge is-integrate"
+                   title="The container is already done — this story needs to be integrated">
+                (Integrate)
+              </div>
+            {% elif story.parent_box_type %}
+              {# Tag derived from the PARENT container's type so a child's own
+                 container toggling never wipes its attachment badge. #}
+              <div class="card-box-badge box-{{ story.parent_box_type }} is-attached-box"
+                   title="Build this as a {{ _box_labels.get(story.parent_box_type, story.parent_box_type) }}">
+                {{ _box_labels.get(story.parent_box_type, story.parent_box_type) }}
+              </div>
+            {% endif %}
           {% endif %}
 
           <div class="card-footer">
@@ -537,7 +572,9 @@
 <div id="sm-bg" class="story-modal-bg" role="dialog" aria-modal="true" aria-label="Edit story" style="display:none">
   <div id="sm-wrap" class="story-modal-wrap">
     <div class="sm-header">
-      <span id="sm-key" class="story-key"></span>
+      <button id="sm-back" class="story-modal-back" aria-label="Back" title="Back" style="display:none">←</button>
+      <a id="sm-key" class="story-key" href="#" title="Open this story"></a>
+      <button id="sm-key-copy" class="story-key-copy" type="button" title="Copy link" aria-label="Copy link">⧉</button>
       <span style="flex:1"></span>
       <button id="sm-close" class="story-modal-close" aria-label="Close">✕</button>
     </div>
@@ -545,6 +582,8 @@
     <div id="sm-content" class="sm-content-body story-layout" style="display:none">
       {# ── Main area ── #}
       <div class="story-main sm-scrollable">
+        {# Container/Attachment banner — TOP PRIORITY when this story is attached #}
+        <div id="sm-attach-banner" class="sm-attach-banner" style="display:none"></div>
         <div class="story-images-section mb-4">
           <h3>Images</h3>
           <div class="story-images-grid" id="sm-images-grid"></div>
@@ -576,17 +615,14 @@
           <label class="form-label">Description</label>
           <textarea id="sm-desc" rows="4" class="form-input" placeholder="More context…"></textarea>
         </div>
-        <div class="form-group">
-          <label class="form-label">Acceptance Criteria</label>
-          <div id="sm-ac-list" class="ac-list"></div>
-          <button type="button" id="sm-ac-add" class="ac-add-btn">+ Add criterion</button>
-        </div>
         <div class="story-tasks-section mt-4">
           <div class="tasks-header">
-            <h3>Tasks</h3>
+            <h3>Tasks
+              <button type="button" id="sm-tasks-help-btn" class="sm-help-btn" title="What counts as a task?">?</button>
+            </h3>
             <span class="tasks-progress" id="sm-tasks-progress"></span>
           </div>
-          <div class="binary-subtask-note">
+          <div class="binary-subtask-note" id="sm-binary-note" style="display:none">
             <strong>Subtasks are BINARY.</strong> Done or not done — no “in review”, “testing”, or “blocked” states.
             <ul>
               <li>Must fit in <strong>&lt; 4 hours</strong>. If bigger, split it.</li>
@@ -601,6 +637,13 @@
             <input type="text" id="sm-task-input" class="form-input" placeholder="Add a task…" style="flex:1;font-size:12px" autocomplete="off">
             <button type="button" id="sm-task-add-btn" class="btn btn-secondary btn-sm">Add</button>
           </div>
+        </div>
+        {# Container summary (small detail when this story IS a container) #}
+        <div id="sm-container-summary" class="sm-container-summary" style="display:none"></div>
+        <div class="form-group">
+          <label class="form-label">Acceptance Criteria</label>
+          <div id="sm-ac-list" class="ac-list"></div>
+          <button type="button" id="sm-ac-add" class="ac-add-btn">+ Add criterion</button>
         </div>
         <section class="comments-section">
           <div class="activity-tabs">
@@ -639,6 +682,40 @@
         <div class="story-sidebar-field">
           <label class="story-sidebar-label">Epic</label>
           <select id="sm-epic" class="story-sidebar-select"></select>
+        </div>
+        {# ── Container box type ── #}
+        <div class="story-sidebar-field">
+          <label class="story-sidebar-label">
+            Container box
+            <button type="button" id="sm-box-help" class="sm-help-btn" title="What are these?">?</button>
+          </label>
+          <select id="sm-box-type" class="story-sidebar-select">
+            <option value="">— Not a container —</option>
+            <option value="whitebox">Whitebox — naked idea working, no layout or style</option>
+            <option value="greybox">Greybox — real functionality, no design or polish</option>
+            <option value="blackbox">Blackbox — tiny test room for one small part</option>
+            <option value="featurebox">Featurebox — focused space to test a complex feature</option>
+          </select>
+          <div id="sm-box-help-panel" class="sm-box-help-panel" style="display:none">
+            <p><strong>Boxes</strong> let a story declare how attachments should treat it. Authority flows host → guest only; no story ever blocks another's "Done".</p>
+            <ul>
+              <li><strong>Whitebox</strong> — Like putting one button on a white screen when there is no menu yet. Games: simple shapes testing movement, scale, timing, rooms, routes, or camera before art exists. Software: the naked idea working before layout, style, or structure exists.</li>
+              <li><strong>Greybox</strong> — Like a no-design menu made of plain blocks, but the functionality is real. Games: a level with correct paths, room sizes, enemy spots, cover, and flow, but no final assets. Software: screens, buttons, menus, forms, and navigation working with no branding, no art, and no polish.</li>
+              <li><strong>Blackbox</strong> — Like making a tiny test room for one small part of a feature. Games: tests one part only, like a face animation, door interaction, AI reaction, navmesh path, or dialogue trigger. Software: tests one small function, like one button action, one form rule, one API call, or one save event.</li>
+              <li><strong>Featurebox</strong> — Like making a special space to test one complex feature. Games: testing a full system like inventory, stealth detection, subtitles, checkpoints, or save/load away from the full game. Software: a focused area where a complex feature can be used, broken, fixed, and understood before it joins the real app.</li>
+            </ul>
+          </div>
+        </div>
+        {# ── Attachments list (only when this story is a Container) ── #}
+        <div id="sm-attachments-wrap" class="story-sidebar-field" style="display:none">
+          <label class="story-sidebar-label">Attachments</label>
+          <div id="sm-attachments-list" class="sm-attachments-list"></div>
+          <div class="sm-attach-add-row">
+            <button type="button" id="sm-attach-open-picker"
+                    class="btn btn-secondary btn-sm" style="width:100%">
+              + Attach a story…
+            </button>
+          </div>
         </div>
         <div class="story-sidebar-field">
           <label class="story-sidebar-label">Status</label>
@@ -685,6 +762,100 @@
   </div>
 </div>
 
+{# ──────────────────── ATTACH-STORY PICKER OVERLAY ──────────────────── #}
+<div id="attach-picker-bg" class="attach-picker-bg" role="dialog" aria-modal="true" style="display:none">
+  <div class="attach-picker-wrap">
+    <div class="attach-picker-header">
+      <strong>Attach a story</strong>
+      <button type="button" id="attach-picker-close" class="attach-picker-close" aria-label="Close">✕</button>
+    </div>
+    <div class="attach-picker-search-row">
+      <input id="attach-picker-q" type="text" autocomplete="off"
+             placeholder="Search by title or #id…" class="attach-picker-input">
+    </div>
+    <div id="attach-picker-list" class="attach-picker-list"></div>
+    <div class="attach-picker-action-row">
+      <input id="attach-picker-action" type="text" autocomplete="off"
+             placeholder="Dependent action (optional) — what does this story need to do?"
+             class="attach-picker-input">
+      <button type="button" id="attach-picker-confirm"
+              class="btn btn-primary btn-sm" disabled>Attach</button>
+    </div>
+    <div id="attach-picker-selected" class="attach-picker-selected" style="display:none"></div>
+  </div>
+</div>
+
+<style>
+  .attach-picker-bg {
+    position:fixed; inset:0; background:rgba(0,0,0,.55);
+    z-index:40000; display:flex; align-items:center; justify-content:center;
+  }
+  .attach-picker-wrap {
+    background:#fff; border-radius:10px; width:92vw; max-width:560px;
+    max-height:80vh; display:flex; flex-direction:column;
+    box-shadow:0 12px 40px rgba(0,0,0,.35);
+  }
+  .attach-picker-header {
+    display:flex; align-items:center; padding:12px 16px;
+    border-bottom:1px solid #e5e7eb; font-size:14px;
+  }
+  .attach-picker-header strong { flex:1; }
+  .attach-picker-close {
+    background:none; border:none; cursor:pointer; font-size:16px;
+    color:#64748b; padding:4px 8px; border-radius:4px;
+  }
+  .attach-picker-close:hover { background:#f1f5f9; color:#000; }
+  .attach-picker-search-row { padding:10px 14px; border-bottom:1px solid #f1f5f9; }
+  .attach-picker-input {
+    width:100%; padding:8px 10px; font-size:13px;
+    border:1px solid #cbd5e1; border-radius:5px; outline:none;
+  }
+  .attach-picker-input:focus { border-color:#6366f1; }
+  .attach-picker-list {
+    flex:1; overflow-y:auto; padding:6px 0; min-height:200px;
+  }
+  .attach-picker-row {
+    display:flex; align-items:center; gap:10px;
+    padding:8px 16px; cursor:pointer; font-size:13px;
+    border-bottom:1px solid #f8fafc;
+  }
+  .attach-picker-row:hover { background:#eef2ff; }
+  .attach-picker-row.is-selected { background:#e0e7ff; }
+  .attach-picker-row .ap-id {
+    font-family:monospace; color:#64748b; font-size:11px; min-width:38px;
+  }
+  .attach-picker-row .ap-title { flex:1; color:#1f2937; }
+  .attach-picker-row .ap-status {
+    font-size:10px; padding:2px 6px; border-radius:3px;
+    background:#f1f5f9; color:#475569;
+  }
+  .attach-picker-empty, .attach-picker-loading {
+    padding:20px; text-align:center; color:#94a3b8; font-size:12px; font-style:italic;
+  }
+  .attach-picker-action-row {
+    padding:10px 14px; border-top:1px solid #e5e7eb;
+    display:flex; gap:8px; align-items:center;
+  }
+  .attach-picker-action-row .attach-picker-input { flex:1; }
+  .attach-picker-selected {
+    padding:6px 14px; background:#fef3c7; font-size:11px; color:#78350f;
+    border-top:1px solid #fde68a;
+  }
+  .attach-picker-row .ap-attached {
+    font-size:10px; padding:2px 6px; border-radius:3px;
+    background:#fee2e2; color:#991b1b; border:1px solid #fca5a5;
+    white-space:nowrap;
+  }
+  .attach-picker-row.is-selected { background:#c7d2fe; box-shadow:inset 3px 0 0 #4f46e5; }
+  .attach-picker-selected .ap-chip {
+    display:inline-flex; align-items:center; gap:4px;
+    background:#fff; border:1px solid #fde68a; border-radius:10px;
+    padding:2px 6px; margin:2px 2px 0 0; cursor:pointer;
+  }
+  .attach-picker-selected .ap-chip:hover { background:#fef9c3; }
+  .attach-picker-selected .ap-chip-x { color:#b45309; font-weight:700; }
+</style>
+
 {# ──────────────────────── EPIC MODAL ─────────────────────────── #}
 <style>
   /* Column-header epic chips */
@@ -702,270 +873,235 @@
     text-shadow:0 1px 1px rgba(0,0,0,.55);
     line-height:1; pointer-events:none;
   }
+  .col-sort-btn {
+    margin-left:auto; background:none; border:1px solid transparent;
+    color:var(--c-gray-400,#9ca3af); cursor:pointer;
+    font-size:13px; line-height:1; padding:2px 4px; border-radius:4px;
+    transition:background .1s, color .1s, border-color .1s;
+    flex-shrink:0;
+  }
+  .col-sort-btn:hover          { background:#fff; color:var(--c-gray-700,#374151); border-color:var(--c-gray-300,#d1d5db); }
+  .col-sort-btn.is-organizing  { background:var(--c-purple-500,#7c3aed); color:#fff; border-color:transparent; transform:rotate(180deg); transition:transform .4s ease, background .15s, color .15s; }
 
-  /* Epic modal */
-  .epic-modal-bg {
-    position:fixed; inset:0; background:rgba(0,0,0,.6);
-    z-index:35001; display:none; align-items:center; justify-content:center;
+  /* ── Container/Attachment ── */
+  .box-badge {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:3px 9px; border-radius:12px; font-size:11px;
+    letter-spacing:.3px; line-height:1.4;
   }
-  .epic-modal-wrap {
-    background:var(--c-gray-50,#F9F5EE); border-radius:10px;
-    width:92vw; max-width:1100px; height:90vh; display:flex; flex-direction:column;
-    box-shadow:var(--shadow-md, 0 8px 32px rgba(0,0,0,.25));
-    border:1.5px solid var(--c-gray-200,#DDD0B8);
+  .box-badge strong { font-weight:800; }
+  .box-badge .box-help {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:13px; height:13px; border-radius:50%;
+    background:rgba(255,255,255,.55); color:inherit;
+    font-size:9px; font-weight:800; cursor:help;
   }
-  .em-header {
-    display:flex; align-items:center; gap:12px;
-    padding:14px 20px; border-bottom:1.5px solid var(--c-gray-200,#DDD0B8);
-    background:var(--c-gray-100,#EDE4D0); border-radius:10px 10px 0 0;
-  }
-  .em-color-dot {
-    width:22px; height:22px; border-radius:50%;
-    border:2px solid #fff; box-shadow:0 0 0 1.5px rgba(0,0,0,.18);
-    cursor:pointer; flex-shrink:0;
-  }
-  .em-title-input {
-    flex:1; font-size:20px; font-weight:700; background:transparent;
-    border:none; outline:none; color:var(--c-gray-900,#1A1208);
-    padding:4px 6px; border-radius:4px;
-  }
-  .em-title-input:focus { background:#fff; box-shadow:0 0 0 2px var(--c-purple-500,#7C4A1E); }
-  .em-status-badge {
-    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
-    padding:4px 10px; border-radius:12px;
-  }
-  .em-status-badge.s-planning  { background:#E5E7EB; color:#374151; }
-  .em-status-badge.s-active    { background:#DBEAFE; color:#1E40AF; }
-  .em-status-badge.s-completed { background:#D1FAE5; color:#065F46; }
-  .em-status-badge.s-on_hold   { background:#FEF3C7; color:#92400E; }
-  .em-close {
-    width:32px; height:32px; border-radius:50%;
-    border:1.5px solid var(--c-gray-300,#C4B49A); background:#fff;
-    cursor:pointer; font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center;
-  }
-  .em-close:hover { background:var(--c-red,#DC2626); color:#fff; border-color:var(--c-red,#DC2626); }
+  .box-whitebox   { background:#dcfce7; color:#14532d; }
+  .box-greybox    { background:#e2e8f0; color:#334155; }
+  .box-blackbox   { background:#1f2937; color:#f9fafb; }
+  .box-featurebox { background:#ede9fe; color:#4c1d95; }
 
-  .em-body { flex:1; display:flex; overflow:hidden; }
-  .em-main { flex:1; overflow-y:auto; padding:20px 24px; }
-  .em-side {
-    width:280px; flex-shrink:0; border-left:1.5px solid var(--c-gray-200,#DDD0B8);
-    background:var(--c-gray-100,#EDE4D0); padding:20px 18px; overflow-y:auto;
+  .story-link {
+    color:inherit; font-weight:700; text-decoration:underline;
+    text-decoration-color:rgba(0,0,0,.25); text-underline-offset:2px;
+    cursor:pointer;
+  }
+  .story-link:hover { text-decoration-color:currentColor; }
+
+  .sm-attach-banner {
+    background:transparent; border:none;
+    padding:18px 0 14px; margin:0 0 18px;
+    display:flex; flex-direction:column; gap:6px;
+    border-bottom:2px solid rgba(0,0,0,.08);
+  }
+  .sm-attach-headline {
+    font-size:28px; font-weight:900; letter-spacing:1.5px;
+    line-height:1.1; text-transform:uppercase; color:#0f172a;
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  }
+  .sm-attach-help-btn {
+    font-size:14px; font-weight:700;
+    width:26px; height:26px; border-radius:50%;
+    border:2px solid currentColor; background:transparent; color:inherit;
+    cursor:pointer; line-height:1; padding:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    opacity:.7;
+  }
+  .sm-attach-help-btn:hover { opacity:1; background:rgba(0,0,0,.06); }
+  /* Header story-key acts as both link and copy button */
+  a#sm-key.story-key {
+    text-decoration:none; cursor:pointer;
+    max-width:min(60vw, 720px);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    padding:2px 8px; border-radius:6px;
+    transition:background-color .15s;
+  }
+  a#sm-key.story-key:hover { background:rgba(124,74,30,.10); text-decoration:underline; text-underline-offset:3px; }
+  a#sm-key.story-key.is-copied { background:#D1FAE5; color:#065F46; }
+  /* Banner for "current story" (no container / no dependency) — no box, just text */
+  .sm-attach-banner.is-current {
+    background:transparent; border:none; color:#3D2E1A;
+  }
+  #sm-content.sm-tint-current   .sm-attach-parent-title { color:#3D2E1A; }
+  #sm-content.sm-tint-current   .sm-attach-headline     { color:#7C4A1E; }
+  button#sm-key-copy.story-key-copy {
+    background:transparent; border:1.5px solid var(--c-gray-300,#C4B49A);
+    color:var(--c-gray-700,#3D2E1A);
+    width:28px; height:28px; border-radius:6px;
+    display:inline-flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:14px; line-height:1; padding:0;
+    transition:background-color .15s, border-color .15s, color .15s;
+  }
+  button#sm-key-copy.story-key-copy:hover { background:rgba(124,74,30,.10); border-color:var(--c-purple-500,#7C4A1E); color:var(--c-purple-500,#7C4A1E); }
+  button#sm-key-copy.story-key-copy.is-copied { background:#D1FAE5; border-color:#065F46; color:#065F46; }
+  .sm-attach-parent-title {
+    font-size:22px; font-weight:800; color:inherit; opacity:.92;
+    text-transform:none; letter-spacing:.2px; line-height:1.25;
+    margin:0 0 10px;
+  }
+  .sm-attach-parent-title a { color:inherit; text-decoration:none; border-bottom:1px dashed currentColor; }
+  .sm-attach-parent-title a:hover { opacity:.7; }
+  .sm-attach-explain {
+    margin-top:6px; padding:10px 12px; border-radius:6px;
+    background:rgba(255,255,255,.55); border:1px solid rgba(0,0,0,.08);
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .sm-attach-explain[hidden] { display:none; }
+  .sm-attach-tip {
+    font-size:15px; font-weight:600; color:#334155;
+  }
+  .sm-attach-detail {
+    font-size:13px; color:#475569; line-height:1.45; max-width:62ch;
+  }
+  .sm-attach-target {
+    font-size:13px; color:#475569; font-weight:600; margin-top:4px;
+  }
+  .sm-attach-do {
+    font-size:14px; font-weight:700; color:#0f172a; margin-top:6px;
+  }
+  .sm-attach-faq-title {
+    margin-top:10px; padding-top:8px; border-top:1px dashed rgba(0,0,0,.18);
+    font-size:11px; font-weight:800; letter-spacing:.6px;
+    text-transform:uppercase; color:#475569;
+  }
+  .sm-attach-faq-list { display:flex; flex-direction:column; gap:4px; margin-top:4px; }
+  details.sm-attach-faq {
+    background:rgba(255,255,255,.55); border:1px solid rgba(0,0,0,.08);
+    border-radius:5px; padding:6px 10px;
+  }
+  details.sm-attach-faq[open] { background:rgba(255,255,255,.85); }
+  details.sm-attach-faq summary {
+    cursor:pointer; font-size:13px; font-weight:700; color:#0f172a;
+    list-style:none; outline:none;
+  }
+  details.sm-attach-faq summary::-webkit-details-marker { display:none; }
+  details.sm-attach-faq summary::before {
+    content:'▸'; display:inline-block; width:14px;
+    transition:transform .15s; color:#64748b;
+  }
+  details.sm-attach-faq[open] summary::before { transform:rotate(90deg); }
+  .sm-attach-faq-a {
+    margin-top:6px; padding-left:14px; font-size:13px;
+    color:#334155; line-height:1.5; max-width:62ch;
   }
 
-  /* Progress section */
-  .em-progress-section { margin-bottom:22px; }
-  .em-progress-row {
-    display:flex; justify-content:space-between; align-items:baseline;
-    margin-bottom:6px; font-size:13px;
-  }
-  .em-progress-label { font-weight:700; color:var(--c-gray-700,#3D2E1A); }
-  .em-progress-pct   { font-weight:800; font-size:18px; color:var(--c-purple-500,#7C4A1E); }
-  .em-progress-bar {
-    height:14px; background:var(--c-gray-200,#DDD0B8); border-radius:7px;
-    overflow:hidden; border:1px solid rgba(0,0,0,.08); position:relative;
-  }
-  .em-progress-fill {
-    height:100%; background:linear-gradient(90deg, var(--c-green,#059669), #10B981);
-    border-radius:7px; transition:width .4s ease;
-  }
-  .em-progress-fill.is-points { background:linear-gradient(90deg, var(--c-purple-500,#7C4A1E), var(--c-purple-400,#A0632A)); }
-  .em-progress-marker {
-    position:absolute; top:-3px; bottom:-3px; width:2px;
-    background:var(--c-red,#DC2626); pointer-events:none;
-  }
-  .em-progress-marker::after {
-    content:'Today'; position:absolute; top:-16px; left:50%; transform:translateX(-50%);
-    font-size:9px; font-weight:700; color:var(--c-red,#DC2626); white-space:nowrap;
-  }
-  .em-progress-meta { font-size:11px; color:var(--c-gray-500,#7A6A52); margin-top:4px; }
+  /* ── Whole-modal tint by box type ── */
+  /* Each tint colors the FULL inside of the modal, not just a banner. */
+  #sm-content.sm-tint-whitebox   .story-main { background:#fefce8; }
+  #sm-content.sm-tint-whitebox   .sm-attach-headline,
+  #sm-content.sm-tint-whitebox   .sm-attach-parent-title { color:#854d0e; }
 
-  /* Stats grid */
-  .em-stats-grid {
-    display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:24px;
-  }
-  .em-stat-card {
-    background:#fff; border:1.5px solid var(--c-gray-200,#DDD0B8);
-    border-radius:8px; padding:12px; text-align:center;
-  }
-  .em-stat-value { font-size:22px; font-weight:800; color:var(--c-gray-900,#1A1208); line-height:1.1; }
-  .em-stat-label { font-size:10px; font-weight:700; text-transform:uppercase; color:var(--c-gray-500,#7A6A52); margin-top:4px; letter-spacing:.5px; }
+  #sm-content.sm-tint-greybox    .story-main { background:#f1f5f9; }
+  #sm-content.sm-tint-greybox    .sm-attach-headline,
+  #sm-content.sm-tint-greybox    .sm-attach-parent-title { color:#334155; }
 
-  /* Status breakdown bar */
-  .em-status-bar {
-    display:flex; height:24px; border-radius:6px; overflow:hidden;
-    border:1.5px solid var(--c-gray-200,#DDD0B8); margin-bottom:8px;
-  }
-  .em-status-seg {
-    display:flex; align-items:center; justify-content:center;
-    font-size:11px; font-weight:700; color:#fff;
-    text-shadow:0 1px 1px rgba(0,0,0,.4); min-width:24px;
-  }
-  .em-status-legend { display:flex; flex-wrap:wrap; gap:10px; font-size:11px; }
-  .em-status-legend-item { display:flex; align-items:center; gap:5px; color:var(--c-gray-700,#3D2E1A); }
-  .em-status-legend-dot { width:10px; height:10px; border-radius:50%; }
+  #sm-content.sm-tint-blackbox   .story-main { background:#e5e7eb; }
+  #sm-content.sm-tint-blackbox   .sm-attach-headline,
+  #sm-content.sm-tint-blackbox   .sm-attach-parent-title { color:#0f172a; }
+  #sm-content.sm-tint-blackbox   .sm-attach-tip,
+  #sm-content.sm-tint-blackbox   .sm-attach-detail,
+  #sm-content.sm-tint-blackbox   .sm-attach-target { color:#334155; }
+  #sm-content.sm-tint-blackbox   .sm-attach-do     { color:#0f172a; }
 
-  /* Story list */
-  .em-section-title {
-    font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
-    color:var(--c-gray-700,#3D2E1A); margin:24px 0 10px; padding-bottom:6px;
-    border-bottom:1.5px solid var(--c-gray-200,#DDD0B8);
-  }
-  .em-story-list { display:flex; flex-direction:column; gap:6px; }
-  .em-story-row {
-    display:flex; align-items:center; gap:10px; padding:8px 12px;
-    background:#fff; border:1.5px solid var(--c-gray-200,#DDD0B8); border-radius:6px;
-    cursor:pointer; transition:transform .1s, box-shadow .1s;
-  }
-  .em-story-row:hover { transform:translateX(2px); box-shadow:var(--shadow-sm, 0 1px 3px rgba(0,0,0,.1)); }
-  .em-story-status-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
-  .em-story-title { flex:1; font-size:13px; color:var(--c-gray-900,#1A1208); }
-  .em-story-pts {
-    font-size:11px; font-weight:700; background:var(--c-gray-100,#EDE4D0);
-    padding:2px 7px; border-radius:10px; color:var(--c-gray-700,#3D2E1A);
-  }
-  .em-story-status-name { font-size:10px; color:var(--c-gray-500,#7A6A52); text-transform:uppercase; font-weight:700; }
+  #sm-content.sm-tint-featurebox .story-main { background:#f5f3ff; }
+  #sm-content.sm-tint-featurebox .sm-attach-headline,
+  #sm-content.sm-tint-featurebox .sm-attach-parent-title { color:#5b21b6; }
 
-  /* Sidebar fields */
-  .em-side-field { margin-bottom:16px; }
-  .em-side-label {
-    font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
-    color:var(--c-gray-500,#7A6A52); display:block; margin-bottom:6px;
+  #sm-content.sm-tint-integrate  .story-main { background:#f0fdf4; }
+  #sm-content.sm-tint-integrate  .sm-attach-headline,
+  #sm-content.sm-tint-integrate  .sm-attach-parent-title { color:#15803d; }
+
+  .sm-container-summary {
+    background:transparent; border:none; padding:6px 14px; margin:14px 0;
   }
-  .em-side-input, .em-side-select {
-    width:100%; padding:7px 10px; border:1.5px solid var(--c-gray-200,#DDD0B8);
-    border-radius:5px; background:#fff; font-size:13px; color:var(--c-gray-900,#1A1208);
+  .sm-cs-heading {
+    font-size:18px; font-weight:900; letter-spacing:.5px; margin:10px 0 4px;
   }
-  .em-side-textarea {
-    width:100%; padding:8px 10px; border:1.5px solid var(--c-gray-200,#DDD0B8);
-    border-radius:5px; background:#fff; font-size:13px; resize:vertical; min-height:90px;
-    font-family:inherit;
+  .sm-cs-heading.sm-cs-go { color:#15803d; }
+  .sm-cs-heading.sm-cs-no { color:#b91c1c; }
+  .sm-cs-ul { margin:0 0 8px; padding-left:22px; font-size:14px; }
+  .sm-cs-ul li { margin:3px 0; color:#1f2937; line-height:1.4; }
+  .sm-cs-date { color:#64748b; font-size:11px; font-weight:500; }
+  .sm-cs-status {
+    font-size:10px; color:#64748b; background:#f1f5f9;
+    padding:1px 5px; border-radius:3px; margin-left:4px;
   }
-  .em-side-row { display:flex; flex-direction:column; gap:6px; }
-  .em-side-row > * { flex:1; min-width:0; width:100%; }
-  .em-color-picker {
-    display:flex; gap:6px; flex-wrap:wrap;
+  .sm-cs-empty { color:#94a3b8; font-style:italic; font-size:12px; }
+
+  .sm-attachments-list {
+    display:flex; flex-direction:column; gap:4px; margin-bottom:6px;
   }
-  .em-color-swatch {
-    width:24px; height:24px; border-radius:50%; cursor:pointer;
-    border:2px solid transparent;
+  .sm-attachment-row {
+    display:flex; align-items:center; gap:6px; padding:4px 6px;
+    background:#fff; border:1px solid #e5e7eb; border-radius:4px;
+    font-size:11px;
   }
-  .em-color-swatch.is-selected { border-color:var(--c-gray-900,#1A1208); }
-  .em-btn-row { display:flex; gap:8px; margin-top:18px; }
-  .em-days-badge {
-    display:inline-block; padding:3px 9px; border-radius:10px;
-    font-size:11px; font-weight:700;
+  .sm-attachment-row.done { background:#f0fdf4; border-color:#86efac; }
+  .sm-attachment-row .sm-att-title {
+    flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
-  .em-days-badge.is-late { background:#FEE2E2; color:#991B1B; }
-  .em-days-badge.is-soon { background:#FEF3C7; color:#92400E; }
-  .em-days-badge.is-ok   { background:#D1FAE5; color:#065F46; }
+  .sm-attachment-row .sm-att-status {
+    font-size:10px; color:#64748b; padding:1px 4px;
+    background:#f1f5f9; border-radius:3px;
+  }
+  .sm-attachment-row .sm-att-detach {
+    background:none; border:none; color:#dc2626; cursor:pointer;
+    padding:0 4px; font-size:14px; line-height:1;
+  }
+  .sm-attach-add-row { margin-top:6px; }
+
+  .sm-help-btn {
+    background:#e0e7ff; border:none; color:#4338ca; cursor:pointer;
+    width:16px; height:16px; border-radius:50%; font-size:10px;
+    font-weight:700; padding:0; margin-left:4px; line-height:16px;
+  }
+  .sm-box-help-panel {
+    background:#f1f5f9; border-left:3px solid #6366f1;
+    padding:8px 10px; margin-top:6px; font-size:11px; border-radius:3px;
+  }
+  .sm-box-help-panel ul { margin:4px 0 0; padding-left:16px; }
+  .sm-box-help-panel li { margin:2px 0; }
+
+  /* ── Card-level box / container badges (postit footer) ── */
+  .card-box-badge {
+    display:inline-flex; align-items:center; gap:3px;
+    font-size:9px; font-weight:800; text-transform:uppercase;
+    letter-spacing:.4px; padding:2px 6px; border-radius:8px;
+    margin-top:4px; margin-bottom:6px; line-height:1.3;
+  }
+  .card-box-badge.is-container {
+    background:#ede9fe; color:#5b21b6; border:1px solid #c4b5fd;
+  }
+  .card-box-badge.is-integrate {
+    background:#fef9c3; color:#854d0e; border:1px solid #fde047;
+  }
+  .card-box-badge.box-whitebox  { background:#f8fafc; color:#0f172a; border:1px solid #cbd5e1; }
+  .card-box-badge.box-greybox   { background:#f1f5f9; color:#334155; border:1px solid #94a3b8; }
+  .card-box-badge.box-blackbox  { background:#1e293b; color:#f1f5f9; border:1px solid #0f172a; }
+  .card-box-badge.box-featurebox{ background:#dbeafe; color:#1e3a8a; border:1px solid #93c5fd; }
+
 </style>
 
-<div id="em-bg" class="epic-modal-bg" role="dialog" aria-modal="true" aria-label="Edit epic">
-  <div class="epic-modal-wrap">
-    <div class="em-header">
-      <span id="em-color-dot" class="em-color-dot" style="background:#6B7280" title="Change color"></span>
-      <input id="em-title" class="em-title-input" placeholder="Epic title">
-      <span id="em-status-badge" class="em-status-badge s-planning">Planning</span>
-      <button type="button" class="em-close" id="em-close" aria-label="Close">×</button>
-    </div>
-    <div class="em-body">
-      <div class="em-main">
-        <div id="em-loading" style="padding:40px;text-align:center;color:var(--c-gray-500,#7A6A52)">Loading…</div>
-        <div id="em-content" style="display:none">
-
-          <div class="em-progress-section">
-            <div class="em-progress-row">
-              <span class="em-progress-label">Stories complete</span>
-              <span id="em-pct-count" class="em-progress-pct">0%</span>
-            </div>
-            <div class="em-progress-bar">
-              <div id="em-fill-count" class="em-progress-fill" style="width:0%"></div>
-              <div id="em-today-marker" class="em-progress-marker" style="display:none"></div>
-            </div>
-            <div id="em-progress-meta" class="em-progress-meta"></div>
-          </div>
-
-          <div class="em-progress-section">
-            <div class="em-progress-row">
-              <span class="em-progress-label">Story points complete</span>
-              <span id="em-pct-points" class="em-progress-pct">0%</span>
-            </div>
-            <div class="em-progress-bar">
-              <div id="em-fill-points" class="em-progress-fill is-points" style="width:0%"></div>
-            </div>
-          </div>
-
-          <div class="em-stats-grid">
-            <div class="em-stat-card">
-              <div id="em-stat-stories" class="em-stat-value">0</div>
-              <div class="em-stat-label">Stories</div>
-            </div>
-            <div class="em-stat-card">
-              <div id="em-stat-points"  class="em-stat-value">0</div>
-              <div class="em-stat-label">Points</div>
-            </div>
-            <div class="em-stat-card">
-              <div id="em-stat-done"    class="em-stat-value">0</div>
-              <div class="em-stat-label">Done</div>
-            </div>
-            <div class="em-stat-card">
-              <div id="em-stat-days"    class="em-stat-value">—</div>
-              <div class="em-stat-label">Days left</div>
-            </div>
-          </div>
-
-          <div class="em-section-title">Status breakdown</div>
-          <div id="em-status-bar"    class="em-status-bar"></div>
-          <div id="em-status-legend" class="em-status-legend"></div>
-
-          <div class="em-section-title">Stories <span id="em-story-total" style="color:var(--c-gray-500,#7A6A52);font-weight:600">(0)</span></div>
-          <div id="em-story-list" class="em-story-list">
-            <div style="padding:14px;text-align:center;color:var(--c-gray-500,#7A6A52);font-size:13px">No stories assigned yet.</div>
-          </div>
-        </div>
-      </div>
-
-      <aside class="em-side">
-        <div class="em-side-field">
-          <label class="em-side-label">Status</label>
-          <select id="em-status" class="em-side-select">
-            <option value="planning">Planning</option>
-            <option value="active">Active</option>
-            <option value="on_hold">On hold</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
-        <div class="em-side-field">
-          <label class="em-side-label">Timeline</label>
-          <div class="em-side-row">
-            <input type="date" id="em-start" class="em-side-input" title="Start date">
-            <input type="date" id="em-due"   class="em-side-input" title="Due date">
-          </div>
-          <div id="em-days-badge-wrap" style="margin-top:6px"></div>
-        </div>
-        <div class="em-side-field">
-          <label class="em-side-label">Color</label>
-          <div id="em-color-picker" class="em-color-picker"></div>
-        </div>
-        <div class="em-side-field">
-          <label class="em-side-label">Description</label>
-          <textarea id="em-desc" class="em-side-textarea" placeholder="What's this epic about?"></textarea>
-        </div>
-        <div class="em-btn-row">
-          <button type="button" id="em-save"  class="btn btn-primary btn-full">Save</button>
-        </div>
-        <div class="em-btn-row" style="margin-top:8px">
-          <button type="button" id="em-delete" class="btn btn-full" style="background:#fee;color:#a02020;border:1px solid #f3c0c0">Delete epic</button>
-        </div>
-        <div style="margin-top:14px;font-size:11px;color:var(--c-gray-500,#7A6A52)">
-          <div>Created by <span id="em-creator">—</span></div>
-          <div>Created <span id="em-created">—</span></div>
-          <div>Updated <span id="em-updated">—</span></div>
-        </div>
-      </aside>
-    </div>
-  </div>
-</div>
 
 {% endblock %}
 
@@ -1150,6 +1286,150 @@
   document.querySelectorAll('.board-card').forEach(wireCard);
   // Expose so the realtime reconciler can wire click/select on newly-inserted cards
   window._wireBoardCard = wireCard;
+
+  // ── Container/attachment badge live render ───────────────────────────────
+  var BOX_LABELS = { whitebox:'WhiteBox', greybox:'GreyBox', blackbox:'BlackBox', featurebox:'FeatureBox' };
+  // Rebuilds the (Container) and attachment/(Integrate) badges for a card based on its data attrs.
+  function renderCardBoxBadges(card) {
+    if (!card) return;
+    // Remove existing badges
+    Array.from(card.querySelectorAll('.card-box-badge')).forEach(function(el){ el.remove(); });
+    var boxType       = card.dataset.boxType        || '';
+    var attachedTo    = card.dataset.attachedTo     || '';
+    var parentBoxType = card.dataset.parentBoxType  || '';
+    var parentDone    = card.dataset.parentIsDone   === '1';
+    var statusDone    = card.dataset.statusIsDone   === '1';
+    var footer = card.querySelector('.card-footer');
+    // Insert BEFORE the absolute-positioned footer so badges sit in-flow above it.
+    function insertBadge(el) {
+      if (footer) card.insertBefore(el, footer);
+      else        card.appendChild(el);
+    }
+    // Container badge first
+    if (boxType && !statusDone) {
+      var b = document.createElement('div');
+      b.className = 'card-box-badge is-container';
+      b.title = 'This story contains other stories (dynamic container)';
+      b.textContent = '(Container)';
+      insertBadge(b);
+    }
+    // Attachment badge
+    if (attachedTo && !statusDone) {
+      if (parentDone) {
+        var bi = document.createElement('div');
+        bi.className = 'card-box-badge is-integrate';
+        bi.title = 'The container is already done — this story needs to be integrated';
+        bi.textContent = '(Integrate)';
+        insertBadge(bi);
+      } else if (parentBoxType) {
+        // Tag derived from the PARENT container's type so the child's own
+        // box_type toggling never wipes its attachment badge.
+        var ba = document.createElement('div');
+        ba.className = 'card-box-badge box-' + parentBoxType + ' is-attached-box';
+        ba.title = 'Build this as a ' + (BOX_LABELS[parentBoxType] || parentBoxType);
+        ba.textContent = (BOX_LABELS[parentBoxType] || parentBoxType);
+        insertBadge(ba);
+      }
+    }
+  }
+  // Find every card attached to this container and flip its parent-done flag
+  // then re-render its badges. Called immediately after a container changes status.
+  function cascadeContainerBadges(parentId, parentIsDone) {
+    if (!parentId) return;
+    var attached = document.querySelectorAll('.board-card[data-attached-to="' + parentId + '"]');
+    attached.forEach(function(c){
+      c.dataset.parentIsDone = parentIsDone ? '1' : '0';
+      renderCardBoxBadges(c);
+    });
+  }
+  // After ANY successful move, refresh the moved card's own statusDone and badges,
+  // and if it's a container, cascade to its attachments.
+  function postMoveBadgeRefresh(card) {
+    if (!card) return;
+    var col = card.closest('.board-column');
+    var colDone = col && col.dataset.statusIsDone === '1';
+    card.dataset.statusIsDone = colDone ? '1' : '0';
+    renderCardBoxBadges(card);
+    if (card.dataset.boxType) {
+      cascadeContainerBadges(card.dataset.storyId, colDone);
+    }
+  }
+  window._renderCardBoxBadges  = renderCardBoxBadges;
+  window._cascadeContainerBadges = cascadeContainerBadges;
+  window._postMoveBadgeRefresh = postMoveBadgeRefresh;
+
+  // ── Column "Organize" button ─────────────────────────────────────────────
+  // One-shot action: sort cards by priority, redistribute evenly across the
+  // column's subcols, then PERSIST the new order/subcol layout to the server
+  // so other clients see it via the realtime reconciler.
+  var PRIO_RANK = { VH: 0, H: 1, M: 2, L: 3, VL: 4 };
+  function cardPriority(card) {
+    var tape = card.querySelector('.card-tape');
+    return tape ? (tape.textContent.trim()) : null;
+  }
+
+  function allCardsInCol(col) {
+    return Array.from(col.querySelectorAll('.board-card'));
+  }
+
+  // Distribute a sorted card list across the column's subcols as evenly as
+  // possible, updating each card's data-subcol-index. Cards stay in sort
+  // order within each subcol (contiguous chunks).
+  function distributeCardsEvenly(col, sortedCards) {
+    var outer = col.querySelector('.board-cards');
+    if (!outer) return;
+    var subs = Array.from(outer.querySelectorAll(':scope > .board-subcol'));
+    if (subs.length === 0) {
+      sortedCards.forEach(function (c) {
+        c.dataset.subcolIndex = '0';
+        outer.appendChild(c);
+      });
+      return;
+    }
+    var inner = subs.length;
+    var n     = sortedCards.length;
+    var base  = Math.floor(n / inner);
+    var extra = n % inner;
+    var idx   = 0;
+    for (var s = 0; s < inner; s++) {
+      var take = base + (s < extra ? 1 : 0);
+      for (var k = 0; k < take; k++) {
+        var card = sortedCards[idx++];
+        card.dataset.subcolIndex = String(s);
+        subs[s].appendChild(card);
+      }
+    }
+  }
+
+  function organizeColumn(col) {
+    var items = allCardsInCol(col);
+    if (!items.length) return;
+    items.sort(function (a, b) {
+      var pa = PRIO_RANK[cardPriority(a)];
+      var pb = PRIO_RANK[cardPriority(b)];
+      if (pa === undefined) pa = 99;
+      if (pb === undefined) pb = 99;
+      if (pa !== pb) return pa - pb;
+      return parseInt(a.dataset.orderIndex || 0) - parseInt(b.dataset.orderIndex || 0);
+    });
+    distributeCardsEvenly(col, items);
+    // Persist new order + subcol_index so it sticks for everyone.
+    if (window._saveColOrder) window._saveColOrder(col);
+  }
+
+  document.querySelectorAll('.col-sort-btn').forEach(function (btn) {
+    btn.title = 'Organize';
+    btn.removeAttribute('data-sorted');
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var col = btn.closest('.board-column');
+      if (!col) return;
+      btn.classList.add('is-organizing');
+      organizeColumn(col);
+      // Brief flash so the user sees something happened
+      setTimeout(function () { btn.classList.remove('is-organizing'); }, 600);
+    });
+  });
 
   function bulkFetch(url, body, onOk) {
     fetch(url, {
@@ -1872,6 +2152,31 @@
       hideTimer = setTimeout(function () { popup.style.display = 'none'; }, 80);
     });
   });
+
+  // Hide tooltip immediately when any drag begins, and keep it suppressed
+  // until the drag ends — prevents the hint from re-appearing under the cursor
+  // while the user is dragging a card.
+  var dragging = false;
+  function hidePopup() {
+    clearTimeout(hideTimer);
+    popup.style.display = 'none';
+  }
+  document.addEventListener('dragstart', function () {
+    dragging = true;
+    hidePopup();
+  }, true);
+  document.addEventListener('dragend', function () {
+    dragging = false;
+  }, true);
+  document.addEventListener('drop', function () {
+    dragging = false;
+  }, true);
+  // Block mouseenter-driven re-show while dragging
+  document.addEventListener('mouseenter', function (e) {
+    if (dragging && e.target && e.target.closest && e.target.closest('.board-card')) {
+      hidePopup();
+    }
+  }, true);
 }());
 </script>
 
@@ -1909,7 +2214,9 @@
     card.dataset.storyId     = s.id;
     card.dataset.orderIndex  = s.order_index;
     card.dataset.subcolIndex = s.subcol_index || 0;
-    card.dataset.href        = appRoot + '/story/' + s.id;
+    // Prefer the human-readable composite ref (KEY-N) in URLs. The backend
+    // route converter accepts both forms, so old PK links still resolve.
+    card.dataset.href        = appRoot + '/story/' + ((s.project_key && s.story_number) ? (s.project_key + '-' + s.story_number) : s.id);
     card.dataset.assigneeIds = (s.assignees || []).map(function (a) { return a.id || ''; }).join(',');
     card.dataset.epicId      = s.epic_id || '';
     card.dataset.syncedAt    = String(s.updated_at || '');
@@ -1927,11 +2234,11 @@
     if (s.story_type_name) {
       html += '<span class="card-type-badge">' + _escHtml(s.story_type_name) + '</span>';
     }
-    html += '<span class="card-id">' + _escHtml(projectKey ? projectKey + '-' : '') + s.id + '</span>';
+    html += '<span class="card-id">' + _escHtml(projectKey ? projectKey + '-' : '') + (s.story_number || s.id) + '</span>';
     html += '<div class="card-title">' + (s.html_title || _escHtml(s.title || '')) + '</div>';
     if (s.images && s.images.length) {
       html += '<div class="card-images">' + s.images.slice(0, 5).map(function (fn) {
-        return '<div class="card-image-item"><img src="' + appRoot + '/story-images/thumb_' + fn + '" alt="" loading="lazy"></div>';
+        return '<div class="card-image-item"><img src="' + appRoot + '/story-images/thumb_' + fn + '" alt="" loading="lazy" draggable="false"></div>';
       }).join('') + '</div>';
     }
     html += '<div class="card-footer">';
@@ -2002,7 +2309,26 @@
       var card = document.querySelector('.board-card[data-story-id="' + s.id + '"]');
       if (!card) return;
       if (openModalId === String(s.id)) return; // user is editing this card
-      if (card.dataset.syncedAt === String(s.updated_at)) return; // nothing changed
+
+      // ── Container / attachment badge sync (always, even if updated_at hasn't
+      // changed — because when a container flips done, the attached children's
+      // updated_at does NOT change but their parent_is_done flag does). ─────
+      var srvBox        = s.box_type        || '';
+      var srvAttached   = s.attached_to ? String(s.attached_to) : '';
+      var srvParentBox  = s.parent_box_type || '';
+      var srvParentDone = s.parent_is_done ? '1' : '0';
+      var srvStatusDone = s.status_is_done ? '1' : '0';
+      var badgesDirty = false;
+      if (card.dataset.boxType            !== srvBox)        { card.dataset.boxType        = srvBox;        badgesDirty = true; }
+      if ((card.dataset.attachedTo || '') !== srvAttached)   { card.dataset.attachedTo     = srvAttached;   badgesDirty = true; }
+      if ((card.dataset.parentBoxType || '') !== srvParentBox) { card.dataset.parentBoxType = srvParentBox; badgesDirty = true; }
+      if (card.dataset.parentIsDone       !== srvParentDone) { card.dataset.parentIsDone   = srvParentDone; badgesDirty = true; }
+      if (card.dataset.statusIsDone       !== srvStatusDone) { card.dataset.statusIsDone   = srvStatusDone; badgesDirty = true; }
+      if (badgesDirty && window._renderCardBoxBadges) {
+        window._renderCardBoxBadges(card);
+      }
+
+      if (card.dataset.syncedAt === String(s.updated_at)) return; // nothing else changed
       card.dataset.syncedAt = String(s.updated_at);
       // Title
       var t = card.querySelector('.card-title');
@@ -2057,7 +2383,7 @@
           else card.appendChild(imagesWrap);
         }
         imagesWrap.innerHTML = s.images.slice(0, 5).map(function(fn) {
-          return '<div class="card-image-item"><img src="' + appRoot + '/story-images/thumb_' + fn + '" alt="" loading="lazy"></div>';
+          return '<div class="card-image-item"><img src="' + appRoot + '/story-images/thumb_' + fn + '" alt="" loading="lazy" draggable="false"></div>';
         }).join('');
       } else if (imagesWrap) { imagesWrap.remove(); }
       // Hover tooltip data — keep in sync so tooltip reflects latest changes
@@ -2359,6 +2685,33 @@
 
   var bg    = document.getElementById('sm-bg');
   var smKey = document.getElementById('sm-key');
+  var smKeyCopy = document.getElementById('sm-key-copy');
+
+  // Copy icon next to the title → copies "CODE — title" to clipboard.
+  // Clicking the title itself navigates to the story page (default <a> behavior).
+  if (smKeyCopy) {
+    smKeyCopy.addEventListener('click', function(e){
+      e.preventDefault();
+      var txt = (smKey && smKey.dataset.copyText) || (smKey && smKey.href) || '';
+      var done = function(){
+        var prev = smKeyCopy.textContent;
+        smKeyCopy.classList.add('is-copied');
+        smKeyCopy.textContent = '✓';
+        setTimeout(function(){
+          smKeyCopy.textContent = prev;
+          smKeyCopy.classList.remove('is-copied');
+        }, 900);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(done, done);
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = txt; document.body.appendChild(ta);
+        ta.select(); try { document.execCommand('copy'); } catch(_){}
+        document.body.removeChild(ta); done();
+      }
+    });
+  }
 
   // Listen for card-click events dispatched by wireCard
   document.addEventListener('gyra:openStory', function(e) {
@@ -2411,15 +2764,28 @@
 
   // ── Open / Close ──
   function openStoryModal(href) {
-    // Accept either a URL like /story/123 or a numeric ID
-    var id = typeof href === 'number' ? href : parseInt((href.match(/\/story\/(\d+)/) || [])[1] || '0');
-    if (!id) return;
-    curId = id;
+    // Accept either a URL (/story/123 or /story/CTL-12), a numeric PK,
+    // or a composite string ("CTL-12"). The ref is passed through as-is
+    // to the API — the backend converter resolves both forms.
+    var ref;
+    if (typeof href === 'number') {
+      ref = String(href);
+    } else if (typeof href === 'string') {
+      var m = href.match(/\/story\/([A-Za-z0-9][A-Za-z0-9\-]*)/);
+      ref = m ? m[1] : href.replace(/^\/+|\/+$/g, '');
+    }
+    if (!ref) return;
+    // Push current story onto history stack (skip first open or re-open of same)
+    if (curId && curId !== ref) {
+      _navStack.push(curId);
+    }
+    _renderBackBtn();
+    curId = ref;
     document.getElementById('sm-loading').style.display = 'block';
     document.getElementById('sm-content').style.display = 'none';
     bg.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    apiGet('/api/story/' + id + '/full').then(function(d) {
+    apiGet('/api/story/' + encodeURIComponent(ref) + '/full').then(function(d) {
       if (!d.ok) { alert('Could not load story'); closeStoryModal(); return; }
       _allUsers = d.all_users || [];
       populate(d);
@@ -2428,11 +2794,33 @@
     });
   }
 
+  // ── Modal navigation history ──
+  var _navStack = [];
+  function _renderBackBtn() {
+    var btn = document.getElementById('sm-back');
+    if (btn) btn.style.display = _navStack.length ? '' : 'none';
+  }
+  function navBack() {
+    if (!_navStack.length) return;
+    var prev = _navStack.pop();
+    // Pop without re-pushing current
+    var saved = curId;
+    curId = null;
+    openStoryModal(prev);
+    // openStoryModal pushed nothing because curId was null
+    _renderBackBtn();
+  }
+  var _backBtn = document.getElementById('sm-back');
+  if (_backBtn) _backBtn.addEventListener('click', navBack);
+
   var _savedData = null;
 
   function closeStoryModal(data) {
     bg.style.display = 'none';
     document.body.style.overflow = '';
+    _navStack = [];
+    curId = null;
+    _renderBackBtn();
     var d = data !== undefined ? data : _savedData;
     _savedData = null;
     if (!d) return;
@@ -2452,7 +2840,18 @@
   // ── Populate all fields ──
   function populate(d) {
     var s = d.story;
-    smKey.textContent = (s.project_key || '') + '-' + s.id;
+    // Display + URL use the per-project story_number (falls back to PK
+    // for any legacy story missing a number).
+    var num = (s.story_number != null) ? s.story_number : s.id;
+    var composite = (s.project_key && s.story_number != null)
+      ? (s.project_key + '-' + s.story_number)
+      : String(s.id);
+    var code = (s.project_key || '') + '-' + num;
+    var label = code + ' — ' + (s.title || '');
+    smKey.textContent = label;
+    smKey.href = ROOT + '/story/' + composite;
+    smKey.dataset.copyText = location.origin + ROOT + '/story/' + composite;
+    smKey.dataset.code = code;
 
     // Story builder
     setOpts('sm-actor', {{ story_actor_options|tojson }}, s.story_actor);
@@ -2483,6 +2882,477 @@
     document.getElementById('sm-reporter').textContent = d.creator_name || '—';
     document.getElementById('sm-created').textContent  = fmtDate(s.created_at);
     document.getElementById('sm-updated').textContent  = fmtDate(s.updated_at);
+
+    renderContainerUI(d);
+  }
+
+  // ── Container/Attachment UI ──
+  var BOX_FAQ_COMMON = [
+    {
+      q: "Wouldn't this make more work?",
+      a: "No \u2014 this IS the work, just done in a smaller, testable environment first. Scrum's no-double-work rule means we don't rebuild things twice. A box is a real system: the button, the rule, the flow you build here is the same one that ships. It either integrates straight into the app, or it stays as a permanent test harness for that part of the product. Nothing is wasted.\n\n<strong>And GYRA enforces this for you.</strong> Every box is tracked with a link to the feature or container it's exploring. The moment that parent container exists and the box is integrated into it, GYRA automatically drops the WhiteBox / BlackBox label from the story \u2014 it stops being a \"box\" and becomes part of the real feature. So you never end up with stale labels, duplicated tickets, or orphaned prototypes floating around the board. The box is a phase, not a parallel track."
+    },
+    {
+      q: "Why not just wait and build it properly?",
+      a: "Because waiting is the most expensive option in Scrum. The team's priority is producing a working increment every sprint — a box IS that increment for risky or unknown work. You get evidence now instead of assumptions later, and the team keeps moving instead of stalling on a guess."
+    }
+  ];
+  // Shared note for white/black boxes about where they live.
+  var ISOLATED_VS_CONNECTED = ''
+    + '<strong>Isolated</strong> means the box lives in its own sandbox '
+    + '(a separate route, scene, or test page). You can break it, reset it, '
+    + 'and demo it without touching the real app. Best when the rest of the '
+    + 'system is still moving or doesn\'t exist yet.\n\n'
+    + '<strong>Connected to app</strong> means the box is wired into the real '
+    + 'app shell, using real navigation, real auth, real data flow — but the '
+    + 'feature itself is still simplified. Best when the surrounding app is '
+    + 'stable and the question you\'re answering depends on real context.\n\n'
+    + 'Both are valid. Pick the one that answers the question fastest. Either '
+    + 'way, the working code graduates — it either becomes the feature, or it '
+    + 'becomes the permanent test bed for that feature.';
+  var BOX_INFO = {
+    whitebox: {
+      label: 'WhiteBox',
+      tip:   'The naked idea working before layout, style, or structure exists.',
+      detail:'Like putting one button on a white screen when there is no menu yet. In games, it is simple shapes testing movement, scale, timing, rooms, routes, or camera before art exists. In software, it is the naked idea working before layout, style, or structure exists. A WhiteBox can live <strong>isolated</strong> in its own page/scene, or <strong>connected to the app</strong> wired into the real shell — either way, what you build is the real thing in a smaller form.',
+      faqs: BOX_FAQ_COMMON.concat([
+        {
+          q: "Isolated or connected to the app — which should my WhiteBox be?",
+          a: ISOLATED_VS_CONNECTED
+        },
+        {
+          q: "Is this just a sketch I could draw on paper?",
+          a: "A sketch shows intent. A WhiteBox shows behaviour. Even one button on a blank page proves the idea is real, clickable, and demoable. The interaction you build here is the same interaction the user will eventually have — paper can't deliver that."
+        },
+        {
+          q: "When is a WhiteBox 'done'?",
+          a: "When the core interaction works once, end-to-end, and the team can answer the question it was built to ask. That's the trigger to either GreyBox the next layer, or graduate the WhiteBox straight into the app."
+        }
+      ])
+    },
+    greybox: {
+      label: 'GreyBox',
+      tip:   'Real functionality with no design, branding, art, or polish.',
+      detail:'Like a no-design menu made of plain blocks, but the functionality is real. In games, it is a level with correct paths, room sizes, enemy spots, cover, and flow, but no final assets. In software, it is screens, buttons, menus, forms, and navigation working with no branding, no art, and no polish.',
+      faqs: BOX_FAQ_COMMON.concat([
+        {
+          q: "Why ship something ugly to the team?",
+          a: "Because Scrum reviews need real interaction, not slides. Ugly + working > pretty + broken. Stakeholders can click through the flow at sprint review and give feedback that polish would only hide."
+        },
+        {
+          q: "Won't the team confuse this with the final version?",
+          a: "No — that's the point of naming it a GreyBox. The label is the contract: 'flow is real, look is not'. It keeps design and engineering work parallel without one blocking the other."
+        }
+      ])
+    },
+    blackbox: {
+      label: 'BlackBox',
+      tip:   'A tiny test room for one small part of a feature.',
+      detail:'Like making a tiny test room for one small part of a feature. In games, it tests one part only, like a face animation, door interaction, AI reaction, navmesh path, or dialogue trigger. In software, it tests one small function, like one button action, one form rule, one API call, or one save event. A BlackBox can be <strong>isolated</strong> in its own sandbox, or <strong>connected to the app</strong> running against real data and shell — the code you write is real either way.',
+      faqs: BOX_FAQ_COMMON.concat([
+        {
+          q: "Isolated or connected to the app — which should my BlackBox be?",
+          a: ISOLATED_VS_CONNECTED
+        },
+        {
+          q: "Why not just unit-test it inside the feature?",
+          a: "A unit test proves the code runs. A BlackBox proves the behaviour is correct in a place the team can actually see, click, and stress. It doubles as permanent UI/behaviour-test value — the same harness you used to build it stays as the place you reproduce bugs forever after."
+        },
+        {
+          q: "What happens to the BlackBox once the feature ships?",
+          a: "It keeps living. A BlackBox done right is a real, testable single-environment system — perfect for regression testing, onboarding new devs, and isolating bugs when the integrated feature misbehaves. Or, if it makes sense, you integrate the working part straight into the app. It is never throwaway code."
+        }
+      ])
+    },
+    featurebox: {
+      label: 'FeatureBox',
+      tip:   'A focused space to test one complex feature.',
+      detail:'Like making a special space to test one complex feature. In games, it means testing a full system like inventory, stealth detection, subtitles, checkpoints, or save/load away from the full game. In software, it means building a focused area where a complex feature can be used, broken, fixed, and understood before it joins the real app.',
+      faqs: BOX_FAQ_COMMON.concat([
+        {
+          q: "Why not build it directly inside the product?",
+          a: "Because complex features destabilise sprints. A FeatureBox lets the team work at full speed without blocking other stories or risking the increment. Scrum protects the sprint goal — and isolating risk is how you protect it."
+        },
+        {
+          q: "How is this different from a long-lived branch?",
+          a: "A branch hides progress. A FeatureBox is visible on the board, demoable at review, and has its own Definition of Done. The team can refine, estimate, and re-prioritise it like any other story — that's what makes it Scrum-compliant."
+        }
+      ])
+    }
+  };
+  function boxBadge(box, withTip) {
+    if (!box) return '';
+    var info = BOX_INFO[box] || { label: box, tip: '' };
+    var tipAttr = withTip ? ' title="' + esc(info.tip) + '"' : '';
+    return '<span class="box-badge box-' + box + '"' + tipAttr + '>'
+         + '<strong>' + esc(info.label) + '</strong>'
+         + (withTip ? '<span class="box-help">?</span>' : '')
+         + '</span>';
+  }
+  function storyLink(id, title) {
+    return '<a href="#" class="story-link" data-story-id="' + id + '">'
+         + esc(title) + '</a>';
+  }
+  function wireStoryLinks(container) {
+    container.querySelectorAll('.story-link').forEach(function(a){
+      a.addEventListener('click', function(e){
+        e.preventDefault();
+        var id = parseInt(a.dataset.storyId);
+        if (id) openStoryModal(id);
+      });
+    });
+  }
+
+  function clearStoryTint() {
+    var content = document.getElementById('sm-content');
+    if (!content) return;
+    content.classList.remove(
+      'sm-tint-whitebox','sm-tint-greybox','sm-tint-blackbox',
+      'sm-tint-featurebox','sm-tint-integrate','sm-tint-current'
+    );
+  }
+
+  function renderContainerUI(d) {
+    var s     = d.story;
+    var c     = d.container || {};
+    var boxEl = document.getElementById('sm-box-type');
+    boxEl.value = c.box_type || '';
+
+    clearStoryTint();
+
+    // ── Attachment banner (this story is attached to a container) ──
+    var banner  = document.getElementById('sm-attach-banner');
+    var content = document.getElementById('sm-content');
+    if (c.container) {
+      var box   = c.container.box_type || 'whitebox';
+      var done  = !!c.container.is_done;
+      var info  = BOX_INFO[box] || { label: box, tip: '', detail: '' };
+      var tintClass = done ? 'sm-tint-integrate' : ('sm-tint-' + box);
+      content.classList.add(tintClass);
+
+      banner.className = 'sm-attach-banner' + (done ? ' is-integrate' : (' box-' + box));
+      var html = '';
+      if (done) {
+        html += '<div class="sm-attach-parent-title">'
+              +   esc(s.title)
+              + '</div>'
+              + '<div class="sm-attach-headline">INTEGRATE</div>'
+              + '<div class="sm-attach-target">into: '
+              +   storyLink(c.container.id, c.container.title)
+              + '</div>';
+        if (c.dependent_action) {
+          html += '<div class="sm-attach-do">→ ' + esc(c.dependent_action) + '</div>';
+        }
+      } else {
+        var explainerId = 'sm-attach-explain-' + box;
+        html += '<div class="sm-attach-parent-title">'
+              +   esc(s.title)
+              + '</div>'
+              + '<div class="sm-attach-headline">'
+              +   esc(info.label.toUpperCase())
+              +   ' <button type="button" class="sm-attach-help-btn"'
+              +        ' data-target="' + explainerId + '"'
+              +        ' aria-label="What is ' + esc(info.label) + '?">?</button>'
+              + '</div>'
+              + '<div class="sm-attach-target">will be integrated in: '
+              +   storyLink(c.container.id, c.container.title)
+              + '</div>'
+              + '<div class="sm-attach-explain" id="' + explainerId + '" hidden>'
+              +   '<div class="sm-attach-tip">' + esc(info.tip) + '</div>'
+              +   '<div class="sm-attach-detail">' + info.detail + '</div>'
+              +   (info.faqs && info.faqs.length
+                    ? '<div class="sm-attach-faq-title">Common questions</div>'
+                      + '<div class="sm-attach-faq-list">'
+                      + info.faqs.map(function(f){
+                          var ans = String(f.a || '').replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+                          return '<details class="sm-attach-faq">'
+                               +   '<summary>' + esc(f.q) + '</summary>'
+                               +   '<div class="sm-attach-faq-a">' + ans + '</div>'
+                               + '</details>';
+                        }).join('')
+                      + '</div>'
+                    : '')
+              + '</div>';
+        if (c.dependent_action) {
+          html += '<div class="sm-attach-do">→ ' + esc(c.dependent_action) + '</div>';
+        }
+      }
+      banner.innerHTML = html;
+      banner.style.display = '';
+      wireStoryLinks(banner);
+      // Wire the (?) toggle inside the banner.
+      var helpBtn = banner.querySelector('.sm-attach-help-btn');
+      if (helpBtn) {
+        helpBtn.addEventListener('click', function(e){
+          e.stopPropagation();
+          var tgt = document.getElementById(helpBtn.dataset.target);
+          if (tgt) tgt.hidden = !tgt.hidden;
+        });
+      }
+    } else {
+      // ── No container / no dependency: show "Current Story / Create <Type>" banner ──
+      var typeName = s.story_type_name || '';
+      var headline = typeName ? ('CREATE ' + typeName.toUpperCase()) : 'CURRENT STORY';
+      banner.className = 'sm-attach-banner is-current';
+      banner.innerHTML =
+          '<div class="sm-attach-parent-title">' + esc(s.title || '(untitled)') + '</div>'
+        + '<div class="sm-attach-headline">' + esc(headline) + '</div>';
+      banner.style.display = '';
+      // Apply a neutral tint when no box context
+      content.classList.add('sm-tint-current');
+    }
+
+    // ── Container summary (this story IS a container) ──
+    var summary = document.getElementById('sm-container-summary');
+    var wrap    = document.getElementById('sm-attachments-wrap');
+    if (c.box_type) {
+      wrap.style.display = '';
+      var atts    = c.attachments || [];
+      var ready   = atts.filter(function(a){ return a.is_done; });
+      var pending = atts.filter(function(a){ return !a.is_done; });
+      var html    = '';
+      if (ready.length) {
+        html += '<div class="sm-cs-heading sm-cs-go">INTEGRATE</div><ul class="sm-cs-ul">'
+              + ready.map(function(a){
+                  var when = a.updated_at ? ' <span class="sm-cs-date">('
+                           + new Date(a.updated_at * 1000).toLocaleDateString() + ')</span>' : '';
+                  return '<li>' + storyLink(a.id, a.title) + when + '</li>';
+                }).join('')
+              + '</ul>';
+      }
+      if (pending.length) {
+        html += '<div class="sm-cs-heading sm-cs-no">DO NOT do the following</div><ul class="sm-cs-ul">'
+              + pending.map(function(a){
+                  return '<li>' + storyLink(a.id, a.title)
+                       + ' <span class="sm-cs-status">' + esc(a.status_name) + '</span></li>';
+                }).join('')
+              + '</ul>';
+      }
+      if (!atts.length) {
+        html += '<div class="sm-cs-empty">No attachments yet. Use the sidebar to attach stories.</div>';
+      }
+      summary.innerHTML = html;
+      summary.style.display = '';
+      wireStoryLinks(summary);
+      renderAttachmentsList(s.id, atts);
+      loadAttachCandidates(s.id);
+    } else {
+      summary.style.display = 'none';
+      wrap.style.display = 'none';
+    }
+  }
+
+  function renderAttachmentsList(containerId, atts) {
+    var list = document.getElementById('sm-attachments-list');
+    list.innerHTML = '';
+    if (!atts || !atts.length) {
+      list.innerHTML = '<div class="form-hint" style="font-size:11px">No attachments.</div>';
+      return;
+    }
+    atts.forEach(function(a){
+      var row = document.createElement('div');
+      row.className = 'sm-attachment-row' + (a.is_done ? ' done' : '');
+      row.innerHTML =
+          '<span class="sm-att-title" title="'+esc(a.title)+'">' + esc(a.title) + '</span>'
+        + '<span class="sm-att-status">' + esc(a.status_name || '—') + '</span>'
+        + '<button type="button" class="sm-att-detach" title="Detach">×</button>';
+      row.querySelector('.sm-att-detach').addEventListener('click', function(){
+        if (!confirm('Detach "' + a.title + '" from this container?')) return;
+        apiDelete('/api/story/'+containerId+'/attach/'+a.id).then(function(r){
+          if (r.ok) renderAttachmentsList(containerId, r.attachments);
+        });
+      });
+      list.appendChild(row);
+    });
+  }
+
+  function loadAttachCandidates(containerId) {
+    // No-op: candidates are now fetched on-demand by the picker overlay.
+  }
+
+  // ── Attach-story picker overlay ──
+  var _apBg       = document.getElementById('attach-picker-bg');
+  var _apList     = document.getElementById('attach-picker-list');
+  var _apQ        = document.getElementById('attach-picker-q');
+  var _apAction   = document.getElementById('attach-picker-action');
+  var _apConfirm  = document.getElementById('attach-picker-confirm');
+  var _apSelected = document.getElementById('attach-picker-selected');
+  var _apSelectedIds   = [];   // multi-select
+  var _apSelectedMeta  = {};   // id -> { title, attached_to }
+  var _apOffset   = 0;
+  var _apHasMore  = false;
+  var _apLoading  = false;
+  var _apSearchT  = null;
+
+  function _apRenderSelected() {
+    if (!_apSelectedIds.length) {
+      _apSelected.style.display = 'none';
+      _apSelected.innerHTML = '';
+      _apConfirm.disabled = true;
+      _apConfirm.textContent = 'Attach';
+      return;
+    }
+    _apSelected.style.display = '';
+    _apConfirm.disabled = false;
+    _apConfirm.textContent = 'Attach ' + _apSelectedIds.length;
+    _apSelected.innerHTML = 'Selected: ' + _apSelectedIds.map(function(id){
+      var m = _apSelectedMeta[id] || {};
+      return '<span class="ap-chip" data-id="'+id+'">#'+id+' '+esc(m.title||'')+' <span class="ap-chip-x">✕</span></span>';
+    }).join(' ');
+    _apSelected.querySelectorAll('.ap-chip').forEach(function(ch){
+      ch.addEventListener('click', function(){
+        var id = parseInt(ch.dataset.id);
+        _apToggleSelect(id, false);
+      });
+    });
+  }
+  function _apToggleSelect(id, meta) {
+    var idx = _apSelectedIds.indexOf(id);
+    if (idx >= 0) {
+      _apSelectedIds.splice(idx, 1);
+      delete _apSelectedMeta[id];
+    } else {
+      _apSelectedIds.push(id);
+      if (meta) _apSelectedMeta[id] = meta;
+    }
+    // Reflect in list
+    var row = _apList.querySelector('.attach-picker-row[data-id="'+id+'"]');
+    if (row) row.classList.toggle('is-selected', _apSelectedIds.indexOf(id) >= 0);
+    _apRenderSelected();
+  }
+
+  function openAttachPicker() {
+    if (!curId) return;
+    _apSelectedIds = [];
+    _apSelectedMeta = {};
+    _apRenderSelected();
+    _apAction.value = '';
+    _apQ.value = '';
+    _apBg.style.display = 'flex';
+    _apQ.focus();
+    fetchAttachCandidates(true);
+  }
+  function closeAttachPicker() {
+    _apBg.style.display = 'none';
+  }
+  function fetchAttachCandidates(reset) {
+    if (_apLoading) return;
+    if (reset) { _apOffset = 0; _apList.innerHTML = '<div class="attach-picker-loading">Searching…</div>'; }
+    _apLoading = true;
+    var q = encodeURIComponent(_apQ.value.trim());
+    apiGet('/api/story/'+curId+'/attach-search?q='+q+'&limit=30&offset='+_apOffset).then(function(d){
+      _apLoading = false;
+      if (!d || !d.ok) { _apList.innerHTML = '<div class="attach-picker-empty">Search failed.</div>'; return; }
+      _apHasMore = !!d.has_more;
+      if (reset) _apList.innerHTML = '';
+      if (!d.items.length && reset) {
+        _apList.innerHTML = '<div class="attach-picker-empty">No matches.</div>';
+        return;
+      }
+      d.items.forEach(function(it){
+        var row = document.createElement('div');
+        row.className = 'attach-picker-row';
+        if (_apSelectedIds.indexOf(it.id) >= 0) row.classList.add('is-selected');
+        row.dataset.id = it.id;
+        row.dataset.title = it.title;
+        var attachedBadge = it.attached_to
+          ? '<span class="ap-attached" title="Already attached to container #'+it.attached_to+' — will be moved here">⛓ #'+it.attached_to+'</span>'
+          : '';
+        row.innerHTML = '<span class="ap-id">#'+it.id+'</span>'
+                      + '<span class="ap-title">'+esc(it.title)+'</span>'
+                      + attachedBadge
+                      + '<span class="ap-status" style="background:'+esc(it.status_color)+'22;color:'+esc(it.status_color)+'">'+esc(it.status_name)+'</span>';
+        row.addEventListener('click', function(){
+          _apToggleSelect(it.id, { title: it.title, attached_to: it.attached_to });
+        });
+        _apList.appendChild(row);
+      });
+      _apOffset += d.items.length;
+    });
+  }
+  _apQ.addEventListener('input', function(){
+    clearTimeout(_apSearchT);
+    _apSearchT = setTimeout(function(){ fetchAttachCandidates(true); }, 180);
+  });
+  _apList.addEventListener('scroll', function(){
+    if (!_apHasMore || _apLoading) return;
+    if (_apList.scrollTop + _apList.clientHeight >= _apList.scrollHeight - 40) {
+      fetchAttachCandidates(false);
+    }
+  });
+  document.getElementById('attach-picker-close').addEventListener('click', closeAttachPicker);
+  _apBg.addEventListener('click', function(e){ if (e.target === _apBg) closeAttachPicker(); });
+  _apConfirm.addEventListener('click', function(){
+    if (!_apSelectedIds.length) return;
+    var act = _apAction.value.trim();
+    // Pre-confirm moving any items already attached elsewhere.
+    var moving = _apSelectedIds.filter(function(id){
+      var m = _apSelectedMeta[id]; return m && m.attached_to;
+    });
+    if (moving.length && !confirm(moving.length + ' selected story(ies) are already attached to another container. Move them here?')) {
+      return;
+    }
+    var ids = _apSelectedIds.slice();
+    closeAttachPicker();
+    // Sequential attach to keep server state consistent + avoid race on attachments list.
+    (function next(i){
+      if (i >= ids.length) return;
+      doAttach(ids[i], act, true);
+      // small stagger so each /attach POST resolves before the next renders
+      setTimeout(function(){ next(i+1); }, 120);
+    })(0);
+  });
+  var _apOpenBtn = document.getElementById('sm-attach-open-picker');
+  if (_apOpenBtn) _apOpenBtn.addEventListener('click', openAttachPicker);
+
+  document.getElementById('sm-box-help').addEventListener('click', function(){
+    var p = document.getElementById('sm-box-help-panel');
+    p.style.display = p.style.display === 'none' ? '' : 'none';
+  });
+
+  var _tasksHelpBtn = document.getElementById('sm-tasks-help-btn');
+  if (_tasksHelpBtn) _tasksHelpBtn.addEventListener('click', function(){
+    var n = document.getElementById('sm-binary-note');
+    n.style.display = n.style.display === 'none' ? '' : 'none';
+  });
+
+  document.getElementById('sm-box-type').addEventListener('change', function(){
+    var v = this.value || null;
+    apiJson('/api/story/'+curId+'/box', 'POST', {box_type: v}).then(function(r){
+      if (!r.ok) {
+        alert(r.error || 'Failed to set box type');
+        // revert
+        return;
+      }
+      // Re-open: simplest way to refresh container UI fully
+      var wrap = document.getElementById('sm-attachments-wrap');
+      var summary = document.getElementById('sm-container-summary');
+      if (v) {
+        wrap.style.display = '';
+        summary.style.display = '';
+        renderAttachmentsList(curId, []);
+        summary.innerHTML = '<div class="sm-cs-empty">No attachments yet. Use “+ Attach a story…” in the sidebar.</div>';
+      } else {
+        wrap.style.display = 'none';
+        summary.style.display = 'none';
+      }
+    });
+  });
+
+  function doAttach(childId, action, force) {
+    apiJson('/api/story/'+curId+'/attach', 'POST',
+            {child_id: childId, dependent_action: action || null, force: !!force})
+      .then(function(r){
+        if (r.ok) {
+          renderAttachmentsList(curId, r.attachments);
+        } else if (r.error === 'already_attached') {
+          if (confirm('That story is already attached to another container (#'+r.current_container_id+'). Move it here?')) {
+            doAttach(childId, action, true);
+          }
+        } else {
+          alert(r.error || 'Attach failed');
+        }
+      });
   }
 
   function setVal(id, v) { var e = document.getElementById(id); if (e) e.value = v; }
@@ -2711,11 +3581,27 @@
     var parts = ['sm-actor','sm-verb','sm-z','sm-x','sm-for','sm-y'].map(function(id){
       var e = document.getElementById(id); return e ? e.value.trim() : '';
     }).filter(Boolean);
-    document.getElementById('sm-preview').textContent = parts.join(' ') || 'Preview will appear here…';
+    var liveTitle = parts.join(' ');
+    document.getElementById('sm-preview').textContent = liveTitle || 'Preview will appear here…';
     var wc = parts.reduce(function(n,p){ return n + p.split(/\s+/).filter(Boolean).length; }, 0);
     var wcEl = document.getElementById('sm-wc');
     wcEl.textContent = wc + ' / 19';
     wcEl.style.color = wc > 19 ? 'var(--c-red)' : '';
+    // ── Propagate the live title everywhere it's shown in the modal ──
+    if (curId && liveTitle) {
+      var code = smKey ? (smKey.dataset.code || '') : '';
+      if (code) {
+        var label = code + ' — ' + liveTitle;
+        smKey.textContent = label;
+        // copyText stays as the URL — don't overwrite it here
+      }
+      // Update the parent-title line in the attach banner (it mirrors current story title)
+      var bannerEl = document.getElementById('sm-attach-banner');
+      if (bannerEl) {
+        var pt = bannerEl.querySelector('.sm-attach-parent-title');
+        if (pt) pt.textContent = liveTitle;
+      }
+    }
   }
   ['sm-actor','sm-verb','sm-z','sm-x','sm-for','sm-y'].forEach(function(id){
     var el = document.getElementById(id); if (el) el.addEventListener('input', updatePreview);
@@ -2819,7 +3705,7 @@
         else card.appendChild(imagesWrap);
       }
       imagesWrap.innerHTML = d.images.slice(0, 5).map(function(fn) {
-        return '<div class="card-image-item"><img src="' + ROOT + '/story-images/thumb_' + fn + '" alt="" loading="lazy"></div>';
+        return '<div class="card-image-item"><img src="' + ROOT + '/story-images/thumb_' + fn + '" alt="" loading="lazy" draggable="false"></div>';
       }).join('');
     } else if (imagesWrap) { imagesWrap.remove(); }
     if (d.status_id) {
@@ -2984,7 +3870,81 @@
   function setPanel(open) {
     panel.classList.toggle('is-open', open);
     panelBtn.classList.toggle('is-active', open);
-    if (open) renderPanel();
+    if (open) { ensureSortBar(); hydrateStats(); renderPanel(); }
+  }
+
+  /* ── Sort + lazy state ───────────────────────────────────────── */
+  var panelSort      = 'newest';
+  var panelRendered  = 0;
+  var PANEL_PAGE     = 15;
+  var panelStatsById = {};
+  var panelStatsLoaded = false;
+
+  function ensureSortBar() {
+    if (document.getElementById('epics-pb-sort')) return;
+    var bar = document.createElement('div');
+    bar.id = 'epics-pb-sort';
+    bar.className = 'epics-pb-sort';
+    bar.innerHTML = '<span>Sort:</span>' +
+      '<select id="epics-pb-sort-sel">' +
+        '<option value="newest">Newest</option>' +
+        '<option value="oldest">Oldest</option>' +
+        '<option value="order">Manual</option>' +
+        '<option value="name_asc">Name A\u2013Z</option>' +
+        '<option value="pct_done_desc">% done \u2193</option>' +
+        '<option value="stories_desc"># stories \u2193</option>' +
+      '</select>';
+    panel.insertBefore(bar, panelBody);
+    bar.querySelector('select').addEventListener('change', function(){
+      panelSort = this.value;
+      sortEpics();
+      panelRendered = 0;
+      renderPanel();
+    });
+    panelBody.addEventListener('scroll', function(){
+      if (panelBody.scrollTop + panelBody.clientHeight >= panelBody.scrollHeight - 80) {
+        renderMore();
+      }
+    });
+  }
+
+  function sortEpics() {
+    var s = panelSort;
+    epicsData.sort(function(a, b){
+      var sa = panelStatsById[a.id] || {}, sb = panelStatsById[b.id] || {};
+      if (s === 'newest')        return (b.created_at||0) - (a.created_at||0);
+      if (s === 'oldest')        return (a.created_at||0) - (b.created_at||0);
+      if (s === 'order')         return (a.order_index||0) - (b.order_index||0);
+      if (s === 'name_asc')      return String(a.title||'').toLowerCase().localeCompare(String(b.title||'').toLowerCase());
+      if (s === 'pct_done_desc') return (sb.pct_done||0) - (sa.pct_done||0);
+      if (s === 'stories_desc')  return (sb.total_stories||0) - (sa.total_stories||0);
+      return 0;
+    });
+  }
+
+  function hydrateStats() {
+    if (panelStatsLoaded) return;
+    var pid = panel.getAttribute('data-pid');
+    fetch('/api/project/' + pid + '/epics/stats?limit=100&sort=newest&archived=0')
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){
+        if (!j || !j.ok) return;
+        j.epics.forEach(function(s){ panelStatsById[s.id] = s; });
+        panelStatsLoaded = true;
+        sortEpics();
+        panelRendered = 0;
+        renderPanel();
+      }).catch(function(){});
+  }
+
+  function renderMore() {
+    if (panelRendered >= epicsData.length) return;
+    var next = epicsData.slice(panelRendered, panelRendered + PANEL_PAGE);
+    var frag = document.createElement('div');
+    frag.innerHTML = next.map(renderEpicItemHtml).join('');
+    while (frag.firstChild) panelBody.appendChild(frag.firstChild);
+    panelRendered += next.length;
+    wireDragAndDrop();
   }
 
   panelBtn.addEventListener('click', function () { setPanel(!panel.classList.contains('is-open')); });
@@ -2992,42 +3952,68 @@
 
   function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+  function renderEpicItemHtml(e) {
+    var storiesHtml = '';
+    if (e.stories && e.stories.length) {
+      storiesHtml = '<ul class="epic-story-list">' +
+        e.stories.map(function(s) {
+          return '<li><a href="/story/' + ((s.project_key && s.story_number != null) ? (s.project_key + '-' + s.story_number) : s.id) + '" class="epic-story-link">' +
+            '<span class="epic-story-dot" style="background:' + esc(s.status_color) + '"></span>' +
+            esc(s.title) +
+            (s.story_points ? '<span class="epic-story-pts">' + s.story_points + 'pt</span>' : '') +
+            '</a></li>';
+        }).join('') +
+      '</ul>';
+    } else {
+      storiesHtml = '<p class="epics-empty" style="margin:4px 0 8px 20px">No stories in sprint.</p>';
+    }
+    var st = panelStatsById[e.id];
+    var statsHtml = '';
+    if (st) {
+      var pri = st.pri || {};
+      var pill = function(k, label){
+        var v = pri[k] || 0;
+        return '<span class="epic-row-pri-pill p-' + k + (v?'':' is-zero') + '">' + label + ' ' + v + '</span>';
+      };
+      statsHtml = '<div class="epic-row-stats">' +
+        '<div class="epic-row-bar"><div class="epic-row-bar-fill" style="width:' + st.pct_done + '%"></div></div>' +
+        '<span class="epic-row-pct">' + st.pct_done + '%</span>' +
+        '<span class="epic-row-pri">' +
+          pill('VH','VH') + pill('H','H') + pill('M','M') + pill('L','L') + pill('VL','VL') +
+        '</span>' +
+      '</div>';
+    }
+    return '<div class="epic-item" id="epic-item-' + e.id + '" draggable="true" data-epic-id="' + e.id + '">' +
+      '<div class="epic-item-head" data-epic-modal-id="' + e.id + '" style="cursor:pointer">' +
+        '<span class="epic-drag-handle" title="Drag to reorder">⋮⋮</span>' +
+        '<span class="epic-dot" style="background:' + esc(e.color) + '"></span>' +
+        '<span class="epic-title" id="epic-title-' + e.id + '">' + esc(e.title) + '</span>' +
+        '<span class="epic-story-count">' + (e.stories ? e.stories.length : 0) + '</span>' +
+        '<span class="epic-chevron" onclick="event.stopPropagation();toggleEpicItem(' + e.id + ')" title="Show stories">▾</span>' +
+        '<button class="epic-edit-btn" data-epic-modal-id="' + e.id + '" title="Open epic">✏</button>' +
+      '</div>' +
+      statsHtml +
+      '<div class="epic-body" id="epic-body-' + e.id + '" style="display:none">' +
+        storiesHtml +
+      '</div>' +
+    '</div>';
+  }
+
   function renderPanel() {
     if (!epicsData.length) {
       panelBody.innerHTML = '<p class="epics-empty">No epics for this project yet.</p>';
       return;
     }
-    var html = epicsData.map(function(e) {
-      var storiesHtml = '';
-      if (e.stories && e.stories.length) {
-        storiesHtml = '<ul class="epic-story-list">' +
-          e.stories.map(function(s) {
-            return '<li><a href="/story/' + s.id + '" class="epic-story-link">' +
-              '<span class="epic-story-dot" style="background:' + esc(s.status_color) + '"></span>' +
-              esc(s.title) +
-              (s.story_points ? '<span class="epic-story-pts">' + s.story_points + 'pt</span>' : '') +
-              '</a></li>';
-          }).join('') +
-        '</ul>';
-      } else {
-        storiesHtml = '<p class="epics-empty" style="margin:4px 0 8px 20px">No stories in sprint.</p>';
-      }
-      return '<div class="epic-item" id="epic-item-' + e.id + '" draggable="true" data-epic-id="' + e.id + '">' +
-        '<div class="epic-item-head" data-epic-modal-id="' + e.id + '" style="cursor:pointer">' +
-          '<span class="epic-drag-handle" title="Drag to reorder">⋮⋮</span>' +
-          '<span class="epic-dot" style="background:' + esc(e.color) + '"></span>' +
-          '<span class="epic-title" id="epic-title-' + e.id + '">' + esc(e.title) + '</span>' +
-          '<span class="epic-story-count">' + (e.stories ? e.stories.length : 0) + '</span>' +
-          '<span class="epic-chevron" onclick="event.stopPropagation();toggleEpicItem(' + e.id + ')" title="Show stories">▾</span>' +
-          '<button class="epic-edit-btn" data-epic-modal-id="' + e.id + '" title="Open epic">✏</button>' +
-        '</div>' +
-        '<div class="epic-body" id="epic-body-' + e.id + '" style="display:none">' +
-          storiesHtml +
-        '</div>' +
-      '</div>';
-    }).join('');
-    panelBody.innerHTML = html;
-    wireDragAndDrop();
+    if (panelRendered === 0) {
+      sortEpics();
+      panelBody.innerHTML = '';
+      renderMore();
+    } else {
+      // Re-render of already loaded items (e.g. after sort change)
+      panelBody.innerHTML = epicsData.slice(0, panelRendered)
+        .map(renderEpicItemHtml).join('');
+      wireDragAndDrop();
+    }
   }
 
   /* ── Drag-and-drop reorder ─────────────────────────────────────── */
@@ -3207,287 +4193,6 @@
 }());
 </script>
 
-{# ───────────────────── EPIC MODAL JS ───────────────────── #}
-<script>
-(function () {
-  var ROOT = '';
-  var CSRF = (document.querySelector('meta[name="csrf-token"]') || {getAttribute:function(){return '';}}).getAttribute('content') || '';
-
-  var EPIC_COLORS = [
-    '#6B7280', '#DC2626', '#EA580C', '#D97706', '#65A30D',
-    '#059669', '#0891B2', '#2563EB', '#7C3AED', '#C026D3',
-    '#DB2777', '#7C4A1E'
-  ];
-  var STATUS_LABELS = {
-    planning:  'Planning',
-    active:    'Active',
-    on_hold:   'On hold',
-    completed: 'Completed'
-  };
-
-  var bg          = document.getElementById('em-bg');
-  if (!bg) return;
-  var loading     = document.getElementById('em-loading');
-  var content     = document.getElementById('em-content');
-  var titleInput  = document.getElementById('em-title');
-  var statusBadge = document.getElementById('em-status-badge');
-  var colorDot    = document.getElementById('em-color-dot');
-
-  var currentEpic = null;
-
-  function esc(s){ return String(s||'').replace(/[&<>"']/g, function(c){
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-  });}
-  function fmtDate(ts){ if(!ts) return '—'; try { return new Date(ts*1000).toLocaleDateString(); } catch(e){ return '—'; } }
-
-  function apiGet(path){
-    return fetch(ROOT+path, {credentials:'same-origin'}).then(function(r){
-      if (!r.ok) return {ok:false, status:r.status};
-      return r.json();
-    });
-  }
-  function apiPatch(path, body){
-    return fetch(ROOT+path, {
-      method:'PATCH', credentials:'same-origin',
-      headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},
-      body: JSON.stringify(body)
-    }).then(function(r){ return r.json(); });
-  }
-
-  function renderColorPicker(selected){
-    var wrap = document.getElementById('em-color-picker');
-    wrap.innerHTML = '';
-    EPIC_COLORS.forEach(function(c){
-      var sw = document.createElement('span');
-      sw.className = 'em-color-swatch' + (c.toLowerCase() === (selected||'').toLowerCase() ? ' is-selected' : '');
-      sw.style.background = c;
-      sw.setAttribute('data-color', c);
-      sw.addEventListener('click', function(){
-        wrap.querySelectorAll('.em-color-swatch').forEach(function(x){x.classList.remove('is-selected');});
-        sw.classList.add('is-selected');
-        colorDot.style.background = c;
-      });
-      wrap.appendChild(sw);
-    });
-  }
-
-  function updateStatusBadge(s){
-    statusBadge.className = 'em-status-badge s-' + s;
-    statusBadge.textContent = STATUS_LABELS[s] || 'Planning';
-  }
-
-  function renderStatusBreakdown(by_status, total){
-    var bar    = document.getElementById('em-status-bar');
-    var legend = document.getElementById('em-status-legend');
-    bar.innerHTML = ''; legend.innerHTML = '';
-    if (!total) {
-      bar.innerHTML = '<div style="flex:1;background:var(--c-gray-200,#DDD0B8)"></div>';
-      legend.innerHTML = '<span style="color:var(--c-gray-500,#7A6A52);font-style:italic">No stories yet</span>';
-      return;
-    }
-    by_status.forEach(function(s){
-      if (!s.count) return;
-      var pct = (s.count / total) * 100;
-      var seg = document.createElement('div');
-      seg.className = 'em-status-seg';
-      seg.style.width = pct + '%';
-      seg.style.background = s.color || '#6B7280';
-      seg.textContent = s.count;
-      seg.title = s.name + ': ' + s.count + ' (' + s.points + ' pts)';
-      bar.appendChild(seg);
-
-      var li = document.createElement('span');
-      li.className = 'em-status-legend-item';
-      li.innerHTML = '<span class="em-status-legend-dot" style="background:'+esc(s.color||'#6B7280')+'"></span>'
-                  + esc(s.name) + ' (' + s.count + ')';
-      legend.appendChild(li);
-    });
-  }
-
-  function renderStories(stories){
-    var list = document.getElementById('em-story-list');
-    document.getElementById('em-story-total').textContent = '(' + stories.length + ')';
-    if (!stories.length) {
-      list.innerHTML = '<div style="padding:14px;text-align:center;color:var(--c-gray-500,#7A6A52);font-size:13px">No stories assigned yet.</div>';
-      return;
-    }
-    list.innerHTML = '';
-    stories.forEach(function(s){
-      var row = document.createElement('div');
-      row.className = 'em-story-row';
-      row.innerHTML =
-        '<span class="em-story-status-dot" style="background:'+esc(s.status_color||'#6B7280')+'"></span>'
-      + '<span class="em-story-title">'+esc(s.title||'')+'</span>'
-      + '<span class="em-story-status-name">'+esc(s.status_name||'')+'</span>'
-      + '<span class="em-story-pts">'+(s.story_points||0)+' pts</span>';
-      row.addEventListener('click', function(){
-        closeEpicModal();
-        if (typeof window.openStoryModal === 'function') {
-          window.openStoryModal(s.id);
-        }
-      });
-      list.appendChild(row);
-    });
-  }
-
-  function renderDaysBadge(stats){
-    var wrap = document.getElementById('em-days-badge-wrap');
-    wrap.innerHTML = '';
-    var d = stats.days_remaining;
-    if (d === null || d === undefined) { return; }
-    var cls, txt;
-    if (d < 0)       { cls = 'is-late'; txt = Math.abs(d) + ' day' + (Math.abs(d)===1?'':'s') + ' overdue'; }
-    else if (d <= 3) { cls = 'is-soon'; txt = d + ' day' + (d===1?'':'s') + ' left'; }
-    else             { cls = 'is-ok';   txt = d + ' days left'; }
-    var b = document.createElement('span');
-    b.className = 'em-days-badge ' + cls;
-    b.textContent = txt;
-    wrap.appendChild(b);
-  }
-
-  function populate(data){
-    var e = data.epic; currentEpic = e;
-    var s = data.stats;
-
-    titleInput.value          = e.title || '';
-    document.getElementById('em-desc').value     = e.description || '';
-    document.getElementById('em-status').value   = e.status || 'planning';
-    document.getElementById('em-start').value    = e.start_date || '';
-    document.getElementById('em-due').value      = e.due_date   || '';
-    document.getElementById('em-creator').textContent = e.creator_name || '—';
-    document.getElementById('em-created').textContent = fmtDate(e.created_at);
-    document.getElementById('em-updated').textContent = fmtDate(e.updated_at);
-
-    colorDot.style.background = e.color || '#6B7280';
-    updateStatusBadge(e.status || 'planning');
-    renderColorPicker(e.color);
-
-    document.getElementById('em-pct-count').textContent  = s.pct_count + '%';
-    document.getElementById('em-fill-count').style.width = s.pct_count + '%';
-    document.getElementById('em-pct-points').textContent  = s.pct_points + '%';
-    document.getElementById('em-fill-points').style.width = s.pct_points + '%';
-
-    document.getElementById('em-stat-stories').textContent = s.total_stories;
-    document.getElementById('em-stat-points').textContent  = s.total_points;
-    document.getElementById('em-stat-done').textContent    = s.done_stories;
-    document.getElementById('em-stat-days').textContent    =
-      (s.days_remaining === null || s.days_remaining === undefined) ? '—' : s.days_remaining;
-
-    // Today marker on the count progress bar (based on schedule pct)
-    var marker = document.getElementById('em-today-marker');
-    if (s.sched_pct !== null && s.sched_pct !== undefined) {
-      marker.style.display = 'block';
-      marker.style.left = Math.min(100, Math.max(0, s.sched_pct)) + '%';
-    } else { marker.style.display = 'none'; }
-
-    // Meta line
-    var meta = '';
-    if (e.start_date || e.due_date) {
-      meta = (e.start_date || '?') + ' → ' + (e.due_date || '?');
-      if (s.days_total !== null && s.days_total !== undefined) {
-        meta += '  •  ' + s.days_total + ' day' + (s.days_total===1?'':'s') + ' total';
-      }
-    }
-    document.getElementById('em-progress-meta').textContent = meta;
-
-    renderStatusBreakdown(s.by_status || [], s.total_stories);
-    renderStories(data.stories || []);
-    renderDaysBadge(s);
-  }
-
-  function openEpicModal(epicId){
-    bg.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-    loading.style.display = 'block';
-    content.style.display = 'none';
-    apiGet('/api/epic/' + epicId + '/full').then(function(d){
-      if (!d || !d.ok) { alert('Could not load epic'); closeEpicModal(); return; }
-      populate(d);
-      loading.style.display = 'none';
-      content.style.display = '';
-    });
-  }
-  function closeEpicModal(){
-    bg.style.display = 'none';
-    document.body.style.overflow = '';
-    currentEpic = null;
-  }
-
-  document.getElementById('em-close').addEventListener('click', closeEpicModal);
-  bg.addEventListener('click', function(ev){ if (ev.target === bg) closeEpicModal(); });
-  document.addEventListener('keydown', function(ev){
-    if (ev.key === 'Escape' && bg.style.display === 'flex') closeEpicModal();
-  });
-
-  document.getElementById('em-status').addEventListener('change', function(){
-    updateStatusBadge(this.value);
-  });
-
-  document.getElementById('em-save').addEventListener('click', function(){
-    if (!currentEpic) return;
-    var btn = this;
-    var swatch = document.querySelector('#em-color-picker .em-color-swatch.is-selected');
-    var body = {
-      title:       titleInput.value.trim(),
-      description: document.getElementById('em-desc').value,
-      status:      document.getElementById('em-status').value,
-      start_date:  document.getElementById('em-start').value || '',
-      due_date:    document.getElementById('em-due').value   || '',
-      color:       swatch ? swatch.getAttribute('data-color') : (currentEpic.color || '#6B7280')
-    };
-    if (!body.title) { alert('Title is required'); return; }
-    btn.disabled = true; btn.textContent = 'Saving…';
-    apiPatch('/api/epic/' + currentEpic.id, body).then(function(r){
-      btn.disabled = false; btn.textContent = 'Save';
-      if (r && r.ok) {
-        // refresh to get recalculated stats / timeline
-        openEpicModal(currentEpic.id);
-      } else {
-        alert('Save failed' + (r && r.error ? ': ' + r.error : ''));
-      }
-    });
-  });
-
-  document.getElementById('em-delete').addEventListener('click', function(){
-    if (!currentEpic) return;
-    var id    = currentEpic.id;
-    var title = currentEpic.title || ('epic #' + id);
-    if (!confirm('Delete "' + title + '"?\n\nStories will NOT be deleted, but they will no longer belong to this epic.')) return;
-    var btn = this;
-    btn.disabled = true; btn.textContent = 'Deleting…';
-    fetch(ROOT + '/api/epic/' + id, {
-      method: 'DELETE', credentials: 'same-origin',
-      headers: {'X-CSRF-Token': CSRF}
-    }).then(function(r){
-      btn.disabled = false; btn.textContent = 'Delete epic';
-      if (!r.ok) {
-        return r.json().catch(function(){ return {}; }).then(function(d){
-          alert('Delete failed (HTTP ' + r.status + ')' + (d && d.error ? ': ' + d.error : ''));
-        });
-      }
-      closeEpicModal();
-      // Reload the board so the panel + columns update
-      window.location.reload();
-    }).catch(function(err){
-      btn.disabled = false; btn.textContent = 'Delete epic';
-      alert('Delete failed: ' + err);
-    });
-  });
-
-  // Delegated handler: column-header epic chips + Sprint Epics panel rows + pencil
-  document.addEventListener('click', function(ev){
-    var chip = ev.target.closest('.col-epic-chip, [data-epic-modal-id]');
-    if (!chip) return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    var id = parseInt(chip.getAttribute('data-epic-id') || chip.getAttribute('data-epic-modal-id') || '0', 10);
-    if (id) openEpicModal(id);
-  }, true);
-
-  window.openEpicModal  = openEpicModal;
-  window.closeEpicModal = closeEpicModal;
-}());
-</script>
 
 {% endblock %}
 

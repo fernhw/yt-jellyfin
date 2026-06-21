@@ -340,21 +340,14 @@ def _migrate_db() -> None:
         ("stories", "os",          "TEXT DEFAULT NULL"),
         # ── Container/Attachment model (sovereign-story system) ─────────────
         # box_type:        only set on Container stories. One of
-        #                  'whitebox' | 'blackbox' | 'greybox' | 'featurebox'
-        #                  | 'stubbox' | 'blocked'.
+        #                  'whitebox' | 'blackbox' | 'greybox' | 'featurebox'.
         # attached_to:     only set on Attachment stories — points at the
         #                  Container story that hosts this one. Strict 1:1.
         # dependent_action:short string the Container declares onto the
         #                  Attachment ("DO NOT integrate yet", "Wire to slot 3"…).
-        # block_description / block_mock_idea: only meaningful when
-        #   box_type == 'blocked'. The description is the real-world hard
-        #   dependency; the mock-idea forces the user to justify why a
-        #   StubBox / WhiteBox / etc. cannot replace the block.
         ("stories", "box_type",          "TEXT DEFAULT NULL"),
         ("stories", "attached_to",       "INTEGER DEFAULT NULL"),
         ("stories", "dependent_action",  "TEXT DEFAULT NULL"),
-        ("stories", "block_description", "TEXT DEFAULT NULL"),
-        ("stories", "block_mock_idea",   "TEXT DEFAULT NULL"),
         # ── Per-project sequential story number (May 2026) ─────────────────
         # The integer PK `id` is globally unique but meaningless to users.
         # `story_number` is the per-project sequence (1, 2, 3, …) used to
@@ -368,25 +361,6 @@ def _migrate_db() -> None:
         ("epics",   "order_index", "INTEGER DEFAULT 0"),
         ("epics",   "initiative_id", "INTEGER DEFAULT NULL"),
         ("epics",   "is_archived", "INTEGER DEFAULT 0"),
-        # ── Comments: system-generated flag for auto-comments (cascade,
-        # scope-change). Users can delete their own comments AND any
-        # system-comment on stories they can access.
-        ("comments", "is_system", "INTEGER DEFAULT 0"),
-        # ── Password auth (May 2026) ──────────────────────────────────────
-        # Primary auth is now password + optional TOTP as a second factor.
-        # `password_hash` stores ONLY the salted pbkdf2-sha256 hash produced
-        # by werkzeug.security.generate_password_hash — the plaintext
-        # password is never written to disk or logged.
-        # `setup_token_plain` keeps the raw invite URL token so admins can
-        # re-copy the signup link from the Users admin until the invitee
-        # finishes setup (cleared when password is set).
-        # `setup_complete` flips to 1 once the user has set their password.
-        # `welcomed_at` records when the user dismissed the first-login
-        # welcome modal; NULL means they haven't seen it yet.
-        ("users", "password_hash",      "TEXT DEFAULT NULL"),
-        ("users", "setup_token_plain",  "TEXT DEFAULT NULL"),
-        ("users", "setup_complete",     "INTEGER DEFAULT 0"),
-        ("users", "welcomed_at",        "INTEGER DEFAULT NULL"),
     ]
     conn = get_db()
     for table, col, col_def in new_cols:
@@ -478,32 +452,6 @@ def _migrate_db() -> None:
             "SELECT p.id, u.id, ? FROM projects p, users u WHERE u.is_active = 1",
             (now,),
         )
-
-    # ── Backfill setup_complete for legacy TOTP-only users ────────────────
-    # Pre-password users with a confirmed TOTP secret are considered setup
-    # complete so they can keep logging in (TOTP-only) until they choose to
-    # add a password.
-    try:
-        conn.execute(
-            "UPDATE users SET setup_complete = 1 "
-            "WHERE setup_complete = 0 AND totp_confirmed = 1"
-        )
-    except Exception:
-        pass
-
-    # ── Backfill welcomed_at for pre-existing users ───────────────────────
-    # Anyone already onboarded before the welcome-modal feature shipped
-    # should not see the "new user" popup — mark them as welcomed at the
-    # time the migration runs.
-    try:
-        now = int(time.time())
-        conn.execute(
-            "UPDATE users SET welcomed_at = ? "
-            "WHERE welcomed_at IS NULL AND setup_complete = 1",
-            (now,),
-        )
-    except Exception:
-        pass
 
     # ── Backfill stories.story_number per project (idempotent) ─────────────
     # Assigns 1, 2, 3 … to every existing story within each project, ordered
@@ -873,11 +821,9 @@ def get_board_stories(project_id: int):
 def get_backlog_stories(project_id: int):
     conn = get_db()
     rows = conn.execute(
-        """SELECT s.*, st.name AS status_name, st.color AS status_color,
-                  p.box_type AS parent_box_type
+        """SELECT s.*, st.name AS status_name, st.color AS status_color
            FROM stories s
            LEFT JOIN statuses st ON s.status_id = st.id
-           LEFT JOIN stories  p  ON s.attached_to = p.id
            WHERE s.project_id = ? AND s.sprint IS NULL AND s.is_archived = 0
            ORDER BY s.order_index""",
         (project_id,),
@@ -1313,7 +1259,7 @@ def create_notification(user_id: int, type_: str, message: str,
     conn.close()
 
 
-def get_notifications(user_id: int, limit: int = 20, offset: int = 0):
+def get_notifications(user_id: int, limit: int = 30):
     conn = get_db()
     rows = conn.execute(
         """SELECT n.*, u.display_name as from_name, u.avatar as from_avatar,
@@ -1322,8 +1268,8 @@ def get_notifications(user_id: int, limit: int = 20, offset: int = 0):
            LEFT JOIN users u ON u.id = n.from_user
            LEFT JOIN stories s ON s.id = n.story_id
            WHERE n.user_id = ?
-           ORDER BY n.created_at DESC LIMIT ? OFFSET ?""",
-        (user_id, limit, offset),
+           ORDER BY n.created_at DESC LIMIT ?""",
+        (user_id, limit),
     ).fetchall()
     conn.close()
     return rows

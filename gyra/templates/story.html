@@ -2,7 +2,7 @@
 {% if mode == 'new' %}
   {% set page_title = 'New Story — Gyra' %}
 {% else %}
-  {% set page_title = story.project_key ~ '-' ~ story.id ~ ' — Gyra' %}
+  {% set page_title = story.project_key ~ '-' ~ (story.story_number if story.story_number is not none else story.id) ~ ' — Gyra' %}
 {% endif %}
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -15,7 +15,7 @@
     <div class="story-breadcrumb">
       <a href="{{ url_for('board', project_id=story.project_id) }}">{{ story.project_name }}</a>
       <span>/</span>
-      <span class="story-key">{{ story.project_key }}-{{ story.id }}</span>
+      <span class="story-key">{{ story.project_key }}-{{ story.story_number if story.story_number is not none else story.id }}</span>
     </div>
     {% endif %}
 

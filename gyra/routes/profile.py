@@ -68,19 +68,7 @@ def register(app) -> None:
     @app.route("/api/notifications")
     @login_required
     def api_notifications():
-        # Pagination: caller passes ?limit=&offset=. We fetch limit+1 rows so
-        # we can tell the client whether more pages exist without a COUNT(*).
-        try:
-            limit = max(1, min(int(request.args.get("limit", 20)), 100))
-        except (TypeError, ValueError):
-            limit = 20
-        try:
-            offset = max(0, int(request.args.get("offset", 0)))
-        except (TypeError, ValueError):
-            offset = 0
-        notes    = list(get_notifications(session["user_id"], limit + 1, offset))
-        has_more = len(notes) > limit
-        notes    = notes[:limit]
+        notes  = get_notifications(session["user_id"])
         result = [
             {
                 "id":         n["id"],
@@ -96,9 +84,6 @@ def register(app) -> None:
         return jsonify(
             notifications=result,
             unread=get_unread_count(session["user_id"]),
-            has_more=has_more,
-            offset=offset,
-            limit=limit,
         )
 
     @app.route("/api/notifications/mark-read", methods=["POST"])

@@ -55,7 +55,11 @@ def register(app) -> None:
                 flash("Project is required.", "error")
                 return redirect(request.url)
 
-            errors, warnings = validate_story_parts(actor, verb, z, x, for_conn, y)
+            errors, warnings = validate_story_parts(
+                actor, verb, z, x, for_conn, y,
+                points=points,
+                description=(description + "\n" + ac).strip(),
+            )
             if errors:
                 for e in errors:
                     flash(e, "error")
@@ -71,18 +75,25 @@ def register(app) -> None:
                 (project_id,),
             ).fetchone()
             order = row["nxt"]
+            # Per-project sequential story number (used in URLs / display keys).
+            snum_row = conn.execute(
+                "SELECT COALESCE(MAX(story_number),0)+1 AS nxt "
+                "FROM stories WHERE project_id=?",
+                (project_id,),
+            ).fetchone()
+            story_number = snum_row["nxt"]
 
             cur = conn.execute(
                 """INSERT INTO stories
                    (project_id,title,description,acceptance_criteria,story_points,
                     status_id,sprint,order_index,created_at,created_by,updated_at,
                     story_actor,story_verb,story_z,story_x,story_for,story_y,
-                    story_type,epic_id,priority,software_version,os)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    story_type,epic_id,priority,software_version,os,story_number)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (project_id, title, description, ac, points,
                  status_id, sprint, order, now, session["user_id"], now,
                  actor, verb, z, x, for_conn, y, story_type, epic_id, priority,
-                 software_version, os_field),
+                 software_version, os_field, story_number),
             )
             story_id = cur.lastrowid
             for uid in assignees:
@@ -131,8 +142,12 @@ def register(app) -> None:
         all_users  = get_all_active_users()
         default_sprint = request.args.get("sprint", type=int)
         if project_id:
-            with get_db() as _c:
+            _c = get_db()
+            try:
                 ensure_story_types(project_id, _c)
+                _c.commit()
+            finally:
+                _c.close()
         story_types = get_story_types(project_id) if project_id else []
         epics       = get_epics(project_id) if project_id else []
         return render_template(
@@ -154,7 +169,7 @@ def register(app) -> None:
             addons=[],
         )
 
-    @app.route("/story/<int:story_id>", methods=["GET", "POST"])
+    @app.route("/story/<storyref:story_id>", methods=["GET", "POST"])
     @login_required
     def story_view(story_id):
         s = get_story(story_id)
@@ -176,9 +191,16 @@ def register(app) -> None:
                 x        = request.form.get("story_x", "").strip()
                 for_conn = request.form.get("story_for", "to").strip()
                 y        = request.form.get("story_y", "").strip()
+                desc       = request.form.get("description", "").strip()
+                ac         = request.form.get("acceptance_criteria", "").strip()
+                points     = request.form.get("story_points", 0, type=int)
                 title    = build_story_title(actor, verb, z, x, for_conn, y)
 
-                errors, warnings = validate_story_parts(actor, verb, z, x, for_conn, y)
+                errors, warnings = validate_story_parts(
+                    actor, verb, z, x, for_conn, y,
+                    points=points,
+                    description=(desc + "\n" + ac).strip(),
+                )
                 if errors:
                     if is_modal:
                         return jsonify(ok=False, error=" ".join(errors))
@@ -188,9 +210,6 @@ def register(app) -> None:
                 for w in warnings:
                     flash(w, "warning")
 
-                desc       = request.form.get("description", "").strip()
-                ac         = request.form.get("acceptance_criteria", "").strip()
-                points     = request.form.get("story_points", 0, type=int)
                 status_id  = request.form.get("status_id", type=int) or None
                 sprint     = request.form.get("sprint", type=int) or None
                 assignees  = request.form.getlist("assignee_ids", type=int)

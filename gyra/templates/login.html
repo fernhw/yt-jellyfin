@@ -13,9 +13,6 @@
       </svg>
       <h1 style="font-weight:900;letter-spacing:6px;font-size:28px;">GYRA</h1>
     </div>
-    <p class="auth-tagline" style="margin:-6px 0 18px;text-align:center;font-size:13px;color:var(--c-gray-500,#7A6A52);font-style:italic;">
-      Made for humans. (Mostly.)
-    </p>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
@@ -27,150 +24,43 @@
 
     <form method="post" action="{{ url_for('login') }}" autocomplete="off" id="login-form">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-      <input type="hidden" name="human_proof" id="human_proof" value="">
-      <input type="hidden" id="human_nonce" value="{{ human_nonce }}">
 
       <div class="form-group">
         <label for="username">Username</label>
         <input id="username" name="username" type="text" autocomplete="username"
-               {% if not prefill_username %}autofocus{% endif %} required
-               class="form-input" placeholder="your.username"
-               value="{{ prefill_username or '' }}">
+               autofocus required class="form-input" placeholder="your.username">
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password"
-               autocomplete="current-password"
-               {% if prefill_username and not require_totp %}autofocus{% endif %}
-               class="form-input" placeholder="••••••••">
-      </div>
-
-      <div class="form-group">
-        <label for="totp_code">
-          Authenticator code
-          {% if not require_totp %}<span class="form-hint" style="font-weight:400">(only if you've enabled two-factor)</span>{% endif %}
-        </label>
+        <label for="totp_code">Authenticator code</label>
         <input id="totp_code" name="totp_code" type="text" inputmode="numeric"
                pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code"
-               {% if require_totp %}required autofocus{% endif %}
-               class="form-input totp-input" placeholder="000000">
+               required class="form-input totp-input" placeholder="000000">
+        <p class="form-hint">6-digit code — auto-submits when complete</p>
       </div>
 
-      <div id="human-check" class="human-check" aria-live="polite">
-        <span class="human-spinner" aria-hidden="true"></span>
-        <span class="human-msg">Checking you're truly human…</span>
-      </div>
-
-      <button type="submit" id="login-submit" class="btn btn-primary btn-full" disabled>
-        <span id="login-submit-label">Hold on a sec…</span>
-      </button>
-      <noscript>
-        <p style="margin-top:10px;color:var(--c-red,#DC2626);font-size:12px;text-align:center;">
-          JavaScript is required to sign in (we use it to make sure you're a person, not a robot).
-        </p>
-      </noscript>
+      <button type="submit" class="btn btn-primary btn-full">Sign in</button>
     </form>
   </div>
 </div>
-
-<style>
-.human-check {
-  display:flex; align-items:center; gap:8px;
-  font-size:12px; color:var(--c-gray-500,#7A6A52);
-  margin:14px 0 10px; padding:8px 12px;
-  background:var(--c-gray-100,#EDE4D0);
-  border:1.5px solid var(--c-gray-200,#DDD0B8);
-  border-radius:6px; transition:background .3s, color .3s, border-color .3s;
-}
-.human-check.is-ok      { background:#D1FAE5; border-color:#A7F3D0; color:#065F46; }
-.human-check.is-fail    { background:#FEE2E2; border-color:#FCA5A5; color:#991B1B; }
-.human-spinner {
-  width:14px; height:14px; border-radius:50%;
-  border:2px solid var(--c-gray-300,#C4B49A);
-  border-top-color:var(--c-purple-500,#7C4A1E);
-  animation:human-spin .8s linear infinite;
-  flex-shrink:0;
-}
-.human-check.is-ok .human-spinner,
-.human-check.is-fail .human-spinner { display:none; }
-@keyframes human-spin { to { transform:rotate(360deg); } }
-</style>
 {% endblock %}
 
 {% block scripts %}
 <script>
 (function () {
-  var input    = document.getElementById('totp_code');
-  var form     = document.getElementById('login-form');
-  var nonceEl  = document.getElementById('human_nonce');
-  var proofEl  = document.getElementById('human_proof');
-  var btn      = document.getElementById('login-submit');
-  var btnLabel = document.getElementById('login-submit-label');
-  var check    = document.getElementById('human-check');
-  var msg      = check ? check.querySelector('.human-msg') : null;
-
-  if (input) {
-    input.addEventListener('input', function () {
-      this.value = this.value.replace(/\D/g, '');
-    });
-  }
-
-  // Playful list of "still verifying" lines — picked at random per load.
-  var quips = [
-    "Checking you're truly human…",
-    "Counting your fingers (should be ten)…",
-    "Looking for the soul behind the cursor…",
-    "Asking if you've ever cried at a song…",
-    "Verifying you blink occasionally…",
-    "Making sure you're not three crows in a trench coat…"
-  ];
-  if (msg) msg.textContent = quips[Math.floor(Math.random() * quips.length)];
-
-  var HUMAN_SALT = "gyra:i-am-a-real-human-being:v1";
-
-  function hexFromBuffer(buf) {
-    var bytes = new Uint8Array(buf), out = '';
-    for (var i = 0; i < bytes.length; i++) {
-      var h = bytes[i].toString(16);
-      out += h.length === 1 ? '0' + h : h;
+  var input = document.getElementById('totp_code');
+  var form  = document.getElementById('login-form');
+  if (!input || !form) return;
+  var submitted = false;
+  input.addEventListener('input', function () {
+    var v = this.value.replace(/\D/g, '');
+    this.value = v;
+    if (v.length === 6 && !submitted) {
+      submitted = true;
+      form.submit();
+      this.readOnly = true;   /* readOnly fields ARE submitted unlike disabled */
     }
-    return out;
-  }
-
-  function fail(reason) {
-    if (check) {
-      check.classList.add('is-fail');
-      if (msg) msg.textContent = reason || "Couldn't verify — try refreshing.";
-    }
-    if (btnLabel) btnLabel.textContent = "Refresh and try again";
-  }
-
-  function succeed(hex) {
-    proofEl.value = hex;
-    if (check) {
-      check.classList.add('is-ok');
-      if (msg) msg.textContent = "Human verified. Welcome back.";
-    }
-    if (btn) btn.disabled = false;
-    if (btnLabel) btnLabel.textContent = "Sign in";
-  }
-
-  if (!nonceEl || !proofEl || !btn) return;
-  var nonce = nonceEl.value || '';
-  if (!nonce) { fail("No challenge present."); return; }
-  if (!window.crypto || !crypto.subtle) {
-    fail("Your browser is too old for the human check.");
-    return;
-  }
-
-  // Tiny artificial delay so the message reads as deliberate, not flicker.
-  setTimeout(function () {
-    crypto.subtle
-      .digest('SHA-256', new TextEncoder().encode(nonce + HUMAN_SALT))
-      .then(function (buf) { succeed(hexFromBuffer(buf)); })
-      .catch(function ()  { fail("Verification failed."); });
-  }, 900);
+  });
 }());
 </script>
 {% endblock %}

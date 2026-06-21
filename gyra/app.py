@@ -120,29 +120,6 @@ def set_no_cache(response):
 
 register_all(app)
 
-
-# ── 404 handler: friendly page for deleted/missing stories ────────────────────
-@app.errorhandler(404)
-def _not_found(e):
-    from flask import render_template, request
-    path = request.path or ""
-    # Only the /story/... URLs get the branded "deleted" page; everything
-    # else uses Flask's default 404 (kept lightweight for API callers).
-    if path.startswith(("/story/", "/api/story/")):
-        # Extract the story ref (segment immediately after "story").
-        parts = [p for p in path.split("/") if p]
-        ref = None
-        if "story" in parts:
-            i = parts.index("story")
-            if i + 1 < len(parts):
-                ref = parts[i + 1]
-        if path.startswith("/api/"):
-            from flask import jsonify
-            return jsonify(error="story_not_found", ref=ref), 404
-        return render_template("story_missing.html", requested_ref=ref), 404
-    return e, 404
-
-
 # ── Entry-point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":

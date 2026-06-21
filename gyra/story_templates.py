@@ -1,198 +1,37 @@
-"""story_templates.py — GYRA story templates + composable AC blocks.
+"""story_templates.py — Canonical GYRA story templates.
 
-Templates here are *scaffolds* a writer can apply on the New-Story screen.
-The catalogue is intentionally small and modular — each template references
-zero or more **blocks** defined in ``story_blocks.md``. A block contributes
-its acceptance-criteria list when included. Tasks are NOT part of blocks —
-teams break work down their own way, so templates ship only a few generic
-tasks (or none) and let humans add the rest.
+Each template is a self-contained scaffold for a common kind of game-dev work.
+A template contains:
 
-UI navigation
--------------
-The picker is filtered by two axes:
+* `id`           — slug used by the UI to identify the template
+* `name`         — display name in the dropdown
+* `category`     — group label (e.g. "3D Models", "Bugs")
+* `type_hint`    — preferred story_type name (matched case-insensitively)
+* `actor`        — default story_actor
+* `verb`         — default story_verb
+* `z` / `x` / `for_conn` / `y` — grammar fields, may contain `{key}` placeholders
+* `description`  — multi-line description, may contain `{key}` placeholders
+* `acceptance`   — list[str] of acceptance criteria, may contain placeholders
+* `subtasks`     — list[str] of tasks to create, may contain placeholders
+* `questions`    — list of {key, label, placeholder} prompted to the user
+* `os_field`     — bool, prompt OS field (bugs)
+* `version_field`— bool, prompt software_version field (bugs)
 
-* ``type``    — feature, asset, design, bug, fix, chore, spike, docs, marketing
-* ``domain``  — game, app, web, corporate, cicd, devops, tech, content
-
-Both fields live on every template.
-
-Block composition
------------------
-A template specifies ``blocks=[...]``. The user can toggle additional blocks
-on/off in the apply modal — final AC list is the de-duplicated union of all
-selected blocks' ACs (preserving block order, AC order within each block).
-
-Placeholders
-------------
-Fields and tasks may contain ``{key}`` tokens. Each token must have a matching
-``questions`` entry. Skipped answers render as ``[key]`` so the writer can spot
-them.
+Placeholders are simple `{key}` tokens. If a question is left blank, the token
+is replaced with the placeholder text wrapped in brackets so the writer can
+spot what they skipped.
 """
 
-from __future__ import annotations
+# ── Helper builder to keep the list below readable ──────────────────────────
 
-import os
-import re
-from typing import Dict, List
-
-
-# ── Block loader ────────────────────────────────────────────────────────────
-
-_BLOCKS_PATH = os.path.join(os.path.dirname(__file__), "story_blocks.md")
-
-
-def _parse_blocks(path: str) -> Dict[str, dict]:
-    """Parse ``story_blocks.md`` into ``{id: {id, name, description, tasks, acs}}``.
-
-    Recognised structure per block::
-
-        ## block-id — Display name
-        _Optional one-line description._
-        ### Tasks
-        - task line 1
-        - task line 2
-        ### ACs
-        - acceptance criterion 1
-
-    Either section may be omitted. Bullets that appear before any ``###``
-    heading are treated as ACs (legacy single-section format).
-    """
-    if not os.path.exists(path):
-        return {}
-    with open(path, "r", encoding="utf-8") as fh:
-        text = fh.read()
-
-    blocks: Dict[str, dict] = {}
-    current = None
-    section = "acs"  # default: bullets without a heading land in ACs
-    in_fence = False
-    # Accept "—", "–" or "-" as the separator between id and name.
-    header_re = re.compile(r"^##\s+([a-z0-9][a-z0-9\-]*)\s+[—–\-]\s+(.+?)\s*$")
-    desc_re = re.compile(r"^_(.+?)_\s*$")
-    section_re = re.compile(r"^###\s+(.+?)\s*$")
-    bullet_re = re.compile(r"^[-*]\s+(.+?)\s*$")
-
-    for raw in text.splitlines():
-        line = raw.rstrip()
-        if line.startswith("```"):
-            in_fence = not in_fence
-            continue
-        if in_fence:
-            continue
-        m = header_re.match(line)
-        if m:
-            bid, name = m.group(1), m.group(2)
-            current = {"id": bid, "name": name, "description": "",
-                       "tasks": [], "acs": []}
-            blocks[bid] = current
-            section = "acs"
-            continue
-        if current is None:
-            continue
-        m = section_re.match(line)
-        if m:
-            label = m.group(1).strip().lower()
-            if label.startswith("task"):
-                section = "tasks"
-            elif label.startswith("ac"):
-                section = "acs"
-            else:
-                section = "acs"
-            continue
-        m = desc_re.match(line)
-        if m and not current["acs"] and not current["tasks"]:
-            current["description"] = m.group(1)
-            continue
-        m = bullet_re.match(line)
-        if m:
-            current[section].append(m.group(1))
-            continue
-        # any other line (blank, prose) is ignored
-    return blocks
-
-
-BLOCKS: Dict[str, dict] = _parse_blocks(_BLOCKS_PATH)
-
-
-# ── Types & domains ─────────────────────────────────────────────────────────
-
-TYPES = [
-    {"id": "feature",   "name": "Feature"},
-    {"id": "asset",     "name": "Asset"},
-    {"id": "design",    "name": "Design"},
-    {"id": "bug",       "name": "Bug"},
-    {"id": "fix",       "name": "Fix"},
-    {"id": "chore",     "name": "Chore"},
-    {"id": "spike",     "name": "Spike / Research"},
-    {"id": "docs",      "name": "Docs"},
-    {"id": "marketing", "name": "Marketing"},
-]
-
-DOMAINS = [
-    {"id": "game",      "name": "Game"},
-    {"id": "app",       "name": "App"},
-    {"id": "web",       "name": "Web"},
-    {"id": "corporate", "name": "Corporate"},
-    {"id": "cicd",      "name": "CI / CD"},
-    {"id": "devops",    "name": "DevOps"},
-    {"id": "tech",      "name": "Tech / Infra"},
-    {"id": "content",   "name": "Content"},
-]
-
-
-# ── Helpers ─────────────────────────────────────────────────────────────────
-
-# Inline question syntax: {Question text?}  — the text (incl. the ?) is the key.
-# Same exact text in two places = one question, asked once, substituted everywhere.
-_INLINE_Q_RE = re.compile(r"\{([^{}]+?\?)\}")
-
-
-def _collect_inline_questions(strings: List[str]) -> List[str]:
-    seen = set()
-    out: List[str] = []
-    for s in strings:
-        if not s:
-            continue
-        for m in _INLINE_Q_RE.finditer(s):
-            q = m.group(1).strip()
-            if q in seen:
-                continue
-            seen.add(q)
-            out.append(q)
-    return out
-
-
-def _t(id, name, type, domain, type_hint, actor, verb, z, x, for_conn, y,
-       description, blocks=None, tasks=None, questions=None,
+def _t(id, name, category, type_hint, actor, verb, z, x, for_conn, y,
+       description, acceptance, subtasks, questions,
        os_field=False, version_field=False):
-    block_ids = list(blocks or [])
-    task_list = list(tasks or [])
-    # Gather every string a user might see, so inline {question?} placeholders
-    # found inside block tasks or ACs are surfaced alongside template-level ones.
-    scan = [name, description, z, x, for_conn, y] + task_list
-    for bid in block_ids:
-        b = BLOCKS.get(bid)
-        if not b:
-            continue
-        scan.append(b.get("name", ""))
-        scan.append(b.get("description", ""))
-        scan.extend(b.get("tasks", []))
-        scan.extend(b.get("acs", []))
-    inline_qs = _collect_inline_questions(scan)
     return dict(
-        id=id, name=name, type=type, domain=domain, type_hint=type_hint,
+        id=id, name=name, category=category, type_hint=type_hint,
         actor=actor, verb=verb, z=z, x=x, for_conn=for_conn, y=y,
-        description=description,
-        blocks=block_ids,
-        tasks=task_list,
-        questions=list(questions or []),
-        inline_questions=inline_qs,
-        os_field=os_field, version_field=version_field,
-        # Resolved on demand by clients; included pre-resolved for convenience.
-        acceptance=_resolve_acs(block_ids),
-        # Legacy alias kept for older UI code.
-        subtasks=task_list,
-        category=name.split("—")[0].strip() if "—" in name else name,
+        description=description, acceptance=acceptance, subtasks=subtasks,
+        questions=questions, os_field=os_field, version_field=version_field,
     )
 
 
@@ -200,236 +39,989 @@ def _q(key, label, placeholder=""):
     return dict(key=key, label=label, placeholder=placeholder)
 
 
-def _resolve_acs(block_ids: List[str]) -> List[str]:
-    """Flatten the AC lists of the given blocks (in order, de-duped)."""
-    seen = set()
-    out: List[str] = []
-    for bid in block_ids:
-        b = BLOCKS.get(bid)
-        if not b:
-            continue
-        for ac in b["acs"]:
-            if ac in seen:
-                continue
-            seen.add(ac)
-            out.append(ac)
-    return out
-
-
-# ── Templates ───────────────────────────────────────────────────────────────
-#
-# Question wording in each template field MUST exactly match the wording used
-# in the referenced block's tasks / ACs — same text inside `{...?}` braces =
-# one prompt that fills every occurrence.
+# ── 40 templates ────────────────────────────────────────────────────────────
 
 TEMPLATES = [
 
-    # ── GAME — ASSETS ─────────────────────────────────────────────────────
-    _t("char-3d", "3D Character", "asset", "game", "Art",
-       "User", "needs", "Seeing", "{character name?} in-game", "to",
-       "have a character in the world",
-       "Model, rig, animate and place {character name?} in-game. "
-       "Under {how many tris for model?} tris.",
-       blocks=["3d-base", "3d-rig-anim", "3d-place"]),
+    # ── 3D MODELS ──────────────────────────────────────────────────────────
+    _t("char-model", "Character — 3D Model", "3D Models", "Art",
+       "Player", "needs", "Breathing", "life into {name}", "to",
+       "meet a playable {name} in-engine",
+       "Build the production 3D mesh for the {name} character. Reference sheet and silhouette must be approved before high-poly begins.",
+       ["Mesh matches concept silhouette",
+        "Tri-count under {tricount}",
+        "Clean topology with edge loops at deformation areas",
+        "UVs unwrapped and packed",
+        "Exported FBX imports cleanly into engine"],
+       ["Block-out from concept",
+        "High-poly sculpt",
+        "Retopo to game mesh",
+        "UV unwrap",
+        "Engine import test"],
+       [_q("name", "Character name", "e.g. Amy, Carver, Pixel"),
+        _q("tricount", "Target tri-count", "e.g. 35k")]),
 
-    _t("prop-3d", "3D Prop", "asset", "game", "Art",
-       "User", "needs", "Seeing", "{prop name?} in-game", "to",
-       "have an object in the world",
-       "Model and place {prop name?} in-game. No rig or animation. "
-       "Under {how many tris for model?} tris.",
-       blocks=["3d-base", "3d-place"]),
+    _t("prop-model", "Prop — 3D Model", "3D Models", "Art",
+       "Player", "needs", "Breathing", "a {prop} into {area}", "to",
+       "feel {area} as a lived-in place",
+       "Build a game-ready 3D model for a {prop}. Placed in {area}.",
+       ["Mesh under {tricount} triangles",
+        "Single material slot",
+        "LOD0 + LOD1 generated",
+        "Collision mesh authored"],
+       ["Block-out", "High-to-low bake", "Texture pass", "LODs + collision", "Engine import"],
+       [_q("prop", "Prop name", "e.g. wooden crate, lantern"),
+        _q("area", "Where it goes", "e.g. Chapter 2 alley"),
+        _q("tricount", "Target tri-count", "e.g. 3k")]),
 
-    _t("env-kit", "Environment Kit", "asset", "game", "Art",
-       "User", "needs", "Seeing", "a {kit name?} built in {target area?}", "to",
-       "have a place in the world",
-       "Modular {kit name?} kit ready to assemble {target area?}.",
-       blocks=["env-modular"]),
+    _t("env-modular", "Environment — Modular Kit", "3D Models", "Art",
+       "Designer", "needs", "Breathing", "the {kit} kit into existence", "to",
+       "build {area} levels fast",
+       "Author a modular building kit for {area}. Pieces must snap on a {grid_unit} grid.",
+       ["All pieces snap on {grid_unit} grid",
+        "Trim sheet UVs shared across kit",
+        "Kit demo scene assembled",
+        "No visible seams at corners"],
+       ["Greybox kit pieces", "Trim sheet design", "Final geometry pass", "Demo scene", "Handoff doc"],
+       [_q("kit", "Kit name", "e.g. Brick Alley, Sewer"),
+        _q("area", "Where used", "e.g. Chapter 3"),
+        _q("grid_unit", "Grid unit", "e.g. 1m, 50cm")]),
 
-    _t("vfx-shader", "VFX / Shader", "asset", "game", "Art",
-       "User", "needs", "Seeing", "{effect name?} fire on {trigger?}", "to",
-       "have visual flare in the world",
-       "Author the {effect name?} VFX / shader, triggered by {trigger?}.",
-       blocks=["shader-base"]),
+    _t("vehicle-model", "Vehicle — 3D Model", "3D Models", "Art",
+       "Player", "must", "Moving", "in the {vehicle}", "to",
+       "complete {level} traversal",
+       "Model the {vehicle}. Must be drivable in-engine with separate wheel meshes.",
+       ["Wheels separated for rotation",
+        "Interior modelled to camera-safe level",
+        "Damage states block-out present",
+        "Materials: paint, glass, metal"],
+       ["Block-out", "Body mesh", "Wheels + interior", "Material setup", "Drivable test"],
+       [_q("vehicle", "Vehicle name", "e.g. patrol car"),
+        _q("level", "Where it appears", "e.g. Highway chase")]),
 
-    _t("audio-sfx", "Audio / SFX", "asset", "game", "Art",
-       "User", "needs", "Hearing", "{sound name?}", "to",
-       "have sound in the world",
-       "Author SFX bundle for {sound name?} with {how many variations?} variations.",
-       blocks=["audio-base"]),
+    _t("weapon-model", "Weapon — 3D Model", "3D Models", "Art",
+       "Player", "wants", "Acting", "with the {weapon} in hand", "to",
+       "fight through {level}",
+       "Build the {weapon} model in first-person + third-person scale.",
+       ["FP and TP variants exported",
+        "Tri-count under {tricount}",
+        "Attachment points for muzzle/mag/scope"],
+       ["Concept lock", "High-poly", "Low-poly + bake", "Attachment sockets", "Engine import"],
+       [_q("weapon", "Weapon name", "e.g. revolver, baton"),
+        _q("tricount", "Target tri-count", "e.g. 8k"),
+        _q("level", "Where used", "e.g. Chapter 4")]),
 
-    _t("video-trailer", "Trailer / Cinematic", "content", "game", "Art",
-       "User", "needs", "Watching", "{video name?}", "to",
-       "have a video about the product",
-       "Produce the {video name?} video.",
-       blocks=["video-base"]),
+    # ── TEXTURES ───────────────────────────────────────────────────────────
+    _t("texture-pbr", "Texture — PBR Set", "Textures", "Art",
+       "Player", "needs", "Breathing", "{material} onto {target}", "to",
+       "believe the surface is real",
+       "Author a tileable PBR set for {material}: BaseColor, Normal, Roughness, AO, Height.",
+       ["Maps tile seamlessly",
+        "Resolution {res}",
+        "Roughness reads correctly in test scene",
+        "File naming follows project convention"],
+       ["Reference gather", "Substance graph", "Map export", "Engine material setup", "Tile test"],
+       [_q("material", "Material name", "e.g. cracked concrete"),
+        _q("target", "Where used", "e.g. Chapter 1 streets"),
+        _q("res", "Resolution", "e.g. 2048")]),
 
-    # ── GAME — FEATURES / DESIGN ──────────────────────────────────────────
-    _t("ui-screen", "UI Screen", "feature", "game", "Feature",
-       "User", "needs", "Using", "the {screen name?} screen", "to",
-       "have access to that feature",
-       "Build the {screen name?} UI screen.",
-       blocks=["ui-screen"]),
+    _t("texture-trim", "Texture — Trim Sheet", "Textures", "Art",
+       "Designer", "needs", "Breathing", "the {name} trim sheet to life", "to",
+       "clothe the {kit} modular kit",
+       "Build a trim sheet supporting the {kit} kit. Must cover all common trim widths.",
+       ["Covers 8/16/32/64 trim widths",
+        "Material variations included",
+        "Demo geo using sheet present"],
+       ["Layout planning", "High-poly elements", "Bake to sheet", "Material variants", "Kit demo"],
+       [_q("name", "Trim sheet name", "e.g. Industrial-A"),
+        _q("kit", "Kit it serves", "e.g. Sewer kit")]),
 
-    _t("mechanic", "Gameplay Mechanic", "feature", "game", "Feature",
-       "User", "needs", "Performing", "{mechanic name?}", "to",
-       "have a new action available",
-       "Design and build the {mechanic name?} mechanic.",
-       blocks=["mechanic-design"]),
+    _t("texture-decal", "Texture — Decal Pack", "Textures", "Art",
+       "Player", "wants", "Breathing", "{theme} wear into {area}", "to",
+       "feel {area} has a history",
+       "Pack of {count} decals themed {theme}.",
+       ["{count} unique decals",
+        "Alpha channel clean at edges",
+        "Engine decal actor preset created"],
+       ["Reference + plan", "Authoring pass", "Alpha cleanup", "Engine preset"],
+       [_q("theme", "Decal theme", "e.g. graffiti, blood"),
+        _q("count", "How many", "e.g. 12"),
+        _q("area", "Where used", "e.g. Chapter 2")]),
 
-    _t("level-design", "Level Design", "design", "game", "Feature",
-       "User", "needs", "Playing", "{level name?}", "to",
-       "have a level to play",
-       "Design and ship the {level name?} level.",
-       blocks=["level-base"]),
+    _t("texture-vfx", "Texture — VFX Sheet", "Textures", "Art",
+       "Player", "must", "Acting", "on the {effect} flash", "to",
+       "react to the gameplay event",
+       "Author flipbook/noise textures for {effect}.",
+       ["Flipbook plays smoothly",
+        "Alpha premultiplied correctly",
+        "Hooked into VFX system"],
+       ["Flipbook capture/sim", "Texture export", "VFX graph setup", "In-engine test"],
+       [_q("effect", "Effect name", "e.g. muzzle flash, smoke")]),
 
-    _t("balance-pass", "Balance / Tuning Pass", "design", "game", "Feature",
-       "User", "needs", "Playing", "a re-tuned {system to rebalance?}", "to",
-       "have balanced play",
-       "Targeted balance pass on {system to rebalance?} to fix "
-       "{symptom we are fixing?}.",
-       blocks=["balance-base"]),
+    # ── LEVELS ─────────────────────────────────────────────────────────────
+    _t("level-greybox", "Level — Greybox", "Levels", "Design",
+       "Player", "must", "Moving", "through {level}'s greybox", "to",
+       "prove the flow before art is made",
+       "Block-out the {level} level with placeholder geometry. Focus on flow and combat spaces.",
+       ["Player can traverse start → end",
+        "All combat arenas blocked out",
+        "Critical-path objectives placed",
+        "Lighting set to neutral whitebox"],
+       ["Paper design pass", "Greybox geo", "Player path test", "Combat arena pass", "Playtest notes"],
+       [_q("level", "Level name", "e.g. Sewer Run")]),
 
-    _t("game-bug", "Game Bug", "bug", "game", "Bug",
-       "User", "needs", "Playing", "without {what is broken?}", "to",
-       "have a working game",
-       "Reproduce and fix: {what is broken?}.",
-       blocks=["bug-repro"],
+    _t("level-art-pass", "Level — Art Pass", "Levels", "Art",
+       "Player", "wants", "Breathing", "final art into {level}", "to",
+       "feel the world instead of grey blocks",
+       "Replace greybox geometry with final art in {level}.",
+       ["All greybox geo swapped",
+        "Lighting first pass complete",
+        "Performance budget met"],
+       ["Set dressing", "Lighting first pass", "Polish lighting", "Perf audit"],
+       [_q("level", "Level name")]),
+
+    _t("level-lighting", "Level — Lighting", "Levels", "Art",
+       "Player", "must", "Breathing", "{mood} light through {level}", "to",
+       "feel the place and read the path",
+       "Author full lighting for {level}. Mood: {mood}.",
+       ["Mood matches concept ({mood})",
+        "Key path readable at night",
+        "Bakes complete with no light leaks"],
+       ["Direct light pass", "Bounce/skylight", "Bake + polish", "Perf check"],
+       [_q("level", "Level name"),
+        _q("mood", "Lighting mood", "e.g. oppressive, hopeful")]),
+
+    _t("level-collision", "Level — Collision Pass", "Levels", "Design",
+       "Player", "must", "Protecting", "players from {level}'s holes", "to",
+       "never fall through the world",
+       "Audit and author collision meshes for {level}.",
+       ["No reachable holes",
+        "Player can't escape playable area",
+        "Collision simpler than render mesh"],
+       ["Collision audit", "Author missing collision", "Playtest sweep"],
+       [_q("level", "Level name")]),
+
+    _t("level-nav", "Level — Navmesh", "Levels", "Design",
+       "Player", "must", "Moving", "AI across {level}", "to",
+       "feel hunted instead of safe",
+       "Generate and tweak navmesh for {level}. Verify AI can reach all combat positions.",
+       ["Navmesh covers all walkable area",
+        "AI reaches every combat slot",
+        "No off-mesh links broken"],
+       ["Initial bake", "Off-mesh link audit", "AI patrol test"],
+       [_q("level", "Level name")]),
+
+    # ── CHARACTERS (design → game) ─────────────────────────────────────────
+    _t("char-concept", "Character — Concept", "Characters", "Design",
+       "Designer", "needs", "Breathing", "{name}'s look to life", "to",
+       "lock who they are before production",
+       "Concept art pass for {name}. Role: {role}.",
+       ["Silhouette test passes",
+        "Front/side/back orthos delivered",
+        "Color script approved"],
+       ["Mood research", "Silhouette explorations", "Refined ortho", "Color call-outs"],
+       [_q("name", "Character name"),
+        _q("role", "Role in story", "e.g. antagonist")]),
+
+    _t("char-rig", "Character — Rig", "Characters", "Tech Art",
+       "Player", "needs", "Moving", "{name}'s body believably", "to",
+       "see a character instead of a puppet",
+       "Production rig for {name}. Includes IK/FK switching and face controls.",
+       ["IK/FK on arms and legs",
+        "Face rig with {face_ctrls} controls",
+        "Skin weights pass visual inspection"],
+       ["Skeleton", "Skinning", "IK/FK", "Face rig", "Animator handoff"],
+       [_q("name", "Character name"),
+        _q("face_ctrls", "Face controls", "e.g. 24")]),
+
+    _t("char-anim-set", "Character — Locomotion Set", "Characters", "Animation",
+       "Player", "must", "Moving", "{name} like they're alive", "to",
+       "feel the character through every step",
+       "Author the locomotion animation set for {name}: idle, walk, run, sprint, jump, land.",
+       ["All 6 anims looping cleanly",
+        "Blend-tree integrated",
+        "Foot IK does not skate"],
+       ["Idle + walk", "Run + sprint", "Jump + land", "Blend tree", "In-engine polish"],
+       [_q("name", "Character name")]),
+
+    _t("char-vo", "Character — VO Lines", "Characters", "Audio",
+       "Player", "must", "Breathing", "voice into {name}", "to",
+       "feel the world react out loud",
+       "Record and integrate combat/idle barks for {name}.",
+       ["At least {count} unique lines",
+        "Lines triggered by gameplay events",
+        "Loudness normalized"],
+       ["Script", "Studio session", "Edit + master", "Engine hookup"],
+       [_q("name", "Character name"),
+        _q("count", "Line count", "e.g. 30")]),
+
+    _t("char-ability", "Character — Ability", "Characters", "Design",
+       "Player", "must", "Acting", "through {name}'s {ability}", "to",
+       "{outcome}",
+       "Design and implement the {ability} ability for {name}.",
+       ["Ability triggers on input",
+        "VFX + audio hooked up",
+        "Cooldown {cooldown}s",
+        "Tutorial prompt added"],
+       ["Design doc", "Prototype script", "VFX + SFX", "Tuning pass"],
+       [_q("name", "Character"),
+        _q("ability", "Ability name", "e.g. Dash"),
+        _q("outcome", "What it lets the player do", "e.g. escape combat"),
+        _q("cooldown", "Cooldown seconds", "e.g. 5")]),
+
+    # ── FEATURES ──────────────────────────────────────────────────────────
+    _t("feature-system", "Feature — Gameplay System", "Features", "Feature",
+       "Player", "must", "Acting", "through the {system}", "to",
+       "{outcome}",
+       "Build the {system} gameplay system end-to-end. Owner: {owner}.",
+       ["System responds to player input",
+        "Persists across save/load",
+        "UI surface implemented",
+        "Telemetry events fire"],
+       ["Tech design doc", "Core script", "UI hookup", "Save/load", "Polish + tune"],
+       [_q("system", "System name", "e.g. Inventory, Crafting"),
+        _q("outcome", "What it enables", "e.g. manage gear"),
+        _q("owner", "Owning team", "e.g. Systems team")]),
+
+    _t("feature-ui", "Feature — UI Screen", "Features", "Feature",
+       "Player", "needs", "Acting", "from the {screen} screen", "to",
+       "{outcome}",
+       "Implement the {screen} UI. Style follows the design system.",
+       ["Pixel-matches mockup at {res}",
+        "Controller + KB/M navigation works",
+        "Localized strings hooked up",
+        "Empty/loading/error states present"],
+       ["Markup", "Bindings", "Controller nav", "Visual polish", "Localization wire-up"],
+       [_q("screen", "Screen name", "e.g. Settings"),
+        _q("outcome", "What it lets them do"),
+        _q("res", "Reference resolution", "e.g. 1920x1080")]),
+
+    _t("feature-input", "Feature — Input Binding", "Features", "Feature",
+       "Player", "must", "Acting", "on the {action} input", "to",
+       "control their character on any device",
+       "Add rebindable input for {action} across KB/M and gamepad.",
+       ["Default binding works on both devices",
+        "User can rebind in Settings",
+        "Conflicts highlighted in UI"],
+       ["Action map entry", "Default bindings", "Settings UI hookup"],
+       [_q("action", "Action name", "e.g. Jump, Crouch")]),
+
+    _t("feature-save", "Feature — Save Slot", "Features", "Feature",
+       "Player", "needs", "Protecting", "their {state} across sessions", "to",
+       "trust the game with their time",
+       "Persist {state} across sessions in the save system.",
+       ["Save round-trips on game restart",
+        "Version-tagged for migration",
+        "Corrupt saves fail gracefully"],
+       ["Schema", "Serializer", "Migration path", "Corruption test"],
+       [_q("state", "What is saved", "e.g. inventory, progression")]),
+
+    # ── BACKEND ───────────────────────────────────────────────────────────
+    _t("backend-endpoint", "Backend — API Endpoint", "Backend", "Backend",
+       "Player", "needs", "Acting", "through the {endpoint} endpoint", "to",
+       "{purpose}",
+       "Implement `{method} {endpoint}`. Auth: {auth}.",
+       ["Returns 200 with valid payload",
+        "Returns 4xx with explanatory body on bad input",
+        "Auth enforced",
+        "Integration test covers happy + sad path"],
+       ["Schema", "Handler", "Auth wiring", "Tests", "Docs"],
+       [_q("method", "HTTP method", "e.g. POST"),
+        _q("endpoint", "Path", "e.g. /api/player/inventory"),
+        _q("purpose", "What it does"),
+        _q("auth", "Auth scheme", "e.g. Bearer JWT")]),
+
+    _t("backend-schema", "Backend — DB Schema Change", "Backend", "Backend",
+       "Developer", "needs", "Protecting", "{table} data through migration", "to",
+       "support {purpose}",
+       "Add/alter columns on `{table}` to support {purpose}.",
+       ["Migration runs forward",
+        "Migration runs backward",
+        "No data loss on existing rows",
+        "Indexes updated"],
+       ["Write migration", "Test on staging copy", "Update ORM", "Backfill if needed"],
+       [_q("table", "Table name"),
+        _q("purpose", "Why")]),
+
+    _t("backend-job", "Backend — Scheduled Job", "Backend", "Backend",
+       "Player", "must", "Acting", "on the {job} schedule", "to",
+       "{purpose}",
+       "Author a scheduled job: {job}. Frequency: {freq}.",
+       ["Job runs at {freq}",
+        "Failure alerts the on-call channel",
+        "Idempotent — safe to re-run"],
+       ["Job script", "Scheduler entry", "Alerting hook", "Idempotency test"],
+       [_q("job", "Job name", "e.g. nightly inventory rollup"),
+        _q("freq", "Frequency", "e.g. 0 3 * * *"),
+        _q("purpose", "What it accomplishes")]),
+
+    _t("backend-cache", "Backend — Cache Layer", "Backend", "Backend",
+       "Player", "needs", "Protecting", "the DB from {resource} load", "to",
+       "keep the game snappy under traffic",
+       "Add caching for {resource}. TTL: {ttl}s.",
+       ["Cache hit rate measured",
+        "Invalidation hooked to writes",
+        "TTL configurable"],
+       ["Cache wrapper", "Invalidation", "Metrics"],
+       [_q("resource", "Resource name"),
+        _q("ttl", "TTL seconds", "e.g. 300")]),
+
+    # ── MAINTENANCE ───────────────────────────────────────────────────────
+    _t("maint-update", "Maintenance — Dependency Update", "Maintenance", "Chore",
+       "Player", "must", "Protecting", "us via the {package} update", "to",
+       "patch {reason}",
+       "Update `{package}` from {from_ver} to {to_ver}.",
+       ["All tests pass after upgrade",
+        "Breaking changes documented",
+        "Lockfile committed"],
+       ["Read changelog", "Bump version", "Run tests", "Smoke test app"],
+       [_q("package", "Package name"),
+        _q("from_ver", "From version"),
+        _q("to_ver", "To version"),
+        _q("reason", "Why now", "e.g. CVE, perf, feature")]),
+
+    _t("maint-refactor", "Maintenance — Refactor", "Maintenance", "Chore",
+       "Developer", "needs", "Improving", "{target} without breaking it", "to",
+       "{goal}",
+       "Refactor `{target}` to {goal}. No behavior change.",
+       ["Tests pass unchanged",
+        "No regression in QA smoke",
+        "Code review approved by domain owner"],
+       ["Plan diff", "Apply refactor", "Run full test suite", "Manual smoke"],
+       [_q("target", "Module/class"),
+        _q("goal", "Refactor goal", "e.g. split into 2 modules")]),
+
+    _t("maint-cleanup", "Maintenance — Dead Code Removal", "Maintenance", "Chore",
+       "Developer", "must", "Protecting", "the build by deleting {target}", "to",
+       "shrink build size and remove footguns",
+       "Remove dead code in {target}. Verified unreachable by static analysis.",
+       ["Nothing imports the removed code",
+        "Build size shrinks",
+        "Tests still pass"],
+       ["Static analysis report", "Delete code", "Test"],
+       [_q("target", "Area / module")]),
+
+    _t("maint-perf", "Maintenance — Performance Pass", "Maintenance", "Chore",
+       "Player", "must", "Protecting", "60fps in {scene}", "to",
+       "keep the game silky smooth",
+       "Find and fix the worst perf offenders in {scene}.",
+       ["Frame time under {budget}ms on {target_hw}",
+        "GPU + CPU profile attached to story"],
+       ["Capture profile", "Identify hotspots", "Fix top 3", "Re-profile"],
+       [_q("scene", "Scene/level"),
+        _q("budget", "Frame budget ms", "e.g. 16.6"),
+        _q("target_hw", "Target hardware", "e.g. PS5, mid-PC")]),
+
+    # ── TECH ART ──────────────────────────────────────────────────────────
+    _t("ta-shader", "Tech Art — Shader", "Tech Art", "Tech Art",
+       "Player", "needs", "Breathing", "{effect} through the {name} shader", "to",
+       "see the world look like itself",
+       "Author the {name} shader. Targets {platform}.",
+       ["Compiles on all target platforms",
+        "Cost under {cost} instructions",
+        "Exposes parameters for art tuning"],
+       ["Reference / breakdown", "Master shader", "Parameter UI", "Perf check"],
+       [_q("name", "Shader name"),
+        _q("effect", "What it does"),
+        _q("platform", "Target platform"),
+        _q("cost", "Instruction budget", "e.g. 80")]),
+
+    _t("ta-tool-rig", "Tech Art — Rigging Tool", "Tech Art", "Tools",
+       "Animator", "needs", "Acting", "through the {tool} rig tool", "to",
+       "{outcome}",
+       "Maya/Blender tool to {outcome}.",
+       ["One-click runs in target DCC",
+        "Operates on selection",
+        "Has undo support"],
+       ["Spec", "Implementation", "DCC test", "Animator demo"],
+       [_q("tool", "Tool name"),
+        _q("outcome", "What it does for them")]),
+
+    _t("ta-shader-graph", "Tech Art — VFX Graph", "Tech Art", "Tech Art",
+       "Player", "must", "Acting", "on the {effect} VFX graph", "to",
+       "react to gameplay viscerally",
+       "Build a VFX graph node setup for {effect}.",
+       ["Graph reusable across spawners",
+        "Parameter-driven (no hardcoded numbers)"],
+       ["Reference", "Graph build", "Spawner integration"],
+       [_q("effect", "Effect name")]),
+
+    # ── TOOLS ─────────────────────────────────────────────────────────────
+    _t("tool-editor", "Tools — Editor Tool", "Tools", "Tools",
+       "Developer", "needs", "Acting", "through {tool} in the editor", "to",
+       "{outcome}",
+       "Build editor tool `{tool}`. {outcome}.",
+       ["Accessible from {menu_path}",
+        "Persists last settings",
+        "Logs actions to console"],
+       ["UI", "Logic", "Persistence", "Docs page"],
+       [_q("tool", "Tool name"),
+        _q("outcome", "What it lets the user do"),
+        _q("menu_path", "Where it lives", "e.g. Window > GYRA > {tool}")]),
+
+    _t("tool-cli", "Tools — CLI Script", "Tools", "Tools",
+       "Developer", "needs", "Acting", "via the {script} CLI", "to",
+       "{outcome}",
+       "Author a CLI script `{script}` to {outcome}.",
+       ["`--help` describes all flags",
+        "Exits non-zero on error",
+        "Dry-run flag exists"],
+       ["Skeleton", "Flags + help", "Core logic", "Dry-run mode"],
+       [_q("script", "Script name"),
+        _q("outcome", "What it does")]),
+
+    _t("tool-import", "Tools — Asset Importer", "Tools", "Tools",
+       "Artist", "needs", "Breathing", "{asset_kind} into the engine automatically", "to",
+       "skip manual checkbox-clicking",
+       "Automate import settings for {asset_kind} so artists don't touch checkboxes.",
+       ["Detects {asset_kind} by naming convention",
+        "Applies correct settings",
+        "Logs what it changed"],
+       ["Hook", "Detection", "Settings application", "Logging"],
+       [_q("asset_kind", "Asset kind", "e.g. character textures")]),
+
+    # ── BUGS ──────────────────────────────────────────────────────────────
+    _t("bug-visual", "Bug — Visual", "Bugs", "Bug",
+       "Player", "must", "Fixing", "{symptom}", "to",
+       "see the game correctly",
+       "Visual bug: {symptom}.\n\n"
+       "**System:** {system}\n"
+       "**Version:** affects software version below\n"
+       "**OS:** see OS field\n\n"
+       "**Repro steps:**\n{repro}",
+       ["Symptom no longer reproduces on listed OS/version",
+        "Regression test added if feasible",
+        "QA verifies on 2nd machine"],
+       ["Reproduce locally", "Find root cause", "Fix", "Verify on second machine"],
+       [_q("symptom", "What you see vs expected", "e.g. character has pink texture"),
+        _q("system", "Which system / area", "e.g. Character rendering"),
+        _q("repro", "Steps to reproduce", "1. ... 2. ... 3. ...")],
        os_field=True, version_field=True),
 
-    # ── WEB / APP — FEATURES ──────────────────────────────────────────────
-    _t("web-page", "Web Page", "feature", "web", "Feature",
-       "User", "needs", "Reading", "the {page path or name?} page", "to",
-       "have the information on that page",
-       "Build and ship the {page path or name?} page.",
-       blocks=["web-page"]),
-
-    _t("ui-component", "UI Component", "feature", "web", "Feature",
-       "User", "needs", "Using", "the {component name?} across the product", "to",
-       "have a consistent interface",
-       "Build reusable {component name?} component.",
-       blocks=["component-base"]),
-
-    _t("api-endpoint", "API Endpoint", "feature", "app", "Feature",
-       "User", "needs", "Calling", "{HTTP method?} {endpoint path?}", "to",
-       "have the action that endpoint provides",
-       "Ship the {HTTP method?} {endpoint path?} endpoint.",
-       blocks=["api-base"]),
-
-    _t("app-bug", "App / Web Bug", "bug", "app", "Bug",
-       "User", "needs", "Using", "the product without {what is broken?}", "to",
-       "have a working product",
-       "Reproduce and fix: {what is broken?}.",
-       blocks=["bug-repro"],
+    _t("bug-crash", "Bug — Crash", "Bugs", "Bug",
+       "Player", "must", "Fixing", "{summary} crash", "to",
+       "keep playing",
+       "Crash: {summary}.\n\n"
+       "**Stack trace / error:**\n```\n{stack}\n```\n\n"
+       "**Repro:**\n{repro}",
+       ["Crash no longer occurs",
+        "Cause documented in commit",
+        "Telemetry alert added if applicable"],
+       ["Reproduce", "Stack-trace analysis", "Fix", "Add telemetry"],
+       [_q("summary", "Crash summary", "e.g. crash on level load"),
+        _q("stack", "Stack/error text"),
+        _q("repro", "Repro steps")],
        os_field=True, version_field=True),
 
-    # ── INFRA / DEVOPS / CI ───────────────────────────────────────────────
-    _t("db-mig", "DB Migration", "chore", "tech", "Chore",
-       "Admin", "needs", "Running", "data on {table or collection?} on the new schema", "to",
-       "have the data ready for new features",
-       "Schema migration for {table or collection?}.",
-       blocks=["db-mig"]),
+    _t("bug-perf", "Bug — Performance", "Bugs", "Bug",
+       "Player", "must", "Restoring", "{scene} performance", "to",
+       "play smoothly",
+       "Perf bug in {scene}. Observed {observed_fps}fps, target {target_fps}fps.\n\n"
+       "**Repro:**\n{repro}",
+       ["Frame rate back to target ({target_fps}fps)",
+        "Profile capture attached before/after"],
+       ["Profile capture", "Identify hotspot", "Fix", "Verify"],
+       [_q("scene", "Scene / area"),
+        _q("observed_fps", "Observed fps", "e.g. 28"),
+        _q("target_fps", "Target fps", "e.g. 60"),
+        _q("repro", "How to reproduce")],
+       os_field=True, version_field=True),
 
-    _t("pipeline-step", "Pipeline Step", "feature", "cicd", "Chore",
-       "Admin", "needs", "Running", "the {pipeline step name?} step in the {pipeline name?} pipeline", "to",
-       "have an automated step in the process",
-       "Add or harden the {pipeline step name?} step in the {pipeline name?} pipeline. "
-       "Any pipeline \u2014 build, asset cook, lint, test, deploy.",
-       blocks=["pipeline-base"]),
+    _t("bug-audio", "Bug — Audio", "Bugs", "Bug",
+       "Player", "must", "Hearing", "{sound} correctly", "to",
+       "not be confused",
+       "Audio bug: {symptom}.\n\n**Repro:**\n{repro}",
+       ["Audio plays as designed",
+        "No clipping / no missing trigger"],
+       ["Reproduce", "Inspect event", "Fix", "Verify"],
+       [_q("sound", "Which sound", "e.g. footsteps, music"),
+        _q("symptom", "What's wrong", "e.g. missing, clipping"),
+        _q("repro", "Steps to reproduce")],
+       os_field=True, version_field=True),
 
-    _t("cicd-online", "CI/CD Online Build & Checks", "feature", "cicd", "Chore",
-       "Admin", "needs", "Running", "{check name?} on every push in CI/CD", "to",
-       "have automated checks online before merge",
-       "Wire {check name?} into the cloud CI/CD runner. Gates merges, "
-       "publishes build artefacts.",
-       blocks=["cicd-online-base"]),
+    _t("bug-input", "Bug — Input", "Bugs", "Bug",
+       "Player", "must", "Pressing", "{action} reliably", "to",
+       "control their character",
+       "Input bug: {symptom} when pressing {action}.\n\n**Repro:**\n{repro}",
+       ["Input fires as expected on listed device",
+        "Works on both gamepad + KB/M (if applicable)"],
+       ["Reproduce", "Trace input event", "Fix"],
+       [_q("action", "Action", "e.g. Jump"),
+        _q("symptom", "What's wrong"),
+        _q("repro", "Steps")],
+       os_field=True, version_field=True),
 
-    _t("deploy-env", "Deploy Environment", "chore", "devops", "Chore",
-       "Admin", "needs", "Deploying", "builds to {environment name?}", "to",
-       "have a place to run them",
-       "Stand up the {environment name?} deploy environment.",
-       blocks=["deploy-base"]),
+    # ── ADDITIONAL TECH ART / MAINT (to round out to 40) ───────────────────
+    _t("ta-lod", "Tech Art — LOD Setup", "Tech Art", "Tech Art",
+       "Player", "must", "Protecting", "frame rate via {asset} LODs", "to",
+       "keep distant scenes smooth",
+       "Author LOD chain for {asset}. Targets: {lod_count} levels.",
+       ["{lod_count} LOD steps generated",
+        "Visual pop minimized",
+        "Memory savings measured"],
+       ["Generate LODs", "Tune transitions", "Memory audit"],
+       [_q("asset", "Asset name"),
+        _q("lod_count", "Number of LODs", "e.g. 3")]),
 
-    _t("monitor-alert", "Monitoring / Alert", "chore", "devops", "Chore",
-       "Admin", "needs", "Being paged", "when {what are we alerting on?}", "to",
-       "have eyes on the system",
-       "Configure alerting for {what are we alerting on?}.",
-       blocks=["monitor-base"]),
+    _t("maint-doc", "Maintenance — Documentation", "Maintenance", "Chore",
+       "Developer", "needs", "Documenting", "{topic}", "to",
+       "onboard new team members",
+       "Write/update docs for {topic}.",
+       ["Doc lives at {location}",
+        "Linked from project README",
+        "Reviewed by domain owner"],
+       ["Draft", "Review", "Publish", "Link from README"],
+       [_q("topic", "What to document"),
+        _q("location", "Where it lives", "e.g. docs/systems/save.md")]),
 
-    _t("incident-pm", "Incident Postmortem", "fix", "devops", "Bug",
-       "Admin", "needs", "Reading", "the {incident name or date?} postmortem", "to",
-       "have a record of what happened",
-       "Postmortem for incident: {incident name or date?}.",
-       blocks=["incident-base"]),
+    # ── TESTS / PROTECTION ────────────────────────────────────────────────
+    # Power verb: PROTECTING — every test is a guardrail that keeps the
+    # player's experience from rotting. Binary: a test passes or it doesn't.
+    _t("test-unit", "Tests — Unit Test", "Tests", "Chore",
+       "Player", "needs", "Protecting", "{module} from regressions", "to",
+       "never re-meet a bug we already fixed",
+       "Add unit test(s) for `{module}` covering {behavior}.\n\n"
+       "Tests must be deterministic, fast (< 100ms each), and isolated "
+       "from disk/network/clock.",
+       ["Test fails before the fix / asserts current correct behavior",
+        "Runs green in CI in under 100ms",
+        "Covers happy path AND at least one edge case",
+        "No mocks of the system under test itself"],
+       ["Identify the contract to lock",
+        "Write failing test (or pinning test)",
+        "Make it green",
+        "Wire into CI run"],
+       [_q("module", "Module / function under test", "e.g. inventory.add_item"),
+        _q("behavior", "What behavior is being locked in",
+           "e.g. stacking items respects max stack size")]),
 
-    _t("hotfix", "Hotfix (live)", "fix", "tech", "Bug",
-       "User", "needs", "Using", "production without {what is broken?}", "to",
-       "have a working product",
-       "Targeted hotfix for {what is broken?}.",
-       blocks=["hotfix-base"],
-       version_field=True),
+    _t("test-integration", "Tests — Integration Test", "Tests", "Chore",
+       "Player", "needs", "Protecting", "the {flow} flow across systems", "to",
+       "catch breakage where modules meet",
+       "Author an integration test for {flow}. Crosses at least 2 module "
+       "boundaries (e.g. UI ↔ save system, AI ↔ navmesh).",
+       ["Exercises real wiring between components (no over-mocking)",
+        "Runs in CI under 5s",
+        "Tears down its own state — leaves nothing behind",
+        "Documented why this contract matters"],
+       ["Sketch the cross-system path",
+        "Stand up fixtures",
+        "Write the test",
+        "CI hookup"],
+       [_q("flow", "What flow is tested", "e.g. pickup → inventory → save")]),
 
-    # ── DESIGN / RESEARCH ─────────────────────────────────────────────────
-    _t("brand-asset", "Brand Asset", "asset", "corporate", "Art",
-       "Admin", "needs", "Shipping", "the {asset name?} brand asset", "to",
-       "have the asset in the brand library",
-       "Produce the {asset name?} brand asset for {where will this be used?}.",
-       blocks=["brand-base"]),
+    _t("test-e2e", "Tests — End-to-End Smoke", "Tests", "Chore",
+       "Player", "needs", "Protecting", "the {scenario} playthrough", "to",
+       "prove the game still boots and plays after every change",
+       "Automated smoke test that drives the game through {scenario} "
+       "start → finish. Runs on every nightly build.",
+       ["Runs unattended start-to-finish",
+        "Captures screenshot at key checkpoints",
+        "Reports a clear pass/fail to Slack/CI",
+        "Average runtime documented"],
+       ["Script player inputs",
+        "Checkpoint assertions",
+        "Screenshot capture",
+        "CI nightly hookup"],
+       [_q("scenario", "User scenario to drive", "e.g. tutorial → first save")]),
 
-    _t("ux-research", "UX Research Spike", "spike", "app", "Spike",
-       "Admin", "needs", "Reading", "a written answer on {what are we trying to learn?}", "to",
-       "have a basis for the decision",
-       "Time-boxed research spike: {what are we trying to learn?}. "
-       "Timebox: {timebox in days?} days.",
-       blocks=["research-base"]),
+    _t("test-regression", "Tests — Regression Test", "Tests", "Chore",
+       "Player", "needs", "Protecting", "against {bug} returning", "to",
+       "never debug the same crash twice",
+       "Pin a test on the exact bug just fixed: {bug}. Link the bug story.\n\n"
+       "This test MUST fail on the pre-fix commit and pass on the fix commit.",
+       ["Test fails on the commit BEFORE the fix",
+        "Test passes on the fix commit",
+        "Linked to the original bug story",
+        "Lives near related tests, not in a regression-graveyard folder"],
+       ["Reproduce in test form",
+        "Verify it fails pre-fix",
+        "Verify it passes post-fix",
+        "Link bug story"],
+       [_q("bug", "Bug being protected against", "e.g. inventory dupe on save/load")]),
 
-    # ── CHORE / TECH-DEBT ─────────────────────────────────────────────────
-    _t("refactor", "Tech-Debt Refactor", "chore", "tech", "Chore",
-       "Admin", "needs", "Working", "in a cleaner {area to refactor?}", "to",
-       "have a maintainable codebase",
-       "Refactor pass on {area to refactor?}.",
-       blocks=["refactor-base"]),
+    _t("test-coverage", "Tests — Coverage Lift", "Tests", "Chore",
+       "Player", "needs", "Protecting", "{area} with real coverage", "to",
+       "stop shipping blind in critical code",
+       "Lift test coverage on {area} from {from_pct}% to at least {to_pct}%. "
+       "Quality over line-count — meaningful assertions, not smoke.",
+       ["Coverage report shows {area} ≥ {to_pct}%",
+        "Every new test asserts behavior, not just \"doesn't throw\"",
+        "No flaky tests added (run x10 locally to confirm)"],
+       ["Identify untested branches",
+        "Write tests for each",
+        "Re-run coverage",
+        "Flake check (10× run)"],
+       [_q("area", "Area / module to cover", "e.g. save system"),
+        _q("from_pct", "Current coverage %", "e.g. 42"),
+        _q("to_pct", "Target coverage %", "e.g. 80")]),
 
-    _t("dep-upgrade", "Dependency Upgrade", "chore", "tech", "Chore",
-       "Admin", "needs", "Running", "on {dependency?} {target version?}", "to",
-       "have a current dependency",
-       "Upgrade {dependency?} to {target version?}.",
-       blocks=["deps-base"]),
+    _t("test-fixture", "Tests — Shared Fixture / Factory", "Tests", "Chore",
+       "Developer", "needs", "Protecting", "future tests with the {fixture} factory", "to",
+       "stop hand-rolling the same setup in every file",
+       "Build a reusable test fixture/factory for {fixture}. Replaces ad-hoc "
+       "setup in at least {usages} existing tests.",
+       ["Fixture lives in the shared test-helpers folder",
+        "At least {usages} existing tests refactored to use it",
+        "Documented with a 3-line usage example"],
+       ["Design fixture API",
+        "Implement",
+        "Migrate existing tests",
+        "Docs / example"],
+       [_q("fixture", "What it builds", "e.g. fake player session"),
+        _q("usages", "Existing tests to migrate", "e.g. 6")]),
 
-    # ── DOCS / ONBOARDING ─────────────────────────────────────────────────
-    _t("docs-page", "Documentation Page", "docs", "tech", "Docs",
-       "User", "needs", "Reading", "the {doc topic?} doc", "to",
-       "have a guide for {doc topic?}",
-       "Write / refresh the {doc topic?} documentation page.",
-       blocks=["docs-base"]),
+    # ── WRITING ──────────────────────────────────────────────────────────
+    # Power verb: WRITING — words breathe identity, story, and clarity into
+    # the game. Player-facing copy is gameplay.
+    _t("writing-lore", "Writing — Lore / World Bible Entry", "Writing", "Design",
+       "Player", "wants", "Writing", "the {topic} into the world bible", "to",
+       "feel the world has a history beyond what they see",
+       "Author a canonical lore entry for {topic}. Goes into the world bible "
+       "and becomes the source of truth for art/design/VO.",
+       ["Entry under {wordcount} words — tight, not novel",
+        "Cross-linked to related lore entries",
+        "Approved by narrative lead",
+        "Surfaced where it influences gameplay (NPC barks, codex, item desc)"],
+       ["Research existing canon",
+        "Draft",
+        "Narrative review",
+        "Cross-link + publish"],
+       [_q("topic", "What lore topic", "e.g. The Hollow War, House Vance"),
+        _q("wordcount", "Word budget", "e.g. 400")]),
 
-    _t("onboarding", "Onboarding Doc", "docs", "corporate", "Docs",
-       "User", "needs", "Following", "the {role or team?} onboarding", "to",
-       "have a path into the team",
-       "Onboarding guide for {role or team?}.",
-       blocks=["onboarding-base"]),
+    _t("writing-dialogue", "Writing — Scene Dialogue", "Writing", "Design",
+       "Player", "must", "Writing", "the {scene} dialogue with weight", "to",
+       "care about who's talking and why",
+       "Write the dialogue for the {scene} scene. Characters: {characters}. "
+       "Tone: {tone}. Beats it must hit: see acceptance.",
+       ["Every line passes the \"would they actually say this\" test",
+        "Each character sounds distinct on the page",
+        "Length fits VO budget ({lines_max} lines max)",
+        "Beats hit: {beats}"],
+       ["Beat-map the scene",
+        "First draft",
+        "Read aloud + cut",
+        "Narrative review"],
+       [_q("scene", "Scene name"),
+        _q("characters", "Who speaks"),
+        _q("tone", "Tone", "e.g. tense, warm, threatening"),
+        _q("beats", "Plot/emotional beats to hit"),
+        _q("lines_max", "Max VO lines", "e.g. 40")]),
 
-    # ── MARKETING / CONTENT ───────────────────────────────────────────────
-    _t("campaign", "Marketing Campaign", "marketing", "content", "Feature",
-       "Admin", "needs", "Launching", "the {campaign name?} campaign", "to",
-       "have the campaign in market",
-       "Plan and ship the {campaign name?} campaign asset set.",
-       blocks=["campaign-base"]),
+    _t("writing-ui-copy", "Writing — UI / Button Copy", "Writing", "Feature",
+       "Player", "needs", "Writing", "the {screen} copy with zero confusion", "to",
+       "know what every button does without thinking",
+       "Tighten every string on the {screen} screen. No throwaway labels, "
+       "no jargon, no \"Submit\".",
+       ["Every label ≤ {char_limit} characters",
+        "No engineering jargon visible to player",
+        "Strings exported to localization file",
+        "Reviewed by 1 non-team person for clarity"],
+       ["Audit current strings",
+        "Rewrite",
+        "Loc export",
+        "Outside-eye review"],
+       [_q("screen", "Screen / surface", "e.g. Settings, HUD"),
+        _q("char_limit", "Per-label char limit", "e.g. 24")]),
 
-    _t("social-series", "Social Post Series", "marketing", "content", "Feature",
-       "Admin", "needs", "Running", "the {series name?} social series", "to",
-       "have content in the feed",
-       "Plan and schedule the {series name?} social series.",
-       blocks=["social-base"]),
+    _t("writing-tutorial", "Writing — Tutorial / Onboarding Copy", "Writing", "Feature",
+       "Player", "must", "Writing", "the {feature} tutorial so it teaches itself", "to",
+       "learn {feature} in under {seconds}s without reading a wall",
+       "Onboarding text + prompts for {feature}. Show, don't tell — copy "
+       "only what action can't.",
+       ["New player can use {feature} after one read",
+        "No prompt longer than {char_limit} chars",
+        "Skippable for replays",
+        "Playtested with at least 2 fresh eyes"],
+       ["Map teaching beats",
+        "Draft copy",
+        "Wire to triggers",
+        "Fresh-eye playtest"],
+       [_q("feature", "What is being taught"),
+        _q("seconds", "Time-to-learn budget", "e.g. 30"),
+        _q("char_limit", "Per-prompt char limit", "e.g. 80")]),
+
+    _t("writing-patchnotes", "Writing — Patch Notes / Devlog", "Writing", "Chore",
+       "Player", "wants", "Writing", "the {version} patch notes with personality", "to",
+       "feel that humans made this update",
+       "Patch notes for {version}. Voice: ours, not corporate. Group by what "
+       "the PLAYER notices, not by internal team.",
+       ["Grouped by player-facing impact (New / Better / Fixed)",
+        "Each line readable to a non-dev",
+        "At least one moment of personality (joke / aside / shout-out)",
+        "Headline summary at the top in ≤ 2 sentences"],
+       ["Pull merged PRs / closed bugs",
+        "Group + rewrite",
+        "Voice pass",
+        "Publish"],
+       [_q("version", "Version / build tag", "e.g. 0.7.2")]),
+
+    # ── ANIMATION ─────────────────────────────────────────────────────────
+    # Power verb: MOVING — animation IS movement. Player-perspective:
+    # every frame is felt, not just seen.
+    _t("anim-cinematic", "Animation — Cinematic", "Animation", "Animation",
+       "Player", "must", "Moving", "through the {scene} cinematic on every beat", "to",
+       "feel the story instead of skipping it",
+       "Author the {scene} cinematic animation. Length: ~{length}s. Camera + "
+       "character anim + timing in one pass.",
+       ["Hits every required story beat",
+        "Camera readable on target aspect ratios",
+        "Skippable cleanly (no save-state break on skip)",
+        "Holds up at {framerate} on minimum-spec hardware"],
+       ["Beat board",
+        "Blocking pass",
+        "Polish pass",
+        "In-engine sequencer hookup",
+        "Skip-safety test"],
+       [_q("scene", "Cinematic scene"),
+        _q("length", "Length seconds", "e.g. 25"),
+        _q("framerate", "Target framerate", "e.g. 30fps")]),
+
+    _t("anim-cycle", "Animation — Cycle (Idle / Walk / Run)", "Animation", "Animation",
+       "Player", "must", "Moving", "{character} through the {cycle} cycle", "to",
+       "believe they're alive between commands",
+       "Loopable {cycle} cycle for {character}. Frame count: {frames}.",
+       ["Loops with zero pop",
+        "Foot-plant frames identified for IK",
+        "Reads in silhouette",
+        "Imports cleanly into engine state machine"],
+       ["Reference pass",
+        "Blocking",
+        "Polish + loop weld",
+        "Engine import + state hookup"],
+       [_q("character", "Character"),
+        _q("cycle", "Cycle type", "e.g. idle, walk, sprint"),
+        _q("frames", "Frame count", "e.g. 32")]),
+
+    _t("anim-facial", "Animation — Facial / Lip-sync", "Animation", "Animation",
+       "Player", "must", "Moving", "{character}'s face with the {scene} dialogue", "to",
+       "feel emotion, not watch a fish",
+       "Facial animation + lip-sync for {character} across the {scene} VO. "
+       "Phoneme pass + emotional layer on top.",
+       ["Lip-sync reads at conversation distance",
+        "Emotional layer matches line subtext (not just words)",
+        "Blinks + micro-movements present",
+        "Holds up at conversation camera distance"],
+       ["Phoneme pass",
+        "Emotional layer",
+        "Eye / blink pass",
+        "In-engine review on actual camera"],
+       [_q("character", "Character"),
+        _q("scene", "Scene / VO bundle")]),
+
+    _t("anim-procedural", "Animation — Procedural / IK Layer", "Animation", "Tech Art",
+       "Player", "must", "Moving", "with proper {system} reactions in real time", "to",
+       "feel the world is solid under their character",
+       "Procedural animation layer for {system} (e.g. foot IK, look-at, hit "
+       "reactions). Sits ON TOP of hand-keyed anim.",
+       ["Never overrides hand-keyed anim where it shouldn't",
+        "Toggleable per-character",
+        "Stable at {framerate} on target hardware",
+        "No visible jitter on slopes/uneven ground"],
+       ["Spec layer behavior",
+        "Implement",
+        "Tune blend weights",
+        "Perf check"],
+       [_q("system", "What is procedural", "e.g. foot IK, look-at, ragdoll blend"),
+        _q("framerate", "Target framerate", "e.g. 60fps")]),
+
+    _t("anim-transition", "Animation — State Transition", "Animation", "Animation",
+       "Player", "must", "Moving", "between {state_a} and {state_b} without a snap", "to",
+       "never see the character \"reset\"",
+       "Author transition animation(s) between {state_a} and {state_b}. "
+       "Bidirectional unless documented otherwise.",
+       ["No visible snap or T-pose between states",
+        "Transition triggers at the right input window",
+        "Cancelable mid-transition where gameplay needs",
+        "Reviewed in-engine, not just in DCC"],
+       ["Reference",
+        "Blocking",
+        "Polish",
+        "State-machine wiring",
+        "In-engine sign-off"],
+       [_q("state_a", "From state", "e.g. sprint"),
+        _q("state_b", "To state", "e.g. slide")]),
+
+    # ── CI / CD ───────────────────────────────────────────────────────────
+    # Power verbs: SHIPPING (pipelines breathe builds into life) and
+    # PROTECTING (gates that keep the build trustworthy).
+    _t("cicd-pipeline", "CI/CD — Build Pipeline", "CI/CD", "Chore",
+       "Developer", "needs", "Shipping", "{repo} via an automated pipeline", "to",
+       "stop hand-rolling builds at 2am",
+       "Stand up a CI pipeline for `{repo}`. Triggers on push to {branch}. "
+       "Runs lint → test → build → artifact.",
+       ["Triggers on push to {branch}",
+        "Full run completes under {minutes} minutes",
+        "Artifact stored and downloadable",
+        "Failure posts to {channel}"],
+       ["Pipeline config",
+        "Lint + test stages",
+        "Build + artifact stage",
+        "Notification hookup"],
+       [_q("repo", "Repo name"),
+        _q("branch", "Trigger branch", "e.g. main"),
+        _q("minutes", "Time budget", "e.g. 8"),
+        _q("channel", "Notification channel", "e.g. #builds")]),
+
+    _t("cicd-deploy", "CI/CD — Auto Deploy", "CI/CD", "Chore",
+       "Player", "needs", "Shipping", "{service} on every green merge", "to",
+       "get fixes the same day they're written",
+       "Auto-deploy `{service}` to {environment} when CI on {branch} is green.",
+       ["Deploys only on green build",
+        "Deploy time under {minutes} minutes",
+        "Rollback documented and one-step",
+        "Deploy posts version + commit to {channel}"],
+       ["Deploy script",
+        "Branch gate",
+        "Rollback path",
+        "Notification"],
+       [_q("service", "Service / app"),
+        _q("environment", "Target env", "e.g. staging, prod"),
+        _q("branch", "Source branch", "e.g. main"),
+        _q("minutes", "Deploy time budget", "e.g. 5"),
+        _q("channel", "Notify channel", "e.g. #deploys")]),
+
+    _t("cicd-test-gate", "CI/CD — Required Test Gate", "CI/CD", "Chore",
+       "Developer", "needs", "Protecting", "{branch} from broken commits", "to",
+       "never debug main on a Monday",
+       "Require CI green before merge to {branch}. Block force-push.",
+       ["Merges to {branch} blocked when CI fails",
+        "Force-push to {branch} disabled",
+        "At least 1 review required",
+        "Settings documented in repo README"],
+       ["Configure branch protection",
+        "Wire required checks",
+        "Doc in README"],
+       [_q("branch", "Protected branch", "e.g. main")]),
+
+    _t("cicd-monitoring", "CI/CD — Production Alerts", "CI/CD", "Chore",
+       "Player", "needs", "Protecting", "prod via {metric} alerts", "to",
+       "learn we broke something before they do",
+       "Alert when {metric} crosses {threshold}. Routes to {channel} with "
+       "runbook link.",
+       ["Alert fires within {minutes} minutes of breach",
+        "Each alert has a runbook link",
+        "No alert without a documented action",
+        "Tested by deliberately tripping it once"],
+       ["Metric definition",
+        "Threshold + alert rule",
+        "Runbook",
+        "Trip-test"],
+       [_q("metric", "What is measured", "e.g. error rate, p95 latency"),
+        _q("threshold", "Threshold value", "e.g. > 1%"),
+        _q("minutes", "Detection time", "e.g. 2"),
+        _q("channel", "Alert channel", "e.g. #oncall")]),
+
+    _t("cicd-rollback", "CI/CD — One-Click Rollback", "CI/CD", "Chore",
+       "Player", "needs", "Protecting", "uptime via one-click rollback", "to",
+       "not feel a bad deploy for more than a minute",
+       "Build a one-step rollback for `{service}`. Documented + tested.",
+       ["Rollback runnable by anyone on the team",
+        "Documented in runbook with exact command",
+        "Tested end-to-end on staging",
+        "Rollback time under {minutes} minutes"],
+       ["Rollback script",
+        "Runbook",
+        "Staging dry-run",
+        "Team walkthrough"],
+       [_q("service", "Service / app"),
+        _q("minutes", "Rollback time budget", "e.g. 2")]),
+
+    # ── IMPROVEMENTS / EDITING ────────────────────────────────────────────
+    # Power verbs: POLISHING / IMPROVING / EDITING — making something
+    # that already exists feel demonstrably better to the player.
+    _t("improve-polish", "Improvement — Polish Pass", "Improvements", "Chore",
+       "Player", "wants", "Polishing", "{feature} until it feels expensive", "to",
+       "sense the difference without being told",
+       "Polish pass on {feature}. Find the 5 small things that make it feel "
+       "cheap and fix them.",
+       ["At least 5 micro-improvements landed",
+        "Before/after captured (gif or video)",
+        "No new bugs introduced (smoke test passes)",
+        "Reviewed by someone outside the feature team"],
+       ["Audit pass — list 5+ rough edges",
+        "Land fixes",
+        "Before/after capture",
+        "Outside-team review"],
+       [_q("feature", "Feature being polished")]),
+
+    _t("improve-feel", "Improvement — Game-Feel Tuning", "Improvements", "Design",
+       "Player", "must", "Acting", "with {action} that snaps in their hand", "to",
+       "feel powerful instead of fighting controls",
+       "Tune the feel of {action}: input lag, camera shake, hit-stop, audio "
+       "punch, animation snappiness.",
+       ["Input-to-effect latency under {latency}ms",
+        "Hit-stop / camera shake present where it matters",
+        "Audio + visual + haptic land within 1 frame of each other",
+        "Blind playtest: player describes it as \"feels good\""],
+       ["Capture current feel (video)",
+        "Tune input response",
+        "Tune hit-feedback layers",
+        "Blind playtest"],
+       [_q("action", "Action being tuned", "e.g. shooting, jumping"),
+        _q("latency", "Latency budget ms", "e.g. 50")]),
+
+    _t("improve-balance", "Improvement — Balance Pass", "Improvements", "Design",
+       "Player", "must", "Acting", "in a fair {system} fight", "to",
+       "lose because of choices, not numbers",
+       "Balance pass on {system}. Pull telemetry, identify outliers, tune, "
+       "verify.",
+       ["Outlier win-rate / pick-rate within {window}% of mean",
+        "Changes documented with before/after numbers",
+        "Patch notes entry drafted",
+        "Verified on next data pull post-deploy"],
+       ["Pull telemetry",
+        "Identify outliers",
+        "Tune",
+        "Patch-note draft",
+        "Post-deploy verify"],
+       [_q("system", "System being balanced", "e.g. weapons, classes"),
+        _q("window", "Tolerance %", "e.g. 5")]),
+
+    _t("improve-cinematic-edit", "Improvement — Cinematic Re-Edit", "Improvements", "Animation",
+       "Player", "must", "Editing", "the {cinematic} for pacing", "to",
+       "stay leaning forward, not reaching for skip",
+       "Re-edit the {cinematic} cinematic. Cut what isn't earning its frame.",
+       ["Final runtime ≤ {seconds}s (down from current)",
+        "Every cut serves a beat — none accidental",
+        "Reviewed by narrative + design",
+        "Skip-safe (state machine handles mid-skip)"],
+       ["Pacing audit on current cut",
+        "Cut list",
+        "Re-edit",
+        "Cross-team review"],
+       [_q("cinematic", "Cinematic name"),
+        _q("seconds", "Target runtime seconds", "e.g. 45")]),
+
+    _t("improve-copy-edit", "Improvement — Copy Edit Pass", "Improvements", "Chore",
+       "Player", "needs", "Editing", "{surface} copy down to its bones", "to",
+       "read once and understand",
+       "Copy-edit pass on {surface}. Cut words, kill jargon, lock voice.",
+       ["Word count down at least {pct_cut}% on touched strings",
+        "No engineering jargon player-facing",
+        "Voice consistent with style guide",
+        "Loc file updated"],
+       ["Audit strings",
+        "Rewrite",
+        "Style-guide check",
+        "Loc export"],
+       [_q("surface", "What surface", "e.g. Settings menu, tutorial popups"),
+        _q("pct_cut", "Target % reduction", "e.g. 30")]),
 ]
 
 
-# ── Sanity check: every block id referenced must exist in BLOCKS ────────────
-_missing = sorted({
-    bid
-    for t in TEMPLATES for bid in t["blocks"]
-    if bid not in BLOCKS
-})
-if _missing:  # pragma: no cover — caught at import time during dev
-    raise RuntimeError(
-        "story_templates.py references unknown block ids: " + ", ".join(_missing)
-    )
+def by_id(template_id):
+    for t in TEMPLATES:
+        if t["id"] == template_id:
+            return t
+    return None
+
+
+def categories():
+    seen, out = set(), []
+    for t in TEMPLATES:
+        if t["category"] not in seen:
+            seen.add(t["category"])
+            out.append(t["category"])
+    return out

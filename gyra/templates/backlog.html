@@ -51,11 +51,7 @@
 
 <div class="backlog-list" id="backlog-list">
   {% for story in stories %}
-  <div class="backlog-row" data-story-id="{{ story.id }}"
-       data-order-index="{{ story.order_index }}"
-       data-box-type="{{ story.box_type or '' }}"
-       data-parent-box-type="{{ story.parent_box_type or '' }}"
-       draggable="true">
+  <div class="backlog-row" data-story-id="{{ story.id }}" data-order-index="{{ story.order_index }}" draggable="true">
     {% if session.role != 'viewer' %}<input type="checkbox" class="bl-row-check" value="{{ story.id }}" aria-label="Select story">{% endif %}
     <span class="bl-drag-handle" title="Drag to reorder">⠿</span>
     <span class="bl-id">{{ project.key }}-{{ story.story_number if story.story_number is not none else story.id }}</span>
@@ -141,45 +137,18 @@
     if (e.target.classList.contains('bl-row-check')) syncBulkBtn();
   });
 
-  // ── Blocked-into-sprint guardrail ──
-  var BLOCKED_WARN =
-    '⚠ BLOCKED stories don\'t belong in a sprint.\n\n' +
-    'Scrum says a sprint contains stories that CAN reach Done.\n' +
-    'Blocked work, by definition, cannot.\n\n' +
-    'Send to sprint anyway?';
-  function rowIsBlocked(row) {
-    if (!row) return false;
-    return row.dataset.boxType === 'blocked' || row.dataset.parentBoxType === 'blocked';
-  }
-
-  // ── Move-to-sprint buttons ───────────────────────────────────────────────────────────────
+  // ── Move-to-sprint buttons ───────────────────────────────────────────────
   document.querySelectorAll('.move-to-sprint').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      var row = btn.closest('.backlog-row');
-      if (rowIsBlocked(row) && !confirm(BLOCKED_WARN)) return;
       var storyId = btn.dataset.storyId;
       var sprint  = parseInt(btn.dataset.sprint, 10);
       fetch(ROOT + '/api/story/' + storyId + '/sprint', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
         body: JSON.stringify({ sprint: sprint }),
-      }).then(function (r) { if (r.ok) row.remove(); });
+      }).then(function (r) { if (r.ok) btn.closest('.backlog-row').remove(); });
     });
   });
-
-  // Bulk-sprint form: warn if any selected row is blocked.
-  var bulkForm = document.getElementById('bulk-sprint-form');
-  if (bulkForm) {
-    bulkForm.addEventListener('submit', function (e) {
-      var checked = Array.from(document.querySelectorAll('.bl-row-check:checked'));
-      var anyBlocked = checked.some(function (cb) {
-        return rowIsBlocked(cb.closest('.backlog-row'));
-      });
-      if (anyBlocked && !confirm(BLOCKED_WARN.replace('don\'t', 'in this selection don\'t'))) {
-        e.preventDefault();
-      }
-    });
-  }
 
   // ── Drag-to-reorder ──────────────────────────────────────────────────────
   var list    = document.getElementById('backlog-list');
