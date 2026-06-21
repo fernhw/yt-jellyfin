@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-20
 
-> *Good evening! Here's what landed on Saturday, June 20, 2026 at 06:04 PM.*
-> **YT Mirror:** 639.99 GB used · 0.57 TB free
+> *Good evening! Here's what landed on Saturday, June 20, 2026 at 07:07 PM.*
+> **YT Mirror:** 639.51 GB used · 0.57 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,8 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **The Great Nintendo Switch Icon Debacle** — *Scott's Stash* · downloaded 07:06 PM · not podcastable
+- **Halo On PS5 Just Took A Ridiculous Turn** — *Spawn Wave* · downloaded 07:04 PM · not podcastable
 - **Liver King f*cked around..** — *Asmongold TV* · downloaded 05:05 PM · not podcastable
 - **Jack and Marty's Breath of the Wild Lockout Bingo Super Cut** — *Second Wind* · downloaded 03:10 PM · podcastable
 - **The AAA Drought Is Ending. It Will Kill Studios.** — *Bellular News* · downloaded 03:09 PM · podcastable
