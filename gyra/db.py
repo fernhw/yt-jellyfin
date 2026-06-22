@@ -268,6 +268,36 @@ CREATE TABLE IF NOT EXISTS bulk_import_staging (
     payload    TEXT    NOT NULL,
     created_at INTEGER NOT NULL
 );
+
+-- ── Game Design Wiki ─────────────────────────────────────────────────────────
+-- Articles live as .md files on disk at:
+--   wiki_content/<project_key>/articles/<slug>.md
+-- This table is purely metadata + tree structure.
+CREATE TABLE IF NOT EXISTS wiki_articles (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id   INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    slug         TEXT    NOT NULL,          -- matches filename (no .md)
+    title        TEXT    NOT NULL,
+    parent_id    INTEGER REFERENCES wiki_articles(id) ON DELETE SET NULL,
+    order_index  REAL    NOT NULL DEFAULT 0,
+    params       TEXT    NOT NULL DEFAULT '{}',  -- JSON: infobox key/value pairs
+    is_published INTEGER NOT NULL DEFAULT 1,
+    created_by   INTEGER REFERENCES users(id),
+    created_at   INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+    updated_by   INTEGER REFERENCES users(id),
+    updated_at   INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+    UNIQUE(project_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS wiki_images (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id     INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    filename       TEXT    NOT NULL,
+    thumb_filename TEXT,
+    caption        TEXT    DEFAULT '',
+    uploaded_by    INTEGER REFERENCES users(id),
+    uploaded_at    INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
 """
 
 
@@ -386,6 +416,33 @@ def _migrate_db() -> None:
             payload    TEXT    NOT NULL,
             created_at INTEGER NOT NULL
         )
+    """)
+    # Ensure wiki tables exist
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS wiki_articles (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id   INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            slug         TEXT    NOT NULL,
+            title        TEXT    NOT NULL,
+            parent_id    INTEGER REFERENCES wiki_articles(id) ON DELETE SET NULL,
+            order_index  REAL    NOT NULL DEFAULT 0,
+            params       TEXT    NOT NULL DEFAULT '{}',
+            is_published INTEGER NOT NULL DEFAULT 1,
+            created_by   INTEGER REFERENCES users(id),
+            created_at   INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+            updated_by   INTEGER REFERENCES users(id),
+            updated_at   INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+            UNIQUE(project_id, slug)
+        );
+        CREATE TABLE IF NOT EXISTS wiki_images (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id     INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            filename       TEXT    NOT NULL,
+            thumb_filename TEXT,
+            caption        TEXT    DEFAULT '',
+            uploaded_by    INTEGER REFERENCES users(id),
+            uploaded_at    INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+        );
     """)
     conn.commit()
     for table, col, col_def in new_cols:

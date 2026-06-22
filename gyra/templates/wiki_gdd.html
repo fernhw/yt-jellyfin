@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — GDD — Gyra{% endblock %}
+
+{% block content %}
+<div class="wiki-page-header">
+  <div class="wiki-page-header-left">
+    <span class="project-key-badge">{{ project.key }}</span>
+    <h2>📄 Game Design Document</h2>
+  </div>
+  <div class="wiki-page-header-right">
+    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_home', project_id=project.id) }}">← Wiki</a>
+    <a class="btn btn-sm btn-secondary" href="{{ url_for('wiki_gdd_export', project_id=project.id) }}">⬇ Export .md</a>
+  </div>
+</div>
+
+<div class="gdd-layout">
+
+  {# ── GDD sidebar TOC ── #}
+  <aside class="gdd-sidebar">
+    <div class="gdd-sidebar-title">Contents</div>
+    {% for section in sections %}
+    <a class="gdd-toc-link gdd-toc-depth-{{ section.gdd_num.split('.')|length }}"
+       href="#gdd-{{ section.slug }}"
+       style="padding-left: {{ 8 + (section.gdd_num.split('.')|length - 1) * 14 }}px">
+      <span class="gdd-toc-num">{{ section.gdd_num }}</span>
+      {{ section.title }}
+    </a>
+    {% endfor %}
+  </aside>
+
+  {# ── GDD body ── #}
+  <div class="gdd-body">
+    <h1 class="gdd-main-title">{{ project.name }}<br><span class="gdd-sub">Game Design Document</span></h1>
+
+    {% for section in sections %}
+    {% set depth = section.gdd_num.split('.')|length %}
+    <section class="gdd-section gdd-depth-{{ depth }}" id="gdd-{{ section.slug }}">
+      {% if depth == 1 %}
+      <h2 class="gdd-h1"><span class="gdd-num">{{ section.gdd_num }}</span> {{ section.title }}</h2>
+      {% elif depth == 2 %}
+      <h3 class="gdd-h2"><span class="gdd-num">{{ section.gdd_num }}</span> {{ section.title }}</h3>
+      {% elif depth == 3 %}
+      <h4 class="gdd-h3"><span class="gdd-num">{{ section.gdd_num }}</span> {{ section.title }}</h4>
+      {% else %}
+      <h5 class="gdd-h4"><span class="gdd-num">{{ section.gdd_num }}</span> {{ section.title }}</h5>
+      {% endif %}
+      <div class="gdd-section-content" id="gdd-content-{{ loop.index }}"></div>
+      <script type="application/json" id="gdd-raw-{{ loop.index }}">{{ section.content | tojson }}</script>
+    </section>
+    {% if depth == 1 %}<hr class="gdd-divider">{% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+<script>
+(function () {
+  document.querySelectorAll('.gdd-section-content[data-raw]').forEach(function (el) {
+    if (typeof marked === 'undefined') return;
+    var md = el.dataset.raw;
+    // Strip leading # heading (we render our own heading above)
+    md = md.replace(/^#[^\n]*\n/, '').trim();
+    el.innerHTML = marked.parse(md);
+    // Resolve image srcs
+    el.querySelectorAll('img').forEach(function (img) {
+      var src = img.getAttribute('src');
+      if (src && !src.startsWith('http') && !src.startsWith('/')) {
+        img.src = '/project/{{ project.id }}/wiki/images/' + src;
+        img.className = 'wiki-img';
+      }
+    });
+    el.removeAttribute('data-raw');
+  });
+})();
+</script>
+{% endblock %}

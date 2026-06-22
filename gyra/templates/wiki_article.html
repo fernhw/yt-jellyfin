@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} — {{ project.name }} Wiki — Gyra{% endblock %}
+
+{% block content %}
+
+{# ── Top bar ── #}
+<div class="wiki-topbar">
+  <div class="wiki-topbar-left">
+    <a class="wiki-topbar-home" href="{{ url_for('wiki_home', project_id=project.id) }}">📖 Wiki</a>
+    {% for bc in breadcrumb %}
+    <span class="wiki-topbar-sep">›</span>
+    <a class="wiki-topbar-crumb" href="{{ url_for('wiki_article', project_id=project.id, slug=bc.slug) }}">{{ bc.title }}</a>
+    {% endfor %}
+    <span class="wiki-topbar-sep">›</span>
+    <span class="wiki-topbar-current">{{ article.title }}</span>
+  </div>
+  <div class="wiki-topbar-right">
+    {% if not article.is_published %}<span class="wiki-draft-badge">Draft</span>{% endif %}
+    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_gdd', project_id=project.id) }}">📄 GDD</a>
+    {% if session.role != 'viewer' %}
+    <a class="btn btn-sm btn-secondary" href="{{ url_for('wiki_edit', project_id=project.id, slug=article.slug) }}">✏ Edit</a>
+    {% endif %}
+    <a class="btn btn-sm btn-primary" href="{{ url_for('wiki_new', project_id=project.id, parent_id=article.id) }}">+ Child</a>
+  </div>
+</div>
+
+{# ── Three-column Wikipedia layout ── #}
+<div class="wiki-article-layout">
+
+  {# Left: navigation tree #}
+  <aside class="wiki-aside-nav">
+    <div class="wiki-aside-title">Contents</div>
+    <div class="wiki-toc" id="wiki-toc">
+      {# Populated by JS from rendered headings #}
+    </div>
+    <div class="wiki-aside-title" style="margin-top:20px">Articles</div>
+    {% for node in flat %}
+    {% if not node.parent_id %}
+    <div class="wiki-nav-item{% if node.slug == article.slug %} is-current{% endif %}"
+         style="padding-left: 8px">
+      <a href="{{ url_for('wiki_article', project_id=project.id, slug=node.slug) }}"
+         class="wiki-nav-link{% if node.slug == article.slug %} is-current{% endif %}">{{ node.title }}</a>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </aside>
+
+  {# Center: article body #}
+  <article class="wiki-article-body">
+    <h1 class="wiki-article-h1">{{ article.title }}</h1>
+    <div class="wiki-article-meta">
+      Last edited {% if article.updated_name %}by <strong>{{ article.updated_name }}</strong>{% endif %}
+      · <span class="wiki-article-date" data-ts="{{ article.updated_at }}"></span>
+    </div>
+
+    {# Article body — rendered entirely client-side by marked.js #}
+    <div class="wiki-article-content" id="wiki-content">
+      <div class="wiki-loading">Loading…</div>
+    </div>
+  </article>
+
+  {# Right: infobox + images #}
+  {% if params %}
+  <aside class="wiki-aside-info">
+    <div class="wiki-infobox">
+      <div class="wiki-infobox-title">{{ article.title }}</div>
+      {% for k, v in params.items() %}
+      <div class="wiki-infobox-row">
+        <span class="wiki-infobox-key">{{ k }}</span>
+        <span class="wiki-infobox-val">{{ v }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </aside>
+  {% endif %}
+
+</div>
+
+{# ── Prev / Next navigation ── #}
+<div class="wiki-prevnext">
+  {% if prev_art %}
+  <a class="wiki-prev" href="{{ url_for('wiki_article', project_id=project.id, slug=prev_art.slug) }}">
+    ← {{ prev_art.title }}
+  </a>
+  {% else %}<span></span>{% endif %}
+  {% if next_art %}
+  <a class="wiki-next" href="{{ url_for('wiki_article', project_id=project.id, slug=next_art.slug) }}">
+    {{ next_art.title }} →
+  </a>
+  {% endif %}
+</div>
+
+{% if session.role in ('admin', 'super_user') %}
+<div style="margin-top:24px; padding-top:12px; border-top:1px solid var(--c-gray-200)">
+  <form method="post" action="{{ url_for('wiki_delete', project_id=project.id, slug=article.slug) }}"
+        onsubmit="return confirm('Delete this article? This cannot be undone.')">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-sm btn-danger">🗑 Delete article</button>
+  </form>
+</div>
+{% endif %}
+
+{# marked.js — renders all Markdown client-side #}
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+
+{# Raw article data injected safely as JSON — no escaping issues #}
+<script id="wiki-data" type="application/json">
+{
+  "raw_md":   {{ raw_md   | tojson }},
+  "link_map": {{ link_map | tojson }},
+  "img_base": "/project/{{ project.id }}/wiki/images/"
+}
+</script>
+
+<script>
+(function () {
+  var dataEl   = document.getElementById('wiki-data');
+  var content  = document.getElementById('wiki-content');
+  var tocEl    = document.getElementById('wiki-toc');
+  if (!dataEl || !content) return;
+
+  var data     = JSON.parse(dataEl.textContent);
+  var raw      = data.raw_md;
+  var linkMap  = data.link_map;
+  var imgBase  = data.img_base;
+
+  // ── 1. Resolve [[wiki links]] before markdown parsing ────────────────────
+  // [[slug]] or [[slug|Label]] or [[Title]]
+  raw = raw.replace(/\[\[([^\]]+)\]\]/g, function (_, inner) {
+    var parts  = inner.split('|');
+    var key    = parts[0].trim().toLowerCase();
+    var label  = (parts[1] || parts[0]).trim();
+    var entry  = linkMap[key] || linkMap[parts[0].trim()];
+    if (entry) {
+      return '[' + label + '](' + entry.url + '){.wiki-link}';
+    }
+    return '<span class="wiki-link-missing" title="Article not found">' + label + '</span>';
+  });
+
+  // ── 2. Render Markdown → HTML ─────────────────────────────────────────────
+  if (typeof marked === 'undefined') {
+    content.innerHTML = '<pre>' + raw.replace(/</g,'&lt;') + '</pre>';
+    return;
+  }
+
+  // Configure marked: allow HTML passthrough (for our <span> missing links)
+  marked.setOptions({ breaks: false, gfm: true });
+
+  var html = marked.parse(raw);
+  content.innerHTML = html;
+
+  // ── 3. Post-process rendered HTML ─────────────────────────────────────────
+
+  // Style internal wiki links (markdown-generated <a> with .wiki-link class marker)
+  // marked doesn't support {.class} so we detect by href being our /project/ path
+  content.querySelectorAll('a').forEach(function (a) {
+    var href = a.getAttribute('href') || '';
+    if (href.indexOf('/project/') === 0 && href.indexOf('/wiki/') > 0) {
+      a.classList.add('wiki-link');
+    } else if (href.startsWith('http') || href.startsWith('//')) {
+      a.classList.add('wiki-ext-link');
+      a.target  = '_blank';
+      a.rel     = 'noopener noreferrer';
+    }
+  });
+
+  // Resolve relative image src → full URL
+  content.querySelectorAll('img').forEach(function (img) {
+    var src = img.getAttribute('src');
+    if (src && !src.startsWith('http') && !src.startsWith('/')) {
+      img.src = imgBase + src;
+    }
+    img.classList.add('wiki-img');
+    img.loading = 'lazy';
+  });
+
+  // ── 4. Build TOC from rendered headings ──────────────────────────────────
+  if (tocEl) {
+    var headings = content.querySelectorAll('h2, h3');
+    if (headings.length) {
+      var ul = document.createElement('ul');
+      ul.className = 'wiki-toc-list';
+      headings.forEach(function (h, i) {
+        var id = 'wiki-h-' + i;
+        h.id = id;
+        var li = document.createElement('li');
+        li.className = h.tagName === 'H3' ? 'wiki-toc-h3' : 'wiki-toc-h2';
+        li.innerHTML = '<a href="#' + id + '">' + h.textContent + '</a>';
+        ul.appendChild(li);
+      });
+      tocEl.appendChild(ul);
+    }
+  }
+
+  // ── 5. Format relative dates ──────────────────────────────────────────────
+  document.querySelectorAll('.wiki-article-date[data-ts]').forEach(function (el) {
+    var ts = parseInt(el.dataset.ts, 10);
+    if (!ts) return;
+    el.textContent = new Date(ts * 1000).toLocaleDateString(undefined,
+      {year: 'numeric', month: 'short', day: 'numeric'});
+  });
+})();
+</script>
+
+{% endblock %}

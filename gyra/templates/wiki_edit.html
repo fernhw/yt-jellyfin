@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == 'new' %}New Article{% else %}Edit: {{ article.title }}{% endif %} — {{ project.name }} Wiki{% endblock %}
+
+{% block content %}
+<div class="wiki-edit-header">
+  <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_home', project_id=project.id) }}">← Wiki</a>
+  {% if mode == 'edit' %}
+  <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_article', project_id=project.id, slug=article.slug) }}">← Read</a>
+  {% endif %}
+  <h2 style="margin:0;flex:1">{% if mode == 'new' %}New Article{% else %}Edit: {{ article.title }}{% endif %}</h2>
+</div>
+
+<form method="post" id="wiki-edit-form"
+      action="{{ url_for('wiki_new', project_id=project.id) if mode == 'new'
+                else url_for('wiki_edit', project_id=project.id, slug=article.slug) }}">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+  {# ── Title + parent ── #}
+  <div class="wiki-edit-meta-row">
+    <div class="wiki-edit-field" style="flex:2">
+      <label class="wiki-edit-label">Title <span class="req">*</span></label>
+      <input type="text" name="title" class="form-input"
+             value="{{ article.title if article else '' }}"
+             placeholder="Article title" required autofocus>
+    </div>
+    <div class="wiki-edit-field" style="flex:1">
+      <label class="wiki-edit-label">Parent article</label>
+      <select name="parent_id" class="form-input">
+        <option value="">— none (top level) —</option>
+        {% for a in flat %}
+        {% if not article or a.id != article.id %}
+        <option value="{{ a.id }}"
+          {% if (article and article.parent_id == a.id) or (prefill_parent and prefill_parent|int == a.id) %}selected{% endif %}>
+          {{ '—' * (a.depth|default(0)) }} {{ a.title }}
+        </option>
+        {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  {# ── Split editor ── #}
+  <div class="wiki-split-editor" id="wiki-split-editor">
+
+    {# Left: CodeMirror #}
+    <div class="wiki-editor-pane" id="wiki-editor-pane">
+      <div class="wiki-editor-toolbar">
+        <button type="button" data-cmd="h2"       title="Heading 2">H2</button>
+        <button type="button" data-cmd="h3"       title="Heading 3">H3</button>
+        <span class="wiki-tb-sep"></span>
+        <button type="button" data-cmd="bold"     title="Bold"><strong>B</strong></button>
+        <button type="button" data-cmd="italic"   title="Italic"><em>I</em></button>
+        <button type="button" data-cmd="code"     title="Inline code"><code>`</code></button>
+        <button type="button" data-cmd="codeblock" title="Code block">```</button>
+        <span class="wiki-tb-sep"></span>
+        <button type="button" data-cmd="hr"       title="Horizontal rule">―</button>
+        <button type="button" data-cmd="ul"       title="List">• List</button>
+        <button type="button" data-cmd="link"     title="External link">🔗</button>
+        <button type="button" data-cmd="wikilink" title="Wiki link">[[link]]</button>
+        <span class="wiki-tb-sep"></span>
+        <button type="button" id="wiki-img-toggle" title="Insert image">🖼 Images</button>
+        <span class="wiki-tb-spacer"></span>
+        <button type="button" id="wiki-preview-toggle" class="wiki-tb-right">👁 Preview</button>
+      </div>
+      <textarea id="wiki-textarea" name="content" style="display:none">{{ prefill_content or '' }}</textarea>
+      <div id="wiki-codemirror"></div>
+    </div>
+
+    {# Right: live preview #}
+    <div class="wiki-preview-pane" id="wiki-preview-pane">
+      <div class="wiki-preview-label">Preview</div>
+      <div class="wiki-preview-body" id="wiki-preview-body"></div>
+    </div>
+  </div>
+
+  {# ── Image palette ── #}
+  <div class="wiki-img-palette" id="wiki-img-palette" style="display:none">
+    <div class="wiki-img-palette-head">
+      <span>Image Pool — click to insert · drag to reorder</span>
+      <label class="wiki-img-upload-label">
+        + Upload
+        <input type="file" id="wiki-img-upload-input" accept="image/*" style="display:none">
+      </label>
+    </div>
+    <div class="wiki-img-grid" id="wiki-img-grid">
+      <div class="wiki-img-loading">Loading…</div>
+    </div>
+  </div>
+
+  {# ── Infobox / params ── #}
+  <details class="wiki-params-section">
+    <summary class="wiki-params-toggle">⚙ Infobox / params (optional)</summary>
+    <div class="wiki-params-body">
+      <p class="wiki-params-hint">JSON object — key/value pairs shown in the right sidebar of the article.<br>
+      Example: <code>{"Engine": "Unity", "Platform": "iOS, Android", "Genre": "Action"}</code></p>
+      <textarea name="params" id="wiki-params" class="wiki-params-ta"
+                placeholder='{"Key": "Value"}'>{{ article.params if article else '{}' }}</textarea>
+    </div>
+  </details>
+
+  <div class="wiki-edit-actions">
+    <button type="submit" class="btn btn-primary">💾 Save Article</button>
+    {% if mode == 'edit' %}
+    <a class="btn btn-secondary" href="{{ url_for('wiki_article', project_id=project.id, slug=article.slug) }}">Cancel</a>
+    {% else %}
+    <a class="btn btn-secondary" href="{{ url_for('wiki_home', project_id=project.id) }}">Cancel</a>
+    {% endif %}
+  </div>
+</form>
+
+{# CodeMirror 6 via CDN #}
+<script src="https://cdn.jsdelivr.net/npm/@codemirror/state@6/dist/index.js"    type="module" id="cm-state"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@codemirror/view@6/dist/style.css">
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+
+{# We use a simpler CDN bundle that exposes window.CodeMirror-free approach:
+   use the all-in-one CM6 bundle from jsdelivr #}
+<script type="module">
+import {EditorState} from 'https://esm.sh/@codemirror/state@6';
+import {EditorView, keymap, lineNumbers, highlightActiveLine} from 'https://esm.sh/@codemirror/view@6';
+import {defaultKeymap, history, historyKeymap} from 'https://esm.sh/@codemirror/commands@6';
+import {markdown, markdownLanguage} from 'https://esm.sh/@codemirror/lang-markdown@6';
+import {oneDark} from 'https://esm.sh/@codemirror/theme-one-dark@6';
+import {syntaxHighlighting, defaultHighlightStyle} from 'https://esm.sh/@codemirror/language@6';
+
+var ta      = document.getElementById('wiki-textarea');
+var cmWrap  = document.getElementById('wiki-codemirror');
+var preview = document.getElementById('wiki-preview-body');
+var form    = document.getElementById('wiki-edit-form');
+
+if (!ta || !cmWrap) { console.error('wiki editor: missing elements'); }
+else {
+
+var view = new EditorView({
+  state: EditorState.create({
+    doc: ta.value,
+    extensions: [
+      history(),
+      keymap.of([...defaultKeymap, ...historyKeymap]),
+      lineNumbers(),
+      highlightActiveLine(),
+      markdown({base: markdownLanguage}),
+      oneDark,
+      syntaxHighlighting(defaultHighlightStyle, {fallback: true}),
+      EditorView.updateListener.of(function (update) {
+        if (update.docChanged) {
+          ta.value = view.state.doc.toString();
+          renderPreview();
+        }
+      }),
+      EditorView.theme({
+        '&': { height: '100%', fontSize: '13px' },
+        '.cm-scroller': { overflow: 'auto', fontFamily: 'ui-monospace,Menlo,monospace' }
+      })
+    ]
+  }),
+  parent: cmWrap
+});
+
+// ── Live preview ────────────────────────────────────────────────────────────
+function renderPreview() {
+  if (!preview || typeof marked === 'undefined') return;
+  var md = view.state.doc.toString();
+  // Stub [[links]] as <a class="wiki-link"> for preview
+  md = md.replace(/\[\[([^\]]+)\]\]/g, function (_, inner) {
+    var parts = inner.split('|');
+    var label = (parts[1] || parts[0]).trim();
+    return '<a class="wiki-link" href="#">' + label + '</a>';
+  });
+  var html = marked.parse(md);
+  preview.innerHTML = html;
+  // Resolve image src
+  preview.querySelectorAll('img').forEach(function (img) {
+    var src = img.getAttribute('src');
+    if (src && !src.startsWith('http') && !src.startsWith('/')) {
+      img.src = '/project/{{ project.id }}/wiki/images/' + src;
+    }
+  });
+}
+renderPreview();
+
+// Sync back to textarea before form submit
+form.addEventListener('submit', function () {
+  ta.value = view.state.doc.toString();
+});
+
+// ── Toolbar ─────────────────────────────────────────────────────────────────
+var CMDS = {
+  'h2':        function (sel) { return '## ' + (sel || 'Heading'); },
+  'h3':        function (sel) { return '### ' + (sel || 'Heading'); },
+  'bold':      function (sel) { return '**' + (sel || 'bold') + '**'; },
+  'italic':    function (sel) { return '*' + (sel || 'italic') + '*'; },
+  'code':      function (sel) { return '`' + (sel || 'code') + '`'; },
+  'codeblock': function (sel) { return '```\n' + (sel || 'code') + '\n```'; },
+  'hr':        function ()    { return '\n---\n'; },
+  'ul':        function (sel) { return '- ' + (sel || 'item'); },
+  'link':      function (sel) { return '[' + (sel || 'text') + '](https://)'; },
+  'wikilink':  function (sel) { return '[[' + (sel || 'Article Name') + ']]'; },
+};
+
+document.querySelectorAll('.wiki-editor-toolbar button[data-cmd]').forEach(function (btn) {
+  btn.addEventListener('click', function (e) {
+    e.preventDefault();
+    var cmd = btn.dataset.cmd;
+    if (!CMDS[cmd]) return;
+    var range  = view.state.selection.main;
+    var selTxt = view.state.sliceDoc(range.from, range.to);
+    var insert = CMDS[cmd](selTxt);
+    view.dispatch({
+      changes: {from: range.from, to: range.to, insert: insert},
+      selection: {anchor: range.from + insert.length}
+    });
+    view.focus();
+  });
+});
+
+// ── Preview toggle ───────────────────────────────────────────────────────────
+var editorPane  = document.getElementById('wiki-editor-pane');
+var previewPane = document.getElementById('wiki-preview-pane');
+var previewBtn  = document.getElementById('wiki-preview-toggle');
+var previewOpen = true;
+previewBtn.addEventListener('click', function () {
+  previewOpen = !previewOpen;
+  previewPane.style.display = previewOpen ? '' : 'none';
+  document.getElementById('wiki-split-editor').style.gridTemplateColumns =
+    previewOpen ? '1fr 1fr' : '1fr';
+  previewBtn.textContent = previewOpen ? '👁 Preview' : '👁 Show Preview';
+});
+
+} // end if ta
+</script>
+
+<script>
+// ── Image palette (non-module) ───────────────────────────────────────────────
+(function () {
+  var toggleBtn = document.getElementById('wiki-img-toggle');
+  var palette   = document.getElementById('wiki-img-palette');
+  var grid      = document.getElementById('wiki-img-grid');
+  var uploadIn  = document.getElementById('wiki-img-upload-input');
+  var loaded    = false;
+
+  if (!toggleBtn || !palette) return;
+
+  toggleBtn.addEventListener('click', function () {
+    var open = palette.style.display === 'none' || !palette.style.display;
+    palette.style.display = open ? '' : 'none';
+    if (open && !loaded) loadImages();
+  });
+
+  function loadImages() {
+    loaded = true;
+    fetch('/api/project/{{ project.id }}/wiki/images', {credentials: 'same-origin'})
+      .then(function (r) { return r.json(); })
+      .then(function (imgs) {
+        grid.innerHTML = '';
+        if (!imgs.length) {
+          grid.innerHTML = '<div class="wiki-img-empty">No images yet — upload one.</div>';
+          return;
+        }
+        imgs.forEach(function (img) {
+          var div = document.createElement('div');
+          div.className = 'wiki-img-thumb';
+          div.title = img.caption || img.filename;
+          div.innerHTML = '<img src="' + (img.thumb_url || img.url) + '" alt="' + (img.caption || '') + '">' +
+            '<div class="wiki-img-thumb-caption">' + (img.caption || img.filename) + '</div>';
+          div.addEventListener('click', function () {
+            insertMd(img.md_snippet);
+          });
+          grid.appendChild(div);
+        });
+      })
+      .catch(function () { grid.innerHTML = '<div class="wiki-img-empty">Failed to load images.</div>'; });
+  }
+
+  uploadIn.addEventListener('change', function () {
+    var file = uploadIn.files[0];
+    if (!file) return;
+    var fd = new FormData();
+    fd.append('image', file);
+    fd.append('_csrf', document.querySelector('input[name="_csrf"]').value);
+    fetch('/project/{{ project.id }}/wiki/images/upload', {
+      method: 'POST', body: fd, credentials: 'same-origin'
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (!res.ok) { alert('Upload failed: ' + (res.error || '?')); return; }
+      insertMd(res.md_snippet);
+      loaded = false;
+      loadImages();
+    });
+    uploadIn.value = '';
+  });
+
+  function insertMd(snippet) {
+    var ta = document.getElementById('wiki-textarea');
+    if (!ta) return;
+    // Try to insert at CodeMirror cursor (module sets ta.value live)
+    var pos = ta.selectionStart || ta.value.length;
+    var before = ta.value.substring(0, pos);
+    var after  = ta.value.substring(pos);
+    ta.value = before + '\n' + snippet + '\n' + after;
+    // Trigger input event so CodeMirror picks it up
+    ta.dispatchEvent(new Event('input'));
+    // Also directly update CodeMirror view if accessible
+    // (the module listener on updateListener keeps ta in sync on CM changes,
+    //  but for external ta changes we need to nudge CM)
+    // Simple fallback: reload page is too harsh; just flash the textarea
+    ta.style.display = 'block';
+    setTimeout(function () { ta.style.display = 'none'; }, 0);
+  }
+})();
+</script>
+
+{% endblock %}

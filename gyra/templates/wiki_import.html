@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Import GDD — {{ project.name }} Wiki{% endblock %}
+
+{% block content %}
+<div class="wiki-page-header">
+  <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_home', project_id=project.id) }}">← Wiki</a>
+  <h2 style="margin:0">⬆ Import GDD Text</h2>
+</div>
+
+<div class="wiki-import-layout">
+  <div class="wiki-import-help">
+    <strong>Paste a numbered GDD document</strong> and the system will create an article tree for each section.
+    <br><br>
+    Format — any numbering depth works:
+    <pre class="wiki-import-example">1. Overview
+This is a top-level section.
+
+1.1 Vision
+Our game is about...
+
+1.2 Core Loop
+1.2.1 Player Actions
+Describing what the player does...
+
+2. Mechanics
+2.1 Combat</pre>
+    <p>Each numbered heading becomes an article. Body text becomes the article content. You can edit everything after import.</p>
+  </div>
+
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <label class="wiki-edit-label">GDD Text</label>
+    <textarea name="gdd_text" class="wiki-import-ta" rows="24"
+              placeholder="Paste your GDD here..."></textarea>
+    <div class="wiki-edit-actions" style="margin-top:12px">
+      <button type="submit" class="btn btn-primary">⬆ Import Articles</button>
+      <a class="btn btn-secondary" href="{{ url_for('wiki_home', project_id=project.id) }}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -4,7 +4,7 @@ Each module exposes a ``register(app)`` function that attaches its routes
 to the Flask app instance.  No Blueprints are used so that all url_for()
 endpoint names remain unchanged throughout templates and JS.
 """
-from routes import auth, board, stories, admin, profile, api_story, api_project, api_container, sprint, grooming, prioritizer, initiatives, epics
+from routes import auth, board, stories, admin, profile, api_story, api_project, api_container, sprint, grooming, prioritizer, initiatives, epics, wiki
 
 
 def register_all(app) -> None:
@@ -21,3 +21,4 @@ def register_all(app) -> None:
     prioritizer.register(app)
     initiatives.register(app)
     epics.register(app)
+    wiki.register(app)

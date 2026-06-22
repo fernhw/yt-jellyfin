@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} Wiki — Gyra{% endblock %}
+
+{% block content %}
+<div class="wiki-page-header">
+  <div class="wiki-page-header-left">
+    <span class="project-key-badge">{{ project.key }}</span>
+    <h2>📖 Wiki</h2>
+  </div>
+  <div class="wiki-page-header-right">
+    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_gdd', project_id=project.id) }}">📄 GDD View</a>
+    {% if session.role in ('admin','super_user') %}
+    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_import', project_id=project.id) }}">⬆ Import GDD</a>
+    {% endif %}
+    <a class="btn btn-sm btn-primary" href="{{ url_for('wiki_new', project_id=project.id) }}">+ New Article</a>
+  </div>
+</div>
+
+<div class="wiki-home-layout">
+  <div class="wiki-tree-panel">
+    <div class="wiki-tree-header">Articles</div>
+    {% if tree %}
+      {% macro render_tree(nodes, depth=0) %}
+        {% for node in nodes %}
+        <div class="wiki-tree-item" style="padding-left: {{ 12 + depth * 16 }}px">
+          <a class="wiki-tree-link{% if not node.is_published %} wiki-tree-unpublished{% endif %}"
+             href="{{ url_for('wiki_article', project_id=project.id, slug=node.slug) }}">
+            {% if node.children %}
+            <span class="wiki-tree-chevron">›</span>
+            {% else %}
+            <span class="wiki-tree-dot">·</span>
+            {% endif %}
+            {{ node.title }}
+          </a>
+          {% if node.children %}
+            {{ render_tree(node.children, depth + 1) }}
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% endmacro %}
+      {{ render_tree(tree) }}
+    {% else %}
+      <div class="wiki-tree-empty">No articles yet.</div>
+    {% endif %}
+  </div>
+
+  <div class="wiki-home-main">
+    {% if tree %}
+    <div class="wiki-home-grid">
+      {% for item in flat %}
+      <a class="wiki-home-card" href="{{ url_for('wiki_article', project_id=project.id, slug=item.slug) }}">
+        <div class="wiki-home-card-title">{{ item.title }}</div>
+        {% if not item.is_published %}<span class="wiki-draft-badge">Draft</span>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="wiki-home-empty">
+      <div class="empty-state">
+        <h2>Your wiki is empty</h2>
+        <p>A welcome article has been created. Click it in the tree to start, or create a new article.</p>
+        <a class="btn btn-primary" href="{{ url_for('wiki_new', project_id=project.id) }}">+ New Article</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

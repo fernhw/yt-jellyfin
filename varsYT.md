@@ -1,14 +1,14 @@
-last_scan=1782102847087
-total_videos=3174
-updated=2026-06-21 23:34:07
-report_date=2026-06-21
-downloaded_today=15
-deleted_today=9
-skipped_today=0
+last_scan=1782106473224
+total_videos=3175
+updated=2026-06-22 00:34:33
+report_date=2026-06-22
+downloaded_today=0
+deleted_today=0
+skipped_today=1
 channels_scanned=93
 channels_total=93
 errors_last_run=0
 errors_list=
-downloaded_list=Big A:Moscow Is Burning|TechDweeb:What Kind of Android Handheld Is Best for PC Games?|Asmongold TV  :He opened his mouth. It backfired..|Lessons in Meme Culture:Who Is YBG Wallace?|Digital Foundry:DF Direct Weekly #269: GTA 6 News Reaction, UE5 Upgrades, UE6, Gears E-Day Tech Demo|Skill Up:The honeymoon is over as Xbox prepares to close multiple studios | Friends Per Second #97|Karsten Runquist:'Toy Story 5' Wasn't Meant To Happen...Does It Still Work?|Second Wind:So I Walked Past Your Game at a Con...|Asmongold TV  :This might actually save him..|Corridor Crew:We Rank SPIDER-MAN CGi|Asmongold TV  :They’re STILL MAD about this.|Asmongold TV  :We cannot coexist with these people..|ConnorDawg:I Sold EVERYTHING I Own|Spawn Wave:This Keeps Happening To Xbox|Big A:I Can't Believe He Said This
-deleted_list=AsmongoldTV:This_is_the_most_pathetic_video_Ive_seen_S26E245|TechDweeb:Your_Handheld_Is_Also_a_STEAM_MACHINE_S26E10|DigitalFoundry:Xbox_Showcase_2026_An_Excellent_Show_-_Gears_E-Day_Halo_Senua_Metro_2039_Reactio_S26E46|SkillUp:Sony_is_back_in_the_exclusives_business_-_will_Xbox_follow_next_Friends_Per_Seco_S26E16|AsmongoldTV:Every_single_venue_cancelled_him_S26E246|SecondWind:I_Dont_Like_007_First_Lights_Level_Design_and_Im_Wrong_Design_Delve_S26E47|CorridorCrew:We_Remade_the_ALIEN_Chestburster_with_OLD_and_NEW_VFX_S26E12|AsmongoldTV:I_actually_lost_brain_cells_watching_this_S26E247|AsmongoldTV:Hes_only_apologizing_because_hes_fcked_S26E248
-skipped_list=
+downloaded_list=
+deleted_list=
+skipped_list=members-only:https://www.youtube.com/watch?v=_YmJMhjd0Ns
