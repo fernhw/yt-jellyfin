@@ -4209,6 +4209,19 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
   background: var(--c-gray-100); padding: 10px 14px;
   font-weight: 700; font-size: 13px; color: var(--c-gray-700);
   border-bottom: 1px solid var(--c-gray-200);
+  text-align: center;
+}
+.wiki-infobox-hero {
+  border-bottom: 1px solid var(--c-gray-200);
+  text-align: center; padding: 10px 12px 6px;
+}
+.wiki-infobox-img {
+  width: 100%; max-width: 260px; height: auto;
+  border-radius: 4px; display: block; margin: 0 auto;
+}
+.wiki-infobox-caption {
+  font-size: 11.5px; color: var(--c-gray-500); margin-top: 5px;
+  font-style: italic; line-height: 1.4;
 }
 .wiki-infobox-row {
   display: grid; grid-template-columns: 100px 1fr;
@@ -4223,6 +4236,33 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
 .wiki-infobox-val {
   padding: 8px 10px; color: var(--c-gray-800);
 }
+
+/* Extra sections & references */
+.wiki-extra-section { margin-top: 36px; }
+.wiki-extra-heading {
+  font-size: 18px; font-weight: 700; color: var(--c-gray-800);
+  border-bottom: 2px solid var(--c-gray-200); padding-bottom: 6px; margin-bottom: 12px;
+}
+.wiki-extra-body { color: var(--c-gray-700); }
+.wiki-refs-heading {
+  font-size: 16px; font-weight: 700; color: var(--c-gray-700);
+  border-bottom: 1px solid var(--c-gray-200); padding-bottom: 6px; margin: 36px 0 10px;
+}
+.wiki-refs-body { font-size: 13px; color: var(--c-gray-600); }
+.wiki-refs-body li { margin-bottom: 4px; }
+.wiki-empty-note { color: var(--c-gray-400); font-style: italic; }
+.wiki-gdd-num {
+  color: var(--c-gray-400); font-weight: 400; font-size: .85em;
+  letter-spacing: .02em; user-select: none;
+}
+.wiki-children-section { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--c-gray-200); }
+.wiki-children-heading {
+  font-size: 16px; font-weight: 700; color: var(--c-gray-700);
+  margin-bottom: 12px;
+}
+.wiki-children-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.wiki-children-item { display: flex; align-items: baseline; gap: 8px; font-size: 14px; }
+.wiki-children-num { color: var(--c-gray-400); font-size: 12px; min-width: 28px; flex-shrink: 0; }
 
 /* Prev/Next */
 .wiki-prevnext {
@@ -4349,6 +4389,7 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
 .wiki-img-thumb img { width: 100%; height: 72px; object-fit: cover; border-radius: 3px; display: block; }
 .wiki-img-thumb-caption { font-size: 10px; color: var(--c-gray-500); padding: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wiki-img-loading, .wiki-img-empty { font-size: 12px; color: var(--c-gray-400); padding: 10px; }
+.wiki-loading { color: var(--c-gray-400); font-size: 13px; padding: 8px 0; }
 
 /* ── Params section ── */
 .wiki-params-section { margin-bottom: 12px; }
@@ -4437,6 +4478,26 @@ body.modal-iframe .story-modal-close-btn:hover { background: #0f172a; }
   border: 1px solid var(--c-gray-300); border-radius: 5px;
   resize: vertical; min-height: 320px;
 }
+.wiki-import-mode-choice {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-bottom: 4px;
+}
+.wiki-import-mode-choice > strong { font-size: 13px; color: var(--c-gray-700); }
+.wiki-import-mode-label {
+  display: flex; align-items: flex-start; gap: 8px; cursor: pointer;
+}
+.wiki-import-mode-label input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+.wiki-import-mode-opt {
+  display: flex; flex-direction: column; gap: 1px; line-height: 1.4;
+  padding: 8px 12px; border-radius: 6px; border: 1px solid var(--c-gray-200);
+  font-size: 13px; flex: 1;
+  transition: border-color .15s;
+}
+.wiki-import-mode-label:has(input:checked) .wiki-import-mode-opt { border-color: var(--c-purple-400); background: var(--c-purple-50); }
+.wiki-import-append small  { color: var(--c-gray-500); font-size: 11.5px; }
+.wiki-import-replace       { border-color: var(--c-red-200) !important; }
+.wiki-import-replace small  { color: var(--c-red-500); font-size: 11.5px; }
+.wiki-import-mode-label:has(input:checked) .wiki-import-replace { background: #fff5f5; border-color: var(--c-red-400) !important; }
 
 /* ── Responsive ── */
 @media (max-width: 900px) {

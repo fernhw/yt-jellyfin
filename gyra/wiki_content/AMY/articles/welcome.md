@@ -1,7 +1,15 @@
+[META]
+title=Welcome
+genre=Game Design Wiki
+status=In Progress
+authors=
+
+[HERO]
+
+[MAIN_SECTION]
 # Welcome to the Amy's Escape Wiki
 
-This is your project's Game Design Wiki. Every article lives as a Markdown
-file on disk, fully editable by your team and exportable as a GDD.
+This is your project's Game Design Wiki. Every article lives as a Markdown file on disk, fully editable by your team and exportable as a GDD.
 
 ## Getting started
 
@@ -24,3 +32,5 @@ file on disk, fully editable by your team and exportable as a GDD.
 ```
 
 Edit this article to make it your own.
+
+[REFERENCES]

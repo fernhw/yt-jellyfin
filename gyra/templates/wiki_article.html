@@ -45,34 +45,52 @@
     {% endfor %}
   </aside>
 
-  {# Center: article body #}
+  {# Center: article body — MAIN_SECTION + extras rendered by JS #}
   <article class="wiki-article-body">
-    <h1 class="wiki-article-h1">{{ article.title }}</h1>
+    <h1 class="wiki-article-h1">
+      {% if gdd_num %}<span class="wiki-gdd-num">{{ gdd_num }}.</span> {% endif %}{{ article.title }}
+    </h1>
     <div class="wiki-article-meta">
       Last edited {% if article.updated_name %}by <strong>{{ article.updated_name }}</strong>{% endif %}
       · <span class="wiki-article-date" data-ts="{{ article.updated_at }}"></span>
     </div>
 
-    {# Article body — rendered entirely client-side by marked.js #}
+    {# Main content #}
     <div class="wiki-article-content" id="wiki-content">
       <div class="wiki-loading">Loading…</div>
     </div>
+
+    {# Extra named sections (not META/HERO/MAIN_SECTION/REFERENCES) #}
+    <div id="wiki-extra-sections"></div>
+
+    {# References section #}
+    <div id="wiki-references" style="display:none">
+      <h2 class="wiki-refs-heading">References</h2>
+      <div class="wiki-refs-body"></div>
+    </div>
+
+    {# Child articles — always shown if children exist #}
+    {% if children %}
+    <div class="wiki-children-section">
+      <h2 class="wiki-children-heading">Sub-articles</h2>
+      <ul class="wiki-children-list">
+        {% for child in children %}
+        <li class="wiki-children-item">
+          {% if child.gdd_num %}<span class="wiki-children-num">{{ child.gdd_num }}.</span>{% endif %}
+          <a href="{{ child.url }}" class="wiki-link">{{ child.title }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
   </article>
 
-  {# Right: infobox + images #}
-  {% if params %}
+  {# Right: infobox — HERO image at top, then META key=values, just like Wikipedia #}
   <aside class="wiki-aside-info">
-    <div class="wiki-infobox">
-      <div class="wiki-infobox-title">{{ article.title }}</div>
-      {% for k, v in params.items() %}
-      <div class="wiki-infobox-row">
-        <span class="wiki-infobox-key">{{ k }}</span>
-        <span class="wiki-infobox-val">{{ v }}</span>
-      </div>
-      {% endfor %}
+    <div class="wiki-infobox" id="wiki-infobox">
+      {# Populated by JS from [HERO] and [META] sections #}
     </div>
   </aside>
-  {% endif %}
 
 </div>
 
@@ -90,23 +108,16 @@
   {% endif %}
 </div>
 
-{% if session.role in ('admin', 'super_user') %}
-<div style="margin-top:24px; padding-top:12px; border-top:1px solid var(--c-gray-200)">
-  <form method="post" action="{{ url_for('wiki_delete', project_id=project.id, slug=article.slug) }}"
-        onsubmit="return confirm('Delete this article? This cannot be undone.')">
-    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-    <button type="submit" class="btn btn-sm btn-danger">🗑 Delete article</button>
-  </form>
-</div>
-{% endif %}
+
 
 {# marked.js — renders all Markdown client-side #}
 <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
 
-{# Raw article data injected safely as JSON — no escaping issues #}
+{# All section data injected as JSON — safe from Jinja2 escaping #}
 <script id="wiki-data" type="application/json">
 {
-  "raw_md":   {{ raw_md   | tojson }},
+  "sections": {{ sections | tojson }},
+  "title":    {{ article.title | tojson }},
   "link_map": {{ link_map | tojson }},
   "img_base": "/project/{{ project.id }}/wiki/images/"
 }
@@ -114,73 +125,163 @@
 
 <script>
 (function () {
-  var dataEl   = document.getElementById('wiki-data');
-  var content  = document.getElementById('wiki-content');
-  var tocEl    = document.getElementById('wiki-toc');
-  if (!dataEl || !content) return;
+  var dataEl      = document.getElementById('wiki-data');
+  var contentEl   = document.getElementById('wiki-content');
+  var extraEl     = document.getElementById('wiki-extra-sections');
+  var refsEl      = document.getElementById('wiki-references');
+  var infoboxEl   = document.getElementById('wiki-infobox');
+  var tocEl       = document.getElementById('wiki-toc');
+  if (!dataEl || !contentEl) return;
 
   var data     = JSON.parse(dataEl.textContent);
-  var raw      = data.raw_md;
+  var sections = data.sections;   // [{type, content}, ...]
   var linkMap  = data.link_map;
   var imgBase  = data.img_base;
+  var title    = data.title;
 
-  // ── 1. Resolve [[wiki links]] before markdown parsing ────────────────────
-  // [[slug]] or [[slug|Label]] or [[Title]]
-  raw = raw.replace(/\[\[([^\]]+)\]\]/g, function (_, inner) {
-    var parts  = inner.split('|');
-    var key    = parts[0].trim().toLowerCase();
-    var label  = (parts[1] || parts[0]).trim();
-    var entry  = linkMap[key] || linkMap[parts[0].trim()];
-    if (entry) {
-      return '[' + label + '](' + entry.url + '){.wiki-link}';
-    }
-    return '<span class="wiki-link-missing" title="Article not found">' + label + '</span>';
-  });
-
-  // ── 2. Render Markdown → HTML ─────────────────────────────────────────────
-  if (typeof marked === 'undefined') {
-    content.innerHTML = '<pre>' + raw.replace(/</g,'&lt;') + '</pre>';
-    return;
-  }
-
-  // Configure marked: allow HTML passthrough (for our <span> missing links)
   marked.setOptions({ breaks: false, gfm: true });
 
-  var html = marked.parse(raw);
-  content.innerHTML = html;
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
-  // ── 3. Post-process rendered HTML ─────────────────────────────────────────
+  function resolveLinks(md) {
+    return md.replace(/\[\[([^\]]+)\]\]/g, function (_, inner) {
+      var parts = inner.split('|');
+      var key   = parts[0].trim().toLowerCase();
+      var label = (parts[1] || parts[0]).trim();
+      var entry = linkMap[key] || linkMap[parts[0].trim()];
+      if (entry) return '[' + label + '](' + entry.url + ')';
+      return '<span class="wiki-link-missing" title="Article not found">' + label + '</span>';
+    });
+  }
 
-  // Style internal wiki links (markdown-generated <a> with .wiki-link class marker)
-  // marked doesn't support {.class} so we detect by href being our /project/ path
-  content.querySelectorAll('a').forEach(function (a) {
-    var href = a.getAttribute('href') || '';
-    if (href.indexOf('/project/') === 0 && href.indexOf('/wiki/') > 0) {
-      a.classList.add('wiki-link');
-    } else if (href.startsWith('http') || href.startsWith('//')) {
-      a.classList.add('wiki-ext-link');
-      a.target  = '_blank';
-      a.rel     = 'noopener noreferrer';
+  function postProcess(el) {
+    el.querySelectorAll('a').forEach(function (a) {
+      var href = a.getAttribute('href') || '';
+      if (href.indexOf('/project/') === 0 && href.indexOf('/wiki/') > 0) {
+        a.classList.add('wiki-link');
+      } else if (href.startsWith('http') || href.startsWith('//')) {
+        a.classList.add('wiki-ext-link');
+        a.target = '_blank';
+        a.rel    = 'noopener noreferrer';
+      }
+    });
+    el.querySelectorAll('img').forEach(function (img) {
+      var src = img.getAttribute('src');
+      if (src && !src.startsWith('http') && !src.startsWith('/')) {
+        img.src = imgBase + src;
+      }
+      img.classList.add('wiki-img');
+      img.loading = 'lazy';
+    });
+  }
+
+  function parseMeta(content) {
+    var rows = {};
+    content.split('\n').forEach(function (line) {
+      line = line.trim();
+      if (!line || line.startsWith('#')) return;
+      var idx = line.indexOf('=');
+      if (idx < 0) return;
+      var k = line.slice(0, idx).trim();
+      var v = line.slice(idx + 1).trim();
+      if (k) rows[k] = v;
+    });
+    return rows;
+  }
+
+  function renderMd(md) {
+    if (typeof marked === 'undefined') return '<pre>' + md.replace(/</g, '&lt;') + '</pre>';
+    return marked.parse(resolveLinks(md));
+  }
+
+  // ── Build infobox from HERO + META sections ───────────────────────────────
+
+  var heroSection = sections.find(function (s) { return s.type === 'HERO'; });
+  var metaSection = sections.find(function (s) { return s.type === 'META'; });
+
+  var infoHtml = '';
+
+  // Title bar
+  infoHtml += '<div class="wiki-infobox-title">' + title.replace(/</g, '&lt;') + '</div>';
+
+  // HERO image — first non-empty line is the filename, second (optional) is caption
+  if (heroSection && heroSection.content.trim()) {
+    var heroLines   = heroSection.content.trim().split('\n');
+    var heroFile    = heroLines[0].trim();
+    var heroCaption = heroLines.slice(1).join(' ').trim();
+    if (heroFile) {
+      var heroSrc = heroFile.startsWith('http') || heroFile.startsWith('/')
+        ? heroFile
+        : imgBase + heroFile;
+      infoHtml += '<div class="wiki-infobox-hero">'
+        + '<img src="' + heroSrc + '" alt="' + (heroCaption || title).replace(/"/g, '&quot;') + '" class="wiki-infobox-img" loading="lazy">'
+        + (heroCaption ? '<div class="wiki-infobox-caption">' + heroCaption.replace(/</g, '&lt;') + '</div>' : '')
+        + '</div>';
     }
+  }
+
+  // META key=value rows (skip 'title' since it's in the title bar)
+  if (metaSection && metaSection.content.trim()) {
+    var meta = parseMeta(metaSection.content);
+    Object.keys(meta).forEach(function (k) {
+      if (k.toLowerCase() === 'title') return;  // already shown
+      var val = meta[k];
+      // Resolve [[links]] in values
+      val = resolveLinks(val);
+      var labelK = k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ');
+      infoHtml += '<div class="wiki-infobox-row">'
+        + '<span class="wiki-infobox-key">' + labelK.replace(/</g, '&lt;') + '</span>'
+        + '<span class="wiki-infobox-val">' + val + '</span>'
+        + '</div>';
+    });
+  }
+
+  infoboxEl.innerHTML = infoHtml;
+  postProcess(infoboxEl);
+
+  // ── Render MAIN_SECTION into article body ─────────────────────────────────
+
+  var mainSection = sections.find(function (s) { return s.type === 'MAIN_SECTION'; });
+  if (mainSection && mainSection.content.trim()) {
+    contentEl.innerHTML = renderMd(mainSection.content);
+    postProcess(contentEl);
+  } else {
+    contentEl.innerHTML = '<p class="wiki-empty-note">No content yet. <a href="{{ url_for("wiki_edit", project_id=project.id, slug=article.slug) }}">Add content →</a></p>';
+  }
+
+  // ── Render extra sections (anything not META/HERO/MAIN_SECTION/REFERENCES) ─
+
+  var skipTypes = { META: 1, HERO: 1, MAIN_SECTION: 1, REFERENCES: 1 };
+  sections.forEach(function (s) {
+    if (skipTypes[s.type] || !s.content.trim()) return;
+    var sLabel = s.type.replace(/_/g, ' ')
+      .split(' ').map(function (w) { return w.charAt(0) + w.slice(1).toLowerCase(); }).join(' ');
+    var sec = document.createElement('section');
+    sec.className = 'wiki-extra-section';
+    sec.innerHTML = '<h2 class="wiki-extra-heading">' + sLabel + '</h2>'
+      + '<div class="wiki-extra-body">' + renderMd(s.content) + '</div>';
+    postProcess(sec);
+    extraEl.appendChild(sec);
   });
 
-  // Resolve relative image src → full URL
-  content.querySelectorAll('img').forEach(function (img) {
-    var src = img.getAttribute('src');
-    if (src && !src.startsWith('http') && !src.startsWith('/')) {
-      img.src = imgBase + src;
-    }
-    img.classList.add('wiki-img');
-    img.loading = 'lazy';
-  });
+  // ── Render REFERENCES ─────────────────────────────────────────────────────
 
-  // ── 4. Build TOC from rendered headings ──────────────────────────────────
+  var refsSection = sections.find(function (s) { return s.type === 'REFERENCES'; });
+  if (refsSection && refsSection.content.trim()) {
+    refsEl.style.display = '';
+    var refsBody = refsEl.querySelector('.wiki-refs-body');
+    refsBody.innerHTML = renderMd(refsSection.content);
+    postProcess(refsEl);
+  }
+
+  // ── Build TOC from rendered headings ──────────────────────────────────────
+
   if (tocEl) {
-    var headings = content.querySelectorAll('h2, h3');
-    if (headings.length) {
+    var allHeadings = contentEl.querySelectorAll('h2, h3');
+    if (allHeadings.length) {
       var ul = document.createElement('ul');
       ul.className = 'wiki-toc-list';
-      headings.forEach(function (h, i) {
+      allHeadings.forEach(function (h, i) {
         var id = 'wiki-h-' + i;
         h.id = id;
         var li = document.createElement('li');
@@ -192,12 +293,13 @@
     }
   }
 
-  // ── 5. Format relative dates ──────────────────────────────────────────────
+  // ── Format relative dates ─────────────────────────────────────────────────
+
   document.querySelectorAll('.wiki-article-date[data-ts]').forEach(function (el) {
     var ts = parseInt(el.dataset.ts, 10);
     if (!ts) return;
     el.textContent = new Date(ts * 1000).toLocaleDateString(undefined,
-      {year: 'numeric', month: 'short', day: 'numeric'});
+      { year: 'numeric', month: 'short', day: 'numeric' });
   });
 })();
 </script>

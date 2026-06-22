@@ -29,13 +29,60 @@ Describing what the player does...
 
   <form method="post">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-    <label class="wiki-edit-label">GDD Text</label>
+
+    <div class="wiki-import-mode-choice">
+      <strong>Import mode</strong>
+      <label class="wiki-import-mode-label">
+        <input type="radio" name="import_mode" value="append" checked>
+        <span class="wiki-import-mode-opt wiki-import-append">
+          <strong>Append</strong>
+          <small>Add imported articles below existing wiki content.</small>
+        </span>
+      </label>
+      <label class="wiki-import-mode-label">
+        <input type="radio" name="import_mode" value="replace">
+        <span class="wiki-import-mode-opt wiki-import-replace">
+          <strong>Replace all</strong>
+          <small>⚠ Delete every existing article, then import fresh. Cannot be undone.</small>
+        </span>
+      </label>
+    </div>
+
+    <label class="wiki-edit-label" style="margin-top:16px;display:block">GDD Text</label>
     <textarea name="gdd_text" class="wiki-import-ta" rows="24"
               placeholder="Paste your GDD here..."></textarea>
     <div class="wiki-edit-actions" style="margin-top:12px">
-      <button type="submit" class="btn btn-primary">⬆ Import Articles</button>
+      <button type="submit" class="btn btn-primary" id="wiki-import-submit">⬆ Import Articles</button>
       <a class="btn btn-secondary" href="{{ url_for('wiki_home', project_id=project.id) }}">Cancel</a>
     </div>
   </form>
 </div>
+
+<script>
+(function () {
+  var radios = document.querySelectorAll('input[name="import_mode"]');
+  var submitBtn = document.getElementById('wiki-import-submit');
+  radios.forEach(function (r) {
+    r.addEventListener('change', function () {
+      if (r.value === 'replace' && r.checked) {
+        submitBtn.textContent = '⚠ Replace All & Import';
+        submitBtn.classList.add('btn-danger');
+        submitBtn.classList.remove('btn-primary');
+      } else {
+        submitBtn.textContent = '⬆ Import Articles';
+        submitBtn.classList.remove('btn-danger');
+        submitBtn.classList.add('btn-primary');
+      }
+    });
+  });
+  document.querySelector('form').addEventListener('submit', function (e) {
+    var mode = document.querySelector('input[name="import_mode"]:checked').value;
+    if (mode === 'replace') {
+      if (!confirm('This will DELETE all existing articles in this wiki and replace them with the import. Continue?')) {
+        e.preventDefault();
+      }
+    }
+  });
+})();
+</script>
 {% endblock %}

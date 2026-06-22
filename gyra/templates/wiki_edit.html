@@ -105,6 +105,14 @@
     {% else %}
     <a class="btn btn-secondary" href="{{ url_for('wiki_home', project_id=project.id) }}">Cancel</a>
     {% endif %}
+    {% if mode == 'edit' and session.role in ('admin', 'super_user') %}
+    <form method="post" action="{{ url_for('wiki_delete', project_id=project.id, slug=article.slug) }}"
+          style="margin:0"
+          onsubmit="return confirm('Delete \'{{ article.title }}\'? This cannot be undone.')">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger">🗑 Delete</button>
+    </form>
+    {% endif %}
   </div>
 </form>
 

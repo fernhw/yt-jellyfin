@@ -82,6 +82,113 @@ def _write_md(project_key: str, slug: str, content: str) -> None:
         f.write(content)
 
 
+# ── Section system ────────────────────────────────────────────────────────────
+# File format: sections separated by [TAG] on its own line, no closing tags.
+# Content runs from after [TAG] until the next [TAG] or end of file.
+#
+#   [META]
+#   title=Combat
+#   authors=[[Alex]]
+#
+#   [HERO]
+#   combat.jpg
+#   Epic battle scene
+#
+#   [MAIN_SECTION]
+#   # Combat System
+#   The player...
+#
+#   [REFERENCES]
+#   - Game Design Patterns, 2004
+
+_SECTION_OPEN_RE = re.compile(r'^\[([A-Z][A-Z_0-9]*)\]\s*$', re.MULTILINE)
+
+# Default section template for new articles
+_DEFAULT_SECTIONS = [
+    {'type': 'META',         'content': 'title=\nauthors=\n'},
+    {'type': 'HERO',         'content': ''},
+    {'type': 'MAIN_SECTION', 'content': ''},
+    {'type': 'REFERENCES',   'content': ''},
+]
+
+# Canonical order for healing — these are ALWAYS present in every article file
+_REQUIRED_SECTIONS = ['META', 'HERO', 'MAIN_SECTION', 'REFERENCES']
+
+# Default content when a required section is re-inserted during healing
+_SECTION_DEFAULTS = {
+    'META':         'title=\nauthors=\n',
+    'HERO':         '',
+    'MAIN_SECTION': '',
+    'REFERENCES':   '',
+}
+
+
+def _heal_sections(sections: list) -> list:
+    """Ensure all required sections are present.
+    Missing ones are silently re-inserted in canonical order.
+    Custom sections are preserved in their original position."""
+    present = {s['type'] for s in sections}
+    missing = [t for t in _REQUIRED_SECTIONS if t not in present]
+    if not missing:
+        return sections  # nothing to heal
+
+    # Insert each missing section at its canonical position
+    healed = list(sections)
+    for tag in _REQUIRED_SECTIONS:
+        if tag in present:
+            continue
+        default_content = _SECTION_DEFAULTS.get(tag, '')
+        # Find where to insert: after the last required section that comes before it
+        canonical_idx   = _REQUIRED_SECTIONS.index(tag)
+        insert_at       = 0
+        for i, s in enumerate(healed):
+            if s['type'] in _REQUIRED_SECTIONS:
+                if _REQUIRED_SECTIONS.index(s['type']) < canonical_idx:
+                    insert_at = i + 1
+        healed.insert(insert_at, {'type': tag, 'content': default_content})
+        present.add(tag)
+
+    return healed
+
+
+def _parse_sections(content: str) -> list:
+    """Split on [TAG] markers. Returns [{type, content}].
+    Falls back to a single MAIN_SECTION for legacy plain-markdown files."""
+    matches = list(_SECTION_OPEN_RE.finditer(content))
+    if not matches:
+        return [{'type': 'MAIN_SECTION', 'content': content.strip()}]
+    sections = []
+    for i, m in enumerate(matches):
+        start = m.end()
+        end   = matches[i + 1].start() if i + 1 < len(matches) else len(content)
+        sections.append({
+            'type':    m.group(1),
+            'content': content[start:end].strip(),
+        })
+    return sections
+
+
+def _serialize_sections(sections: list) -> str:
+    """Serialize sections back to the [TAG]\ncontent\n\n[TAG]\ncontent format."""
+    parts = []
+    for s in sections:
+        tag     = re.sub(r'[^A-Z0-9_]', '_', s.get('type', 'SECTION').strip().upper())
+        content = s.get('content', '').strip()
+        parts.append(f"[{tag}]\n{content}")
+    return '\n\n'.join(parts) + '\n'
+
+
+def _parse_meta_params(meta_content: str) -> dict:
+    """Parse key=value lines from a META section into a dict."""
+    params = {}
+    for line in meta_content.splitlines():
+        line = line.strip()
+        if '=' in line and not line.startswith('#'):
+            key, _, val = line.partition('=')
+            params[key.strip()] = val.strip()
+    return params
+
+
 def _check_access(project_id: int):
     project = get_project(project_id)
     if not project:
@@ -260,8 +367,9 @@ def register(app) -> None:
         article = dict(article)
 
         raw_md = _read_md(project["key"], slug)
-        # Do NOT server-resolve [[links]] — pass raw MD + a link map to JS
-        # so marked.js renders clean HTML without Jinja escaping corruption.
+        sections = _heal_sections(_parse_sections(raw_md))
+
+        # Build link map for [[wiki link]] resolution in JS
         all_articles = conn.execute(
             "SELECT slug, title FROM wiki_articles WHERE project_id=?",
             (project_id,)
@@ -270,14 +378,11 @@ def register(app) -> None:
         for a in all_articles:
             href = url_for("wiki_article", project_id=project_id, slug=a["slug"])
             link_map[a["slug"]] = {"url": href, "title": a["title"]}
-            # also map by title (lowercased) for [[Title]] style links
             link_map[a["title"].lower()] = {"url": href, "title": a["title"]}
 
-        # Parse params JSON for infobox
-        try:
-            params = json.loads(article["params"] or "{}")
-        except Exception:
-            params = {}
+        # Extract META params from sections (file is source of truth)
+        meta_section = next((s for s in sections if s["type"] == "META"), None)
+        params = _parse_meta_params(meta_section["content"]) if meta_section else {}
 
         # Breadcrumb: walk parent chain
         breadcrumb = []
@@ -307,16 +412,37 @@ def register(app) -> None:
 
         flat = _get_tree(project_id)
 
+        # Assign GDD numbers so this article knows its own number + children can show theirs
+        tree     = _build_nested(flat)
+        numbered = _assign_numbers(tree)
+        num_map  = {a["slug"]: a["gdd_num"] for a in numbered}
+        gdd_num  = num_map.get(slug, "")
+
+        # Direct children of this article
+        children = conn.execute(
+            """SELECT id, slug, title, order_index FROM wiki_articles
+               WHERE project_id=? AND parent_id=?
+               ORDER BY order_index""",
+            (project_id, article["id"])
+        ).fetchall()
+        children = [
+            {**dict(c), "gdd_num": num_map.get(c["slug"], ""),
+             "url": url_for("wiki_article", project_id=project_id, slug=c["slug"])}
+            for c in children
+        ]
+
         return render_template("wiki_article.html",
                                project=project,
                                article=article,
-                               raw_md=raw_md,
+                               sections=sections,
                                link_map=link_map,
                                params=params,
                                breadcrumb=breadcrumb,
                                prev_art=prev_art,
                                next_art=next_art,
-                               flat=flat)
+                               flat=flat,
+                               gdd_num=gdd_num,
+                               children=children)
 
     # ── New article ──────────────────────────────────────────────────────────
 
@@ -349,7 +475,12 @@ def register(app) -> None:
             ).fetchone()[0]
 
             now = int(time.time())
-            initial_content = f"# {title}\n\n"
+            initial_content = _serialize_sections([
+                {'type': 'META',         'content': f'title={title}\nauthors=\n'},
+                {'type': 'HERO',         'content': ''},
+                {'type': 'MAIN_SECTION', 'content': f'# {title}\n\n'},
+                {'type': 'REFERENCES',   'content': ''},
+            ])
             _write_md(project["key"], slug, initial_content)
 
             conn.execute(
@@ -367,7 +498,8 @@ def register(app) -> None:
         return render_template("wiki_edit.html",
                                project=project, article=None,
                                flat=flat, mode="new",
-                               prefill_parent=parent_id)
+                               prefill_parent=parent_id,
+                               sections_json=json.dumps(_DEFAULT_SECTIONS))
 
     # ── Edit article ─────────────────────────────────────────────────────────
 
@@ -387,43 +519,41 @@ def register(app) -> None:
 
         if request.method == "POST":
             enforce_csrf()
-            title   = request.form.get("title", "").strip()
-            content = request.form.get("content", "")
-            params  = request.form.get("params", "{}").strip()
+            title     = request.form.get("title", "").strip()
+            content   = request.form.get("content", "")  # assembled by JS as [SECTION]...[/SECTION]
             parent_id = request.form.get("parent_id") or None
             if parent_id:
                 parent_id = int(parent_id)
 
-            # Validate params JSON
-            try:
-                json.loads(params)
-            except Exception:
-                params = "{}"
-
             if not title:
                 flash("Title is required.", "error")
+                sections = _heal_sections(_parse_sections(content))
                 return render_template("wiki_edit.html", project=project,
                                        article=article, flat=flat, mode="edit",
-                                       prefill_content=content)
+                                       sections_json=json.dumps(sections))
+
+            # Heal: silently restore any deleted required sections before saving
+            sections = _heal_sections(_parse_sections(content))
+            healed_content = _serialize_sections(sections)
 
             now = int(time.time())
-            _write_md(project["key"], slug, content)
+            _write_md(project["key"], slug, healed_content)
             conn.execute(
                 """UPDATE wiki_articles
-                   SET title=?, params=?, parent_id=?, updated_by=?, updated_at=?
+                   SET title=?, parent_id=?, updated_by=?, updated_at=?
                    WHERE project_id=? AND slug=?""",
-                (title, params, parent_id, session["user_id"], now,
-                 project_id, slug)
+                (title, parent_id, session["user_id"], now, project_id, slug)
             )
             conn.commit()
             flash("Article saved.", "success")
             return redirect(url_for("wiki_article", project_id=project_id, slug=slug))
 
-        content = _read_md(project["key"], slug)
+        content  = _read_md(project["key"], slug)
+        sections = _heal_sections(_parse_sections(content))
         return render_template("wiki_edit.html",
                                project=project, article=article,
                                flat=flat, mode="edit",
-                               prefill_content=content)
+                               sections_json=json.dumps(sections))
 
     # ── Delete article ───────────────────────────────────────────────────────
 
@@ -641,6 +771,7 @@ def register(app) -> None:
         if request.method == "POST":
             enforce_csrf()
             raw_text = request.form.get("gdd_text", "").strip()
+            import_mode = request.form.get("import_mode", "append")  # 'replace' or 'append'
             if not raw_text:
                 flash("Nothing to import.", "error")
                 return redirect(request.url)
@@ -666,19 +797,38 @@ def register(app) -> None:
                 flash("No numbered headings found. Use format: 1.2 Title", "error")
                 return redirect(request.url)
 
-            # Build id map: num_string → db id (for parent resolution)
             conn = get_db()
-            id_map = {}
             now = int(time.time())
             _ensure_wiki(project_id, project["key"], project["name"])
             os.makedirs(_articles_dir(project["key"]), exist_ok=True)
+
+            if import_mode == "replace":
+                # Delete all existing articles + files for this project
+                existing = conn.execute(
+                    "SELECT slug FROM wiki_articles WHERE project_id=?",
+                    (project_id,)
+                ).fetchall()
+                for row in existing:
+                    path = _article_path(project["key"], row["slug"])
+                    if os.path.exists(path):
+                        os.remove(path)
+                conn.execute("DELETE FROM wiki_articles WHERE project_id=?", (project_id,))
+                conn.commit()
+
+            # Build id map: num_string → db id (for parent resolution)
+            id_map = {}
 
             for item in parsed:
                 num = item["num"]
                 title = item["title"]
                 slug = _unique_slug(project_id, _slugify(title))
                 body = "\n".join(item["body"]).strip()
-                content = f"# {title}\n\n{body}\n" if body else f"# {title}\n\n"
+                content = _serialize_sections([
+                    {"type": "META",         "content": f"title={title}\nauthors=\n"},
+                    {"type": "HERO",         "content": ""},
+                    {"type": "MAIN_SECTION", "content": f"# {title}\n\n{body}\n" if body else f"# {title}\n\n"},
+                    {"type": "REFERENCES",   "content": ""},
+                ])
 
                 # Parent: drop last segment of num
                 parts = num.split(".")
@@ -691,14 +841,15 @@ def register(app) -> None:
                     """INSERT INTO wiki_articles
                        (project_id, slug, title, parent_id, order_index, params,
                         is_published, created_by, created_at, updated_by, updated_at)
-                       VALUES (?,?,?,?,?,1,1,?,?,?,?)""",
-                    (project_id, slug, title, parent_id, order,
+                       VALUES (?,?,?,?,?,?,1,?,?,?,?)""",
+                    (project_id, slug, title, parent_id, order, "{}",
                      session["user_id"], now, session["user_id"], now)
                 )
                 id_map[num] = cur.lastrowid
 
             conn.commit()
-            flash(f"Imported {len(parsed)} articles.", "success")
+            action_label = "Replaced all articles with" if import_mode == "replace" else "Appended"
+            flash(f"{action_label} {len(parsed)} imported articles.", "success")
             return redirect(url_for("wiki_home", project_id=project_id))
 
         return render_template("wiki_import.html",

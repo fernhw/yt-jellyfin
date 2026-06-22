@@ -55,21 +55,25 @@
 <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
 <script>
 (function () {
-  document.querySelectorAll('.gdd-section-content[data-raw]').forEach(function (el) {
-    if (typeof marked === 'undefined') return;
-    var md = el.dataset.raw;
-    // Strip leading # heading (we render our own heading above)
+  if (typeof marked === 'undefined') return;
+  marked.setOptions({ breaks: false, gfm: true });
+
+  document.querySelectorAll('[id^="gdd-raw-"]').forEach(function (script) {
+    var idx  = script.id.replace('gdd-raw-', '');
+    var el   = document.getElementById('gdd-content-' + idx);
+    if (!el) return;
+    var md   = JSON.parse(script.textContent);
+    // Strip leading # heading — we render our own above
     md = md.replace(/^#[^\n]*\n/, '').trim();
     el.innerHTML = marked.parse(md);
-    // Resolve image srcs
+    // Resolve image src
     el.querySelectorAll('img').forEach(function (img) {
       var src = img.getAttribute('src');
       if (src && !src.startsWith('http') && !src.startsWith('/')) {
         img.src = '/project/{{ project.id }}/wiki/images/' + src;
-        img.className = 'wiki-img';
+        img.classList.add('wiki-img');
       }
     });
-    el.removeAttribute('data-raw');
   });
 })();
 </script>
