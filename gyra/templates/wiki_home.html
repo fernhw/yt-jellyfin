@@ -1,8 +1,14 @@
-{% extends "base.html" %}
-{% block title %}{{ project.name }} Wiki — Gyra{% endblock %}
-{% block body_attrs %}class="wiki-mode"{% endblock %}
-
-{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{{ project.name }} Wiki</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}">
+</head>
+<body class="wiki-mode">
 
 {# ── Wiki top bar ── #}
 <div class="wiki-topbar">
@@ -33,14 +39,93 @@
 
 {# ── Reorder panel (hidden by default) ── #}
 {% if session.role in ('admin','super_user') %}
-<div id="wiki-reorder-panel" style="display:none;background:#f8f9fa;border-bottom:1px solid #a2a9b1;padding:12px 32px;">
-  <div style="font-size:11px;color:#72777d;margin-bottom:8px;">Drag to reorder · indentation = child article</div>
-  <div id="wiki-te-list" class="wiki-te-list" style="max-height:360px;overflow-y:auto;"></div>
-  <div style="display:flex;gap:8px;margin-top:10px;">
+<div id="wiki-reorder-panel" style="display:none;background:#f8f9fa;border-bottom:1px solid #a2a9b1;padding:12px 24px 16px;">
+  <div style="font-size:11px;color:#72777d;margin-bottom:10px;">
+    <strong>⠿</strong> drag rows to reorder &nbsp;·&nbsp;
+    <strong>←</strong> unindent &nbsp;·&nbsp;
+    <strong>→</strong> indent &nbsp;·&nbsp;
+    depth = parent/child relationship &nbsp;·&nbsp;
+    GDD numbers update live
+  </div>
+  <div id="wiki-te-list" style="max-height:480px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:4px;background:#fff;"></div>
+  <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
     <button class="btn btn-sm btn-primary" id="wiki-te-save">💾 Save order</button>
-    <button class="btn btn-sm btn-ghost" id="wiki-te-cancel">Cancel</button>
+    <button class="btn btn-sm btn-ghost" id="wiki-te-cancel">✕ Cancel</button>
+    <span id="wiki-te-status" style="font-size:12px;color:#54595d;margin-left:8px;"></span>
   </div>
 </div>
+
+<style>
+.wiki-te-row {
+  display: flex;
+  align-items: center;
+  padding: 5px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: default;
+  user-select: none;
+  background: #fff;
+  transition: background 0.1s;
+  min-height: 34px;
+}
+.wiki-te-row:last-child { border-bottom: none; }
+.wiki-te-row.wiki-te-dragging { opacity: 0.4; background: #e8f0fe; }
+.wiki-te-row.wiki-te-drop-before { border-top: 2px solid #3366cc; }
+.wiki-te-drag {
+  cursor: grab;
+  color: #a0a0a0;
+  font-size: 16px;
+  margin-right: 6px;
+  flex-shrink: 0;
+  padding: 0 4px;
+}
+.wiki-te-drag:active { cursor: grabbing; }
+.wiki-te-indent-btn {
+  border: none;
+  background: none;
+  color: #72777d;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.wiki-te-indent-btn:hover { background: #eee; color: #202122; }
+.wiki-te-indent-btn:disabled { opacity: 0.25; cursor: default; }
+.wiki-te-num {
+  font-size: 11px;
+  color: #a0a0a0;
+  font-family: ui-monospace, monospace;
+  min-width: 52px;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+.wiki-te-title-text {
+  flex: 1;
+  font-size: 13px;
+  color: #202122;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wiki-te-children-badge {
+  font-size: 10px;
+  color: #a0a0a0;
+  margin-left: 8px;
+  flex-shrink: 0;
+  background: #f0f0f0;
+  border-radius: 10px;
+  padding: 1px 6px;
+}
+.wiki-te-end-drop {
+  height: 20px;
+  border: 2px dashed transparent;
+  margin: 2px 4px;
+  border-radius: 3px;
+  transition: border-color 0.1s;
+}
+.wiki-te-end-drop.wiki-te-drop-before { border-color: #3366cc; }
+</style>
 {% endif %}
 
 {# ── Article grid ── #}
@@ -50,7 +135,10 @@
     {% for item in flat %}
     <a class="wiki-home-card" href="{{ url_for('wiki_article', project_id=project.id, slug=item.slug) }}">
       <div style="flex:1;min-width:0">
-        <div class="wiki-home-card-title" style="{% if item.parent_id %}font-size:12.5px;color:#54595d;{% endif %}">{{ item.title }}</div>
+        <div class="wiki-home-card-title" style="{% if item.depth > 0 %}font-size:12.5px;color:#54595d;{% endif %}">
+          {% if item.gdd_num %}<span style="font-size:10px;color:#a0a0a0;margin-right:4px;font-family:monospace">{{ item.gdd_num }}</span>{% endif %}
+          {{ item.title }}
+        </div>
         {% if not item.is_published %}<span class="wiki-draft-badge">Draft</span>{% endif %}
       </div>
     </a>
@@ -65,79 +153,346 @@
   {% endif %}
 </div>
 
-{# Flat data for drag-drop editor #}
 <script id="wiki-flat-data" type="application/json">{{ flat | tojson }}</script>
 
 <script>
 (function () {
-  var reorderBtn  = document.getElementById('wiki-reorder-btn');
-  var panel       = document.getElementById('wiki-reorder-panel');
-  var teList      = document.getElementById('wiki-te-list');
-  var saveBtn     = document.getElementById('wiki-te-save');
-  var cancelBtn   = document.getElementById('wiki-te-cancel');
+  var reorderBtn = document.getElementById('wiki-reorder-btn');
+  var panel      = document.getElementById('wiki-reorder-panel');
+  var teList     = document.getElementById('wiki-te-list');
+  var saveBtn    = document.getElementById('wiki-te-save');
+  var cancelBtn  = document.getElementById('wiki-te-cancel');
+  var statusEl   = document.getElementById('wiki-te-status');
   if (!reorderBtn || !panel) return;
 
-  var flat = JSON.parse(document.getElementById('wiki-flat-data').textContent);
+  // ── State ──────────────────────────────────────────────────────────────────
+  // items: [{id, title, depth}] in display (pre-order) order
+  var items = [];
+  var dragSrcIdx = null;
 
-  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
-
-  function buildEditor() {
-    teList.innerHTML = '';
-    flat.forEach(function (a) {
-      var row = document.createElement('div');
-      row.className = 'wiki-te-row';
-      row.dataset.id       = a.id;
-      row.dataset.parentId = a.parent_id || '';
-      row.draggable        = true;
-      var pid = a.parent_id; var depth = 0;
-      while (pid) { var par = flat.find(function (x) { return x.id === pid; }); if (!par) break; pid = par.parent_id; depth++; }
-      row.style.paddingLeft = (8 + depth * 16) + 'px';
-      row.innerHTML = '<span class="wiki-te-drag">⠿</span><span class="wiki-te-title">' + escHtml(a.title) + '</span>';
-      teList.appendChild(row);
-    });
-    bindDrag();
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  var dragging = null;
-  function bindDrag() {
-    teList.querySelectorAll('.wiki-te-row').forEach(function (row) {
-      row.addEventListener('dragstart', function (e) { dragging = row; row.classList.add('wiki-te-dragging'); e.dataTransfer.effectAllowed = 'move'; });
-      row.addEventListener('dragend', function () { dragging = null; row.classList.remove('wiki-te-dragging'); teList.querySelectorAll('.wiki-te-over').forEach(function (r) { r.classList.remove('wiki-te-over'); }); });
-      row.addEventListener('dragover', function (e) { e.preventDefault(); if (dragging && row !== dragging) row.classList.add('wiki-te-over'); });
-      row.addEventListener('dragleave', function () { row.classList.remove('wiki-te-over'); });
-      row.addEventListener('drop', function (e) { e.preventDefault(); row.classList.remove('wiki-te-over'); if (dragging && row !== dragging) teList.insertBefore(dragging, row); });
+  // ── Tree helpers ───────────────────────────────────────────────────────────
+
+  // Returns {start, end} for subtree rooted at index i (inclusive start, exclusive end)
+  function subtreeBounds(i) {
+    var d = items[i].depth;
+    var end = i + 1;
+    while (end < items.length && items[end].depth > d) end++;
+    return {start: i, end: end};
+  }
+
+  // Returns parent id of item at index i (null if depth 0)
+  function getParentId(i) {
+    var d = items[i].depth;
+    if (d === 0) return null;
+    for (var j = i - 1; j >= 0; j--) {
+      if (items[j].depth === d - 1) return items[j].id;
+    }
+    return null;
+  }
+
+  // Enforce: no item's depth > previous item's depth + 1
+  function enforceInvariant() {
+    for (var i = 1; i < items.length; i++) {
+      if (items[i].depth > items[i - 1].depth + 1) {
+        items[i].depth = items[i - 1].depth + 1;
+      }
+    }
+  }
+
+  // Recompute gdd_num for every item (pre-order traversal assumption holds)
+  function recomputeNumbers() {
+    var gddNumOf  = {};
+    var sibCount  = {};
+    for (var i = 0; i < items.length; i++) {
+      var pid  = getParentId(i);
+      var key  = pid !== null ? String(pid) : 'root';
+      sibCount[key] = (sibCount[key] || 0) + 1;
+      var prefix = pid !== null ? ((gddNumOf[pid] || '') + '.') : '';
+      gddNumOf[items[i].id] = prefix + sibCount[key];
+      items[i].gdd_num = gddNumOf[items[i].id];
+    }
+  }
+
+  // ── Indent / Unindent ──────────────────────────────────────────────────────
+
+  function indent(i) {
+    if (i === 0) return;
+    // Can only indent if depth < previous item's depth + 1
+    if (items[i].depth > items[i - 1].depth) return;
+    var b = subtreeBounds(i);
+    for (var j = b.start; j < b.end; j++) items[j].depth++;
+    recomputeNumbers();
+    renderList();
+  }
+
+  function unindent(i) {
+    if (items[i].depth === 0) return;
+    var b = subtreeBounds(i);
+    for (var j = b.start; j < b.end; j++) {
+      items[j].depth = Math.max(0, items[j].depth - 1);
+    }
+    // enforce for items that come after the subtree
+    enforceInvariant();
+    recomputeNumbers();
+    renderList();
+  }
+
+  // ── Drag / Drop ────────────────────────────────────────────────────────────
+
+  function onDragStart(i) {
+    dragSrcIdx = i;
+  }
+
+  // Drop before targetIdx (pass items.length to drop at end)
+  function onDropBefore(targetIdx) {
+    if (dragSrcIdx === null) return;
+    if (targetIdx === dragSrcIdx) { dragSrcIdx = null; return; }
+
+    var b = subtreeBounds(dragSrcIdx);
+    // Check that targetIdx is not inside the dragged subtree
+    if (targetIdx > b.start && targetIdx <= b.end) { dragSrcIdx = null; return; }
+
+    // Extract subtree
+    var subtree = items.splice(b.start, b.end - b.start);
+
+    // Adjust targetIdx for the removal
+    var insertAt = targetIdx;
+    if (insertAt > b.start) insertAt -= subtree.length;
+    insertAt = Math.max(0, Math.min(insertAt, items.length));
+
+    // Determine new root depth: keep same depth, clamped to insertAt context
+    var maxDepth = insertAt === 0 ? 0 : items[insertAt - 1].depth + 1;
+    var newRootDepth = Math.min(subtree[0].depth, maxDepth);
+    newRootDepth = Math.max(0, newRootDepth);
+
+    var delta = newRootDepth - subtree[0].depth;
+    if (delta !== 0) {
+      for (var k = 0; k < subtree.length; k++) {
+        subtree[k].depth = Math.max(0, subtree[k].depth + delta);
+      }
+    }
+
+    // Insert subtree
+    for (var k = subtree.length - 1; k >= 0; k--) {
+      items.splice(insertAt, 0, subtree[k]);
+    }
+
+    enforceInvariant();
+    recomputeNumbers();
+    renderList();
+    dragSrcIdx = null;
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  function renderList() {
+    teList.innerHTML = '';
+
+    items.forEach(function(item, i) {
+      var b          = subtreeBounds(i);
+      var childCount = b.end - b.start - 1;
+
+      var row = document.createElement('div');
+      row.className   = 'wiki-te-row';
+      row.draggable   = true;
+
+      // indent pad
+      var pad = document.createElement('span');
+      pad.style.cssText = 'display:inline-block;width:' + (item.depth * 20) + 'px;flex-shrink:0';
+
+      // drag handle
+      var handle = document.createElement('span');
+      handle.className = 'wiki-te-drag';
+      handle.textContent = '⠿';
+
+      // unindent btn
+      var btnOut = document.createElement('button');
+      btnOut.type      = 'button';
+      btnOut.className = 'wiki-te-indent-btn';
+      btnOut.title     = 'Unindent (move left)';
+      btnOut.textContent = '←';
+      btnOut.disabled  = (item.depth === 0);
+      (function(idx) {
+        btnOut.addEventListener('click', function(e) { e.stopPropagation(); unindent(idx); });
+      }(i));
+
+      // indent btn
+      var btnIn = document.createElement('button');
+      btnIn.type      = 'button';
+      btnIn.className = 'wiki-te-indent-btn';
+      btnIn.title     = 'Indent (move right, becomes child of item above)';
+      btnIn.textContent = '→';
+      btnIn.disabled  = (i === 0 || item.depth > items[i - 1].depth);
+      (function(idx) {
+        btnIn.addEventListener('click', function(e) { e.stopPropagation(); indent(idx); });
+      }(i));
+
+      // gdd number
+      var numSpan = document.createElement('span');
+      numSpan.className   = 'wiki-te-num';
+      numSpan.textContent = item.gdd_num || '';
+
+      // title
+      var titleSpan = document.createElement('span');
+      titleSpan.className   = 'wiki-te-title-text';
+      titleSpan.textContent = item.title;
+
+      row.appendChild(pad);
+      row.appendChild(handle);
+      row.appendChild(btnOut);
+      row.appendChild(btnIn);
+      row.appendChild(numSpan);
+      row.appendChild(titleSpan);
+
+      if (childCount > 0) {
+        var badge = document.createElement('span');
+        badge.className   = 'wiki-te-children-badge';
+        badge.textContent = childCount + (childCount === 1 ? ' child' : ' children');
+        row.appendChild(badge);
+      }
+
+      // ── Drag events ────────────────────────────────────────────────────────
+      (function(idx) {
+        handle.addEventListener('dragstart', function(e) {
+          e.stopPropagation();
+          onDragStart(idx);
+          row.classList.add('wiki-te-dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', String(idx));
+        });
+        handle.addEventListener('dragend', function() {
+          row.classList.remove('wiki-te-dragging');
+          dragSrcIdx = null;
+          clearDropIndicators();
+        });
+
+        row.addEventListener('dragover', function(e) {
+          if (dragSrcIdx === null) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          clearDropIndicators();
+          row.classList.add('wiki-te-drop-before');
+        });
+        row.addEventListener('dragleave', function(e) {
+          // Only clear if leaving to outside this row entirely
+          if (!row.contains(e.relatedTarget)) {
+            row.classList.remove('wiki-te-drop-before');
+          }
+        });
+        row.addEventListener('drop', function(e) {
+          e.preventDefault();
+          clearDropIndicators();
+          onDropBefore(idx);
+        });
+      }(i));
+
+      teList.appendChild(row);
     });
+
+    // End-of-list drop zone
+    var endZone = document.createElement('div');
+    endZone.className = 'wiki-te-end-drop';
+    endZone.textContent = ' ';
+    endZone.addEventListener('dragover', function(e) {
+      if (dragSrcIdx === null) return;
+      e.preventDefault();
+      clearDropIndicators();
+      endZone.classList.add('wiki-te-drop-before');
+    });
+    endZone.addEventListener('dragleave', function() {
+      endZone.classList.remove('wiki-te-drop-before');
+    });
+    endZone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      clearDropIndicators();
+      onDropBefore(items.length);
+    });
+    teList.appendChild(endZone);
+  }
+
+  function clearDropIndicators() {
+    teList.querySelectorAll('.wiki-te-drop-before').forEach(function(el) {
+      el.classList.remove('wiki-te-drop-before');
+    });
+  }
+
+  // ── Init & open ───────────────────────────────────────────────────────────
+
+  function buildState() {
+    var raw = JSON.parse(document.getElementById('wiki-flat-data').textContent);
+    // raw is already in pre-order with depth computed server-side
+    items = raw.map(function(a) {
+      return { id: a.id, title: a.title, depth: a.depth || 0, gdd_num: a.gdd_num || '' };
+    });
+    enforceInvariant();
+    recomputeNumbers();
   }
 
   reorderBtn.addEventListener('click', function () {
-    var open = panel.style.display !== 'none';
-    if (open) { panel.style.display = 'none'; reorderBtn.textContent = '⇄ Reorder'; }
-    else { buildEditor(); panel.style.display = ''; reorderBtn.textContent = '✕ Close'; }
+    if (panel.style.display !== 'none') {
+      panel.style.display = 'none';
+      reorderBtn.textContent = '⇄ Reorder';
+    } else {
+      buildState();
+      renderList();
+      panel.style.display = '';
+      reorderBtn.textContent = '✕ Close';
+    }
   });
 
-  cancelBtn && cancelBtn.addEventListener('click', function () { panel.style.display = 'none'; reorderBtn.textContent = '⇄ Reorder'; });
+  cancelBtn.addEventListener('click', function () {
+    panel.style.display = 'none';
+    reorderBtn.textContent = '⇄ Reorder';
+    statusEl.textContent = '';
+  });
 
-  saveBtn && saveBtn.addEventListener('click', function () {
-    var rows = teList.querySelectorAll('.wiki-te-row');
-    var items = []; var orderCounter = {};
-    rows.forEach(function (row) {
-      var id = parseInt(row.dataset.id, 10);
-      var orig = flat.find(function (a) { return a.id === id; });
-      var parentId = orig ? orig.parent_id : null;
-      var key = parentId || 'root';
-      orderCounter[key] = (orderCounter[key] || 0) + 1;
-      items.push({ id: id, parent_id: parentId, order_index: orderCounter[key] });
+  // ── Save ──────────────────────────────────────────────────────────────────
+
+  saveBtn.addEventListener('click', function () {
+    var sibCount  = {};
+    var payload   = items.map(function(item, i) {
+      var pid = getParentId(i);
+      var key = pid !== null ? String(pid) : 'root';
+      sibCount[key] = (sibCount[key] || 0) + 1;
+      return { id: item.id, parent_id: pid, order_index: sibCount[key] };
     });
-    saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+
+    saveBtn.disabled    = true;
+    saveBtn.textContent = 'Saving…';
+    statusEl.textContent = '';
+
     fetch('/api/project/{{ project.id }}/wiki/reorder', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
-      body: JSON.stringify({ items: items }),
+      method:      'POST',
+      headers:     { 'Content-Type': 'application/json',
+                     'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
+      body:        JSON.stringify({ items: payload }),
       credentials: 'same-origin'
-    }).then(function (r) { return r.json(); })
-      .then(function (res) { if (res.ok) location.reload(); else { alert('Save failed'); saveBtn.disabled = false; saveBtn.textContent = '💾 Save order'; } })
-      .catch(function () { alert('Network error'); saveBtn.disabled = false; saveBtn.textContent = '💾 Save order'; });
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function() {
+      saveBtn.disabled    = false;
+      saveBtn.textContent = '💾 Save order';
+      statusEl.textContent = '✓ Saved';
+      statusEl.style.color = '#22863a';
+      // Reload page so grid reflects new order
+      setTimeout(function() { window.location.reload(); }, 800);
+    })
+    .catch(function(err) {
+      saveBtn.disabled    = false;
+      saveBtn.textContent = '💾 Save order';
+      statusEl.textContent = '✗ Save failed: ' + err.message;
+      statusEl.style.color = '#d73a49';
+    });
   });
+
 })();
 </script>
-{% endblock %}
+</body>
+</html>

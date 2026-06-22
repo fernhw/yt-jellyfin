@@ -2,9 +2,10 @@
 title=Welcome
 genre=Game Design Wiki
 status=In Progress
-authors=
+authors=Fernando
 
 [HERO]
+
 
 [MAIN_SECTION]
 # Welcome to the Amy's Escape Wiki
@@ -34,3 +35,4 @@ This is your project's Game Design Wiki. Every article lives as a Markdown file 
 Edit this article to make it your own.
 
 [REFERENCES]
+

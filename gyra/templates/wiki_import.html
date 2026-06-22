@@ -1,89 +1,365 @@
-{% extends "base.html" %}
-{% block title %}Import GDD — {{ project.name }} Wiki{% endblock %}
-{% block body_attrs %}class="wiki-mode"{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Import GDD — {{ project.name }} Wiki</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}">
+</head>
+<body class="wiki-mode">
 
-{% block content %}
-<div class="wiki-page-header">
+<script id="wiki-templates-data" type="application/json">{{ templates_json | safe }}</script>
+<script id="wiki-template-list" type="application/json">{{ template_list_json | safe }}</script>
+
+{# ── Topbar ── #}
+<div class="wiki-topbar">
   <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_home', project_id=project.id) }}">← Wiki</a>
-  <h2 style="margin:0">⬆ Import GDD Text</h2>
+  <span style="font-size:15px;font-weight:700;flex:1">⬆ Import GDD</span>
 </div>
 
-<div class="wiki-import-layout">
-  <div class="wiki-import-help">
-    <strong>Paste a numbered GDD document</strong> and the system will create an article tree for each section.
-    <br><br>
-    Format — any numbering depth works:
-    <pre class="wiki-import-example">1. Overview
-This is a top-level section.
+{# ══════════════════════════════════
+   SCREEN 1 — PASTE + MODE
+══════════════════════════════════ #}
+<div id="import-screen-1" class="import-screen">
+  <div class="import-layout">
 
+    <div class="import-help">
+      <strong>Paste your numbered GDD</strong> and the system will parse each section, auto-assign an article template, then let you review before committing.<br><br>
+      <strong>Heading formats supported:</strong>
+      <pre class="wiki-import-example">1. Overview
 1.1 Vision
-Our game is about...
-
-1.2 Core Loop
-1.2.1 Player Actions
-Describing what the player does...
-
-2. Mechanics
-2.1 Combat</pre>
-    <p>Each numbered heading becomes an article. Body text becomes the article content. You can edit everything after import.</p>
-  </div>
-
-  <form method="post">
-    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-
-    <div class="wiki-import-mode-choice">
+1.2 - Core Loop
+2 - Characters
+2.1— Amy Chen
+3.1. World Map
+14.4 Combat System</pre>
+      <p>Any depth works. Body text below each heading becomes the article content.</p>
+      <hr style="border:none;border-top:1px solid #eaecf0;margin:16px 0">
       <strong>Import mode</strong>
-      <label class="wiki-import-mode-label">
-        <input type="radio" name="import_mode" value="append" checked>
-        <span class="wiki-import-mode-opt wiki-import-append">
-          <strong>Append</strong>
-          <small>Add imported articles below existing wiki content.</small>
-        </span>
-      </label>
-      <label class="wiki-import-mode-label">
-        <input type="radio" name="import_mode" value="replace">
-        <span class="wiki-import-mode-opt wiki-import-replace">
-          <strong>Replace all</strong>
-          <small>⚠ Delete every existing article, then import fresh. Cannot be undone.</small>
-        </span>
-      </label>
+      <div class="wiki-import-mode-choice" style="margin-top:10px">
+        <label class="wiki-import-mode-label">
+          <input type="radio" name="import_mode" value="append" id="mode-append" checked>
+          <span class="wiki-import-mode-opt wiki-import-append">
+            <strong>Append</strong>
+            <small>Add imported articles below existing content.</small>
+          </span>
+        </label>
+        <label class="wiki-import-mode-label">
+          <input type="radio" name="import_mode" value="replace" id="mode-replace">
+          <span class="wiki-import-mode-opt wiki-import-replace">
+            <strong>Replace all</strong>
+            <small>⚠ Delete every existing article, then import fresh.</small>
+          </span>
+        </label>
+      </div>
     </div>
 
-    <label class="wiki-edit-label" style="margin-top:16px;display:block">GDD Text</label>
-    <textarea name="gdd_text" class="wiki-import-ta" rows="24"
-              placeholder="Paste your GDD here..."></textarea>
-    <div class="wiki-edit-actions" style="margin-top:12px">
-      <button type="submit" class="btn btn-primary" id="wiki-import-submit">⬆ Import Articles</button>
-      <a class="btn btn-secondary" href="{{ url_for('wiki_home', project_id=project.id) }}">Cancel</a>
+    <div class="import-main">
+      <label class="wiki-edit-label">GDD Text</label>
+      <textarea id="import-text" class="wiki-import-ta" rows="28"
+                placeholder="Paste your GDD here..."></textarea>
+      <div class="wiki-edit-actions" style="margin-top:12px">
+        <button type="button" class="btn btn-primary" id="import-preview-btn">Preview Import →</button>
+        <a class="btn btn-secondary" href="{{ url_for('wiki_home', project_id=project.id) }}">Cancel</a>
+      </div>
+      <div id="import-parse-error" style="display:none;color:#c00;margin-top:8px;font-size:13px"></div>
     </div>
-  </form>
+
+  </div>
+</div>
+
+{# ══════════════════════════════════
+   SCREEN 2 — TEMPLATE REVIEW TABLE
+══════════════════════════════════ #}
+<div id="import-screen-2" class="import-screen" style="display:none">
+  <div class="import-preview-header">
+    <button type="button" class="btn btn-sm btn-ghost" id="import-back-btn">← Back</button>
+    <h3 style="margin:0;flex:1;font-size:17px;font-weight:600">Review &amp; Assign Templates</h3>
+    <span id="import-count-badge" class="import-count-badge"></span>
+    <button type="button" class="btn btn-primary" id="import-confirm-btn">Generate Articles →</button>
+  </div>
+  <div class="import-preview-hint">
+    Each section gets an <strong>auto-detected template</strong> that pre-fills its infobox fields.
+    Change any template below — but you <strong>cannot edit content here</strong>. Do that after import.
+  </div>
+  <div class="import-preview-table-wrap">
+    <table class="import-preview-table">
+      <thead>
+        <tr>
+          <th style="width:70px">#</th>
+          <th>Title</th>
+          <th style="width:60px">Depth</th>
+          <th style="width:200px">Template</th>
+          <th>Fields that will be created</th>
+        </tr>
+      </thead>
+      <tbody id="import-preview-body"></tbody>
+    </table>
+  </div>
+</div>
+
+{# ══════════════════════════════════
+   HIDDEN FORM — submitted on confirm
+══════════════════════════════════ #}
+<form id="import-real-form" method="post"
+      action="{{ url_for('wiki_import', project_id=project.id) }}"
+      style="display:none">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+  <input type="hidden" name="gdd_text" id="form-gdd-text">
+  <input type="hidden" name="import_mode" id="form-import-mode" value="append">
+  <input type="hidden" name="template_assignments" id="form-assignments" value="[]">
+</form>
+
+{# ══════════════════════════════════
+   CONFIRM OVERLAY
+══════════════════════════════════ #}
+<div id="import-confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:8px;padding:28px 32px;max-width:420px;width:92vw;box-shadow:0 8px 40px rgba(0,0,0,.22)">
+    <h3 style="margin:0 0 12px;font-size:18px" id="confirm-title">Confirm Import</h3>
+    <p id="confirm-body" style="font-size:14px;color:#54595d;margin-bottom:20px"></p>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button type="button" class="btn btn-secondary" id="confirm-cancel">No, go back</button>
+      <button type="button" class="btn btn-danger" id="confirm-yes">YES — Generate Articles</button>
+    </div>
+  </div>
 </div>
 
 <script>
 (function () {
-  var radios = document.querySelectorAll('input[name="import_mode"]');
-  var submitBtn = document.getElementById('wiki-import-submit');
-  radios.forEach(function (r) {
-    r.addEventListener('change', function () {
-      if (r.value === 'replace' && r.checked) {
-        submitBtn.textContent = '⚠ Replace All & Import';
-        submitBtn.classList.add('btn-danger');
-        submitBtn.classList.remove('btn-primary');
-      } else {
-        submitBtn.textContent = '⬆ Import Articles';
-        submitBtn.classList.remove('btn-danger');
-        submitBtn.classList.add('btn-primary');
-      }
-    });
-  });
-  document.querySelector('form').addEventListener('submit', function (e) {
-    var mode = document.querySelector('input[name="import_mode"]:checked').value;
-    if (mode === 'replace') {
-      if (!confirm('This will DELETE all existing articles in this wiki and replace them with the import. Continue?')) {
-        e.preventDefault();
+  var TEMPLATES = JSON.parse(document.getElementById('wiki-templates-data').textContent);
+  var TEMPLATE_LIST = JSON.parse(document.getElementById('wiki-template-list').textContent);
+
+  // ── Heading parser (mirrors Python regex) ─────────────────────────────────
+  var HEAD_RE = /^(\d+(?:\.\d+)*)\.?[ \t]*(?:[-\u2013\u2014][ \t]*)?(.*)$/;
+
+  function parseGDD(text) {
+    var lines = text.split('\n');
+    var parsed = [], current = null;
+    for (var i = 0; i < lines.length; i++) {
+      var m = HEAD_RE.exec(lines[i].trim());
+      if (m) {
+        if (current) parsed.push(current);
+        var num   = m[1];
+        var title = m[2].trim() || 'Section ' + m[1];
+        current = { num: num, title: title, body: [] };
+      } else if (current) {
+        current.body.push(lines[i]);
       }
     }
+    if (current) parsed.push(current);
+    return parsed;
+  }
+
+  // ── Keyword template detection ────────────────────────────────────────────
+  function detectTemplate(title, parentTitle) {
+    var combined = (title + ' ' + (parentTitle || '')).toLowerCase();
+    var words = combined.match(/[a-z]+/g) || [];
+    var wordSet = {};
+    words.forEach(function (w) { wordSet[w] = true; });
+    var bestId = 'generic', bestScore = 0;
+    TEMPLATE_LIST.forEach(function (tid) {
+      if (tid === 'generic') return;
+      var tpl = TEMPLATES[tid]; if (!tpl) return;
+      var score = 0;
+      tpl.keywords.forEach(function (kw) {
+        var kws = kw.toLowerCase().split(' ');
+        if (kws.length > 1) { if (combined.indexOf(kw.toLowerCase()) !== -1) score += 2; }
+        else { if (wordSet[kws[0]]) score += 1; }
+      });
+      if (score > bestScore) { bestScore = score; bestId = tid; }
+    });
+    return bestId;
+  }
+
+  // ── Build dropdown HTML ───────────────────────────────────────────────────
+  function buildDropdown(num, selectedId) {
+    var cats = {}, catOrder = [];
+    TEMPLATE_LIST.forEach(function (tid) {
+      var tpl = TEMPLATES[tid];
+      if (!tpl) return;
+      if (!cats[tpl.category]) { cats[tpl.category] = []; catOrder.push(tpl.category); }
+      cats[tpl.category].push(tid);
+    });
+    var html = '<select class="import-tpl-select" data-num="' + escAttr(num) + '">';
+    catOrder.forEach(function (cat) {
+      html += '<optgroup label="' + escHtml(cat) + '">';
+      cats[cat].forEach(function (tid) {
+        var sel = tid === selectedId ? ' selected' : '';
+        html += '<option value="' + escAttr(tid) + '"' + sel + '>' + escHtml(TEMPLATES[tid].name) + '</option>';
+      });
+      html += '</optgroup>';
+    });
+    html += '</select>';
+    return html;
+  }
+
+  function fieldBadges(templateId) {
+    var tpl = TEMPLATES[templateId];
+    if (!tpl) return '';
+    return tpl.meta_fields.map(function (f) {
+      return '<span class="import-field-badge">' + escHtml(f.split('=')[0]) + '</span>';
+    }).join('');
+  }
+
+  // ── Screen 1 → 2 ─────────────────────────────────────────────────────────
+  var parsed = [];
+  var numTitleMap = {};
+
+  document.getElementById('import-preview-btn').addEventListener('click', function () {
+    var text = document.getElementById('import-text').value.trim();
+    var errEl = document.getElementById('import-parse-error');
+    if (!text) { errEl.textContent = 'Please paste your GDD text.'; errEl.style.display = ''; return; }
+    parsed = parseGDD(text);
+    if (!parsed.length) { errEl.textContent = 'No numbered headings found. Use "1.2 Title" format.'; errEl.style.display = ''; return; }
+    errEl.style.display = 'none';
+    numTitleMap = {};
+    parsed.forEach(function (p) { numTitleMap[p.num] = p.title; });
+
+    // Auto-detect templates
+    parsed.forEach(function (p) {
+      var parts = p.num.split('.');
+      var parentNum = parts.slice(0, -1).join('.');
+      p.template = detectTemplate(p.title, numTitleMap[parentNum] || '');
+    });
+
+    renderPreviewTable();
+    document.getElementById('import-screen-1').style.display = 'none';
+    document.getElementById('import-screen-2').style.display = '';
   });
+
+  function renderPreviewTable() {
+    document.getElementById('import-count-badge').textContent = parsed.length + ' articles';
+    var tbody = document.getElementById('import-preview-body');
+    tbody.innerHTML = '';
+    parsed.forEach(function (p) {
+      var depth = p.num.split('.').length;
+      var tr = document.createElement('tr');
+      tr.className = 'import-pr-depth-' + Math.min(depth, 4);
+      tr.innerHTML =
+        '<td class="import-pr-num">' + escHtml(p.num) + '</td>' +
+        '<td class="import-pr-title" style="padding-left:' + ((depth-1)*14+8) + 'px">' + escHtml(p.title) + '</td>' +
+        '<td class="import-pr-depth">' + depth + '</td>' +
+        '<td>' + buildDropdown(p.num, p.template) + '</td>' +
+        '<td class="import-pr-fields" id="fields-' + escAttr(p.num) + '">' + fieldBadges(p.template) + '</td>';
+      tbody.appendChild(tr);
+    });
+
+    // Live update fields badge on dropdown change
+    tbody.querySelectorAll('.import-tpl-select').forEach(function (sel) {
+      sel.addEventListener('change', function () {
+        var num = sel.dataset.num;
+        var tid = sel.value;
+        var idx = parsed.findIndex(function (p) { return p.num === num; });
+        if (idx !== -1) parsed[idx].template = tid;
+        var fieldsEl = document.getElementById('fields-' + num);
+        if (fieldsEl) fieldsEl.innerHTML = fieldBadges(tid);
+      });
+    });
+  }
+
+  // ── Back ──────────────────────────────────────────────────────────────────
+  document.getElementById('import-back-btn').addEventListener('click', function () {
+    document.getElementById('import-screen-2').style.display = 'none';
+    document.getElementById('import-screen-1').style.display = '';
+  });
+
+  // ── Confirm flow ─────────────────────────────────────────────────────────
+  document.getElementById('import-confirm-btn').addEventListener('click', function () {
+    var mode = document.querySelector('input[name="import_mode"]:checked').value;
+    var overlay = document.getElementById('import-confirm-overlay');
+    var title   = document.getElementById('confirm-title');
+    var body    = document.getElementById('confirm-body');
+    if (mode === 'replace') {
+      title.textContent = '⚠ Replace All & Import';
+      body.innerHTML = 'This will <strong>DELETE every existing article</strong> in this wiki and replace them with <strong>' + parsed.length + ' new articles</strong>.<br><br>This cannot be undone.';
+      document.getElementById('confirm-yes').className = 'btn btn-danger';
+    } else {
+      title.textContent = 'Confirm Import';
+      body.innerHTML = 'This will add <strong>' + parsed.length + ' new articles</strong> to the wiki using the templates you assigned. Continue?';
+      document.getElementById('confirm-yes').className = 'btn btn-primary';
+    }
+    overlay.style.display = 'flex';
+  });
+
+  document.getElementById('confirm-cancel').addEventListener('click', function () {
+    document.getElementById('import-confirm-overlay').style.display = 'none';
+  });
+
+  document.getElementById('confirm-yes').addEventListener('click', function () {
+    // Pack assignments
+    var assignments = parsed.map(function (p) { return { num: p.num, template: p.template }; });
+    var mode = document.querySelector('input[name="import_mode"]:checked').value;
+    document.getElementById('form-gdd-text').value = document.getElementById('import-text').value;
+    document.getElementById('form-import-mode').value = mode;
+    document.getElementById('form-assignments').value = JSON.stringify(assignments);
+    document.getElementById('import-confirm-overlay').style.display = 'none';
+    document.getElementById('import-real-form').submit();
+  });
+
+  // Close overlay on backdrop
+  document.getElementById('import-confirm-overlay').addEventListener('click', function (e) {
+    if (e.target === this) this.style.display = 'none';
+  });
+
+  // ── Utils ─────────────────────────────────────────────────────────────────
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function escAttr(s) { return String(s).replace(/"/g,'&quot;').replace(/\./g,'_'); }
+  Array.prototype.findIndex = Array.prototype.findIndex || function(cb) { for(var i=0;i<this.length;i++) if(cb(this[i],i,this)) return i; return -1; };
 })();
 </script>
-{% endblock %}
+
+<style>
+.import-screen { max-width: 1100px; margin: 0 auto; padding: 24px 32px; }
+.import-layout { display: grid; grid-template-columns: 280px 1fr; gap: 28px; align-items: start; }
+.import-help { font-size: 13px; color: #54595d; line-height: 1.6; }
+.import-main {}
+.import-preview-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap;
+}
+.import-count-badge {
+  background: #eaecf0; border-radius: 12px; padding: 2px 10px;
+  font-size: 12px; color: #54595d; font-weight: 600;
+}
+.import-preview-hint {
+  font-size: 13px; color: #54595d; margin-bottom: 14px; padding: 10px 14px;
+  background: #f8f9fa; border: 1px solid #eaecf0; border-radius: 5px;
+}
+.import-preview-table-wrap { overflow-x: auto; }
+.import-preview-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.import-preview-table th {
+  text-align: left; padding: 7px 10px;
+  background: #f8f9fa; border-bottom: 2px solid #a2a9b1;
+  font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #54595d;
+}
+.import-preview-table td {
+  padding: 6px 10px; border-bottom: 1px solid #eaecf0; vertical-align: middle;
+}
+.import-pr-depth-1 td { background: #fafafa; }
+.import-pr-depth-2 td { background: #fff; }
+.import-pr-depth-3 td { background: #fff; color: #54595d; font-size: 12px; }
+.import-pr-depth-4 td { background: #fff; color: #72777d; font-size: 11.5px; }
+.import-pr-num { font-family: ui-monospace,Menlo,monospace; color: #72777d; font-size: 11.5px; }
+.import-pr-title { font-weight: 500; }
+.import-pr-depth { text-align: center; color: #a2a9b1; }
+.import-pr-fields { line-height: 1.8; }
+.import-tpl-select {
+  font-size: 12px; padding: 3px 6px; border: 1px solid #a2a9b1; border-radius: 4px;
+  background: #fff; color: #202122; width: 190px;
+}
+.import-field-badge {
+  display: inline-block; font-size: 10.5px;
+  background: #eaf0ff; border: 1px solid #c8d4f0; color: #3355aa;
+  border-radius: 3px; padding: 1px 5px; margin: 1px 2px;
+  font-family: ui-monospace, Menlo, monospace;
+}
+@media (max-width: 700px) {
+  .import-layout { grid-template-columns: 1fr; }
+  .import-screen { padding: 16px; }
+}
+</style>
+</body>
+</html>

@@ -125,6 +125,200 @@ def _write_gdd_cover(project_key: str, data: dict) -> None:
 
 _SECTION_OPEN_RE = re.compile(r'^\[([A-Z][A-Z_0-9]*)\]\s*$', re.MULTILINE)
 
+# ── Wiki article import templates ─────────────────────────────────────────────
+# Each template defines:
+#   name        — display label
+#   category    — group header in dropdown
+#   keywords    — words in title/parent that trigger auto-selection
+#   meta_fields — list of "key=?" lines added to [META] section
+#   body_hint   — placeholder text in [MAIN_SECTION]
+WIKI_IMPORT_TEMPLATES = {
+    "character": {
+        "name": "Character", "category": "People",
+        "keywords": ["character","char","protagonist","hero","villain","ally","companion","playable","player","avatar","npc"],
+        "meta_fields": ["role=?","age=?","height=?","weight=?","status=?",
+                        "birth_date=?","faction=?","voice_actor=?","first_appearance=?"],
+        "body_hint": "Describe this character's background, personality, motivations, and role in the story.",
+    },
+    "enemy": {
+        "name": "Enemy / Mob", "category": "Combat",
+        "keywords": ["enemy","mob","creature","monster","minion","grunt","miniboss","undead","drone","beast"],
+        "meta_fields": ["type=?","hp=?","damage=?","speed=?","behavior=?",
+                        "region=?","drop_table=?","threat_level=?"],
+        "body_hint": "Describe this enemy's appearance, AI behaviour, attack patterns and loot.",
+    },
+    "boss": {
+        "name": "Boss", "category": "Combat",
+        "keywords": ["boss","final boss","raid boss","elite"],
+        "meta_fields": ["phase_count=?","hp=?","weaknesses=?","rewards=?",
+                        "location=?","theme=?","unlock_condition=?"],
+        "body_hint": "Describe this boss's phases, attacks, cinematic trigger and reward structure.",
+    },
+    "location": {
+        "name": "Location / Area", "category": "World",
+        "keywords": ["location","area","zone","region","map","biome","dungeon","world","hub","district","island","city","town","village","forest","cave","ruins","temple","castle"],
+        "meta_fields": ["region=?","biome=?","climate=?","population=?",
+                        "status=?","difficulty=?","connected_areas=?","music=?"],
+        "body_hint": "Describe this area's atmosphere, key landmarks, inhabitants and traversal.",
+    },
+    "item": {
+        "name": "Item / Loot", "category": "Items",
+        "keywords": ["item","loot","treasure","pickup","collectible","consumable","key item","artifact","relic"],
+        "meta_fields": ["type=?","rarity=?","effect=?","value=?",
+                        "craftable=?","drop_source=?","stack_size=?"],
+        "body_hint": "Describe where this item drops, what it does, and how it fits the player loop.",
+    },
+    "weapon": {
+        "name": "Weapon", "category": "Items",
+        "keywords": ["weapon","sword","gun","bow","staff","axe","blade","hammer","spear","rifle","pistol","wand","shield"],
+        "meta_fields": ["weapon_type=?","damage=?","range=?","attack_speed=?",
+                        "special_ability=?","unlock_condition=?","rarity=?"],
+        "body_hint": "Describe damage values, moveset, unique property and unlock path.",
+    },
+    "ability": {
+        "name": "Ability / Skill", "category": "Gameplay",
+        "keywords": ["ability","skill","power","spell","move","technique","talent","passive","active","ultimate"],
+        "meta_fields": ["ability_type=?","cooldown=?","damage=?","range=?",
+                        "cost=?","unlock_level=?","affects=?"],
+        "body_hint": "Describe what this ability does, its visual feedback, and upgrade path.",
+    },
+    "mechanic": {
+        "name": "Game Mechanic", "category": "Gameplay",
+        "keywords": ["mechanic","mechanics","gameplay","loop","feature","system","physics","platforming","grapple","stealth"],
+        "meta_fields": ["category=?","status=?","complexity=?",
+                        "affects=?","dependencies=?","owner=?"],
+        "body_hint": "Describe how this mechanic works, player input, feedback, and edge cases.",
+    },
+    "quest": {
+        "name": "Quest / Mission", "category": "Narrative",
+        "keywords": ["quest","mission","task","objective","contract","bounty","errand","assignment"],
+        "meta_fields": ["quest_type=?","giver=?","reward=?","prerequisites=?",
+                        "act=?","duration=?","branch_count=?"],
+        "body_hint": "Describe the quest flow, dialogue nodes, success/fail states and reward.",
+    },
+    "story_beat": {
+        "name": "Story Beat / Scene", "category": "Narrative",
+        "keywords": ["story","narrative","plot","act","chapter","beat","scene","prologue","epilogue","moment"],
+        "meta_fields": ["act=?","chapter=?","pov=?","tone=?","outcome=?","location=?"],
+        "body_hint": "Describe what happens in this scene, who is present, and what changes.",
+    },
+    "dialogue": {
+        "name": "Dialogue / Conversation", "category": "Narrative",
+        "keywords": ["dialogue","dialog","conversation","monologue","banter","voice line"],
+        "meta_fields": ["character=?","scene=?","trigger=?","tone=?","branch_count=?","skippable=?"],
+        "body_hint": "Describe the conversation context, speaker, tone and branching options.",
+    },
+    "cutscene": {
+        "name": "Cutscene / Cinematic", "category": "Narrative",
+        "keywords": ["cutscene","cinematic","intro","outro","cinematic sequence","video","fmv"],
+        "meta_fields": ["duration=?","trigger=?","location=?","characters=?","skippable=?","director=?"],
+        "body_hint": "Describe what is shown, camera moves, music, and what it communicates.",
+    },
+    "level_design": {
+        "name": "Level Design", "category": "World",
+        "keywords": ["level","stage","floor","chapter","world","sector"],
+        "meta_fields": ["biome=?","difficulty=?","objectives=?","enemy_types=?",
+                        "boss=?","music=?","time_limit=?"],
+        "body_hint": "Describe the layout, set pieces, pacing beats and player flow.",
+    },
+    "faction": {
+        "name": "Faction / Organisation", "category": "World",
+        "keywords": ["faction","guild","group","clan","team","organisation","organization","alliance","empire","order"],
+        "meta_fields": ["faction_type=?","leader=?","territory=?","alignment=?",
+                        "relations=?","strength=?"],
+        "body_hint": "Describe this faction's goals, history, hierarchy and role in the world.",
+    },
+    "ui_screen": {
+        "name": "UI / HUD Screen", "category": "Technical",
+        "keywords": ["ui","hud","menu","screen","interface","overlay","minimap","inventory","pause","settings"],
+        "meta_fields": ["screen_type=?","platform=?","flow=?","status=?","mockup=?"],
+        "body_hint": "Describe what this screen shows, how the player navigates it, and any states.",
+    },
+    "audio": {
+        "name": "Audio / Music Track", "category": "Audio",
+        "keywords": ["audio","music","sfx","sound","track","ost","ambient","score","voice"],
+        "meta_fields": ["audio_type=?","trigger=?","duration=?","loop=?","composer=?","platform=?"],
+        "body_hint": "Describe the intended mood, instrumentation, trigger conditions and variations.",
+    },
+    "progression": {
+        "name": "Progression / Upgrade", "category": "Gameplay",
+        "keywords": ["progression","upgrade","skill tree","level up","xp","experience","rank","prestige","unlock"],
+        "meta_fields": ["progression_type=?","unlock_condition=?","reward=?",
+                        "prerequisites=?","cap=?"],
+        "body_hint": "Describe what this progression gate does, how it's unlocked and what it rewards.",
+    },
+    "system": {
+        "name": "Technical System", "category": "Technical",
+        "keywords": ["system","technical","architecture","database","network","save","load","backend","pipeline","engine"],
+        "meta_fields": ["system_category=?","status=?","complexity=?",
+                        "owner=?","dependencies=?","platform=?"],
+        "body_hint": "Describe the system's purpose, inputs/outputs, dependencies and known risks.",
+    },
+    "overview": {
+        "name": "Overview / Summary", "category": "Structure",
+        "keywords": ["overview","summary","introduction","about","vision","mission","concept","pitch"],
+        "meta_fields": ["status=?","version=?","owner=?"],
+        "body_hint": "Provide a high-level summary of this section's scope and purpose.",
+    },
+    "generic": {
+        "name": "Generic (default)", "category": "Other",
+        "keywords": [],
+        "meta_fields": ["status=?","owner=?","notes=?"],
+        "body_hint": "Add details here.",
+    },
+}
+
+# Ordered list for dropdown (category grouping happens in JS)
+WIKI_TEMPLATE_LIST = list(WIKI_IMPORT_TEMPLATES.keys())
+
+
+def _detect_wiki_template(title: str, parent_title: str = "") -> str:
+    """Return the best template id for a section by scanning title + parent keywords."""
+    combined = (title + " " + parent_title).lower()
+    words = re.findall(r'[a-z]+', combined)
+    word_set = set(words)
+    # Check every template; score = number of keyword hits
+    best_id, best_score = "generic", 0
+    for tid, tpl in WIKI_IMPORT_TEMPLATES.items():
+        if tid == "generic":
+            continue
+        score = 0
+        for kw in tpl["keywords"]:
+            kw_words = kw.lower().split()
+            # Multi-word keyword: check as substring
+            if len(kw_words) > 1:
+                if kw.lower() in combined:
+                    score += 2
+            else:
+                if kw_words[0] in word_set:
+                    score += 1
+        if score > best_score:
+            best_score = score
+            best_id = tid
+    return best_id
+
+
+def _build_wiki_article_content(title: str, body: str, template_id: str) -> str:
+    """Build a full [META]/[HERO]/[MAIN_SECTION]/[REFERENCES] article
+    using the given template for infobox scaffolding."""
+    tpl = WIKI_IMPORT_TEMPLATES.get(template_id, WIKI_IMPORT_TEMPLATES["generic"])
+    meta_lines = [f"title={title}", "authors=Unknown", f"template={template_id}"]
+    meta_lines.extend(tpl["meta_fields"])
+    meta = "\n".join(meta_lines)
+
+    if body.strip():
+        main = f"# {title}\n\n{body.strip()}\n"
+    else:
+        hint = tpl["body_hint"]
+        main = f"# {title}\n\n> _{hint}_\n\n## Overview\n\n## Notes\n\n- \n"
+
+    return _serialize_sections([
+        {"type": "META",         "content": meta},
+        {"type": "HERO",         "content": ""},
+        {"type": "MAIN_SECTION", "content": main},
+        {"type": "REFERENCES",   "content": ""},
+    ])
+
 # Default section template for new articles
 _DEFAULT_SECTIONS = [
     {'type': 'META',         'content': 'title=\nauthors=\n'},
@@ -252,6 +446,28 @@ def _assign_numbers(tree: list, prefix: str = "") -> list:
     return result
 
 
+def _get_numbered_flat(project_id: int) -> list:
+    """Return pre-order flat list with gdd_num and depth computed. No children key."""
+    flat = _get_tree(project_id)
+    tree = _build_nested(flat)
+    numbered = _assign_numbers(tree)
+    return [
+        {
+            "id":           n["id"],
+            "slug":         n["slug"],
+            "title":        n["title"],
+            "parent_id":    n["parent_id"],
+            "order_index":  n["order_index"],
+            "is_published": n["is_published"],
+            "params":       n.get("params"),
+            "updated_at":   n.get("updated_at"),
+            "gdd_num":      n["gdd_num"],
+            "depth":        n["gdd_num"].count("."),
+        }
+        for n in numbered
+    ]
+
+
 # ── Lazy init ─────────────────────────────────────────────────────────────────
 
 WELCOME_MD = """\
@@ -362,10 +578,8 @@ def register(app) -> None:
     def wiki_home(project_id):
         project = _check_access(project_id)
         _ensure_wiki(project_id, project["key"], project["name"])
-        flat = _get_tree(project_id)
-        tree = _build_nested(flat)
-        return render_template("wiki_home.html",
-                               project=project, tree=tree, flat=flat)
+        flat = _get_numbered_flat(project_id)
+        return render_template("wiki_home.html", project=project, flat=flat)
 
     # ── Read article ─────────────────────────────────────────────────────────
 
@@ -474,7 +688,7 @@ def register(app) -> None:
         project = _check_access(project_id)
         _ensure_wiki(project_id, project["key"], project["name"])
         conn = get_db()
-        flat = _get_tree(project_id)
+        flat = _get_numbered_flat(project_id)
 
         if request.method == "POST":
             enforce_csrf()
@@ -486,6 +700,7 @@ def register(app) -> None:
                 flash("Title is required.", "error")
                 return render_template("wiki_edit.html", project=project,
                                        article=None, flat=flat, mode="new",
+                                       current_gdd_num='',
                                        articles_json=json.dumps([{"slug": a["slug"], "title": a["title"]} for a in flat]))
 
             base_slug = _slugify(title)
@@ -522,6 +737,7 @@ def register(app) -> None:
         return render_template("wiki_edit.html",
                                project=project, article=None,
                                flat=flat, mode="new",
+                               current_gdd_num='',
                                prefill_parent=parent_id,
                                prefill_content=_serialize_sections(_DEFAULT_SECTIONS),
                                sections_json=json.dumps(_DEFAULT_SECTIONS),
@@ -541,7 +757,9 @@ def register(app) -> None:
         if not article:
             abort(404)
         article = dict(article)
-        flat = _get_tree(project_id)
+        flat = _get_numbered_flat(project_id)
+        num_map = {a["id"]: a["gdd_num"] for a in flat}
+        current_gdd_num = num_map.get(article["id"], "")
 
         if request.method == "POST":
             enforce_csrf()
@@ -556,6 +774,7 @@ def register(app) -> None:
                 sections = _heal_sections(_parse_sections(content))
                 return render_template("wiki_edit.html", project=project,
                                        article=article, flat=flat, mode="edit",
+                                       current_gdd_num=current_gdd_num,
                                        prefill_content=_serialize_sections(sections),
                                        sections_json=json.dumps(sections),
                                        articles_json=json.dumps([{"slug": a["slug"], "title": a["title"]} for a in flat]))
@@ -582,6 +801,7 @@ def register(app) -> None:
         return render_template("wiki_edit.html",
                                project=project, article=article,
                                flat=flat, mode="edit",
+                               current_gdd_num=current_gdd_num,
                                prefill_content=_serialize_sections(sections),
                                sections_json=json.dumps(sections),
                                articles_json=json.dumps(articles_list))
@@ -886,23 +1106,36 @@ def register(app) -> None:
         if request.method == "POST":
             enforce_csrf()
             raw_text = request.form.get("gdd_text", "").strip()
-            import_mode = request.form.get("import_mode", "append")  # 'replace' or 'append'
+            import_mode = request.form.get("import_mode", "append")
+            # Template assignments from JS preview: JSON list [{num, template}]
+            assignments_raw = request.form.get("template_assignments", "[]")
+            try:
+                assignments = {a["num"]: a["template"] for a in json.loads(assignments_raw)}
+            except Exception:
+                assignments = {}
+
             if not raw_text:
                 flash("Nothing to import.", "error")
                 return redirect(request.url)
 
-            # Parse numbered headings: "1.2.3 Title" or "1.2.3. Title"
-            pattern = re.compile(r"^(\d+(?:\.\d+)*\.?)\s+(.+)$")
+            pattern = re.compile(
+                r"^(\d+(?:\.\d+)*)"
+                r"\.?"
+                r"[ \t]*"
+                r"(?:[-\u2013\u2014][ \t]*)?"
+                r"(.*)$"
+            )
             lines = raw_text.splitlines()
-            parsed = []   # [{num, title, content_lines}]
+            parsed = []
             current = None
             for line in lines:
                 m = pattern.match(line.strip())
                 if m:
                     if current:
                         parsed.append(current)
-                    num = m.group(1).rstrip(".")
-                    current = {"num": num, "title": m.group(2).strip(), "body": []}
+                    num   = m.group(1)
+                    title = m.group(2).strip() or f"Section {m.group(1)}"
+                    current = {"num": num, "title": title, "body": []}
                 elif current is not None:
                     current["body"].append(line)
             if current:
@@ -918,10 +1151,8 @@ def register(app) -> None:
             os.makedirs(_articles_dir(project["key"]), exist_ok=True)
 
             if import_mode == "replace":
-                # Delete all existing articles + files for this project
                 existing = conn.execute(
-                    "SELECT slug FROM wiki_articles WHERE project_id=?",
-                    (project_id,)
+                    "SELECT slug FROM wiki_articles WHERE project_id=?", (project_id,)
                 ).fetchall()
                 for row in existing:
                     path = _article_path(project["key"], row["slug"])
@@ -930,27 +1161,26 @@ def register(app) -> None:
                 conn.execute("DELETE FROM wiki_articles WHERE project_id=?", (project_id,))
                 conn.commit()
 
-            # Build id map: num_string → db id (for parent resolution)
+            # Build parent title map for detection context
+            num_title_map = {item["num"]: item["title"] for item in parsed}
+
             id_map = {}
-
             for item in parsed:
-                num = item["num"]
+                num   = item["num"]
                 title = item["title"]
-                slug = _unique_slug(project_id, _slugify(title))
-                body = "\n".join(item["body"]).strip()
-                content = _serialize_sections([
-                    {"type": "META",         "content": f"title={title}\nauthors=\n"},
-                    {"type": "HERO",         "content": ""},
-                    {"type": "MAIN_SECTION", "content": f"# {title}\n\n{body}\n" if body else f"# {title}\n\n"},
-                    {"type": "REFERENCES",   "content": ""},
-                ])
-
-                # Parent: drop last segment of num
+                body  = "\n".join(item["body"]).strip()
                 parts = num.split(".")
-                parent_num = ".".join(parts[:-1])
-                parent_id = id_map.get(parent_num)
 
-                order = float(parts[-1])
+                # Determine template: use JS assignment if available, else auto-detect
+                parent_num = ".".join(parts[:-1])
+                parent_title = num_title_map.get(parent_num, "")
+                template_id = assignments.get(num) or _detect_wiki_template(title, parent_title)
+
+                slug    = _unique_slug(project_id, _slugify(title))
+                content = _build_wiki_article_content(title, body, template_id)
+                parent_id = id_map.get(parent_num)
+                order   = float(parts[-1])
+
                 _write_md(project["key"], slug, content)
                 cur = conn.execute(
                     """INSERT INTO wiki_articles
@@ -968,4 +1198,6 @@ def register(app) -> None:
             return redirect(url_for("wiki_home", project_id=project_id))
 
         return render_template("wiki_import.html",
-                               project=project, flat=flat)
+                               project=project, flat=flat,
+                               templates_json=json.dumps(WIKI_IMPORT_TEMPLATES),
+                               template_list_json=json.dumps(WIKI_TEMPLATE_LIST))

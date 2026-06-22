@@ -1,8 +1,14 @@
-{% extends "base.html" %}
-{% block title %}{{ article.title }} — {{ project.name }} Wiki — Gyra{% endblock %}
-{% block body_attrs %}class="wiki-mode"{% endblock %}
-
-{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{{ article.title }} — {{ project.name }} Wiki</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}">
+</head>
+<body class="wiki-mode">
 
 {# ── Top bar — navigation only, no edit buttons ── #}
 <div class="wiki-topbar">
@@ -321,5 +327,5 @@
   });
 })();
 </script>
-
-{% endblock %}
+</body>
+</html>

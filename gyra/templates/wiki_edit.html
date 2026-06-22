@@ -1,14 +1,20 @@
-{% extends "base.html" %}
-{% block title %}{% if mode == 'new' %}New Article{% else %}Edit: {{ article.title }}{% endif %} — {{ project.name }} Wiki{% endblock %}
-{% block body_attrs %}class="wiki-mode"{% endblock %}
-
-{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% if mode == 'new' %}New Article{% else %}Edit: {{ article.title }}{% endif %} — {{ project.name }} Wiki</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}">
+</head>
+<body class="wiki-mode">
 <div class="wiki-edit-header">
   <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_home', project_id=project.id) }}">← Wiki</a>
   {% if mode == 'edit' %}
   <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_article', project_id=project.id, slug=article.slug) }}">← Read</a>
   {% endif %}
-  <h2 style="margin:0;flex:1">{% if mode == 'new' %}New Article{% else %}Edit: {{ article.title }}{% endif %}</h2>
+  <h2 style="margin:0;flex:1">{% if current_gdd_num %}<span style="color:#72777d;font-weight:400;font-size:14px;margin-right:6px">{{ current_gdd_num }}</span>{% endif %}{% if mode == 'new' %}New Article{% else %}Edit: {{ article.title }}{% endif %}</h2>
 </div>
 
 <form method="post" id="wiki-edit-form"
@@ -32,7 +38,7 @@
         {% if not article or a.id != article.id %}
         <option value="{{ a.id }}"
           {% if (article and article.parent_id == a.id) or (prefill_parent and prefill_parent|int == a.id) %}selected{% endif %}>
-          {{ '—' * (a.depth|default(0)) }} {{ a.title }}
+          {{ '\u00a0\u00a0\u00a0\u00a0' * a.depth }}{{ a.gdd_num }}. {{ a.title }}
         </option>
         {% endif %}
         {% endfor %}
@@ -403,5 +409,5 @@ previewBtn.addEventListener('click', function () {
   }
 })();
 </script>
-
-{% endblock %}
+</body>
+</html>
