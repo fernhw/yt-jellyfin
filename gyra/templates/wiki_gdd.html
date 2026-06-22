@@ -8,6 +8,11 @@
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}" media="print">
+  <style>
+    /* Suppress browser's own URL / date header and footer chrome when printing */
+    @page { margin: 1in; size: letter portrait; }
+    @page :first { margin-top: 0; }
+  </style>
 </head>
 <body class="wiki-mode">
 

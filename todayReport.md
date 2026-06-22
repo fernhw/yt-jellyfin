@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-22
 
-> *Good afternoon! Here's what landed on Monday, June 22, 2026 at 03:17 PM.*
-> **YT Mirror:** 641.09 GB used · 0.57 TB free
+> *Good evening! Here's what landed on Monday, June 22, 2026 at 05:12 PM.*
+> **YT Mirror:** 642.19 GB used · 0.57 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,9 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **They Used AI For Crazy Taxi. Players Torched It.** — *Bellular News* · downloaded 05:09 PM · podcastable
+- **WWE 2K26 – Official Season 3 Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:08 PM · not podcastable
+- **These f***ing people, man..** — *Asmongold TV* · downloaded 05:07 PM · not podcastable
 - **Steam Machine Review: Beautiful Hardware, But What About Performance... And Price?** — *Digital Foundry* · downloaded 03:15 PM · not podcastable
 - **Valve Steam Machine Review: GPU & CPU Benchmarks, SteamOS Test, Thermals, Noise, and Price** — *Gamers Nexus* · downloaded 03:07 PM · not podcastable
 - **Nobody trusts these studios anymore...** — *Asmongold TV* · downloaded 03:05 PM · not podcastable
