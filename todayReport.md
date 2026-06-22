@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-21
 
-> *Good evening! Here's what landed on Sunday, June 21, 2026 at 06:05 PM.*
-> **YT Mirror:** 640.80 GB used · 0.57 TB free
+> *Good evening! Here's what landed on Sunday, June 21, 2026 at 07:07 PM.*
+> **YT Mirror:** 640.96 GB used · 0.57 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **This Keeps Happening To Xbox** — *Spawn Wave* · downloaded 07:05 PM · not podcastable
 - **They’re STILL MAD about this.** — *Asmongold TV* · downloaded 03:08 PM · not podcastable
 - **We cannot coexist with these people..** — *Asmongold TV* · downloaded 03:07 PM · not podcastable
 - **I Sold EVERYTHING I Own** — *ConnorDawg* · downloaded 03:06 PM · not podcastable
