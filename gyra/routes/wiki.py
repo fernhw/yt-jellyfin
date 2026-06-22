@@ -760,11 +760,62 @@ def register(app) -> None:
             resolved = re.sub(r"\[\[([^\]]+)\]\]", gdd_replace, raw)
             sections.append({**a, "content": resolved})
 
+        # Last modified: max updated_at across all articles
+        import datetime as _dt
+        max_ts = max((a.get("updated_at") or 0 for a in numbered), default=0)
+        last_modified = _dt.datetime.fromtimestamp(max_ts).strftime("%-d %B %Y") if max_ts else ""
+
+        cover = _read_gdd_cover(project["key"])
+
         return render_template("wiki_gdd.html",
                                project=project,
                                sections=sections,
                                flat=flat,
-                               cover=_read_gdd_cover(project["key"]))
+                               last_modified=last_modified,
+                               cover=cover)
+
+    # ── GDD PDF (standalone, auto-print) ─────────────────────────────────────
+
+    @app.route("/project/<int:project_id>/gdd/pdf")
+    @login_required
+    def wiki_gdd_pdf(project_id):
+        import datetime as _dt
+        project = _check_access(project_id)
+        flat = _get_tree(project_id)
+        tree = _build_nested(flat)
+        numbered = _assign_numbers(tree)
+        num_map       = {a["slug"]: a["gdd_num"] for a in numbered}
+        slug_url_map  = {a["slug"]: "#gdd-" + a["slug"] for a in numbered}
+        title_slug_map = {a["title"].lower(): a["slug"] for a in numbered}
+
+        _GDD_SKIP = {"META", "HERO"}
+        sections = []
+        for a in numbered:
+            raw_full = _read_md(project["key"], a["slug"])
+            parsed = _parse_sections(raw_full)
+            raw = _serialize_sections([s for s in parsed if s["type"] not in _GDD_SKIP])
+            def gdd_replace(m, _nm=num_map, _su=slug_url_map, _ts=title_slug_map):
+                inner = m.group(1)
+                parts = inner.split("|")
+                key   = parts[0].strip()
+                label = parts[-1].strip()
+                resolved_slug = key if key in _nm else _ts.get(key.lower(), key)
+                ref  = _nm.get(resolved_slug, key)
+                url  = _su.get(resolved_slug, "#")
+                display = f"§{ref} — {label}" if "|" in inner else f"§{ref}"
+                return f'<a href="{url}">{display}</a>'
+            resolved = re.sub(r"\[\[([^\]]+)\]\]", gdd_replace, raw)
+            sections.append({**a, "content": resolved})
+
+        max_ts = max((a.get("updated_at") or 0 for a in numbered), default=0)
+        last_modified = _dt.datetime.fromtimestamp(max_ts).strftime("%-d %B %Y") if max_ts else ""
+        cover = _read_gdd_cover(project["key"])
+
+        return render_template("wiki_gdd_pdf.html",
+                               project=project,
+                               sections=sections,
+                               last_modified=last_modified,
+                               cover=cover)
 
     # ── GDD cover save ────────────────────────────────────────────────────────
 

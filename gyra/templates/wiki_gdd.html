@@ -4,157 +4,113 @@
 
 {% block content %}
 
-{# ── Screen-only action bar ── #}
-<div class="gdd-action-bar no-print">
-  <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_home', project_id=project.id) }}">← Wiki</a>
-  <span class="gdd-action-bar-title">{{ project.name }} — GDD</span>
-  <div class="gdd-action-bar-right">
-    {% if session.role in ('admin','super_user') %}
-    <button class="btn btn-sm btn-secondary" onclick="document.getElementById('gdd-cover-modal').style.display='flex'">✏ Edit Cover</button>
-    {% endif %}
-    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_gdd_export', project_id=project.id) }}">⬇ .md</a>
-    <button class="btn btn-sm btn-primary" onclick="window.print()">🖨 Print / PDF</button>
-  </div>
+{# ── Floating screen-only controls ── #}
+<div class="gdd-controls no-print">
+  <a class="gdd-ctrl-btn" href="{{ url_for('wiki_home', project_id=project.id) }}" title="Back to Wiki">← Wiki</a>
+  {% if session.role in ('admin','super_user') %}
+  <button class="gdd-ctrl-btn" onclick="document.getElementById('gdd-cover-modal').style.display='flex'" title="Edit cover">✏ Cover</button>
+  {% endif %}
+  <a class="gdd-ctrl-btn" href="{{ url_for('wiki_gdd_export', project_id=project.id) }}" title="Download .md">⬇ .md</a>
+  <button class="gdd-ctrl-btn" onclick="window.print()" title="Print / save as PDF">🖨 Print</button>
+  <a class="gdd-ctrl-btn gdd-ctrl-btn-pdf" href="{{ url_for('wiki_gdd_pdf', project_id=project.id) }}" target="_blank" title="Open clean PDF page">⬇ PDF</a>
 </div>
 
+{# ═══════════════════════════════════════════════════
+   GDD DOCUMENT — everything below is print-safe
+═══════════════════════════════════════════════════ #}
 <div class="gdd-document">
 
-  {# ══════════════════════════════════════════
-     PAGE 1 — COVER
-  ══════════════════════════════════════════ #}
-  <div class="gdd-page gdd-cover-page">
+  {# ─── PAGE 1: COVER ─── #}
+  <div class="gdd-cover-page">
     {% if cover.cover_image %}
-    <div class="gdd-cover-image">
-      <img src="{{ url_for('wiki_image_serve', project_id=project.id, filename=cover.cover_image) }}"
-           alt="{{ project.name }}">
-    </div>
-    {% else %}
-    <div class="gdd-cover-image gdd-cover-image-placeholder">
-      <span class="gdd-cover-placeholder-icon">📄</span>
+    <div class="gdd-cover-hero">
+      <img src="{{ url_for('wiki_image_serve', project_id=project.id, filename=cover.cover_image) }}" alt="{{ project.name }}">
     </div>
     {% endif %}
 
     <div class="gdd-cover-body">
-      {% if cover.studio %}
-      <div class="gdd-cover-studio">{{ cover.studio }}</div>
-      {% endif %}
+      {% if cover.studio %}<div class="gdd-cover-studio">{{ cover.studio }}</div>{% endif %}
       <h1 class="gdd-cover-title">{{ project.name }}</h1>
       <div class="gdd-cover-subtitle">Game Design Document</div>
-      {% if cover.tagline %}
-      <div class="gdd-cover-tagline">{{ cover.tagline }}</div>
+      {% if cover.tagline %}<div class="gdd-cover-tagline">{{ cover.tagline }}</div>{% endif %}
+
+      {% set has_meta = cover.version or cover.date or cover.status or cover.genre or cover.platform or last_modified %}
+      {% if has_meta %}
+      <table class="gdd-cover-meta-table">
+        {% if cover.version %}<tr><th>Version</th><td>{{ cover.version }}</td></tr>{% endif %}
+        {% if cover.date    %}<tr><th>Date</th><td>{{ cover.date }}</td></tr>{% endif %}
+        {% if cover.status  %}<tr><th>Status</th><td>{{ cover.status }}</td></tr>{% endif %}
+        {% if cover.genre   %}<tr><th>Genre</th><td>{{ cover.genre }}</td></tr>{% endif %}
+        {% if cover.platform%}<tr><th>Platform</th><td>{{ cover.platform }}</td></tr>{% endif %}
+        {% if last_modified %}<tr><th>Last Modified</th><td>{{ last_modified }}</td></tr>{% endif %}
+      </table>
       {% endif %}
 
-      <div class="gdd-cover-meta-grid">
-        {% if cover.version %}<div class="gdd-cover-meta-row"><span>Version</span><span>{{ cover.version }}</span></div>{% endif %}
-        {% if cover.date    %}<div class="gdd-cover-meta-row"><span>Date</span><span>{{ cover.date }}</span></div>{% endif %}
-        {% if cover.status  %}<div class="gdd-cover-meta-row"><span>Status</span><span>{{ cover.status }}</span></div>{% endif %}
-        {% if cover.genre   %}<div class="gdd-cover-meta-row"><span>Genre</span><span>{{ cover.genre }}</span></div>{% endif %}
-        {% if cover.platform%}<div class="gdd-cover-meta-row"><span>Platform</span><span>{{ cover.platform }}</span></div>{% endif %}
-      </div>
-
-      {% if cover.description %}
-      <p class="gdd-cover-description">{{ cover.description }}</p>
-      {% endif %}
+      {% if cover.description %}<p class="gdd-cover-desc">{{ cover.description }}</p>{% endif %}
     </div>
   </div>
 
-  {# ══════════════════════════════════════════
-     PAGE 2 — TABLE OF CONTENTS
-  ══════════════════════════════════════════ #}
-  <div class="gdd-page gdd-toc-page">
+  {# ─── PAGE 2: TABLE OF CONTENTS ─── #}
+  <div class="gdd-toc-page">
     <h2 class="gdd-toc-heading">Table of Contents</h2>
     <div class="gdd-toc-list">
       {% for section in sections %}
       {% set depth = section.gdd_num.split('.')|length %}
-      <a class="gdd-toc-entry gdd-toc-d{{ depth }}"
-         href="#gdd-{{ section.slug }}"
-         style="padding-left: {{ (depth - 1) * 24 }}px">
-        <span class="gdd-toc-entry-num">{{ section.gdd_num }}</span>
-        <span class="gdd-toc-entry-title">{{ section.title }}</span>
-        <span class="gdd-toc-leader"></span>
-        <span class="gdd-toc-entry-page no-print">&rarr;</span>
+      <a class="gdd-toc-entry gdd-toc-d{{ depth }}" href="#gdd-{{ section.slug }}"
+         style="padding-left:{{ (depth - 1) * 22 }}px">
+        <span class="gdd-toc-num">{{ section.gdd_num }}</span>
+        <span class="gdd-toc-title">{{ section.title }}</span>
+        <span class="gdd-toc-dots"></span>
+        <span class="gdd-toc-arrow no-print">→</span>
       </a>
       {% endfor %}
     </div>
   </div>
 
-  {# ══════════════════════════════════════════
-     PAGES 3+ — SECTIONS
-  ══════════════════════════════════════════ #}
+  {# ─── PAGES 3+: SECTIONS ─── #}
   {% for section in sections %}
   {% set depth = section.gdd_num.split('.')|length %}
-  <section class="gdd-section gdd-depth-{{ depth }}"
-           id="gdd-{{ section.slug }}"
-           {% if depth == 1 %}style="break-before: page; page-break-before: always"{% endif %}>
-
-    {% if depth == 1 %}
-    <h2 class="gdd-h1"><span class="gdd-num">{{ section.gdd_num }}</span> {{ section.title }}</h2>
-    {% elif depth == 2 %}
-    <h3 class="gdd-h2"><span class="gdd-num">{{ section.gdd_num }}</span> {{ section.title }}</h3>
-    {% elif depth == 3 %}
-    <h4 class="gdd-h3"><span class="gdd-num">{{ section.gdd_num }}</span> {{ section.title }}</h4>
-    {% else %}
-    <h5 class="gdd-h4"><span class="gdd-num">{{ section.gdd_num }}</span> {{ section.title }}</h5>
+  <section class="gdd-section gdd-depth-{{ depth }}" id="gdd-{{ section.slug }}">
+    {% if depth == 1 %}<h2 class="gdd-h1"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h2>
+    {% elif depth == 2 %}<h3 class="gdd-h2"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h3>
+    {% elif depth == 3 %}<h4 class="gdd-h3"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h4>
+    {% else %}<h5 class="gdd-h4"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h5>
     {% endif %}
-
     <div class="gdd-section-content" id="gdd-content-{{ loop.index }}"></div>
     <script type="application/json" id="gdd-raw-{{ loop.index }}">{{ section.content | tojson }}</script>
   </section>
   {% endfor %}
 
-</div>{# end .gdd-document #}
+</div>{# /gdd-document #}
 
-{# ══════════════════════════════════════════
-   COVER EDIT MODAL (screen only)
-══════════════════════════════════════════ #}
+{# ── Cover edit modal ── #}
 <div id="gdd-cover-modal" class="gdd-cover-modal no-print" style="display:none">
   <div class="gdd-cover-modal-box">
     <div class="gdd-cover-modal-head">
       <strong>Edit Cover Page</strong>
-      <button type="button" onclick="document.getElementById('gdd-cover-modal').style.display='none'" class="gdd-modal-close">✕</button>
+      <button type="button" class="gdd-modal-close" onclick="document.getElementById('gdd-cover-modal').style.display='none'">✕</button>
     </div>
     <form method="post" action="{{ url_for('wiki_gdd_cover_save', project_id=project.id) }}" class="gdd-cover-form">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-
       <div class="gdd-cover-form-grid">
-        <label>Studio / Author
-          <input type="text" name="studio"   value="{{ cover.studio or '' }}" placeholder="Studio High Ground">
-        </label>
-        <label>Version
-          <input type="text" name="version"  value="{{ cover.version or '' }}" placeholder="0.1">
-        </label>
-        <label>Date
-          <input type="text" name="date"     value="{{ cover.date or '' }}" placeholder="2026-06-22">
-        </label>
-        <label>Status
-          <input type="text" name="status"   value="{{ cover.status or '' }}" placeholder="Pre-Production">
-        </label>
-        <label>Genre
-          <input type="text" name="genre"    value="{{ cover.genre or '' }}" placeholder="Action / Puzzle">
-        </label>
-        <label>Platform
-          <input type="text" name="platform" value="{{ cover.platform or '' }}" placeholder="iOS, Android, PC">
-        </label>
+        <label>Studio / Author<input type="text" name="studio"   value="{{ cover.studio or '' }}"   placeholder="Studio High Ground"></label>
+        <label>Version       <input type="text" name="version"  value="{{ cover.version or '' }}"  placeholder="0.1"></label>
+        <label>Date          <input type="text" name="date"     value="{{ cover.date or '' }}"     placeholder="2026-06-22"></label>
+        <label>Status        <input type="text" name="status"   value="{{ cover.status or '' }}"   placeholder="Pre-Production"></label>
+        <label>Genre         <input type="text" name="genre"    value="{{ cover.genre or '' }}"    placeholder="Action / Puzzle"></label>
+        <label>Platform      <input type="text" name="platform" value="{{ cover.platform or '' }}" placeholder="iOS, Android, PC"></label>
       </div>
-
       <label style="margin-top:10px;display:block">Tagline
-        <input type="text" name="tagline" value="{{ cover.tagline or '' }}"
-               placeholder="A short punchy subtitle" style="width:100%">
+        <input type="text" name="tagline" value="{{ cover.tagline or '' }}" placeholder="A short punchy subtitle" style="width:100%">
       </label>
-
       <label style="margin-top:10px;display:block">Cover Image filename
-        <input type="text" name="cover_image" value="{{ cover.cover_image or '' }}"
-               placeholder="cover.jpg (must be uploaded to wiki images)" style="width:100%">
+        <input type="text" name="cover_image" value="{{ cover.cover_image or '' }}" placeholder="cover.jpg" style="width:100%">
       </label>
-
-      <label style="margin-top:10px;display:block">Description / Pitch (optional)
-        <textarea name="description" rows="3" style="width:100%;box-sizing:border-box;resize:vertical"
-                  placeholder="One-paragraph pitch for the cover page...">{{ cover.description or '' }}</textarea>
+      <label style="margin-top:10px;display:block">Description / Pitch
+        <textarea name="description" rows="3" style="width:100%;box-sizing:border-box;resize:vertical" placeholder="One-paragraph pitch…">{{ cover.description or '' }}</textarea>
       </label>
-
       <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
-        <button type="button" onclick="document.getElementById('gdd-cover-modal').style.display='none'"
-                class="btn btn-sm btn-ghost">Cancel</button>
+        <button type="button" class="btn btn-sm btn-ghost" onclick="document.getElementById('gdd-cover-modal').style.display='none'">Cancel</button>
         <button type="submit" class="btn btn-sm btn-primary">💾 Save Cover</button>
       </div>
     </form>
@@ -166,34 +122,25 @@
 (function () {
   if (typeof marked === 'undefined') return;
   marked.setOptions({ breaks: false, gfm: true });
-
   document.querySelectorAll('[id^="gdd-raw-"]').forEach(function (script) {
     var idx = script.id.replace('gdd-raw-', '');
     var el  = document.getElementById('gdd-content-' + idx);
     if (!el) return;
     var md  = JSON.parse(script.textContent);
-    // Strip section tags from content before rendering
     md = md.replace(/^\[[A-Z][A-Z_0-9]*\]\s*/gm, '');
-    // Strip leading # heading (we render our own)
-    md = md.replace(/^#[^\n]*\n/, '').trim();
-    // Spoiler
+    md = md.replace(/^#{1,6}[^\n]*\n/, '').trim();
     md = md.replace(/\|\|([^|]+)\|\|/g, function (_, t) {
       return '<span class="wiki-spoiler" onclick="this.classList.toggle(\'revealed\')">' + t + '</span>';
     });
     el.innerHTML = marked.parse(md);
     el.querySelectorAll('img').forEach(function (img) {
       var src = img.getAttribute('src');
-      if (src && !src.startsWith('http') && !src.startsWith('/')) {
+      if (src && !src.startsWith('http') && !src.startsWith('/'))
         img.src = '/project/{{ project.id }}/wiki/images/' + src;
-        img.classList.add('wiki-img');
-      }
     });
   });
-
-  // Close modal on backdrop click
-  document.getElementById('gdd-cover-modal').addEventListener('click', function (e) {
-    if (e.target === this) this.style.display = 'none';
-  });
+  var modal = document.getElementById('gdd-cover-modal');
+  if (modal) modal.addEventListener('click', function (e) { if (e.target === this) this.style.display = 'none'; });
 })();
 </script>
 
