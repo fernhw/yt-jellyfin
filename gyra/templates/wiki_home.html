@@ -468,7 +468,7 @@
     fetch('/api/project/{{ project.id }}/wiki/reorder', {
       method:      'POST',
       headers:     { 'Content-Type': 'application/json',
-                     'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
+                     'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content },
       body:        JSON.stringify({ items: payload }),
       credentials: 'same-origin'
     })
