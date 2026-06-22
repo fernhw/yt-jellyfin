@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}?v={{ range(1,99999) | random }}">
   {% block head %}{% endblock %}
 </head>
-<body{% if request.args.get('modal') %} class="modal-iframe"{% endif %}>
+<body{% if request.args.get('modal') %} class="modal-iframe"{% else %}{% block body_attrs %}{% endblock %}{% endif %}>
 
 {% if session.user_id %}
 <div class="layout">

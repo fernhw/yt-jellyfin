@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 {% block title %}{{ article.title }} — {{ project.name }} Wiki — Gyra{% endblock %}
+{% block body_attrs %}class="wiki-mode"{% endblock %}
 
 {% block content %}
 
-{# ── Top bar ── #}
+{# ── Top bar — navigation only, no edit buttons ── #}
 <div class="wiki-topbar">
   <div class="wiki-topbar-left">
-    <a class="wiki-topbar-home" href="{{ url_for('wiki_home', project_id=project.id) }}">📖 Wiki</a>
+    <a class="wiki-topbar-home" href="{{ url_for('wiki_home', project_id=project.id) }}">📖 {{ project.name }} Wiki</a>
     {% for bc in breadcrumb %}
     <span class="wiki-topbar-sep">›</span>
     <a class="wiki-topbar-crumb" href="{{ url_for('wiki_article', project_id=project.id, slug=bc.slug) }}">{{ bc.title }}</a>
@@ -17,17 +18,13 @@
   <div class="wiki-topbar-right">
     {% if not article.is_published %}<span class="wiki-draft-badge">Draft</span>{% endif %}
     <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_gdd', project_id=project.id) }}">📄 GDD</a>
-    {% if session.role != 'viewer' %}
-    <a class="btn btn-sm btn-secondary" href="{{ url_for('wiki_edit', project_id=project.id, slug=article.slug) }}">✏ Edit</a>
-    {% endif %}
-    <a class="btn btn-sm btn-primary" href="{{ url_for('wiki_new', project_id=project.id, parent_id=article.id) }}">+ Child</a>
   </div>
 </div>
 
 {# ── Three-column Wikipedia layout ── #}
 <div class="wiki-article-layout">
 
-  {# Left: navigation tree #}
+  {# Left: TOC + article nav — sticky sidebar #}
   <aside class="wiki-aside-nav">
     <div class="wiki-aside-title">Contents</div>
     <div class="wiki-toc" id="wiki-toc">
@@ -45,31 +42,43 @@
     {% endfor %}
   </aside>
 
-  {# Center: article body — MAIN_SECTION + extras rendered by JS #}
+  {# Article body: infobox floats right inside, text wraps around it (Wikipedia style) #}
   <article class="wiki-article-body">
+
+    {# Infobox: floated right — sits beside MAIN_SECTION, cleared by extra sections below #}
+    <aside class="wiki-aside-info" id="wiki-infobox-wrap">
+      <div class="wiki-infobox" id="wiki-infobox">
+        {# Populated by JS from [HERO] and [META] sections #}
+      </div>
+    </aside>
+
     <h1 class="wiki-article-h1">
-      {% if gdd_num %}<span class="wiki-gdd-num">{{ gdd_num }}.</span> {% endif %}{{ article.title }}
+      {% if gdd_num %}<div class="wiki-gdd-num-above">{{ gdd_num }}</div>{% endif %}
+      {{ article.title }}
     </h1>
     <div class="wiki-article-meta">
       Last edited {% if article.updated_name %}by <strong>{{ article.updated_name }}</strong>{% endif %}
       · <span class="wiki-article-date" data-ts="{{ article.updated_at }}"></span>
     </div>
 
-    {# Main content #}
+    {# MAIN_SECTION — wraps around the floating infobox #}
     <div class="wiki-article-content" id="wiki-content">
       <div class="wiki-loading">Loading…</div>
     </div>
 
-    {# Extra named sections (not META/HERO/MAIN_SECTION/REFERENCES) #}
+    {# clear float — everything below here is full-width #}
+    <div style="clear:both"></div>
+
+    {# Extra custom sections — full-width below main content #}
     <div id="wiki-extra-sections"></div>
 
-    {# References section #}
+    {# References — full-width #}
     <div id="wiki-references" style="display:none">
       <h2 class="wiki-refs-heading">References</h2>
       <div class="wiki-refs-body"></div>
     </div>
 
-    {# Child articles — always shown if children exist #}
+    {# Child articles #}
     {% if children %}
     <div class="wiki-children-section">
       <h2 class="wiki-children-heading">Sub-articles</h2>
@@ -83,14 +92,8 @@
       </ul>
     </div>
     {% endif %}
-  </article>
 
-  {# Right: infobox — HERO image at top, then META key=values, just like Wikipedia #}
-  <aside class="wiki-aside-info">
-    <div class="wiki-infobox" id="wiki-infobox">
-      {# Populated by JS from [HERO] and [META] sections #}
-    </div>
-  </aside>
+  </article>
 
 </div>
 
@@ -108,7 +111,16 @@
   {% endif %}
 </div>
 
-
+{# ── Editor footer — discreet, out of the way ── #}
+{% if session.role != 'viewer' %}
+<div class="wiki-editor-footer">
+  <a href="{{ url_for('wiki_edit', project_id=project.id, slug=article.slug) }}" class="wiki-editor-footer-link">✏ Edit this article</a>
+  <span class="wiki-editor-footer-sep">·</span>
+  <a href="{{ url_for('wiki_new', project_id=project.id, parent_id=article.id) }}" class="wiki-editor-footer-link">+ Add child article</a>
+  <span class="wiki-editor-footer-sep">·</span>
+  <a href="{{ url_for('wiki_home', project_id=project.id) }}" class="wiki-editor-footer-link">← All articles</a>
+</div>
+{% endif %}
 
 {# marked.js — renders all Markdown client-side #}
 <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
@@ -144,7 +156,8 @@
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   function resolveLinks(md) {
-    return md.replace(/\[\[([^\]]+)\]\]/g, function (_, inner) {
+    // [[wikilink]] resolution
+    md = md.replace(/\[\[([^\]]+)\]\]/g, function (_, inner) {
       var parts = inner.split('|');
       var key   = parts[0].trim().toLowerCase();
       var label = (parts[1] || parts[0]).trim();
@@ -152,6 +165,11 @@
       if (entry) return '[' + label + '](' + entry.url + ')';
       return '<span class="wiki-link-missing" title="Article not found">' + label + '</span>';
     });
+    // ||spoiler text|| → blurred reveal span
+    md = md.replace(/\|\|([^|]+)\|\|/g, function (_, text) {
+      return '<span class="wiki-spoiler" title="Click to reveal" onclick="this.classList.toggle(\'revealed\')">' + text + '</span>';
+    });
+    return md;
   }
 
   function postProcess(el) {

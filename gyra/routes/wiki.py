@@ -82,6 +82,28 @@ def _write_md(project_key: str, slug: str, content: str) -> None:
         f.write(content)
 
 
+def _gdd_cover_path(project_key: str) -> str:
+    return os.path.join(_wiki_dir(project_key), "gdd_cover.json")
+
+
+def _read_gdd_cover(project_key: str) -> dict:
+    path = _gdd_cover_path(project_key)
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def _write_gdd_cover(project_key: str, data: dict) -> None:
+    path = _gdd_cover_path(project_key)
+    os.makedirs(_wiki_dir(project_key), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
 # ── Section system ────────────────────────────────────────────────────────────
 # File format: sections separated by [TAG] on its own line, no closing tags.
 # Content runs from after [TAG] until the next [TAG] or end of file.
@@ -463,7 +485,8 @@ def register(app) -> None:
             if not title:
                 flash("Title is required.", "error")
                 return render_template("wiki_edit.html", project=project,
-                                       article=None, flat=flat, mode="new")
+                                       article=None, flat=flat, mode="new",
+                                       articles_json=json.dumps([{"slug": a["slug"], "title": a["title"]} for a in flat]))
 
             base_slug = _slugify(title)
             slug = _unique_slug(project_id, base_slug)
@@ -495,11 +518,14 @@ def register(app) -> None:
             return redirect(url_for("wiki_edit", project_id=project_id, slug=slug))
 
         parent_id = request.args.get("parent_id")
+        articles_list = [{"slug": a["slug"], "title": a["title"]} for a in flat]
         return render_template("wiki_edit.html",
                                project=project, article=None,
                                flat=flat, mode="new",
                                prefill_parent=parent_id,
-                               sections_json=json.dumps(_DEFAULT_SECTIONS))
+                               prefill_content=_serialize_sections(_DEFAULT_SECTIONS),
+                               sections_json=json.dumps(_DEFAULT_SECTIONS),
+                               articles_json=json.dumps(articles_list))
 
     # ── Edit article ─────────────────────────────────────────────────────────
 
@@ -530,7 +556,9 @@ def register(app) -> None:
                 sections = _heal_sections(_parse_sections(content))
                 return render_template("wiki_edit.html", project=project,
                                        article=article, flat=flat, mode="edit",
-                                       sections_json=json.dumps(sections))
+                                       prefill_content=_serialize_sections(sections),
+                                       sections_json=json.dumps(sections),
+                                       articles_json=json.dumps([{"slug": a["slug"], "title": a["title"]} for a in flat]))
 
             # Heal: silently restore any deleted required sections before saving
             sections = _heal_sections(_parse_sections(content))
@@ -550,10 +578,13 @@ def register(app) -> None:
 
         content  = _read_md(project["key"], slug)
         sections = _heal_sections(_parse_sections(content))
+        articles_list = [{"slug": a["slug"], "title": a["title"]} for a in flat]
         return render_template("wiki_edit.html",
                                project=project, article=article,
                                flat=flat, mode="edit",
-                               sections_json=json.dumps(sections))
+                               prefill_content=_serialize_sections(sections),
+                               sections_json=json.dumps(sections),
+                               articles_json=json.dumps(articles_list))
 
     # ── Delete article ───────────────────────────────────────────────────────
 
@@ -698,17 +729,33 @@ def register(app) -> None:
         # Build slug→number map for [[link]] resolution
         num_map = {a["slug"]: a["gdd_num"] for a in numbered}
 
-        # Load content for each article, resolve [[links]] as §refs
+        # Build slug→url map for clickable GDD links
+        slug_url_map = {
+            a["slug"]: url_for("wiki_article", project_id=project_id, slug=a["slug"])
+            for a in numbered
+        }
+        # Also map by title (lowercase) → slug for [[Title]] style links
+        title_slug_map = {a["title"].lower(): a["slug"] for a in numbered}
+
+        # Load content for each article, resolve [[links]] as clickable §refs
+        _GDD_SKIP = {"META", "HERO"}
         sections = []
         for a in numbered:
-            raw = _read_md(project["key"], a["slug"])
-            # Replace [[slug]] with § references using num_map
-            def gdd_replace(m):
+            raw_full = _read_md(project["key"], a["slug"])
+            # Strip META/HERO params — GDD only shows body content
+            parsed = _parse_sections(raw_full)
+            raw = _serialize_sections([s for s in parsed if s["type"] not in _GDD_SKIP])
+            def gdd_replace(m, _num_map=num_map, _slug_url=slug_url_map, _title_slug=title_slug_map):
                 inner = m.group(1)
-                slug_or_title = inner.split("|")[0].strip()
-                label = inner.split("|")[-1].strip()
-                ref = num_map.get(slug_or_title, slug_or_title)
-                return f"§{ref} ({label})" if "|" in inner else f"§{ref}"
+                parts = inner.split("|")
+                key   = parts[0].strip()
+                label = parts[-1].strip()
+                # Resolve slug or title → gdd_num + url
+                resolved_slug = key if key in _num_map else _title_slug.get(key.lower(), key)
+                ref  = _num_map.get(resolved_slug, key)
+                url  = _slug_url.get(resolved_slug, "#")
+                display = f"§{ref} — {label}" if "|" in inner else f"§{ref}"
+                return f'<a href="{url}" class="gdd-ref-link">{display}</a>'
 
             resolved = re.sub(r"\[\[([^\]]+)\]\]", gdd_replace, raw)
             sections.append({**a, "content": resolved})
@@ -716,7 +763,24 @@ def register(app) -> None:
         return render_template("wiki_gdd.html",
                                project=project,
                                sections=sections,
-                               flat=flat)
+                               flat=flat,
+                               cover=_read_gdd_cover(project["key"]))
+
+    # ── GDD cover save ────────────────────────────────────────────────────────
+
+    @app.route("/project/<int:project_id>/gdd/cover", methods=["POST"])
+    @login_required
+    def wiki_gdd_cover_save(project_id):
+        project = _check_access(project_id)
+        if session.get("role") not in ("admin", "super_user"):
+            abort(403)
+        enforce_csrf()
+        _COVER_FIELDS = ["studio", "version", "date", "status",
+                         "genre", "platform", "tagline", "cover_image", "description"]
+        data = {k: request.form.get(k, "").strip() for k in _COVER_FIELDS}
+        _write_gdd_cover(project["key"], data)
+        flash("Cover page saved.", "success")
+        return redirect(url_for("wiki_gdd", project_id=project_id))
 
     # ── GDD export as .md ────────────────────────────────────────────────────
 

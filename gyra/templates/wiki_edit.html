@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{% if mode == 'new' %}New Article{% else %}Edit: {{ article.title }}{% endif %} — {{ project.name }} Wiki{% endblock %}
+{% block body_attrs %}class="wiki-mode"{% endblock %}
 
 {% block content %}
 <div class="wiki-edit-header">
@@ -57,13 +58,20 @@
         <button type="button" data-cmd="ul"       title="List">• List</button>
         <button type="button" data-cmd="link"     title="External link">🔗</button>
         <button type="button" data-cmd="wikilink" title="Wiki link">[[link]]</button>
+        <button type="button" data-cmd="spoiler"  title="Spoiler tag">👁 Spoiler</button>
         <span class="wiki-tb-sep"></span>
         <button type="button" id="wiki-img-toggle" title="Insert image">🖼 Images</button>
         <span class="wiki-tb-spacer"></span>
         <button type="button" id="wiki-preview-toggle" class="wiki-tb-right">👁 Preview</button>
       </div>
-      <textarea id="wiki-textarea" name="content" style="display:none">{{ prefill_content or '' }}</textarea>
-      <div id="wiki-codemirror"></div>
+      <textarea id="wiki-textarea" name="content" style="display:none"></textarea>
+      <script type="application/json" id="wiki-init-content">{{ prefill_content | tojson if prefill_content else '""' }}</script>
+      <div id="wiki-codemirror" style="position:relative"></div>
+      {# [[autocomplete dropdown #}
+      <div id="wiki-ac-dropdown" style="display:none;position:fixed;z-index:9999;
+           background:#fff;border:1px solid #a2a9b1;border-radius:3px;
+           box-shadow:0 3px 8px rgba(0,0,0,.2);min-width:200px;max-height:220px;overflow-y:auto;
+           font-size:13px;font-family:-apple-system,sans-serif;"></div>
     </div>
 
     {# Right: live preview #}
@@ -120,6 +128,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@codemirror/state@6/dist/index.js"    type="module" id="cm-state"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@codemirror/view@6/dist/style.css">
 <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+{# Article list for [[ autocomplete #}
+<script id="wiki-articles-json" type="application/json">{{ articles_json | safe }}</script>
 
 {# We use a simpler CDN bundle that exposes window.CodeMirror-free approach:
    use the all-in-one CM6 bundle from jsdelivr #}
@@ -132,6 +142,8 @@ import {oneDark} from 'https://esm.sh/@codemirror/theme-one-dark@6';
 import {syntaxHighlighting, defaultHighlightStyle} from 'https://esm.sh/@codemirror/language@6';
 
 var ta      = document.getElementById('wiki-textarea');
+// Populate textarea from JSON-injected content (safe: avoids HTML-escaping issues)
+try { var _ic = document.getElementById('wiki-init-content'); if (_ic) ta.value = JSON.parse(_ic.textContent); } catch(e) {}
 var cmWrap  = document.getElementById('wiki-codemirror');
 var preview = document.getElementById('wiki-preview-body');
 var form    = document.getElementById('wiki-edit-form');
@@ -169,15 +181,18 @@ var view = new EditorView({
 function renderPreview() {
   if (!preview || typeof marked === 'undefined') return;
   var md = view.state.doc.toString();
-  // Stub [[links]] as <a class="wiki-link"> for preview
+  // Stub [[links]]
   md = md.replace(/\[\[([^\]]+)\]\]/g, function (_, inner) {
     var parts = inner.split('|');
     var label = (parts[1] || parts[0]).trim();
     return '<a class="wiki-link" href="#">' + label + '</a>';
   });
+  // Spoiler preview
+  md = md.replace(/\|\|([^|]+)\|\|/g, function (_, text) {
+    return '<span class="wiki-spoiler" title="Click to reveal" onclick="this.classList.toggle(\'revealed\')">' + text + '</span>';
+  });
   var html = marked.parse(md);
   preview.innerHTML = html;
-  // Resolve image src
   preview.querySelectorAll('img').forEach(function (img) {
     var src = img.getAttribute('src');
     if (src && !src.startsWith('http') && !src.startsWith('/')) {
@@ -204,7 +219,77 @@ var CMDS = {
   'ul':        function (sel) { return '- ' + (sel || 'item'); },
   'link':      function (sel) { return '[' + (sel || 'text') + '](https://)'; },
   'wikilink':  function (sel) { return '[[' + (sel || 'Article Name') + ']]'; },
+  'spoiler':   function (sel) { return '||' + (sel || 'spoiler text') + '||'; },
 };
+
+// ── [[Article autocomplete ─────────────────────────────────────────────────
+var acDropdown = document.getElementById('wiki-ac-dropdown');
+var acArticles = [];
+try { acArticles = JSON.parse(document.getElementById('wiki-articles-json').textContent); } catch(e) {}
+
+var acActive = false;
+var acFrom   = 0;    // position of the opening [[
+
+function acFilter(query) {
+  var q = query.toLowerCase();
+  return acArticles.filter(function (a) {
+    return a.title.toLowerCase().indexOf(q) !== -1 || a.slug.indexOf(q) !== -1;
+  }).slice(0, 10);
+}
+
+function acShow(results, query) {
+  if (!results.length) { acHide(); return; }
+  acDropdown.innerHTML = '';
+  results.forEach(function (a) {
+    var item = document.createElement('div');
+    item.className = 'wiki-ac-item';
+    item.textContent = a.title;
+    item.dataset.title = a.title;
+    item.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      acInsert(a.title);
+    });
+    acDropdown.appendChild(item);
+  });
+  // Position near cursor
+  var coords = view.coordsAtPos(view.state.selection.main.head);
+  if (coords) {
+    acDropdown.style.left  = coords.left + 'px';
+    acDropdown.style.top   = (coords.bottom + 2) + 'px';
+  }
+  acDropdown.style.display = '';
+  acActive = true;
+}
+
+function acHide() {
+  acDropdown.style.display = 'none';
+  acActive = false;
+}
+
+function acInsert(title) {
+  var cursor = view.state.selection.main.head;
+  view.dispatch({
+    changes: { from: acFrom, to: cursor, insert: '[[' + title + ']]' },
+    selection: { anchor: acFrom + title.length + 4 }
+  });
+  acHide();
+  view.focus();
+}
+
+// Watch for [[ pattern as user types
+EditorView.updateListener.of(function (update) {
+  if (!update.docChanged && !update.selectionSet) return;
+  var cursor = update.state.selection.main.head;
+  var line   = update.state.doc.lineAt(cursor);
+  var before = line.text.slice(0, cursor - line.from);
+  var m      = before.match(/\[\[([^\]]*)$/);
+  if (m) {
+    acFrom = cursor - m[0].length;
+    acShow(acFilter(m[1]), m[1]);
+  } else {
+    acHide();
+  }
+});
 
 document.querySelectorAll('.wiki-editor-toolbar button[data-cmd]').forEach(function (btn) {
   btn.addEventListener('click', function (e) {

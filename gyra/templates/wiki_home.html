@@ -1,54 +1,86 @@
 {% extends "base.html" %}
 {% block title %}{{ project.name }} Wiki — Gyra{% endblock %}
+{% block body_attrs %}class="wiki-mode"{% endblock %}
 
 {% block content %}
-<div class="wiki-page-header">
-  <div class="wiki-page-header-left">
-    <span class="project-key-badge">{{ project.key }}</span>
-    <h2>📖 Wiki</h2>
-  </div>
-  <div class="wiki-page-header-right">
-    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_gdd', project_id=project.id) }}">📄 GDD View</a>
-    {% if session.role in ('admin','super_user') %}
-    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_import', project_id=project.id) }}">⬆ Import GDD</a>
-    {% endif %}
-    <a class="btn btn-sm btn-primary" href="{{ url_for('wiki_new', project_id=project.id) }}">+ New Article</a>
-  </div>
-</div>
+<div class="wiki-home-wrap">
 
-<div class="wiki-home-layout">
-  <div class="wiki-tree-panel">
-    <div class="wiki-tree-header">Articles</div>
-    {% if tree %}
-      {% macro render_tree(nodes, depth=0) %}
-        {% for node in nodes %}
-        <div class="wiki-tree-item" style="padding-left: {{ 12 + depth * 16 }}px">
-          <a class="wiki-tree-link{% if not node.is_published %} wiki-tree-unpublished{% endif %}"
-             href="{{ url_for('wiki_article', project_id=project.id, slug=node.slug) }}">
+  {# ── Left: logo + tree + editor toggle ── #}
+  <aside class="wiki-home-sidebar">
+    {# Wiki logo / title block #}
+    <div class="wiki-home-logo-block">
+      <div class="wiki-home-logo-img" id="wiki-logo-drop" title="Drop an image to set wiki logo">
+        {% if wiki_logo %}
+        <img src="{{ url_for('wiki_image_serve', project_id=project.id, filename=wiki_logo) }}" alt="{{ project.name }}">
+        {% else %}
+        <span class="wiki-home-logo-placeholder">📖</span>
+        {% endif %}
+      </div>
+      <div class="wiki-home-logo-name">{{ project.name }}</div>
+      <div class="wiki-home-logo-sub">Game Design Wiki</div>
+    </div>
+
+    {# Tree navigation #}
+    <div class="wiki-home-tree-head">
+      <span>Contents</span>
+      {% if session.role != 'viewer' %}
+      <button class="wiki-home-edit-toggle" id="wiki-tree-edit-btn" title="Reorder articles">⇄ Reorder</button>
+      {% endif %}
+    </div>
+
+    <div id="wiki-tree-read" class="wiki-home-tree">
+      {% if tree %}
+        {% macro render_nav(nodes, depth=0) %}
+          {% for node in nodes %}
+          <div class="wiki-hn-item" data-id="{{ node.id }}" style="padding-left:{{ 10 + depth * 14 }}px">
+            <a class="wiki-hn-link" href="{{ url_for('wiki_article', project_id=project.id, slug=node.slug) }}">
+              {% if node.children %}<span class="wiki-hn-chev">▸</span>{% else %}<span class="wiki-hn-dot">·</span>{% endif %}
+              {{ node.title }}
+            </a>
             {% if node.children %}
-            <span class="wiki-tree-chevron">›</span>
-            {% else %}
-            <span class="wiki-tree-dot">·</span>
+            <div class="wiki-hn-children">
+              {{ render_nav(node.children, depth + 1) }}
+            </div>
             {% endif %}
-            {{ node.title }}
-          </a>
-          {% if node.children %}
-            {{ render_tree(node.children, depth + 1) }}
-          {% endif %}
-        </div>
-        {% endfor %}
-      {% endmacro %}
-      {{ render_tree(tree) }}
-    {% else %}
-      <div class="wiki-tree-empty">No articles yet.</div>
-    {% endif %}
-  </div>
+          </div>
+          {% endfor %}
+        {% endmacro %}
+        {{ render_nav(tree) }}
+      {% else %}
+        <div class="wiki-tree-empty">No articles yet.</div>
+      {% endif %}
+    </div>
 
-  <div class="wiki-home-main">
-    {% if tree %}
+    {# Drag-drop reorder editor (hidden by default) #}
+    <div id="wiki-tree-editor" class="wiki-home-tree-editor" style="display:none">
+      <div class="wiki-te-hint">Drag to reorder · indent = child</div>
+      <div id="wiki-te-list" class="wiki-te-list"></div>
+      <div class="wiki-te-actions">
+        <button class="btn btn-sm btn-primary" id="wiki-te-save">💾 Save order</button>
+        <button class="btn btn-sm btn-ghost" id="wiki-te-cancel">Cancel</button>
+      </div>
+    </div>
+
+    {# Add new article #}
+    {% if session.role != 'viewer' %}
+    <div class="wiki-home-sidebar-footer">
+      <a class="btn btn-sm btn-primary" style="width:100%;justify-content:center" href="{{ url_for('wiki_new', project_id=project.id) }}">+ New Article</a>
+      <a class="btn btn-sm btn-ghost" style="width:100%;justify-content:center;margin-top:4px" href="{{ url_for('wiki_gdd', project_id=project.id) }}">📄 GDD View</a>
+      {% if session.role in ('admin','super_user') %}
+      <a class="btn btn-sm btn-ghost" style="width:100%;justify-content:center;margin-top:4px" href="{{ url_for('wiki_import', project_id=project.id) }}">⬆ Import GDD</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </aside>
+
+  {# ── Right: article grid ── #}
+  <main class="wiki-home-main">
+    {% if flat %}
+    <div class="wiki-home-section-heading">All Articles</div>
     <div class="wiki-home-grid">
       {% for item in flat %}
       <a class="wiki-home-card" href="{{ url_for('wiki_article', project_id=project.id, slug=item.slug) }}">
+        <div class="wiki-home-card-num">{{ item.order_index | int }}</div>
         <div class="wiki-home-card-title">{{ item.title }}</div>
         {% if not item.is_published %}<span class="wiki-draft-badge">Draft</span>{% endif %}
       </a>
@@ -63,6 +95,150 @@
       </div>
     </div>
     {% endif %}
-  </div>
+  </main>
+
 </div>
+
+{# Flat article data for drag-drop editor #}
+<script id="wiki-flat-data" type="application/json">{{ flat | tojson }}</script>
+
+<script>
+(function () {
+  var editBtn   = document.getElementById('wiki-tree-edit-btn');
+  var readTree  = document.getElementById('wiki-tree-read');
+  var editorDiv = document.getElementById('wiki-tree-editor');
+  var teList    = document.getElementById('wiki-te-list');
+  var saveBtn   = document.getElementById('wiki-te-save');
+  var cancelBtn = document.getElementById('wiki-te-cancel');
+  if (!editBtn) return;
+
+  var flat = JSON.parse(document.getElementById('wiki-flat-data').textContent);
+
+  // ── Build editor list from flat array ───────────────────────────────────
+  function buildEditor() {
+    teList.innerHTML = '';
+    flat.forEach(function (a) {
+      var row = document.createElement('div');
+      row.className = 'wiki-te-row';
+      row.dataset.id       = a.id;
+      row.dataset.parentId = a.parent_id || '';
+      row.draggable        = true;
+      var indent = 0;
+      // count depth
+      var pid = a.parent_id;
+      var depth = 0;
+      while (pid) {
+        var par = flat.find(function (x) { return x.id === pid; });
+        if (!par) break;
+        pid = par.parent_id;
+        depth++;
+      }
+      row.style.paddingLeft = (8 + depth * 16) + 'px';
+      row.innerHTML =
+        '<span class="wiki-te-drag" title="Drag">⠿</span>' +
+        '<span class="wiki-te-title">' + escHtml(a.title) + '</span>' +
+        '<span class="wiki-te-num">' + (a.parent_id ? '' : '#' + Math.round(a.order_index)) + '</span>';
+      teList.appendChild(row);
+    });
+    bindDrag();
+  }
+
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+  // ── Drag-and-drop ────────────────────────────────────────────────────────
+  var dragging = null;
+  function bindDrag() {
+    teList.querySelectorAll('.wiki-te-row').forEach(function (row) {
+      row.addEventListener('dragstart', function (e) {
+        dragging = row;
+        row.classList.add('wiki-te-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      row.addEventListener('dragend', function () {
+        dragging = null;
+        row.classList.remove('wiki-te-dragging');
+        teList.querySelectorAll('.wiki-te-over').forEach(function (r) { r.classList.remove('wiki-te-over'); });
+      });
+      row.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        if (dragging && row !== dragging) { row.classList.add('wiki-te-over'); }
+      });
+      row.addEventListener('dragleave', function () { row.classList.remove('wiki-te-over'); });
+      row.addEventListener('drop', function (e) {
+        e.preventDefault();
+        row.classList.remove('wiki-te-over');
+        if (dragging && row !== dragging) {
+          teList.insertBefore(dragging, row);
+        }
+      });
+    });
+  }
+
+  // ── Toggle edit/read mode ────────────────────────────────────────────────
+  editBtn.addEventListener('click', function () {
+    var editing = editorDiv.style.display !== 'none';
+    if (editing) {
+      editorDiv.style.display = 'none';
+      readTree.style.display = '';
+      editBtn.textContent = '⇄ Reorder';
+    } else {
+      buildEditor();
+      editorDiv.style.display = '';
+      readTree.style.display = 'none';
+      editBtn.textContent = '✕ Close';
+    }
+  });
+
+  cancelBtn && cancelBtn.addEventListener('click', function () {
+    editorDiv.style.display = 'none';
+    readTree.style.display = '';
+    editBtn.textContent = '⇄ Reorder';
+  });
+
+  // ── Save order ───────────────────────────────────────────────────────────
+  saveBtn && saveBtn.addEventListener('click', function () {
+    var rows = teList.querySelectorAll('.wiki-te-row');
+    var items = [];
+    // Assign order based on DOM position; keep parent_id from original flat
+    var orderCounter = {};
+    rows.forEach(function (row) {
+      var id = parseInt(row.dataset.id, 10);
+      var orig = flat.find(function (a) { return a.id === id; });
+      var parentId = orig ? orig.parent_id : null;
+      var key = parentId || 'root';
+      orderCounter[key] = (orderCounter[key] || 0) + 1;
+      items.push({ id: id, parent_id: parentId, order_index: orderCounter[key] });
+    });
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+    fetch('/api/project/{{ project.id }}/wiki/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
+      body: JSON.stringify({ items: items }),
+      credentials: 'same-origin'
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (res.ok) { location.reload(); }
+      else { alert('Save failed'); saveBtn.disabled = false; saveBtn.textContent = '💾 Save order'; }
+    })
+    .catch(function () { alert('Network error'); saveBtn.disabled = false; saveBtn.textContent = '💾 Save order'; });
+  });
+
+  // ── Expandable tree nodes ────────────────────────────────────────────────
+  document.querySelectorAll('.wiki-hn-chev').forEach(function (chev) {
+    chev.style.cursor = 'pointer';
+    chev.addEventListener('click', function (e) {
+      e.preventDefault();
+      var item = chev.closest('.wiki-hn-item');
+      var children = item.querySelector('.wiki-hn-children');
+      if (!children) return;
+      var open = children.style.display !== 'none';
+      children.style.display = open ? 'none' : '';
+      chev.textContent = open ? '▸' : '▾';
+    });
+  });
+})();
+</script>
 {% endblock %}
