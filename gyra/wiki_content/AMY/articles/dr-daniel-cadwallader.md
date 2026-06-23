@@ -20,8 +20,6 @@ relationships
 
 
 [MAIN_SECTION]
-# Dr. Daniel Cadwallader
-
 a highly renowned doctor hired to treat Baya Ross' severe illness, Dr. Cadwallader initially refused to move to Albert Ross' household but eventually agreed after being offered financial incentives. He dislikes confined spaces and has been waiting for his wife to find the perfect dress for several decades.
 
 [SECONDARY]
@@ -60,4 +58,5 @@ His wife, **[Francena Cadwallader](francena-cadwallader.md)**, works in the room
 Cadwallader's puzzle is centered on [Francena](francena-cadwallader.md), not on himself. The degree to which [Amy](amelia-amy-loevinger.md) helps Francena complete her dress determines whether Cadwallader's final scene is one of continued silent regret or something more like release. He cannot finish anything himself. Amy finishing something for him is the only route available.
 
 [REFERENCES]
+
 

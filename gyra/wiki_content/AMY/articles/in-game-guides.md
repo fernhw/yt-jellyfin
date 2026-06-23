@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# In-game Guides
-
 Tailored Assistance for Players
 The game offers in-game guides that provide hints and solutions to puzzles, tailored to the player's chosen difficulty mode. These guides can be accessed through the game's menu, ensuring players have the support they need without detracting from the immersive experience.
 
@@ -22,4 +20,5 @@ The game offers in-game guides that provide hints and solutions to puzzles, tail
 _Add more details here._
 
 [REFERENCES]
+
 

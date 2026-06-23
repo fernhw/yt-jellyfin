@@ -18,8 +18,6 @@ relationships
 
 
 [MAIN_SECTION]
-# Kole Wadjet
-
 - A grumpy old man who has held numerous assistant positions throughout his life, now works as a receptionist and hotel manager's assistant at the Ross Hotel. He appears to never sleep, suggesting that some people may not have time for dreams.
 
 [SECONDARY]
@@ -51,4 +49,5 @@ Kole is not naive about what the hotel is. He has been here long enough to have 
 Kole does not join the Liminal Bar through a puzzle. He arrives, if conditions are right, on his own terms and in his own time. He sits at the far end. He may have ordered something. He does not celebrate.
 
 [REFERENCES]
+
 

@@ -18,8 +18,6 @@ relationships
 
 
 [MAIN_SECTION]
-# Francena Cadwallader
-
 A renowned dress designer and wife of Dr. Daniel Cadwallader, Francena was given a personal design studio at the Ross Hotel as a condition of her relocation. Despite having many fans in the past, she has not released a new design in 80 years, causing most of her followers to pass away.
 
 [SECONDARY]
@@ -59,4 +57,5 @@ Players who spend time with her learn, gradually, what the party was — and why
 - Francena's design studio was established as a condition of her relocation to the [Ross Hotel](ross-hotel.md): [Daniel](dr-daniel-cadwallader.md) would not come without her, and she would not come without her workspace. The studio was built for her. She has been in it ever since.
 
 [REFERENCES]
+
 

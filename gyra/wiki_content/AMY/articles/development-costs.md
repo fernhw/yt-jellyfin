@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Development Costs
-
 $774,000
 Game Design and Programming: $300,000
 Art and Animation: $150,000
@@ -36,4 +34,5 @@ Contingency and Extras: $3,000
 _Add more details here._
 
 [REFERENCES]
+
 

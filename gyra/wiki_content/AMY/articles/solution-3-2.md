@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 3
-
 BARRY CHASING YOU
 Nettle asks Amy to pull the valve, but she refuses, leading Nettle to threaten Amy, if Amy doesn't Nettle will Shout and SCREAM! This alerts Barry, who will chase Amy throughout almost the entire game.
 
@@ -19,4 +17,5 @@ Nettle asks Amy to pull the valve, but she refuses, leading Nettle to threaten A
 _Add more details here._
 
 [REFERENCES]
+
 

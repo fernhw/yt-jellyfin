@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 2
-
 LET HER GO
 After Amy meets Nettle, she will ask her to pull a valve to finally leave the hotel and be free.
 
@@ -19,4 +17,5 @@ After Amy meets Nettle, she will ask her to pull a valve to finally leave the ho
 _Add more details here._
 
 [REFERENCES]
+
 

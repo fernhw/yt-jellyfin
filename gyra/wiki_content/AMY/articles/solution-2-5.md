@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 2
-
 HIDE
 Amy can sneak through the entire Knotts area, which is spacious and has many objects she can hide behind. However, she must be cautious about making any noise as the Knotts may notice her and attack without hesitation.
 
@@ -19,4 +17,5 @@ Amy can sneak through the entire Knotts area, which is spacious and has many obj
 _Add more details here._
 
 [REFERENCES]
+
 

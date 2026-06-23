@@ -23,8 +23,6 @@ screenshot-2026-06-22-at-233406-1782190119.png
 Our Hero
 
 [MAIN_SECTION]
-# Amelia “Amy" Loevinger
-
 a sweet maid at the Albert Ross Hotel, is responsible for maintaining the cleanliness of hallways and select rooms. She is not permitted to enter special guests' rooms, the kitchen, basement, or attic due to recent safety concerns.
 
 [SECONDARY]
@@ -73,4 +71,5 @@ Her body is a record of what she did and what she chose.
 - Her design philosophy: she should look like she wandered in from the real world and hasn't fully realized she hasn't left it.
 
 [REFERENCES]
+
 

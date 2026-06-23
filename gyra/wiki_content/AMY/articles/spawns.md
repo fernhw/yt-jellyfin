@@ -14,8 +14,6 @@ time_limit=?
 
 
 [MAIN_SECTION]
-# Spawns
-
 The game's spawn points, artfully designed by our programming team, serve to position Amy on the map at the game's outset, enabling customization of her initial orientation and setting her starting direction.
 
 
@@ -26,4 +24,5 @@ Each scene may contain multiple spawn points, with one designated as the default
 _Add more details here._
 
 [REFERENCES]
+
 

@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# How To Use Black Jack
-
 Load Blackjack in an empty Unity scene. Blackjack is a separate scene from the game arena.
 Connect the start nodes in Blackjack with linkers. These linkers are connected to dialog boxes, event boxes, and arena starting events.
 You need to create the linkers as the content agnostic nature of the system means we load the data FROM blackjack TO the scene
@@ -34,4 +32,5 @@ By following these steps, writers and designers can easily create dynamic and en
 _Add more details here._
 
 [REFERENCES]
+
 

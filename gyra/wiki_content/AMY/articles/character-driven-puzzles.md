@@ -16,12 +16,11 @@ first_appearance=?
 
 
 [MAIN_SECTION]
-# Character-driven Puzzles
-
 Many of the puzzles are intertwined with the lives and stories of the hotel's inhabitants. By learning about their personalities, motivations, and relationships, players can piece together clues and find solutions to seemingly impossible challenges.
 
 [SECONDARY]
 _Add more details here._
 
 [REFERENCES]
+
 

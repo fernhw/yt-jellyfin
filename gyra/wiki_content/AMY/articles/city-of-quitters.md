@@ -15,8 +15,6 @@ music=?
 
 
 [MAIN_SECTION]
-# City Of Quitters
-
 ingersole’s Embrace
 All the miners and people in general who have stayed inside the mines live there. It's like a cocoon that houses a city that is quite unstable.
 
@@ -24,4 +22,5 @@ All the miners and people in general who have stayed inside the mines live there
 _Add more details here._
 
 [REFERENCES]
+
 

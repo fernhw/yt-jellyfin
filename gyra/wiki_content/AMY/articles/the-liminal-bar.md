@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# The Liminal Bar
-
 > _Add details here._
 
 ## Overview
@@ -24,4 +22,5 @@ notes=?
 _Add more details here._
 
 [REFERENCES]
+
 

@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Quarter 8
-
 (POS-RELEASE)
 Analyze sales data and make any necessary adjustments to improve numbers.
 Release Accolades Trailer to increase the hype and keep top of mind.
@@ -31,4 +29,5 @@ Start on “Now On Playstation Trailer”.
 _Add more details here._
 
 [REFERENCES]
+
 

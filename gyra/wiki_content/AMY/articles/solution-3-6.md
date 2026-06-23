@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 3
-
 GIVE HIM A CIGARETTE
 Amy and Barry can have a peaceful conversation at the bar if she gives him a cigarette as a gift.
 
@@ -19,4 +17,5 @@ Amy and Barry can have a peaceful conversation at the bar if she gives him a cig
 _Add more details here._
 
 [REFERENCES]
+
 

@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Quarter 6
-
 (Ready, Set…. )
 Launch Trailers
 Setup Bug Reporting platform on website for players. Start allocating resources for customer support.
@@ -36,4 +34,5 @@ Set the review embargo, create social media hype on all platforms.
 _Add more details here._
 
 [REFERENCES]
+
 

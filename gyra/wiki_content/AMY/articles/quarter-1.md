@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Quarter 1
-
 (New Team)
 Focus on completing the hiring process for the remaining 7 team members and distributing work among them.
 Create leading Roles, Lead Artist, Lead Engineer, etc.
@@ -25,4 +23,5 @@ Current staff, not including the CEO, receive a 20-30% raise to match the talent
 _Add more details here._
 
 [REFERENCES]
+
 

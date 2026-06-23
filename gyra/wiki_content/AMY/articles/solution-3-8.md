@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 3
-
 CURE HER
 This ending happens when Amy has been helpful to the characters in the hotel throughout the game and hasn't become aggressive. When she arrives at the penthouse, she has a discussion with Jon about getting the key, which he eventually gives her after a long conversation.
 
@@ -19,4 +17,5 @@ This ending happens when Amy has been helpful to the characters in the hotel thr
 _Add more details here._
 
 [REFERENCES]
+
 

@@ -13,12 +13,11 @@ platform=?
 
 
 [MAIN_SECTION]
-# Source Code
-
 Access to the engine's source code allows developers to modify existing features or add new ones to suit their specific needs.
 
 [SECONDARY]
 _Add more details here._
 
 [REFERENCES]
+
 

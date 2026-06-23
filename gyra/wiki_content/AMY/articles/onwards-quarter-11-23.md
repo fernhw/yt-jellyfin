@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Onwards Quarter 11-23
-
 We make individual releases for remaining consoles, we focus on top of mind above all else, each new console will increase visibility
 We will work on translating to new languages we couldn’t afford to keep top of mind and release on other territories
 We will start discounting PC down to 75% and start getting into sales, Humble bundles again Top Of Mind.
@@ -28,4 +26,5 @@ Each quarter will have an important quarter review meeting with investors to sho
 _Add more details here._
 
 [REFERENCES]
+
 

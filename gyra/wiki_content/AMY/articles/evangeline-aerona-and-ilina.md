@@ -19,8 +19,6 @@ relationships
 
 
 [MAIN_SECTION]
-# Evangeline Aerona And Ilina
-
 Evangeline and Ilina are two women who descended into the [Ingersole Caverns](ingersole-caverns.md) as medical assistants to [Dr. Daniel Cadwallader](dr-daniel-cadwallader.md) and did not come back as what they went in as. Evangeline is now a semi-fluid presence spread across two floors. Ilina is the size of a large pea. Between them, they can tell the past and the future. They are not consulted lightly.
 
 [SECONDARY]
@@ -86,4 +84,5 @@ This is the Fishbowl Ending. It is one of the most discussed endings in the game
 - Evangeline's loop is her body. The Kubler didn't need to give her one — she gave it to herself.
 
 [REFERENCES]
+
 

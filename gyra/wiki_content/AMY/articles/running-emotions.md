@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Running Emotions
-
 Amy's running style will adapt to her emotions in certain situations. For example, if she is scared, she may run differently than if she is calm.
 
 [Needs an image]
@@ -20,4 +18,5 @@ Amy's running style will adapt to her emotions in certain situations. For exampl
 _Add more details here._
 
 [REFERENCES]
+
 

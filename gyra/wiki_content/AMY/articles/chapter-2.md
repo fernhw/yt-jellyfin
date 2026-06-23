@@ -13,8 +13,6 @@ location=?
 
 
 [MAIN_SECTION]
-# Chapter 2
-
 "Tea for Two"
 Amy must reactivate an elevator. Kole tells Amy not to dare go there, but if she has to go, its simple: down. Amy navigates the hotel's ballroom and kitchen. During this time, she befriends a Hollow Maid and foils the gluttonous Baya Ross. Onwards.
 
@@ -22,4 +20,5 @@ Amy must reactivate an elevator. Kole tells Amy not to dare go there, but if she
 _Add more details here._
 
 [REFERENCES]
+
 

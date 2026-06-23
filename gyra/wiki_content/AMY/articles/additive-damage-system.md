@@ -13,8 +13,6 @@ owner=?
 
 
 [MAIN_SECTION]
-# Additive Damage System
-
 Another system that will give a new touch of realism to our game is the damage system. Throughout the gameplay, Amy will be involved in a series of dangerous situations that will result in, for example, her clothes getting dirty or having marks of wounds. To achieve this, we will design a system that will change Amy's textures to add these details as the game progresses and the player makes physical decisions that affect the character.
 
 Purple stains on apron: noticeable stains that result from contact with a bruised area of the body.
@@ -39,4 +37,5 @@ Branch on head: A visible injury on the head caused by a sharp or blunt object, 
 _Add more details here._
 
 [REFERENCES]
+
 

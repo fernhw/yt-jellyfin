@@ -13,8 +13,6 @@ location=Ross Hotel — Ventilation Room, Floors 1–5, Attic
 
 
 [MAIN_SECTION]
-# Chapter 1
-
 "Awoken"
 Amy breaks out of her room at the Ross Hotel and searches for a way out. After a failed escape attempt, Kole Wadjet greets her and informs her that the keys to the hotel gates are on the top floor, where Mr. Ross lives. Amy has to go up. She meets the mute Daniel Cadwallader, who, after an encounter with his wife, tells Amy in writing that the only way to get through is through the elevator. The generator that powers it is at the bottom of the hotel, deep in the Ingersole.
 
@@ -98,4 +96,5 @@ Reunited, he writes one instruction: *the elevator*. Go down. He does not explai
 - The Sin System begins here: each bad-path solution leaves a physical mark on [Amy](amelia-amy-loevinger.md) (soot from the lamp fire, for example) that persists visually. These marks are also the game's achievement triggers for bad decisions.
 
 [REFERENCES]
+
 

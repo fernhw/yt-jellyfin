@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Scenario C
-
 (Aim To) Success (500,000 units on PC and consoles combined)
 Year 1: PC release
 Total units sold: 200,000
@@ -35,4 +33,5 @@ Total Budget: $1,148,000
 _Add more details here._
 
 [REFERENCES]
+
 

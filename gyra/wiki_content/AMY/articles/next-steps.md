@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Next Steps
-
 To successfully develop and release Amy's Escape, we will:
 
 Secure funding for the total budget of $812,000-$12,000,000.
@@ -29,4 +27,5 @@ Develop and release DLCs and expansions to further enrich the game's experience,
 _Add more details here._
 
 [REFERENCES]
+
 

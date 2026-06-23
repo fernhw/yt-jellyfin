@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Endings
-
 Baya's tea will affect the ending due to Ross being directly related.
 Baya Ross: good state, mid-state, fail state. (has secret state)
 
@@ -41,4 +39,5 @@ This changes endings and adds a post-ending if you don't eat it.
 _Add more details here._
 
 [REFERENCES]
+
 

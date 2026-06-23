@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Secondary Sale Of Shares
-
 Investors may sell their shares to other interested parties in private transactions, providing a return on their investment while still allowing the company to remain privately held. This option is dependent on the availability of interested buyers and the willingness of the company to facilitate such transactions.
 
 16- Tax Breaks. Investings On Video Games 
@@ -30,4 +28,5 @@ To be eligible, simply register your company under the relevant activity and com
 _Add more details here._
 
 [REFERENCES]
+
 

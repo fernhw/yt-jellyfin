@@ -8,9 +8,8 @@ notes=This article must be read before the achievement list makes any sense. The
 
 [HERO]
 
-[MAIN_SECTION]
-# Achievements
 
+[MAIN_SECTION]
 > Every achievement in *Amy's Escape* is awarded for the wrong choice. See [Why](#why) below before the list makes sense.
 
 ---
@@ -152,3 +151,5 @@ The **Fishbowl** ([Ending D](ending-d.md)) is locked out of the genocide run by 
 After [Ending F](ending-f.md)'s credits roll, the screen reads **"Thanks for playing."** There is no pop. There is no icon during play. That is the achievement. If you got there, you know.
 
 [REFERENCES]
+
+

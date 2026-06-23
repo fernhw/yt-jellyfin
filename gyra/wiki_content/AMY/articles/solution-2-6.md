@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 2
-
 AVOID HIM
 If Nettle decapitates Barry, Amy can avoid him as he will no longer be able to control his movements.
 
@@ -19,4 +17,5 @@ If Nettle decapitates Barry, Amy can avoid him as he will no longer be able to c
 _Add more details here._
 
 [REFERENCES]
+
 

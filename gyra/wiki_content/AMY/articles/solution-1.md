@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 1
-
 IGNORE HER
 You can stealth pass her she will be still trapped but why bother when she's having so much.. fun.
 
@@ -19,4 +17,5 @@ You can stealth pass her she will be still trapped but why bother when she's hav
 _Add more details here._
 
 [REFERENCES]
+
 

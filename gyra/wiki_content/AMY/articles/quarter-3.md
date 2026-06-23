@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Quarter 3
-
 (Outsource, Casting Call)
 Complete the second chapter of the game and focus on outsourcing 3D assets.
 Finalize agreements and pay tabling fees for events and look into a venue setting company to set walls and merchandising.
@@ -23,4 +21,5 @@ Start planning Collector Edition, Toy and Art book
 _Add more details here._
 
 [REFERENCES]
+
 

@@ -19,8 +19,6 @@ relationships
 
 
 [MAIN_SECTION]
-# Darby (Glowing Bird)
-
 A firebird from ancient times, Darby is a nocturnal creature that emits light to see in dark environments. While these birds are often associated with guiding weary travelers, they are more akin to sparkly cockatoos. Darby is well-trained.
 
 [SECONDARY]
@@ -69,4 +67,5 @@ Amy does not understand this distinction at the time. Most players won't either.
 - The name Darby was never chosen by Blueth. Amy named it herself, in Chapter 1, without ceremony.
 
 [REFERENCES]
+
 

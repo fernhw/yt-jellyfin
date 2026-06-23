@@ -10,8 +10,6 @@ notes=Dates marked [UNCONFIRMED] should be reviewed and pinned during production
 
 
 [MAIN_SECTION]
-# World Timeline
-
 The events of *Amy's Escape* span 181 years — from a university research expedition in South America in 1844 to a present-day hotel in which nothing has moved toward an exit in forty years. The game itself takes place entirely in the final hours of that stillness.
 
 [SECONDARY]
@@ -246,7 +244,6 @@ The [Kubler](the-kubler.md) does not merely keep people alive. Over sufficient e
 - The anonymous $12M investor's identity is intentional blank lore space.
 
 [REFERENCES]
-
 ---
 
 ## ERA I — Before the Hotel
@@ -454,4 +451,5 @@ She wakes in the [Ventilation Maintenance Room](ventilation-maintenance-room-amy
 - Ross's departure and fate are deliberately unresolved in the main game. The ARG handles it.
 
 [REFERENCES]
+
 

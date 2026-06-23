@@ -13,12 +13,11 @@ platform=?
 
 
 [MAIN_SECTION]
-# Shaders
-
 Customizable shaders and rendering options allow developers to create unique visuals that are tailored to their mod.
 
 [SECONDARY]
 _Add more details here._
 
 [REFERENCES]
+
 

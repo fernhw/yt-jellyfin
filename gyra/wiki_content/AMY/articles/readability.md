@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Readability
-
 Make it readable in all sizes
 
 5.1.1.2 SYMBOLS
@@ -50,4 +48,5 @@ Eaten Alive
 _Add more details here._
 
 [REFERENCES]
+
 

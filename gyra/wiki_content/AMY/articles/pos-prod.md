@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Pos-prod
-
 Animation: Cinematics, Special Events
 Sound: Music Composition, Sound Effects, Sound Mix
 Scripting: 3D Dev Polish, Culling, Camera Placement, Connective Tissue, Code Fixing
@@ -43,4 +41,5 @@ We don't consider games like UNDERTALE in competition, we also didn't put it as 
 _Add more details here._
 
 [REFERENCES]
+
 

@@ -10,12 +10,11 @@ notes=?
 
 
 [MAIN_SECTION]
-# Blueth’s Insect Room
-
 Blueth managed to adapt her room into a place where she keeps insects in a bunch of jars.
 
 [SECONDARY]
 _Add more details here._
 
 [REFERENCES]
+
 

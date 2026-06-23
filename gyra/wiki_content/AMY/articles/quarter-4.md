@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Quarter 4
-
 (Make It Sound, Make Some Noise)
 Complete the third chapter of the game and begin music orchestration with a focus on getting a famous composer like Kevin Penkin, Darren Korb, or Austin Wintory.
 Plan for events like Comic Con, GDC, and PAX.
@@ -24,4 +22,5 @@ Reach out to Localization companies to start localization
 _Add more details here._
 
 [REFERENCES]
+
 

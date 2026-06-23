@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 3
-
 CURE HER
 If Amy grabs and build the perfect outfit Francena will snap out of it, breaking the curse that 
 Perfect outfit consists of 
@@ -23,4 +21,5 @@ Golden shoes
 _Add more details here._
 
 [REFERENCES]
+
 

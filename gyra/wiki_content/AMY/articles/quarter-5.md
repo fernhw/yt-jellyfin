@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Quarter 5
-
 (Test Test)
 Complete the fourth chapter of the game and continue working on music orchestration.
 Attend planned events to increase exposure and reach.
@@ -25,4 +23,5 @@ Get localization and implement on the game
 _Add more details here._
 
 [REFERENCES]
+
 

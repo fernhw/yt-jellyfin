@@ -317,8 +317,7 @@ function renderPreview() {
   var refsS = sections.find(function (s) { return s.type === 'REFERENCES'; });
 
   var hasAny = sections.length > 0;
-  // Strip leading h1 from GDD content — template renders its own title
-  var mainMd = hasAny ? (mainS ? mainS.content.replace(/^#[^#][^\n]*\n?/, '') : '') : raw;
+  var mainMd = hasAny ? (mainS ? mainS.content : '') : raw;
 
   function expandImageShortcodes(md) {
     // Convert [image name="file.jpg" caption="text"] shortcodes to standard markdown images

@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Target (12-16 Teenagers) Young Teens
-
 and market appeal.
 "Amy's Escape" delves into the largely unexplored realm of horror for the 12–16 age bracket, drawing inspiration from giants like "Coraline," "Undertale," and "Little Nightmares"—titles that collectively sold tens of millions.
 
@@ -31,4 +29,5 @@ The game will feature a diverse cast of characters, including:
 _Add more details here._
 
 [REFERENCES]
+
 

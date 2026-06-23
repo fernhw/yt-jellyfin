@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Jackal/joker
-
 Puzzles and Stealth - Normal
 -The base game
 -Standard puzzles and stealth mechanics.
@@ -20,4 +18,5 @@ Puzzles and Stealth - Normal
 _Add more details here._
 
 [REFERENCES]
+
 

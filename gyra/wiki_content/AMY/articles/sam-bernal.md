@@ -18,8 +18,6 @@ relationships
 
 
 [MAIN_SECTION]
-# Sam Bernal
-
 is Sam Bernal, is the guy who is sleeping near to the duster.
 
 [SECONDARY]
@@ -52,4 +50,5 @@ The fire solution is also the game's first **achievement trigger** on the bad pa
 Sam is not a large presence. He is the man who sleeps near a duster. But the Bar exists as a record of who Amy helped, and Sam's presence — or absence — is the game's simplest question: *did you take the easy way?*
 
 [REFERENCES]
+
 

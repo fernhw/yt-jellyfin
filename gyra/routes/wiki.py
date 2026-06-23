@@ -307,10 +307,10 @@ def _build_wiki_article_content(title: str, body: str, template_id: str) -> str:
     meta = "\n".join(meta_lines)
 
     if body.strip():
-        main = f"# {title}\n\n{body.strip()}\n"
+        main = f"{body.strip()}\n"
     else:
         hint = tpl["body_hint"]
-        main = f"# {title}\n\n> _{hint}_\n\n## Overview\n\n## Notes\n\n- \n"
+        main = f"> _{hint}_\n\n## Overview\n\n## Notes\n\n- \n"
 
     return _serialize_sections([
         {"type": "META",         "content": meta},

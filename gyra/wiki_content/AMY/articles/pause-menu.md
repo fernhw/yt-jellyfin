@@ -12,8 +12,6 @@ mockup=?
 
 
 [MAIN_SECTION]
-# Pause Menu
-
 The pause menu design is minimalistic with 5 interactive buttons. The screen will be covered by a slightly transparent black solid color, and the following buttons will appear:
 
 Resume game
@@ -29,4 +27,5 @@ After completing the game, we will display various messages to the player based 
 _Add more details here._
 
 [REFERENCES]
+
 

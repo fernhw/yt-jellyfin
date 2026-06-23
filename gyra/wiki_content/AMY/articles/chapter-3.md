@@ -13,8 +13,6 @@ location=?
 
 
 [MAIN_SECTION]
-# Chapter 3
-
 "The World of Adults,"
 Amy ventures into the hotel's theater, where she meets the enigmatic Kane and his marionette audience. A thrilling chase ensues as Amy and Kane flee from the vengeful audience.
 
@@ -22,4 +20,5 @@ Amy ventures into the hotel's theater, where she meets the enigmatic Kane and hi
 _Add more details here._
 
 [REFERENCES]
+
 

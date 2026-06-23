@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Projected Revenue
-
 Scenario A Realistic Lower Bound:
 Total Revenue (3 years): $3,523,750
 ROI: ($1,318,625 / $1,148,000) * 100 = 114.8%
@@ -26,4 +24,5 @@ ROI: ($12,585,650 / $1,148,000) * 100 = 1096.1%
 _Add more details here._
 
 [REFERENCES]
+
 

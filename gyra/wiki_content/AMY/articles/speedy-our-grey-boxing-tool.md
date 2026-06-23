@@ -14,8 +14,6 @@ time_limit=?
 
 
 [MAIN_SECTION]
-# Speedy Our Grey-boxing Tool
-
 Greyboxing, a crucial step in level design, entails crafting a basic, playable prototype of a stage to evaluate its gameplay potential prior to refining its aesthetics. This widely-used approach allows designers to assess the layout's effectiveness in delivering an engaging gaming experience. By focusing on functionality first, greyboxing ensures a solid foundation for visually stunning and enjoyable levels.
 
 The greyboxing process is both user-friendly and efficient. Each 3D object can be placed in editing mode, allowing for seamless layering and customization as needed. This flexibility enables the stacking and overlapping of objects to create complex designs with multiple layers.
@@ -34,4 +32,5 @@ In the internal code, what is happening is that Amy's character is interacting w
 _Add more details here._
 
 [REFERENCES]
+
 

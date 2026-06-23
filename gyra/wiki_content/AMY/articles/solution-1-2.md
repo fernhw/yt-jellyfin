@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 1
-
 DON’T GO INTO THE BATHROOM
 If the player never goes to the main hotel restroom, Amy will never meet Nettle and therefore the missions involving this character will not progress.
 
@@ -19,4 +17,5 @@ If the player never goes to the main hotel restroom, Amy will never meet Nettle 
 _Add more details here._
 
 [REFERENCES]
+
 

@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# List Of Awards We Can Enter With Physical
-
 Trophies
 Independent Games Festival Awards
 IndieCade Awards
@@ -43,4 +41,5 @@ Based on the estimated entry fees, the total cost to enter all of these competit
 _Add more details here._
 
 [REFERENCES]
+
 

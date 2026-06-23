@@ -10,8 +10,6 @@ owner=?
 
 
 [MAIN_SECTION]
-# Overview
-
 We want it to be super replayable, we believe we fail if we don't aid on this, Amy's Escape employs a unique difficulty system, providing players with four different difficulty modes, each offering a distinct gameplay experience. 
 These modes are designed to challenge players in different ways, with entirely new puzzles, AI exploration routes, and character interactions that change based on the player's choice. This innovative system eliminates RNG, allowing players to rely on in-game guides to solve puzzles and complete challenges. 
 - Also on the basis that we will balance stealth for fun first, and making it harder won't make it enjoyable except for a few.
@@ -22,4 +20,5 @@ These modes are designed to challenge players in different ways, with entirely n
 _Add more details here._
 
 [REFERENCES]
+
 

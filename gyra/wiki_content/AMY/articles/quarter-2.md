@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Quarter 2
-
 (Work!)
 Complete the first chapter of the game with the entire team focused on functionality or direct one-to-one scrum stories.
 Contact lawyers for work visas for events like Gamescom and Pax.
@@ -23,4 +21,5 @@ Create a 3-week sprint cycle with 2-3 refinement meetings to increase agility an
 _Add more details here._
 
 [REFERENCES]
+
 

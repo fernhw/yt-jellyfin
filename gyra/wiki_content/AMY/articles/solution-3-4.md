@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 3
-
 STALE SOUP
 Amy ignores the couple and Julianne, They keep on their quarrel until the end of existence. Or until it all falls.
 
@@ -19,4 +17,5 @@ Amy ignores the couple and Julianne, They keep on their quarrel until the end of
 _Add more details here._
 
 [REFERENCES]
+
 

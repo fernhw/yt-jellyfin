@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# First Final Version
-
 Start.
 
 1. WHAT’S AMY’S ESCAPE?
@@ -20,4 +18,5 @@ Start.
 _Add more details here._
 
 [REFERENCES]
+
 

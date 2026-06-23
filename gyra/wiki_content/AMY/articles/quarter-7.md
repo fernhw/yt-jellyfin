@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Quarter 7
-
 (RELEASE!)
 Launch Trailer.
 We Have a Gold Master.
@@ -34,4 +32,5 @@ If we don't, we push now to get dev kits from Playstation, Nintendo, Microsoft.
 _Add more details here._
 
 [REFERENCES]
+
 

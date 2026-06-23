@@ -13,8 +13,6 @@ location=?
 
 
 [MAIN_SECTION]
-# Ends—and Solutions Dictating Them
-
 All of these puzzles have three solutions—solutions that affect the ending the most are the multi-solution story puzzles listed below. Only the good ending gives a "Thank You For Playing," and that is the canon one, as we do have a sequel planned.
 
 To make it easy, all puzzles have three solutions: a good state, a mid-state, and a fail state.
@@ -23,4 +21,5 @@ To make it easy, all puzzles have three solutions: a good state, a mid-state, an
 _Add more details here._
 
 [REFERENCES]
+
 

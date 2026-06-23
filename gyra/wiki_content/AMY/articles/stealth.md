@@ -13,12 +13,11 @@ owner=?
 
 
 [MAIN_SECTION]
-# Stealth
-
 The game's mechanics are designed to constantly challenge players, encouraging them to think and react to the world around them.
 
 [SECONDARY]
 _Add more details here._
 
 [REFERENCES]
+
 

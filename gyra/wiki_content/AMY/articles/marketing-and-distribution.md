@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Marketing And Distribution
-
 $100,000
 Ads at Release: $54,000
 Social Media Campaigns: $21,000
@@ -24,4 +22,5 @@ Total Marketing and Distribution Costs: $100,000
 _Add more details here._
 
 [REFERENCES]
+
 

@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 2
-
 HER FAVORITE TEA
 Amy can obtain the recipe book of Marta, just like in the previous solution, but this time the user must choose to make Baya's favorite tea to make her more friendly after giving it to her.
 
@@ -19,4 +17,5 @@ Amy can obtain the recipe book of Marta, just like in the previous solution, but
 _Add more details here._
 
 [REFERENCES]
+
 

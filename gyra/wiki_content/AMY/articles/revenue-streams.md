@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Revenue Streams
-
 Game sales on PC (Steam, GOG, Epic Games Store)
 Game sales on consoles (PS5, Switch, Xbox Series X)
 Possible DLC or expansion packs (released free for early release)
@@ -22,4 +20,5 @@ Merchandise sales (t-shirts, posters, collectibles)
 _Add more details here._
 
 [REFERENCES]
+
 

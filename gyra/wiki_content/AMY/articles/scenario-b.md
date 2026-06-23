@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Scenario B
-
 Upper Bound (100,000 units on PC, 200,000 units on consoles)
 Year 1: PC only release
 Total units sold: 100,000
@@ -31,4 +29,5 @@ Total sales revenue for Scenario B (3 years): $10,646,300
 _Add more details here._
 
 [REFERENCES]
+
 

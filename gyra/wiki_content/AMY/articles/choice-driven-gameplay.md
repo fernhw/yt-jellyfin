@@ -13,12 +13,11 @@ owner=?
 
 
 [MAIN_SECTION]
-# Choice-driven Gameplay
-
 Choices made throughout the game impact the story, leading to different endings and experiences.
 
 [SECONDARY]
 _Add more details here._
 
 [REFERENCES]
+
 

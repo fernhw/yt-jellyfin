@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Key Performance Indicators (Kpis) And Success Metrics
-
 Sales and Revenue:
 Units sold within the first month, quarter, and year of release
 Total revenue generated within the first month, quarter, and year of release
@@ -36,4 +34,5 @@ Coverage in gaming media outlets (IGN, GameSpot, Kotaku, etc.)
 _Add more details here._
 
 [REFERENCES]
+
 

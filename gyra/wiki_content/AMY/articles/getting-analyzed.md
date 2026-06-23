@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Getting Analyzed
-
 Lore Youtuber Bait
 Amy's Escape offers a complex narrative that captivates audiences and is perfect for analysis videos. The game's rich story, memorable characters, and intricate world-building spark conversation, interpretation, and theories. These videos deepen players' connections and foster a sense of community around shared interests.
 
@@ -21,4 +19,5 @@ By engaging viewers, analysis videos can expand the game's audience, leading to 
 _Add more details here._
 
 [REFERENCES]
+
 

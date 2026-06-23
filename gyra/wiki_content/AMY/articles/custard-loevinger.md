@@ -18,12 +18,11 @@ relationships
 
 
 [MAIN_SECTION]
-# Custard Loevinger
-
 is Amy’s brother.
 
 [SECONDARY]
 _Add more details here._
 
 [REFERENCES]
+
 

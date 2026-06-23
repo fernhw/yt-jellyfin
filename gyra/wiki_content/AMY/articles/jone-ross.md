@@ -21,12 +21,11 @@ relationships
 
 
 [MAIN_SECTION]
-# Jone Ross
-
 is the son of Baya and Albert Ross.
 
 [SECONDARY]
 _Add more details here._
 
 [REFERENCES]
+
 

@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Attic
-
 The attic is the second-to-last floor of the hotel, and it's primarily used as a storage area for keeping boxes and unnecessary items. However, it's also where Daniel and his wife Francena have their space for their tailoring room.
 
 [SECONDARY]
@@ -50,4 +48,5 @@ The smell of the flowers is described in-world as rotting meat. The source of th
 - Daniel and Francena's physical proximity in this space — his neck anchored above her room, her at the table just below — is not accidental design.
 
 [REFERENCES]
+
 

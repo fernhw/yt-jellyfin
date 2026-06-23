@@ -14,8 +14,6 @@ time_limit=?
 
 
 [MAIN_SECTION]
-# The In-house Speedy Level Editor
-
 Rustle:
 Amy's Escape features a custom-built level editor and physics engine, Rustle, developed by Fernando Holguin from 2017-2020. Rustle is designed to maximize Unity's capabilities, enabling rapid level design and iteration. The game's 12-hour experience has already been greyboxed in just six months, thanks to Rustle's efficiency.
 
@@ -23,4 +21,5 @@ Amy's Escape features a custom-built level editor and physics engine, Rustle, de
 _Add more details here._
 
 [REFERENCES]
+
 

@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Start [Complete]
-
 Engineering: Tooling, Engine Code (Engine, Cluster Based Architecture, Shading, Animation)
 Writing: Overall Game Design, Design Bible Master, Whole Game Walkthrough
 Animation: Real Rig, Blend Shapes
@@ -20,4 +18,5 @@ Animation: Real Rig, Blend Shapes
 _Add more details here._
 
 [REFERENCES]
+
 

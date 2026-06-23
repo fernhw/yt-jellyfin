@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Must Participate Somehow
-
 Based on the estimated entry fees and prestige, we have narrowed down the list to the following awards:
 
 BAFTA Games Awards (£425 per entry for members, £525 per entry for non-members)
@@ -31,4 +29,5 @@ Based on the estimated entry fees, the total cost to enter all of these competit
 _Add more details here._
 
 [REFERENCES]
+
 

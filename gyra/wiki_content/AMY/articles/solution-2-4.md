@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 2
-
 THE PROFESSIONAL WINGMAN
 If the player is clever enough they can listen to what each one says use the information
  Juliane:
@@ -27,4 +25,5 @@ First one will incite clementine to respond, even if it's NOT the message Julian
 _Add more details here._
 
 [REFERENCES]
+
 

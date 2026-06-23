@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 3
-
 NO PLAY
 Amy doesn't interact with Nettle in this solution, so Nettle becomes dehydrated and dies on her own.
 
@@ -19,4 +17,5 @@ Amy doesn't interact with Nettle in this solution, so Nettle becomes dehydrated 
 _Add more details here._
 
 [REFERENCES]
+
 

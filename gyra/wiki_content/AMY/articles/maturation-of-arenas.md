@@ -10,12 +10,11 @@ notes=?
 
 
 [MAIN_SECTION]
-# Maturation Of Arenas
-
 Feature Maturation is how we define the work pipeline we have to ensure all departments are in most stages of production.
 
 [SECONDARY]
 _Add more details here._
 
 [REFERENCES]
+
 

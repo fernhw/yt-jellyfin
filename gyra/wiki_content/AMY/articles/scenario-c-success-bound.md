@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Scenario C Success Bound
-
 Total Revenue (3 years): $19,619,500
 Estimated distribution/platform fees (30%): $5,885,850
 Net Revenue: $13,733,650
@@ -24,4 +22,5 @@ Based on these calculations, Scenario A would generate a 114.8% ROI over three y
 _Add more details here._
 
 [REFERENCES]
+
 

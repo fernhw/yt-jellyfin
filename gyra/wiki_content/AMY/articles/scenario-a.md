@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Scenario A
-
 Lower Bound (50,000 units on PC, 50,000 units on consoles)
 Year 1: PC only release
 Total units sold: 50,000
@@ -31,4 +29,5 @@ Total sales revenue for Scenario A (3 years): $3,523,750
 _Add more details here._
 
 [REFERENCES]
+
 

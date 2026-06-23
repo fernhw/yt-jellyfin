@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Localization
-
 Global Reach: Not everyone can speak english, Localization of our game is important to expand our global reach and meet the specific needs of businesses in different regions. We are currently localizing our platform for the following languages:
 
 English: BASE LANGUAGE. Localizing a game in English can make it accessible to a wide range of players globally. English is a universal language used in many countries and is a preferred language for gaming. By localizing a game in English, developers can reach players in the US, UK, Canada, Australia, and other English-speaking regions.
@@ -35,4 +33,5 @@ The game's puzzles and mechanics are specifically designed to challenge players 
 _Add more details here._
 
 [REFERENCES]
+
 

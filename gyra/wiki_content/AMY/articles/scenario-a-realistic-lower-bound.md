@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Scenario A Realistic Lower Bound
-
 Total Revenue (3 years): $3,523,750
 Estimated distribution/platform fees (30%): $1,057,125
 Net Revenue: $2,466,625
@@ -22,4 +20,5 @@ ROI: ($1,318,625 / $1,148,000) * 100 = 114.8%
 _Add more details here._
 
 [REFERENCES]
+
 

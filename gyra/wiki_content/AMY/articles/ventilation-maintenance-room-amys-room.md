@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Ventilation Maintenance Room (amy’s Room)
-
 Amy's room is inside the hotel's ventilation system, the vents create shadows that are noticeable in the area where Amy is.
 
 [SECONDARY]
@@ -41,4 +39,5 @@ Room 509 — [Sam Bernal](sam-bernal.md)'s room — is a short distance down the
 - Whoever placed Amy in this room made a specific choice about it. The ventilation keeps the Kubler out. That is not standard hotel accommodation.
 
 [REFERENCES]
+
 

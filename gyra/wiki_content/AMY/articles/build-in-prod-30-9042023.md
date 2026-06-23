@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Build [In Prod 30%] 9/04/2023
-
 Engineering: Event Engineering, Remaining Systems, Level Specific Engineering, Mini Game Engineering
 Scripting: Grey Boxing, BlackJack Integration
 Art: Target Renders, Prop Design
@@ -22,4 +20,5 @@ Animation: Character Main Animation
 _Add more details here._
 
 [REFERENCES]
+
 

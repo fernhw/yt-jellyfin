@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Quarter 10
-
 (Now On Playstation!)
  Console porting should be done in 6 months. We might need licensing approvals from the big guys but we release to consoles we want to focus on playstation. This will keep top of mind and we will enter an unsaturated market
 New ad campaigns
@@ -21,4 +19,5 @@ Send the On Playstation trailer, we showcase all the new graphics settings (spoi
 _Add more details here._
 
 [REFERENCES]
+
 

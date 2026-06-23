@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# 4 Of Clubs
-
 Puzzles - Hard, Stealth - Normal
 - For second playthroughs
 - Features more difficult puzzles with entirely new solutions,
@@ -21,4 +19,5 @@ Puzzles - Hard, Stealth - Normal
 _Add more details here._
 
 [REFERENCES]
+
 

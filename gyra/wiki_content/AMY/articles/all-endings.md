@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# All Endings
-
 *Amy's Escape* has five main endings, one hidden ending, and a special Genocide Run mode. The game never announces which ending is occurring. There is no score, no ending card. There is only what happens next.
 
 Which ending fires is determined by three variables: the state of [Baya's tea](baya-ross.md), how many of the ten story puzzles were solved humanely, and a small number of specific actions. See [Endings — Conditions](endings.md) for the full breakdown.
@@ -54,4 +52,5 @@ The **Fishbowl** ([Ending D](ending-d.md)) is only reachable when Amy is already
 Only [Ending F](ending-f.md) receives these words — after the credits, not before. The game earns them or it doesn't. Most playthroughs don't.
 
 [REFERENCES]
+
 

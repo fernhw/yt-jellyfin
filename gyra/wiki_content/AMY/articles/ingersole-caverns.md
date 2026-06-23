@@ -10,12 +10,11 @@ notes=?
 
 
 [MAIN_SECTION]
-# Ingersole Caverns
-
 ingersole was created to find the great secret to immortality, it is a large space filled with flowers and rays of light falling from the ceiling.
 
 [SECONDARY]
 _Add more details here._
 
 [REFERENCES]
+
 

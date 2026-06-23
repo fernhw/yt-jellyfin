@@ -345,9 +345,7 @@
 
   var mainSection = sections.find(function (s) { return s.type === 'MAIN_SECTION'; });
   if (mainSection && mainSection.content.trim()) {
-    // Strip the leading h1 from GDD content — the template already renders the article title
-    var mainMd = mainSection.content.replace(/^#[^#][^\n]*\n?/, '');
-    contentEl.innerHTML = renderMd(mainMd);
+    contentEl.innerHTML = renderMd(mainSection.content);
     postProcess(contentEl);
     postProcessShortcodes(contentEl);
   } else {

@@ -20,8 +20,6 @@ relationships
 
 
 [MAIN_SECTION]
-# Dr. Elizabeth Blueth Needham
-
 A woman of simple needs, Dr. Blueth enjoys playing solitaire and drinking tea. She is the proud caretaker of 543 insects and has remained solitary for an extended period, causing her playing cards to lose their color.
 
 [SECONDARY]
@@ -67,4 +65,5 @@ If [Amy](amelia-amy-loevinger.md) finds and releases all twelve **[Jarred Male A
 - She was fully aware of what the experiments in the mines were doing. She stayed by choice. She has had a long time to decide how to feel about that.
 
 [REFERENCES]
+
 

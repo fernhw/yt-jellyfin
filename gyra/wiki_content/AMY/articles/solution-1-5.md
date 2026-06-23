@@ -10,8 +10,6 @@ notes=?
 
 
 [MAIN_SECTION]
-# Solution 1
-
 FACING KANE
 If you enter the theater you will meet the man himself, entering this will result in a dance minigame with the dancing dolls you take the role of the Jester ballerina.
 
@@ -19,4 +17,5 @@ If you enter the theater you will meet the man himself, entering this will resul
 _Add more details here._
 
 [REFERENCES]
+
 
