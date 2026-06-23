@@ -1,10 +1,18 @@
 [META]
 title=Sam Bernal
 authors=Unknown
-template=generic
-status=?
-owner=?
-notes=?
+template=character
+role=Geneticist / Scientific Cohort / Room 509 Sleeper
+age=197 (born 1828; appears ~80)
+height=2.1m / 6'9" — notably large head
+status=Asleep — Room 509; has not fully woken in days
+birth_date=1828
+faction=Ross Hotel / Scientific Cohort
+voice_actor=?
+first_appearance=Chapter 1 — Raphe (Room 509)
+relationships
+[Dr. Elizabeth Blueth Needham](dr-elizabeth-blueth-needham.md) — rival and best friend; their antagonism defined the scientific cohort for decades
+[Albert Ross](albert-ross.md) — employer; Sam is, by most accounts, the researcher most responsible for what the experiments became
 
 [HERO]
 

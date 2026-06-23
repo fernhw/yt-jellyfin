@@ -1,10 +1,18 @@
 [META]
 title=Francena Cadwallader
 authors=Unknown
-template=generic
-status=?
-owner=?
-notes=?
+template=character
+role=Fashion Designer / Attic Tailoring Room
+age=205 (born 1820)
+height=1.65m / 5'4" with wig | 1.57m / 5'2" without
+status=Active — Attic Tailoring Room; has not finished the dress
+birth_date=1820
+faction=Ross Hotel
+voice_actor=?
+first_appearance=Chapter 1 — Raphe (Attic, optional puzzle)
+relationships
+[Dr. Daniel Cadwallader](dr-daniel-cadwallader.md) — husband; his neck descends through the ceiling above her room; they are physically proximate and effectively unable to be together
+[Albert Ross](albert-ross.md) — patron; built her studio as the condition of Daniel's recruitment in 1855
 
 [HERO]
 

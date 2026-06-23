@@ -1,10 +1,20 @@
 [META]
 title=Dr. Daniel Cadwallader
 authors=Unknown
-template=generic
-status=?
-owner=?
-notes=?
+template=character
+role=Physician / Attic Resident
+age=210 (born 1815)
+height=Immeasurable — head on a neck that traverses the attic; original stature unknown
+status=Active — Attic; head separated from body for unknown period
+birth_date=1815
+faction=Ross Hotel
+voice_actor=?
+first_appearance=Chapter 1 — Raphe (Attic)
+relationships
+[Francena Cadwallader](francena-cadwallader.md) — wife; she works in the room directly below where his neck descends
+[Baya Ross](baya-ross.md) — original patient; the reason Daniel was recruited
+[Albert Ross](albert-ross.md) — employer; financial incentives overcame Daniel's refusal twice
+[Amelia Loevinger](amelia-amy-loevinger.md) — attic encounter; their non-verbal communication is Chapter 1's quietest sequence
 
 [HERO]
 

@@ -1,10 +1,19 @@
 [META]
 title=Martha Gioseppy Waliger
 authors=Unknown
-template=generic
-status=?
-owner=?
-notes=?
+template=character
+role=Head of Housekeeping (former) / Tea Specialist / Kubler Shrub
+age=~190 (born ~1835)
+height=~1.63m / 5'4" (pre-transformation; current form is a shrub)
+status=Transformed — Kubler Shrub; mobile; Tea Book still open on her workbench
+birth_date=~1835
+faction=Ross Hotel / Domestic Staff
+voice_actor=?
+first_appearance=Chapter 2 — Thorn (as shrub; the recipe that transformed her is in the Tea Book)
+relationships
+[Baya Ross](baya-ross.md) — the only person Baya trusted to make her teas; Martha had exclusive permission to harvest from Eila's garden
+[Eila Bartlett](eila-bartlett.md) — her garden access was authorised by Baya; their working relationship shaped Chapter 2's central puzzle
+[Amelia Loevinger](amelia-amy-loevinger.md) — Amy must use Martha's Tea Book to make Baya's tea in Chapter 2
 
 [HERO]
 

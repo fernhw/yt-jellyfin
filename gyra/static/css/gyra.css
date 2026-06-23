@@ -4219,7 +4219,7 @@ body.wiki-mode a:visited { color: #6b4ba1; }
 .wiki-aside-info {
   float: right;
   clear: right;
-  width: 260px;
+  width: 320px;
   margin: 0 0 20px 28px;
   font-family: -apple-system, sans-serif;
 }
@@ -4248,7 +4248,7 @@ body.wiki-mode a:visited { color: #6b4ba1; }
   font-style: italic; line-height: 1.4; text-align: center;
 }
 .wiki-infobox-row {
-  display: grid; grid-template-columns: 95px 1fr;
+  display: grid; grid-template-columns: 110px 1fr;
   border-bottom: 1px solid #eaecf0;
 }
 .wiki-infobox-row:last-child { border-bottom: none; }
@@ -4260,6 +4260,14 @@ body.wiki-mode a:visited { color: #6b4ba1; }
 .wiki-infobox-val {
   padding: 6px 8px; color: #202122; font-size: 12.5px; background: #f8f9fa;
 }
+/* Separator label — a META line with no = */
+.wiki-infobox-sep {
+  padding: 5px 10px 2px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #72777d;
+  border-top: 1px solid #eaecf0;
+}
+body.wiki-dark .wiki-infobox-sep { color: #64748b; border-color: #2d3148; }
 
 /* Extra sections & references — full-width, below the float clearance */
 .wiki-extra-section { margin-top: 32px; }

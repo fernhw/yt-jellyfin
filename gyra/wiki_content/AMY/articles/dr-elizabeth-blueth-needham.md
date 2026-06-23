@@ -1,10 +1,20 @@
 [META]
 title=Dr. Elizabeth Blueth Needham
 authors=Unknown
-template=generic
-status=?
-owner=?
-notes=?
+template=character
+role=Entomologist / Biological Countermeasures Researcher
+age=203 (born 1822)
+height=1.23m / 4'0" — described as resembling a sack of potatoes
+status=Active — Floor 5 (Insect Room); present throughout
+birth_date=1822
+faction=Ross Hotel / Scientific Cohort
+voice_actor=?
+first_appearance=Chapter 1 — Raphe (Floor 5, behind spider door)
+relationships
+[Sam Bernal](sam-bernal.md) — rival and best friend; the defining relationship of the scientific cohort
+[Albert Ross](albert-ross.md) — employer
+[Darby](darby-glowing-bird.md) — she created Darby and forgot about it; the bird survived 65 years in a cage on her behalf
+[Amelia Loevinger](amelia-amy-loevinger.md) — ally unlocked by the solitaire cards; tells Amy what Sam fears
 
 [HERO]
 

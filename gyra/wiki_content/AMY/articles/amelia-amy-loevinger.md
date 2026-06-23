@@ -1,10 +1,22 @@
 [META]
 title=Amelia “Amy" Loevinger
 authors=Unknown
-template=generic
-status=?
-owner=?
-notes=?
+template=character
+role=Protagonist / 7th Maid of the Ross Hotel
+age=14
+height=1.3m / 4'3"
+status=Active — present throughout
+birth_date=2011
+faction=Loevinger Family (outsider)
+voice_actor=Lizzie Freeman
+first_appearance=Chapter 1 — Raphe
+relationships
+[Custard Loevinger](custard-loevinger.md)=Younger brother; his death is the hidden wound the entire game is built around
+[Darby](darby-glowing-bird.md)=firebird companion; found in Chapter 1; her light in the dark
+[Barret Aricson](barret-aricson.md)=antagonist and unwilling host; found and reassembled her
+[Kole Wadjet](kole-wadjet.md)=first point of contact; her most reliable source of plain truth
+[Dr. Daniel Cadwallader](dr-daniel-cadwallader.md)=attic ally; their non-verbal negotiation is Chapter 1's quietest scene
+[Esther Persson](the-cursed-maids.md)=Hollow Maid; befriended in Chapter 2; recognises something in Amy without naming it
 
 [HERO]
 screenshot-2026-06-22-at-233406-1782190119.png
@@ -43,18 +55,6 @@ Amy is genuinely sweet. Not naive, not performing — she is kind by instinct, p
 
 She asks good questions. She speaks simply. She is not clever in the way puzzle protagonists often are — she works things out by doing them, by asking, by patience.
 
----
-
-## Appearance
-
-| | |
-|---|---|
-| **Age** | 14 |
-| **Height** | 1.3 m |
-| **Hair** | Brown |
-| **Build** | Small, slim; androgynous but clearly female |
-| **Voice** | Lizzie Freeman |
-| **Design language** | Simple, clean, high contrast against the hotel's ornate environment |
 
 ---
 
@@ -63,16 +63,6 @@ She asks good questions. She speaks simply. She is not clever in the way puzzle 
 Amy was physically dismembered before the events of the game and reassembled by the hotel's Kubler-sustained repair process. The marks of this are on her — not always visible, but present. The game's **Sin System** adds to them: bad-path solutions to character puzzles leave physical marks on Amy that persist for the rest of the run. Soot from setting Sam's lamp on fire. Other marks from other choices. These are also the game's achievement triggers for taking the cruel path.
 
 Her body is a record of what she did and what she chose.
-
----
-
-## Relationships
-
-- **[Custard Loevinger](custard-loevinger.md)** — Her younger brother. His death is the wound the entire game is built around. Amy keeps it buried so deep that most players will never find it.
-- **[Darby](darby-glowing-bird.md)** — Her firebird companion, found in a forgotten storage cage in [Chapter 1](chapter-1.md). She bonds with it immediately and completely. Symbolically: Amy's buried light, her warmth, the part of Custard that was never the tragedy.
-- **[Kole Wadjet](kole-wadjet.md)** — She respects his bluntness even when he gives her nothing useful. He is reliably honest in an unreliable hotel.
-- **[Dr. Daniel Cadwallader](dr-daniel-cadwallader.md)** — Their non-verbal negotiation in [Chapter 1](chapter-1.md)'s attic is one of the game's quietly affecting sequences.
-- **Esther Persson (Hollow Maid)** — Befriended in [Chapter 2](chapter-2.md). One of the hotel's lost children. Esther recognizes something in Amy without being able to name it.
 
 ---
 

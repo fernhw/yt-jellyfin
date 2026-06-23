@@ -260,17 +260,29 @@
   }
 
   function parseMeta(content) {
-    var rows = {};
+    var rows = [];
+    var map  = {};
     content.split('\n').forEach(function (line) {
-      line = line.trim();
-      if (!line || line.startsWith('#')) return;
-      var idx = line.indexOf('=');
-      if (idx < 0) return;
-      var k = line.slice(0, idx).trim();
-      var v = line.slice(idx + 1).trim();
-      if (k) rows[k] = v;
+      var trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) return;
+      var idx = trimmed.indexOf('=');
+      if (idx > 0) {
+        var k = trimmed.slice(0, idx).trim();
+        var v = trimmed.slice(idx + 1).trim();
+        if (k) { rows.push({ type: 'kv', key: k, val: v }); map[k] = v; }
+      } else {
+        rows.push({ type: 'sep', label: trimmed });
+      }
     });
-    return rows;
+    return { rows: rows, map: map };
+  }
+
+  // Render inline markdown (links, bold, etc.) without wrapping <p> tags
+  function inlineMd(text) {
+    if (typeof marked !== 'undefined' && marked.parseInline) {
+      return marked.parseInline(resolveLinks(text));
+    }
+    return resolveLinks(text);
   }
 
   function renderMd(md) {
@@ -304,19 +316,25 @@
     }
   }
 
-  // META key=value rows (skip 'title' since it's in the title bar)
+  // META key=value rows and separators
   if (metaSection && metaSection.content.trim()) {
-    var meta = parseMeta(metaSection.content);
-    Object.keys(meta).forEach(function (k) {
-      if (k.toLowerCase() === 'title') return;  // already shown
-      var val = meta[k];
-      // Resolve [[links]] in values
-      val = resolveLinks(val);
-      var labelK = k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ');
-      infoHtml += '<div class="wiki-infobox-row">'
-        + '<span class="wiki-infobox-key">' + labelK.replace(/</g, '&lt;') + '</span>'
-        + '<span class="wiki-infobox-val">' + val + '</span>'
-        + '</div>';
+    var parsed = parseMeta(metaSection.content);
+    parsed.rows.forEach(function (row) {
+      if (row.type === 'sep') {
+        infoHtml += '<div class="wiki-infobox-sep">' + row.label.replace(/</g, '&lt;') + '</div>';
+      } else if (row.type === 'kv') {
+        if (row.key.toLowerCase() === 'title') return;
+        // Key: render as inline markdown if it contains a link, else as plain label
+        var keyHtml = row.key.indexOf('[') !== -1
+          ? inlineMd(row.key)
+          : (row.key.charAt(0).toUpperCase() + row.key.slice(1).replace(/_/g, ' ')).replace(/</g, '&lt;');
+        // Value: always render inline markdown so links work
+        var valHtml = inlineMd(row.val);
+        infoHtml += '<div class="wiki-infobox-row">'
+          + '<span class="wiki-infobox-key">' + keyHtml + '</span>'
+          + '<span class="wiki-infobox-val">' + valHtml + '</span>'
+          + '</div>';
+      }
     });
   }
 
@@ -327,7 +345,9 @@
 
   var mainSection = sections.find(function (s) { return s.type === 'MAIN_SECTION'; });
   if (mainSection && mainSection.content.trim()) {
-    contentEl.innerHTML = renderMd(mainSection.content);
+    // Strip the leading h1 from GDD content — the template already renders the article title
+    var mainMd = mainSection.content.replace(/^#[^#][^\n]*\n?/, '');
+    contentEl.innerHTML = renderMd(mainMd);
     postProcess(contentEl);
     postProcessShortcodes(contentEl);
   } else {
@@ -373,23 +393,7 @@
   }
 
   // ── Build TOC from rendered headings ──────────────────────────────────────
-
-  if (tocEl) {
-    var allHeadings = contentEl.querySelectorAll('h2, h3');
-    if (allHeadings.length) {
-      var ul = document.createElement('ul');
-      ul.className = 'wiki-toc-list';
-      allHeadings.forEach(function (h, i) {
-        var id = 'wiki-h-' + i;
-        h.id = id;
-        var li = document.createElement('li');
-        li.className = h.tagName === 'H3' ? 'wiki-toc-h3' : 'wiki-toc-h2';
-        li.innerHTML = '<a href="#' + id + '">' + h.textContent + '</a>';
-        ul.appendChild(li);
-      });
-      tocEl.appendChild(ul);
-    }
-  }
+  // Deferred to rAF so secondary section is placed first (it may contain headings)
 
   // ── Format relative dates ─────────────────────────────────────────────────
 
@@ -416,6 +420,49 @@
       } else {
         // Normal — secondary full-width below the float
         extraEl.insertBefore(secDiv, extraEl.firstChild);
+      }
+      // ── Build TOC after secondary is placed (may contain headings) ─────────
+      if (tocEl) {
+        // Scan the entire article body — catches headings in main + secondary + extras
+        var articleEl = contentEl.closest('article') || document.body;
+        var allHeadings = articleEl.querySelectorAll(
+          '#wiki-content h2, #wiki-content h3, #wiki-extra-sections h2, #wiki-extra-sections h3'
+        );
+        if (allHeadings.length) {
+          var ul = document.createElement('ul');
+          ul.className = 'wiki-toc-list';
+          allHeadings.forEach(function (h, i) {
+            var id = 'wiki-h-' + i;
+            h.id = id;
+            var li = document.createElement('li');
+            li.className = h.tagName === 'H3' ? 'wiki-toc-h3' : 'wiki-toc-h2';
+            li.innerHTML = '<a href="#' + id + '">' + h.textContent + '</a>';
+            ul.appendChild(li);
+          });
+          tocEl.appendChild(ul);
+        }
+      }
+    });
+  } else {
+    // No secondary section — build TOC immediately from main content only
+    requestAnimationFrame(function () {
+      if (tocEl) {
+        var allHeadings = document.querySelectorAll(
+          '#wiki-content h2, #wiki-content h3, #wiki-extra-sections h2, #wiki-extra-sections h3'
+        );
+        if (allHeadings.length) {
+          var ul = document.createElement('ul');
+          ul.className = 'wiki-toc-list';
+          allHeadings.forEach(function (h, i) {
+            var id = 'wiki-h-' + i;
+            h.id = id;
+            var li = document.createElement('li');
+            li.className = h.tagName === 'H3' ? 'wiki-toc-h3' : 'wiki-toc-h2';
+            li.innerHTML = '<a href="#' + id + '">' + h.textContent + '</a>';
+            ul.appendChild(li);
+          });
+          tocEl.appendChild(ul);
+        }
       }
     });
   }

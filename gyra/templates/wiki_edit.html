@@ -85,7 +85,7 @@
     {# Right: live preview — mirrors wiki_article.html layout exactly #}
     <div class="wiki-preview-pane" id="wiki-preview-pane">
       <div class="wiki-preview-label">Preview</div>
-      <div id="wiki-preview-body" style="padding:16px 20px;position:relative">
+      <div id="wiki-preview-body" class="wiki-preview-body">
         {# Infobox: floated right, same DOM position as wiki_article.html #}
         <aside class="wiki-aside-info" id="preview-infobox-wrap" style="display:none">
           <div class="wiki-infobox" id="preview-infobox"></div>
@@ -317,7 +317,8 @@ function renderPreview() {
   var refsS = sections.find(function (s) { return s.type === 'REFERENCES'; });
 
   var hasAny = sections.length > 0;
-  var mainMd = hasAny ? (mainS ? mainS.content : '') : raw;
+  // Strip leading h1 from GDD content — template renders its own title
+  var mainMd = hasAny ? (mainS ? mainS.content.replace(/^#[^#][^\n]*\n?/, '') : '') : raw;
 
   function expandImageShortcodes(md) {
     // Convert [image name="file.jpg" caption="text"] shortcodes to standard markdown images
@@ -329,17 +330,28 @@ function renderPreview() {
   function renderMd(md) { return marked.parse(resolveLinks(expandImageShortcodes(md || ''))); }
 
   function parseMeta(content) {
-    var rows = {};
+    var rows = [];
+    var map  = {};
     content.split('\n').forEach(function (line) {
-      line = line.trim();
-      if (!line || line.startsWith('#')) return;
-      var idx = line.indexOf('=');
-      if (idx < 0) return;
-      var k = line.slice(0, idx).trim();
-      var v = line.slice(idx + 1).trim();
-      if (k) rows[k] = v;
+      var trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) return;
+      var idx = trimmed.indexOf('=');
+      if (idx > 0) {
+        var k = trimmed.slice(0, idx).trim();
+        var v = trimmed.slice(idx + 1).trim();
+        if (k) { rows.push({ type: 'kv', key: k, val: v }); map[k] = v; }
+      } else {
+        rows.push({ type: 'sep', label: trimmed });
+      }
     });
-    return rows;
+    return { rows: rows, map: map };
+  }
+
+  function inlineMd(text) {
+    if (typeof marked !== 'undefined' && marked.parseInline) {
+      return marked.parseInline(resolveLinks(text));
+    }
+    return resolveLinks(text);
   }
 
   // ── H1 + meta bar — identical to wiki_article.html ───────────────────────
@@ -383,23 +395,32 @@ function renderPreview() {
     }
   }
 
-  // ALL META rows except 'title' — exactly as article page does
+  // META rows — seps and key=value pairs, links work on both sides
   if (metaS && metaS.content.trim()) {
-    var meta = parseMeta(metaS.content);
-    Object.keys(meta).forEach(function (k) {
-      if (k.toLowerCase() === 'title') return;
-      var val = resolveLinks(meta[k]);
-      var labelK = k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ');
-      infoHtml += '<div class="wiki-infobox-row">'
-        + '<span class="wiki-infobox-key">' + labelK.replace(/</g, '&lt;') + '</span>'
-        + '<span class="wiki-infobox-val">' + val + '</span>'
-        + '</div>';
+    var parsed = parseMeta(metaS.content);
+    parsed.rows.forEach(function (row) {
+      if (row.type === 'sep') {
+        infoHtml += '<div class="wiki-infobox-sep">' + row.label.replace(/</g, '&lt;') + '</div>';
+      } else if (row.type === 'kv') {
+        if (row.key.toLowerCase() === 'title') return;
+        var keyHtml;
+        if (row.key.indexOf('[') !== -1) {
+          keyHtml = inlineMd(row.key);
+        } else {
+          keyHtml = (row.key.charAt(0).toUpperCase() + row.key.slice(1).replace(/_/g, ' ')).replace(/</g, '&lt;');
+        }
+        var valHtml = inlineMd(row.val);
+        infoHtml += '<div class="wiki-infobox-row">'
+          + '<span class="wiki-infobox-key">' + keyHtml + '</span>'
+          + '<span class="wiki-infobox-val">' + valHtml + '</span>'
+          + '</div>';
+      }
     });
   }
 
   previewInf.innerHTML = infoHtml;
   var hasInfoContent = !!(heroS && heroS.content.trim())
-                    || previewInf.querySelectorAll('.wiki-infobox-row').length > 0;
+                    || previewInf.querySelectorAll('.wiki-infobox-row, .wiki-infobox-sep').length > 0;
   previewInfWrap.style.display = hasInfoContent ? '' : 'none';
 
   // ── Main content ─────────────────────────────────────────────────────────

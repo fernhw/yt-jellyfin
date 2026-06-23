@@ -1,10 +1,19 @@
 [META]
 title=Darby (Glowing Bird)
 authors=Unknown
-template=generic
-status=?
-owner=?
-notes=?
+template=character
+role=Firebird Companion / Primary Light Source
+age=67 (born ~1958; caged 1960; found by Amy 2025)
+height=Bird
+status=Active — companion to Amy; cannot leave the hotel
+birth_date=~1958
+faction=N/A (experimental organism; last of a sterile line)
+voice_actor=N/A
+first_appearance=Chapter 1 — Raphe (storage room cage)
+relationships
+[Dr. Elizabeth Blueth Needham](dr-elizabeth-blueth-needham.md) — creator; Darby was Blueth's second failed experiment; she caged it in 1960 and forgot about it for 65 years
+[Amelia Loevinger](amelia-amy-loevinger.md) — bonded companion; Amy named it; Darby cannot cross the hotel threshold
+[The Moonlight Aphids](the-12-moonlight-aphids.md) — Darby's original hunt target; was engineered to eat them; never did
 
 [HERO]
 

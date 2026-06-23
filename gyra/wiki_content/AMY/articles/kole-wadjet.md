@@ -1,10 +1,18 @@
 [META]
 title=Kole Wadjet
 authors=Unknown
-template=generic
-status=?
-owner=?
-notes=?
+template=character
+role=Receptionist / Hotel Manager's Assistant
+age=55 (born 1970; looks his age)
+height=1.35m / 4'5"
+status=Active — Lobby; present throughout
+birth_date=1970
+faction=Ross Hotel (hired staff; under NDA)
+voice_actor=?
+first_appearance=Chapter 1 — Raphe (Lobby)
+relationships
+[Barret Aricson](barret-aricson.md) — employer; hired Kole in 2012 age 42
+[Amelia Loevinger](amelia-amy-loevinger.md) — first point of contact; primary information source in Chapter 1
 
 [HERO]
 

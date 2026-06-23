@@ -1,10 +1,19 @@
 [META]
 title=Evangeline Aerona And Ilina
 authors=Unknown
-template=generic
-status=?
-owner=?
-notes=?
+template=character
+role=Fortune-Telling Sisters / Ingersole-Changed
+age=Unknown (descended into Ingersole as adults; Kubler exposure indeterminate)
+height=Evangeline: semi-fluid, spread across two floors | Ilina: approximately the size of a large pea
+status=Active — first floor; not to be consulted lightly
+birth_date=Unknown
+faction=Ross Hotel (changed)
+voice_actor=?
+first_appearance=Late chapters
+relationships
+[Ilina](evangeline-aerona-and-ilina.md) — Evangeline's sister; once shrunk to the size of a pea by Evangeline to keep her safe
+[Dr. Daniel Cadwallader](dr-daniel-cadwallader.md) — former employer; they descended into the Ingersole as his medical assistants and did not return as what they went in as
+[Amelia Loevinger](amelia-amy-loevinger.md) — Ending D: Evangeline offers Amy a choice to stay; if accepted, Amy is slowly reduced to insect scale over centuries
 
 [HERO]
 
