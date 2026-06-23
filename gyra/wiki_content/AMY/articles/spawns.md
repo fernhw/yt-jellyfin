@@ -22,5 +22,8 @@ The game's spawn points, artfully designed by our programming team, serve to pos
 
 Each scene may contain multiple spawn points, with one designated as the default. Leveraging door hitboxes, we can assign a specific spawn point to a destination, ensuring seamless transitions for players as they navigate through doors and enabling the system to identify the appropriate spawn point for each new location.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

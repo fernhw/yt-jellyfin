@@ -16,5 +16,8 @@ Branching: The spores burrow into the bone, transforming it into branch-like str
 
 Amy will cough. She will not slow down yet
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

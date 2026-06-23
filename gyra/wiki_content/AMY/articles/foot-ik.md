@@ -16,5 +16,8 @@ We believe it's crucial for characters to adapt to different surfaces, like slop
 
 [Needs an image]
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

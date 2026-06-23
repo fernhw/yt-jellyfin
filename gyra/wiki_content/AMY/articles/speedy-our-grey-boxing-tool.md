@@ -30,5 +30,8 @@ The editing process is further streamlined by the ability to lasso and select mu
 
 In the internal code, what is happening is that Amy's character is interacting with the triangles closest to her position, while also predicting her future movements forward.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

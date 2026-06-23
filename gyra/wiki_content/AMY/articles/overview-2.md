@@ -18,5 +18,8 @@ These modes are designed to challenge players in different ways, with entirely n
 - Puzzles can't be more difficult without swapping them around we looked at silent hill (2) and want the different puzzle answers but want a more extent mode
 - Finally for those syncing a third or final time we have a combined difficulty with the DLC only in it,
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

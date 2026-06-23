@@ -18,5 +18,8 @@ The story's five chapters are based on the five stages of grief: denial, anger, 
 
 The story is nihilistic and cruel in hidden ways; the charm and jokes hide the 18 overlapping tragedies, but it is not a happy game that will end well unless you work for it; the game is a puzzle in itself.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

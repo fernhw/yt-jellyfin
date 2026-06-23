@@ -19,5 +19,8 @@ In short, Bound by a sinister contract. Amy's only hope to save her brother is t
 
 Each chapter is a stage of grief: denial, anger, bargaining, depression, and acceptance. Amy is metaphysically the embodiment of denial.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

@@ -316,6 +316,7 @@ def _build_wiki_article_content(title: str, body: str, template_id: str) -> str:
         {"type": "META",         "content": meta},
         {"type": "HERO",         "content": ""},
         {"type": "MAIN_SECTION", "content": main},
+        {"type": "SECONDARY",    "content": "_Add more details here._\n"},
         {"type": "REFERENCES",   "content": ""},
     ])
 
@@ -324,17 +325,19 @@ _DEFAULT_SECTIONS = [
     {'type': 'META',         'content': 'title=\nauthors=\n'},
     {'type': 'HERO',         'content': ''},
     {'type': 'MAIN_SECTION', 'content': ''},
+    {'type': 'SECONDARY',    'content': ''},
     {'type': 'REFERENCES',   'content': ''},
 ]
 
 # Canonical order for healing — these are ALWAYS present in every article file
-_REQUIRED_SECTIONS = ['META', 'HERO', 'MAIN_SECTION', 'REFERENCES']
+_REQUIRED_SECTIONS = ['META', 'HERO', 'MAIN_SECTION', 'SECONDARY', 'REFERENCES']
 
 # Default content when a required section is re-inserted during healing
 _SECTION_DEFAULTS = {
     'META':         'title=\nauthors=\n',
     'HERO':         '',
     'MAIN_SECTION': '',
+    'SECONDARY':    '_Add more details here._\n',
     'REFERENCES':   '',
 }
 
@@ -667,6 +670,16 @@ def register(app) -> None:
             for c in children
         ]
 
+        # Direct parent article
+        parent_art = None
+        if article["parent_id"]:
+            p = conn.execute(
+                "SELECT id, slug, title FROM wiki_articles WHERE id=?",
+                (article["parent_id"],)
+            ).fetchone()
+            if p:
+                parent_art = {**dict(p), "url": url_for("wiki_article", project_id=project_id, slug=p["slug"])}
+
         return render_template("wiki_article.html",
                                project=project,
                                article=article,
@@ -678,7 +691,9 @@ def register(app) -> None:
                                next_art=next_art,
                                flat=flat,
                                gdd_num=gdd_num,
-                               children=children)
+                               children=children,
+                               siblings=[{**s, "url": url_for("wiki_article", project_id=project_id, slug=s["slug"])} for s in siblings],
+                               parent_art=parent_art)
 
     # ── New article ──────────────────────────────────────────────────────────
 
@@ -717,6 +732,7 @@ def register(app) -> None:
                 {'type': 'META',         'content': f'title={title}\nauthors=\n'},
                 {'type': 'HERO',         'content': ''},
                 {'type': 'MAIN_SECTION', 'content': f'# {title}\n\n'},
+                {'type': 'SECONDARY',    'content': ''},
                 {'type': 'REFERENCES',   'content': ''},
             ])
             _write_md(project["key"], slug, initial_content)
@@ -936,6 +952,66 @@ def register(app) -> None:
             "md_snippet": f"![{r['caption'] or r['filename']}]({r['filename']})",
         } for r in imgs])
 
+    # ── Images management page ───────────────────────────────────────────────
+
+    @app.route("/project/<int:project_id>/wiki/images", methods=["GET"])
+    @login_required
+    def wiki_images_page(project_id):
+        project = _check_access(project_id)
+        conn = get_db()
+        imgs = conn.execute(
+            "SELECT id, filename, thumb_filename, caption, uploaded_at FROM wiki_images WHERE project_id=? ORDER BY uploaded_at DESC",
+            (project_id,)
+        ).fetchall()
+        images = [{
+            "id": r["id"],
+            "filename": r["filename"],
+            "caption": r["caption"],
+            "url": url_for("wiki_image_serve", project_id=project_id, filename=r["filename"]),
+            "thumb_url": url_for("wiki_image_serve", project_id=project_id,
+                                 filename=f"thumbs/{r['thumb_filename']}") if r["thumb_filename"] else None,
+        } for r in imgs]
+        return render_template("wiki_images.html", project=project, images=images)
+
+    # ── Image caption update API ─────────────────────────────────────────────
+
+    @app.route("/api/project/<int:project_id>/wiki/images/<int:image_id>/caption", methods=["POST"])
+    @login_required
+    def wiki_image_caption(project_id, image_id):
+        _check_access(project_id)
+        enforce_csrf()
+        data = request.get_json(force=True)
+        conn = get_db()
+        conn.execute(
+            "UPDATE wiki_images SET caption=? WHERE id=? AND project_id=?",
+            (data.get("caption", ""), image_id, project_id)
+        )
+        conn.commit()
+        return jsonify({"ok": True})
+
+    # ── Image delete API ─────────────────────────────────────────────────────
+
+    @app.route("/api/project/<int:project_id>/wiki/images/<int:image_id>/delete", methods=["POST"])
+    @login_required
+    def wiki_image_delete(project_id, image_id):
+        project = _check_access(project_id)
+        enforce_csrf()
+        conn = get_db()
+        row = conn.execute(
+            "SELECT filename, thumb_filename FROM wiki_images WHERE id=? AND project_id=?",
+            (image_id, project_id)
+        ).fetchone()
+        if not row:
+            return jsonify({"ok": False, "error": "Not found"}), 404
+        # Remove files
+        for fn in [row["filename"], f"thumbs/{row['thumb_filename']}"]:
+            path = os.path.join(_images_dir(project["key"]), fn)
+            if os.path.exists(path):
+                os.remove(path)
+        conn.execute("DELETE FROM wiki_images WHERE id=? AND project_id=?", (image_id, project_id))
+        conn.commit()
+        return jsonify({"ok": True})
+
     # ── GDD view ─────────────────────────────────────────────────────────────
 
     @app.route("/project/<int:project_id>/gdd")
@@ -958,7 +1034,7 @@ def register(app) -> None:
         title_slug_map = {a["title"].lower(): a["slug"] for a in numbered}
 
         # Load content for each article, resolve [[links]] as clickable §refs
-        _GDD_SKIP = {"META", "HERO"}
+        _GDD_SKIP = {"META", "HERO", "SECONDARY"}
         sections = []
         for a in numbered:
             raw_full = _read_md(project["key"], a["slug"])
@@ -1011,7 +1087,7 @@ def register(app) -> None:
         slug_url_map   = {a["slug"]: "#gdd-" + a["slug"] for a in numbered}
         title_slug_map = {a["title"].lower(): a["slug"] for a in numbered}
 
-        _GDD_SKIP = {"META", "HERO"}
+        _GDD_SKIP = {"META", "HERO", "SECONDARY"}
         _md_renderer = _md.Markdown(
             extensions=["tables", "fenced_code", "nl2br", "sane_lists"],
             output_format="html",
@@ -1135,7 +1211,7 @@ def register(app) -> None:
         slug_url_map   = {a["slug"]: "#gdd-" + a["slug"] for a in numbered}
         title_slug_map = {a["title"].lower(): a["slug"] for a in numbered}
 
-        _GDD_SKIP = {"META", "HERO"}
+        _GDD_SKIP = {"META", "HERO", "SECONDARY"}
         sections = []
         for a in numbered:
             raw_full = _read_md(project["key"], a["slug"])
@@ -1289,43 +1365,17 @@ def register(app) -> None:
 
         if request.method == "POST":
             enforce_csrf()
-            raw_text = request.form.get("gdd_text", "").strip()
             import_mode = request.form.get("import_mode", "append")
-            # Template assignments from JS preview: JSON list [{num, template}]
-            assignments_raw = request.form.get("template_assignments", "[]")
+
+            # Use the JS-parsed articles directly — the preview IS the source of truth
+            parsed_raw = request.form.get("parsed_articles", "[]")
             try:
-                assignments = {a["num"]: a["template"] for a in json.loads(assignments_raw)}
+                parsed = json.loads(parsed_raw)
+                if not isinstance(parsed, list) or not parsed:
+                    raise ValueError("empty")
             except Exception:
-                assignments = {}
-
-            if not raw_text:
-                flash("Nothing to import.", "error")
+                flash("No articles to import (empty parsed list).", "error")
                 return redirect(request.url)
-
-            pattern = re.compile(
-                r"^(\d+(?:\.\d+)*)"
-                r"\.?"
-                r"[ \t]*"
-                r"(?:[-\u2013\u2014][ \t]*)?"
-                r"(.*)$"
-            )
-            lines = raw_text.splitlines()
-            parsed = []
-            current = None
-            for line in lines:
-                m = pattern.match(line.strip())
-                if m:
-                    if current:
-                        parsed.append(current)
-                    num   = m.group(1)
-                    title = m.group(2).strip() or f"Section {m.group(1)}"
-                    current = {"num": num, "title": title, "body": []}
-                elif current is not None:
-                    current["body"].append(line)
-            if current:
-                parsed.append(current)
-
-            if not parsed:
                 flash("No numbered headings found. Use format: 1.2 Title", "error")
                 return redirect(request.url)
 
@@ -1357,10 +1407,10 @@ def register(app) -> None:
                 body  = "\n".join(item["body"]).strip()
                 parts = num.split(".")
 
-                # Determine template: use JS assignment if available, else auto-detect
+                # Determine template: from JS preview assignment, else auto-detect
                 parent_num = ".".join(parts[:-1])
                 parent_title = num_title_map.get(parent_num, "")
-                template_id = assignments.get(num) or _detect_wiki_template(title, parent_title)
+                template_id = item.get("template") or _detect_wiki_template(title, parent_title)
 
                 # Deduplicate slug against both DB and already-inserted batch rows
                 base = _slugify(title)

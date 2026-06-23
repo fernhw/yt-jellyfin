@@ -16,5 +16,8 @@ The game will feature meticulous tracking of Amy's emotions through her body and
 
 Overall, we believe that our focus on Amy's emotions and their impact on gameplay will create a more immersive and engaging experience for the player.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

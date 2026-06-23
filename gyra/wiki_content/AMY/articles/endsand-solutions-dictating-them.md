@@ -19,5 +19,8 @@ All of these puzzles have three solutions—solutions that affect the ending the
 
 To make it easy, all puzzles have three solutions: a good state, a mid-state, and a fail state.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

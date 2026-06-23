@@ -1,5 +1,5 @@
 [META]
-title=[wip] THE ingersole MYSTERY
+title=wip] THE ingersole MYSTERY
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# [wip] THE ingersole MYSTERY
+# wip] THE ingersole MYSTERY
 
 > _Add details here._
 
@@ -19,6 +19,9 @@ notes=?
 ## Notes
 
 -
+
+[SECONDARY]
+_Add more details here._
 
 [REFERENCES]
 

@@ -28,12 +28,14 @@
   <div class="wiki-topbar-right">
     {% if session.role != 'viewer' %}
     <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_gdd', project_id=project.id) }}">📄 GDD</a>
+    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_images_page', project_id=project.id) }}">🖼 Images</a>
     {% if session.role in ('admin','super_user') %}
     <button class="btn btn-sm btn-ghost" id="wiki-reorder-btn">⇄ Reorder</button>
     <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_import', project_id=project.id) }}">⬆ Import</a>
     {% endif %}
     <a class="btn btn-sm btn-primary" href="{{ url_for('wiki_new', project_id=project.id) }}">+ New Article</a>
     {% endif %}
+    <button class="btn btn-sm btn-ghost" id="wiki-dark-toggle" title="Toggle dark mode">🌙</button>
   </div>
 </div>
 
@@ -127,359 +129,379 @@
 .wiki-te-end-drop.wiki-te-drop-before { border-color: #3366cc; }
 </style>
 {% endif %}
-
-{# ── Wiki main layout ── #}
-<div class="wiki-main-layout">
-
-  {# ── Left sidebar: collapsible tree nav ── #}
-  <nav class="wiki-sidenav" id="wiki-sidenav">
-    <div class="wiki-sidenav-search">
-      <input type="search" id="wiki-search" placeholder="Search articles…" autocomplete="off">
-    </div>
-    <div class="wiki-sidenav-tree" id="wiki-sidenav-tree">
-      {% for item in flat %}
-      <a class="wiki-sidenav-item wiki-sidenav-d{{ [item.depth, 4] | min }}"
-         href="{{ url_for('wiki_article', project_id=project.id, slug=item.slug) }}"
-         data-title="{{ item.title | lower }}"
-         data-num="{{ item.gdd_num or '' }}"
-         style="padding-left:{{ 12 + item.depth * 14 }}px">
-        {% if item.gdd_num %}<span class="wiki-sidenav-num">{{ item.gdd_num }}</span>{% endif %}
-        <span class="wiki-sidenav-label">{{ item.title }}</span>
-      </a>
-      {% endfor %}
-      {% if not flat %}
-      <div style="padding:16px 14px;font-size:13px;color:#a0a0a0">No articles yet.</div>
-      {% endif %}
-    </div>
-  </nav>
-
-  {# ── Right: main content area ── #}
-  <main class="wiki-main-body">
-    {% if flat %}
-
-    {# Search results (hidden by default) #}
-    <div id="wiki-search-results" style="display:none">
-      <h2 class="wiki-body-section-title">Search Results</h2>
-      <ul id="wiki-search-list" class="wiki-body-search-list"></ul>
-    </div>
-
-    {# Normal view: root sections with children — rendered by JS from flat data #}
-    <div id="wiki-body-normal"></div>
-
-    {% else %}
-    <div class="wiki-empty-state">
-      <div class="wiki-empty-icon">📖</div>
-      <h2>This wiki is empty</h2>
-      <p>Import a GDD or create your first article to get started.</p>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <a class="btn btn-primary" href="{{ url_for('wiki_new', project_id=project.id) }}">+ New Article</a>
-        {% if session.role in ('admin','super_user') %}
-        <a class="btn btn-secondary" href="{{ url_for('wiki_import', project_id=project.id) }}">⬆ Import GDD</a>
-        {% endif %}
+{# ── Hero banner ── #}
+<div class="wh-hero">
+  <div class="wh-hero-inner">
+    <div class="wh-hero-title">{{ project.name }}</div>
+    <div class="wh-hero-sub">Game Design Wiki</div>
+    <div class="wh-search-wrap">
+      <div class="wh-search-box">
+        <svg class="wh-search-icon" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.8"/><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <input type="search" id="wh-search-input" placeholder="Search articles, sections, characters…" autocomplete="off">
+        <kbd class="wh-search-kbd">Esc</kbd>
       </div>
+      <div id="wh-search-dropdown" class="wh-search-dropdown" style="display:none"></div>
     </div>
-    {% endif %}
-  </main>
-
+  </div>
 </div>
 
+{# ── Section mode picker modal ── #}
+<div id="wh-mode-modal" class="wh-modal-backdrop" style="display:none">
+  <div class="wh-modal-box">
+    <div class="wh-modal-head">
+      <strong id="wh-mode-title">Display mode</strong>
+      <button class="wh-modal-close" id="wh-mode-close">&times;</button>
+    </div>
+    <div class="wh-mode-grid">
+      <button class="wh-mode-opt" data-mode="list">
+        <span class="wh-mode-icon">☰</span>
+        <strong>List</strong>
+        <small>Links in two columns</small>
+      </button>
+      <button class="wh-mode-opt" data-mode="grid">
+        <span class="wh-mode-icon">⊞</span>
+        <strong>Cards</strong>
+        <small>Title cards with number</small>
+      </button>
+      <button class="wh-mode-opt" data-mode="portrait">
+        <span class="wh-mode-icon">◫</span>
+        <strong>Portraits</strong>
+        <small>Image + name (characters)</small>
+      </button>
+      <button class="wh-mode-opt" data-mode="compact">
+        <span class="wh-mode-icon">≡</span>
+        <strong>Compact</strong>
+        <small>Dense single-column list</small>
+      </button>
+    </div>
+  </div>
+</div>
+
+{# ── Sections container ── #}
+<div class="wh-page" id="wh-page">
+  {% if not flat %}
+  <div class="wh-empty">
+    <div class="wh-empty-icon">📖</div>
+    <h2>This wiki is empty</h2>
+    <p>Import a GDD or create your first article to get started.</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px">
+      <a class="btn btn-primary" href="{{ url_for('wiki_new', project_id=project.id) }}">+ New Article</a>
+      {% if session.role in ('admin','super_user') %}
+      <a class="btn btn-secondary" href="{{ url_for('wiki_import', project_id=project.id) }}">⬆ Import GDD</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script id="wiki-flat-data" type="application/json">{{ flat | tojson }}</script>
+
 <style>
-/* ── Layout ────────────────────────────────────────────────────────────────── */
-.wiki-main-layout {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  min-height: calc(100vh - 52px);
-  align-items: start;
-}
-
-/* ── Sidebar ─────────────────────────────────────────────────────────────── */
-.wiki-sidenav {
-  position: sticky;
-  top: 52px;
-  height: calc(100vh - 52px);
-  overflow-y: auto;
-  border-right: 1px solid #a2a9b1;
-  background: #f8f9fa;
-  display: flex;
-  flex-direction: column;
-}
-.wiki-sidenav-search {
-  padding: 10px 12px;
-  border-bottom: 1px solid #e0e0e0;
-  background: #fff;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-.wiki-sidenav-search input {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid #a2a9b1;
-  border-radius: 4px;
-  padding: 6px 10px;
-  font-size: 13px;
-  outline: none;
-  background: #fff;
-  color: #202122;
-}
-.wiki-sidenav-search input:focus { border-color: #3366cc; box-shadow: 0 0 0 2px rgba(51,102,204,.15); }
-.wiki-sidenav-tree { flex: 1; overflow-y: auto; padding: 6px 0; }
-.wiki-sidenav-item {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  padding: 4px 12px;
-  font-size: 13px;
-  color: #0645ad;
-  text-decoration: none;
-  line-height: 1.4;
-  border-left: 2px solid transparent;
-  transition: background .1s;
-}
-.wiki-sidenav-item:hover { background: #eaf0ff; border-left-color: #3366cc; }
-.wiki-sidenav-d0 { font-weight: 600; color: #202122; font-size: 13px; margin-top: 4px; }
-.wiki-sidenav-d0:hover { color: #0645ad; }
-.wiki-sidenav-d1 { font-size: 13px; }
-.wiki-sidenav-d2 { font-size: 12.5px; color: #54595d; }
-.wiki-sidenav-d3, .wiki-sidenav-d4 { font-size: 12px; color: #72777d; }
-.wiki-sidenav-num {
-  font-family: ui-monospace, monospace;
-  font-size: 10px;
-  color: #a0a0a0;
-  flex-shrink: 0;
-  min-width: 32px;
-}
-.wiki-sidenav-label { flex: 1; }
-.wiki-sidenav-item.wiki-search-hidden { display: none; }
-
-/* ── Main body ────────────────────────────────────────────────────────────── */
-.wiki-main-body {
-  padding: 28px 40px 60px;
-  max-width: 860px;
-}
-.wiki-body-section {
-  margin-bottom: 32px;
-  padding-bottom: 28px;
-  border-bottom: 1px solid #eaecf0;
-}
-.wiki-body-section:last-child { border-bottom: none; }
-.wiki-body-section-title {
-  font-size: 20px;
-  font-weight: normal;
-  font-family: 'Linux Libertine', Georgia, serif;
-  color: #202122;
-  margin: 0 0 10px;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.wiki-body-section-title a { color: #0645ad; text-decoration: none; }
-.wiki-body-section-title a:hover { text-decoration: underline; }
-.wiki-body-gdd-num {
-  font-family: ui-monospace, monospace;
-  font-size: 12px;
-  color: #a0a0a0;
-  flex-shrink: 0;
-}
-.wiki-body-children {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  columns: 2;
-  column-gap: 24px;
-}
-.wiki-body-children li {
-  break-inside: avoid;
-  padding: 3px 0;
-  font-size: 14px;
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  flex-wrap: wrap;
-}
-.wiki-body-children a { color: #0645ad; text-decoration: none; }
-.wiki-body-children a:hover { text-decoration: underline; }
-.wiki-body-child-num {
-  font-family: ui-monospace, monospace;
-  font-size: 10.5px;
-  color: #a0a0a0;
-  flex-shrink: 0;
-}
-.wiki-body-child-more {
-  font-size: 11px;
-  color: #a0a0a0;
-  margin-left: 2px;
-}
-.wiki-draft-badge {
-  font-size: 10px;
-  background: #f8d7da;
-  color: #721c24;
-  border-radius: 3px;
-  padding: 1px 5px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .03em;
-}
-
-/* ── Search results ───────────────────────────────────────────────────────── */
-.wiki-body-search-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.wiki-body-search-list li { padding: 6px 0; border-bottom: 1px solid #eaecf0; font-size: 14px; }
-.wiki-body-search-list li:last-child { border-bottom: none; }
-.wiki-body-search-list a { color: #0645ad; text-decoration: none; }
-.wiki-body-search-list a:hover { text-decoration: underline; }
-.wiki-body-search-list .sr-num { font-family: monospace; font-size: 11px; color: #a0a0a0; margin-right: 4px; }
-.wiki-body-search-list .sr-depth { font-size: 11px; color: #a0a0a0; margin-left: 4px; }
-
-/* ── Empty state ─────────────────────────────────────────────────────────── */
-.wiki-empty-state {
+/* ───────────────────────────────────── HERO */
+.wh-hero {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f2744 100%);
+  padding: 52px 24px 44px;
   text-align: center;
-  margin: 80px auto;
-  max-width: 420px;
+  position: relative;
+  overflow: hidden;
 }
-.wiki-empty-icon { font-size: 48px; margin-bottom: 12px; }
-.wiki-empty-state h2 { font-weight: normal; color: #202122; margin-bottom: 8px; }
-.wiki-empty-state p { color: #54595d; margin-bottom: 20px; }
-
-/* ── Responsive ──────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .wiki-main-layout { grid-template-columns: 1fr; }
-  .wiki-sidenav { position: static; height: auto; border-right: none; border-bottom: 1px solid #a2a9b1; }
-  .wiki-main-body { padding: 20px 16px; }
-  .wiki-body-children { columns: 1; }
+.wh-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99,140,255,.18) 0%, transparent 70%);
+  pointer-events: none;
 }
+.wh-hero-inner { position: relative; max-width: 760px; margin: 0 auto; }
+.wh-hero-title {
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+.wh-hero-sub { font-size: 15px; color: rgba(255,255,255,.45); margin-bottom: 28px; letter-spacing: .06em; text-transform: uppercase; font-weight: 500; }
+.wh-search-wrap { position: relative; max-width: 560px; margin: 0 auto; }
+.wh-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,.97);
+  border-radius: 12px;
+  padding: 0 16px;
+  box-shadow: 0 4px 32px rgba(0,0,0,.35);
+}
+.wh-search-icon { width: 18px; height: 18px; color: #94a3b8; flex-shrink: 0; }
+#wh-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  padding: 14px 0;
+  color: #1e293b;
+}
+#wh-search-input::placeholder { color: #94a3b8; }
+.wh-search-kbd { font-size:11px; color:#94a3b8; border:1px solid #e2e8f0; border-radius:4px; padding:2px 5px; font-family:ui-monospace,monospace; white-space:nowrap; }
+.wh-search-dropdown {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: #fff; border-radius: 10px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.2);
+  max-height: 380px; overflow-y: auto; z-index: 200; text-align: left;
+}
+.wh-sr-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px; color: #1e293b;
+  text-decoration: none; transition: background .1s;
+}
+.wh-sr-item:last-child { border-bottom: none; }
+.wh-sr-item:hover, .wh-sr-item.wh-sr-active { background: #eef2ff; }
+.wh-sr-num { font-family: monospace; font-size: 11px; color: #94a3b8; min-width: 40px; flex-shrink: 0; }
+.wh-sr-title { flex: 1; font-weight: 500; }
+.wh-sr-empty { padding: 20px 16px; color: #94a3b8; font-size: 14px; font-style: italic; }
+/* ───────────────────────────────────── PAGE */
+.wh-page { max-width: 1200px; margin: 0 auto; padding: 36px 28px 80px; }
+.wh-empty { text-align: center; padding: 80px 20px; color: #64748b; }
+.wh-empty-icon { font-size: 52px; margin-bottom: 14px; }
+.wh-empty h2 { font-weight: 600; color: #1e293b; margin-bottom: 8px; font-size: 22px; }
+/* ───────────────────────────────────── SECTION */
+.wh-section { margin-bottom: 36px; background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.07),0 4px 20px rgba(0,0,0,.04); overflow: hidden; border: 1px solid #e8edf3; }
+.wh-section-head { display: flex; align-items: center; gap: 12px; padding: 16px 20px 14px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; }
+.wh-section-accent { width: 4px; height: 36px; border-radius: 3px; flex-shrink: 0; }
+.wh-section-num { font-family: ui-monospace,monospace; font-size: 11px; color: #94a3b8; background: #f1f5f9; border-radius: 5px; padding: 2px 7px; flex-shrink: 0; }
+.wh-section-title-link { font-size: 17px; font-weight: 700; color: #0f172a; text-decoration: none; flex: 1; line-height: 1.3; }
+.wh-section-title-link:hover { color: #3b82f6; }
+.wh-section-count { font-size: 12px; color: #94a3b8; background: #f1f5f9; border-radius: 20px; padding: 2px 9px; flex-shrink: 0; }
+.wh-section-settings { background: none; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; cursor: pointer; color: #94a3b8; font-size: 14px; line-height: 1; flex-shrink: 0; transition: background .15s,color .15s; }
+.wh-section-settings:hover { background: #e2e8f0; color: #475569; }
+.wh-section-body { padding: 18px 20px 20px; }
+/* LIST */
+.wh-list { columns: 2; column-gap: 24px; list-style: none; margin: 0; padding: 0; }
+@media (max-width: 640px) { .wh-list { columns: 1; } }
+.wh-list li { break-inside: avoid; margin-bottom: 4px; display: flex; align-items: baseline; gap: 6px; font-size: 14px; }
+.wh-list a { color: #1d4ed8; text-decoration: none; line-height: 1.5; }
+.wh-list a:hover { text-decoration: underline; color: #1e40af; }
+.wh-list .wh-num { font-family: monospace; font-size: 10.5px; color: #94a3b8; flex-shrink: 0; }
+.wh-list .wh-more { font-size: 11px; color: #94a3b8; margin-left: 2px; }
+/* GRID */
+.wh-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(180px,1fr)); gap: 12px; }
+.wh-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 14px 12px; text-decoration: none; color: #1e293b; transition: box-shadow .15s,border-color .15s,transform .12s; background: #fff; display: block; }
+.wh-card:hover { box-shadow: 0 4px 16px rgba(59,130,246,.15); border-color: #93c5fd; transform: translateY(-1px); }
+.wh-card-num { font-family: monospace; font-size: 10px; color: #94a3b8; margin-bottom: 5px; }
+.wh-card-title { font-size: 13.5px; font-weight: 600; color: #1e293b; line-height: 1.4; }
+.wh-card-more { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+/* PORTRAIT */
+.wh-portraits { display: grid; grid-template-columns: repeat(auto-fill,minmax(110px,1fr)); gap: 14px; }
+.wh-portrait { text-align: center; text-decoration: none; color: #1e293b; transition: transform .12s; display: block; }
+.wh-portrait:hover { transform: translateY(-2px); }
+.wh-portrait:hover .wh-portrait-name { color: #1d4ed8; }
+.wh-portrait-img { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; color: #fff; overflow: hidden; flex-shrink: 0; border: 3px solid #fff; box-shadow: 0 2px 10px rgba(0,0,0,.12); }
+.wh-portrait-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.wh-portrait-name { font-size: 12.5px; font-weight: 600; line-height: 1.3; color: #1e293b; word-break: break-word; }
+.wh-portrait-num { font-size: 10px; font-family: monospace; color: #94a3b8; }
+/* COMPACT */
+.wh-compact { list-style: none; margin: 0; padding: 0; }
+.wh-compact li { padding: 5px 0; border-bottom: 1px solid #f8fafc; display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; }
+.wh-compact li:last-child { border-bottom: none; }
+.wh-compact a { color: #1d4ed8; text-decoration: none; }
+.wh-compact a:hover { text-decoration: underline; }
+.wh-compact .wh-num { font-family: monospace; font-size: 10px; color: #94a3b8; flex-shrink: 0; min-width: 44px; }
+.wh-compact .wh-more { font-size: 11px; color: #94a3b8; }
+.wh-section-footer { padding: 10px 20px 14px; border-top: 1px solid #f1f5f9; font-size: 12.5px; }
+.wh-section-footer a { color: #3b82f6; text-decoration: none; font-weight: 500; }
+.wh-section-footer a:hover { text-decoration: underline; }
+.wiki-draft-badge { font-size: 9.5px; background: #fee2e2; color: #991b1b; border-radius: 3px; padding: 1px 5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+/* MODAL */
+.wh-modal-backdrop { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; }
+.wh-modal-box { background: #fff; border-radius: 12px; box-shadow: 0 8px 40px rgba(0,0,0,.2); width: 380px; max-width: 94vw; overflow: hidden; }
+.wh-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #f1f5f9; font-size: 15px; }
+.wh-modal-close { background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer; line-height: 1; padding: 0 2px; }
+.wh-modal-close:hover { color: #475569; }
+.wh-mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 16px; }
+.wh-mode-opt { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 10px; border: 2px solid #e2e8f0; border-radius: 10px; background: #fff; cursor: pointer; transition: border-color .15s,background .15s; text-align: center; }
+.wh-mode-opt:hover { border-color: #3b82f6; background: #eff6ff; }
+.wh-mode-opt.active { border-color: #2563eb; background: #eff6ff; }
+.wh-mode-icon { font-size: 22px; margin-bottom: 2px; }
+.wh-mode-opt strong { font-size: 13px; color: #1e293b; }
+.wh-mode-opt small { font-size: 11px; color: #64748b; }
+@media (max-width: 700px) { .wh-page { padding: 20px 12px 60px; } .wh-hero { padding: 36px 16px 32px; } .wh-section-head { flex-wrap: wrap; } }
 </style>
 
 <script>
-// ── Search ──────────────────────────────────────────────────────────────────
 (function () {
-  var searchInput   = document.getElementById('wiki-search');
-  var normalView    = document.getElementById('wiki-body-normal');
-  var resultsView   = document.getElementById('wiki-search-results');
-  var resultsList   = document.getElementById('wiki-search-list');
-  var sidenavItems  = document.querySelectorAll('.wiki-sidenav-item');
-  if (!searchInput) return;
-
   var flat = JSON.parse(document.getElementById('wiki-flat-data').textContent);
-
-  searchInput.addEventListener('input', function () {
-    var q = searchInput.value.trim().toLowerCase();
-    if (!q) {
-      // reset
-      normalView && (normalView.style.display = '');
-      resultsView && (resultsView.style.display = 'none');
-      sidenavItems.forEach(function (el) { el.classList.remove('wiki-search-hidden'); });
-      return;
-    }
-
-    // filter sidebar
-    sidenavItems.forEach(function (el) {
-      var match = (el.dataset.title || '').indexOf(q) !== -1 || (el.dataset.num || '').indexOf(q) !== -1;
-      el.classList.toggle('wiki-search-hidden', !match);
-    });
-
-    // build results
-    var hits = flat.filter(function (a) {
-      return a.title.toLowerCase().indexOf(q) !== -1
-          || (a.gdd_num || '').indexOf(q) !== -1;
-    });
-
-    normalView && (normalView.style.display = 'none');
-    resultsView && (resultsView.style.display = '');
-    if (resultsList) {
-      if (!hits.length) {
-        resultsList.innerHTML = '<li style="color:#72777d;font-style:italic">No articles match.</li>';
-      } else {
-        resultsList.innerHTML = hits.map(function (a) {
-          var indent = '&nbsp;'.repeat(a.depth * 3);
-          return '<li>' + indent
-            + '<a href="/project/{{ project.id }}/wiki/' + encodeURIComponent(a.slug) + '">'
-            + (a.gdd_num ? '<span class="sr-num">' + a.gdd_num + '</span> ' : '')
-            + escHtml(a.title) + '</a>'
-            + (a.depth ? '<span class="sr-depth">depth ' + a.depth + '</span>' : '')
-            + '</li>';
-        }).join('');
-      }
-    }
-  });
-
-  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-})();
-
-// ── Build body sections from flat data ─────────────────────────────────────
-(function () {
-  var flat     = JSON.parse(document.getElementById('wiki-flat-data').textContent);
-  var bodyEl   = document.getElementById('wiki-body-normal');
-  if (!bodyEl || !flat.length) return;
-
   var base = '/project/{{ project.id }}/wiki/';
-
-  // Separate root items (depth 0) and build index by id
-  var roots = flat.filter(function (a) { return a.depth === 0; });
-
-  // For each root, collect depth-1 children whose gdd_num starts with root.gdd_num + '.'
-  function directChildren(root) {
+  if (!flat.length) return;
+  var ACCENTS = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#ec4899','#6366f1','#14b8a6'];
+  var MODES_KEY = 'wh_modes_{{ project.id }}';
+  var modes = {};
+  try { modes = JSON.parse(localStorage.getItem(MODES_KEY) || '{}'); } catch(e) {}
+  function getMode(id) { return modes[id] || 'list'; }
+  function setMode(id, m) { modes[id] = m; try { localStorage.setItem(MODES_KEY, JSON.stringify(modes)); } catch(e) {} }
+  function childrenOf(root) {
     if (!root.gdd_num) return [];
-    var prefix = root.gdd_num + '.';
-    return flat.filter(function (a) {
-      return a.depth === 1 && a.gdd_num && a.gdd_num.indexOf(prefix) === 0;
-    });
+    var pfx = root.gdd_num + '.';
+    return flat.filter(function(a){ return a.depth === 1 && a.gdd_num && a.gdd_num.slice(0,pfx.length) === pfx; });
   }
-
-  function grandchildCount(child) {
-    if (!child.gdd_num) return 0;
-    var prefix = child.gdd_num + '.';
-    return flat.filter(function (a) {
-      return a.depth === 2 && a.gdd_num && a.gdd_num.indexOf(prefix) === 0;
-    }).length;
+  function descendantCount(a) {
+    var pfx = a.gdd_num ? a.gdd_num + '.' : null;
+    if (!pfx) return 0;
+    return flat.filter(function(x){ return x.gdd_num && x.gdd_num.slice(0,pfx.length) === pfx; }).length;
   }
+  function titleColor(t) { var h=0; for(var i=0;i<t.length;i++) h=(h*31+t.charCodeAt(i))&0xfffffff; return ACCENTS[h%ACCENTS.length]; }
+  function initials(t) { var w=t.trim().split(/\s+/); return w.length>=2?(w[0][0]+w[1][0]).toUpperCase():t.slice(0,2).toUpperCase(); }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function gc(c){
+    if(!c.gdd_num) return 0;
+    var pfx=c.gdd_num+'.';
+    return flat.filter(function(x){ return x.gdd_num && x.gdd_num.slice(0,pfx.length)===pfx; }).length;
+  }
+  function draft(a){ return a.is_published?'':'<span class="wiki-draft-badge">Draft</span>'; }
+  function url(a){ return base+encodeURIComponent(a.slug); }
 
-  var html = '';
-  roots.forEach(function (root) {
-    var children = directChildren(root);
-    html += '<section class="wiki-body-section">';
-    html += '<h2 class="wiki-body-section-title">';
-    if (root.gdd_num) html += '<span class="wiki-body-gdd-num">' + escHtml(root.gdd_num) + '</span>';
-    html += '<a href="' + base + encodeURIComponent(root.slug) + '">' + escHtml(root.title) + '</a>';
-    if (!root.is_published) html += '<span class="wiki-draft-badge">Draft</span>';
-    html += '</h2>';
-
-    if (children.length) {
-      html += '<ul class="wiki-body-children">';
-      children.forEach(function (c) {
-        var gc = grandchildCount(c);
-        html += '<li>';
-        html += '<a href="' + base + encodeURIComponent(c.slug) + '">';
-        if (c.gdd_num) html += '<span class="wiki-body-child-num">' + escHtml(c.gdd_num) + '</span> ';
-        html += escHtml(c.title) + '</a>';
-        if (!c.is_published) html += ' <span class="wiki-draft-badge">Draft</span>';
-        if (gc) html += ' <span class="wiki-body-child-more">+' + gc + ' more</span>';
-        html += '</li>';
-      });
-      html += '</ul>';
+  function renderBody(root, children, mode) {
+    if (mode === 'grid') {
+      return '<div class="wh-grid">'+children.map(function(c){
+        var g=gc(c);
+        return '<a class="wh-card" href="'+url(c)+'">'+
+          (c.gdd_num?'<div class="wh-card-num">'+esc(c.gdd_num)+'</div>':'')+
+          '<div class="wh-card-title">'+esc(c.title)+draft(c)+'</div>'+
+          (g?'<div class="wh-card-more">+'+g+' sub-articles</div>':'')+'</a>';
+      }).join('')+'</div>';
     }
-    html += '</section>';
+    if (mode === 'portrait') {
+      return '<div class="wh-portraits">'+children.map(function(c){
+        var col=titleColor(c.title), ini=initials(c.title);
+        return '<a class="wh-portrait" href="'+url(c)+'">'+
+          '<div class="wh-portrait-img" style="background:'+col+'">'+
+          '<img src="/project/{{ project.id }}/wiki/images/'+esc(c.slug)+'-hero.jpg" onerror="this.style.display=\'none\'" alt="" loading="lazy">'+
+          '<span style="position:relative">'+esc(ini)+'</span></div>'+
+          '<div class="wh-portrait-name">'+esc(c.title)+draft(c)+'</div>'+
+          (c.gdd_num?'<div class="wh-portrait-num">'+esc(c.gdd_num)+'</div>':'')+'</a>';
+      }).join('')+'</div>';
+    }
+    if (mode === 'compact') {
+      return '<ul class="wh-compact">'+children.map(function(c){
+        var g=gc(c);
+        return '<li>'+(c.gdd_num?'<span class="wh-num">'+esc(c.gdd_num)+'</span>':'')+
+          '<a href="'+url(c)+'">'+esc(c.title)+'</a>'+draft(c)+(g?' <span class="wh-more">+'+g+'</span>':'')+'</li>';
+      }).join('')+'</ul>';
+    }
+    // list (default)
+    return '<ul class="wh-list">'+children.map(function(c){
+      var g=gc(c);
+      return '<li>'+(c.gdd_num?'<span class="wh-num">'+esc(c.gdd_num)+'</span>':'')+
+        '<a href="'+url(c)+'">'+esc(c.title)+'</a>'+draft(c)+(g?' <span class="wh-more">+'+g+'</span>':'')+'</li>';
+    }).join('')+'</ul>';
+  }
+
+  var page = document.getElementById('wh-page');
+  var roots = flat.filter(function(a){ return a.depth===0; });
+  roots.forEach(function(root, ri){
+    var children  = childrenOf(root);
+    var totalDesc = descendantCount(root);
+    var accent    = ACCENTS[ri%ACCENTS.length];
+    var mode      = getMode(root.id);
+    var sec = document.createElement('div');
+    sec.className = 'wh-section';
+    sec.dataset.rootId = root.id;
+    var headHtml = '<div class="wh-section-head">'+
+      '<div class="wh-section-accent" style="background:'+accent+'"></div>'+
+      (root.gdd_num?'<span class="wh-section-num">'+esc(root.gdd_num)+'</span>':'')+
+      '<a class="wh-section-title-link" href="'+url(root)+'">'+esc(root.title)+'</a>'+
+      draft(root)+
+      (totalDesc?'<span class="wh-section-count">'+totalDesc+' articles</span>':'')+
+      (children.length?'<button class="wh-section-settings" data-root="'+root.id+'" title="Change display mode">&#9881;</button>':'')+
+      '</div>';
+    var bodyHtml = '';
+    if (children.length) {
+      bodyHtml = '<div class="wh-section-body" id="wh-body-'+root.id+'">'+renderBody(root,children,mode)+'</div>';
+      if (totalDesc > children.length) {
+        bodyHtml += '<div class="wh-section-footer"><a href="'+url(root)+'">View all '+totalDesc+' articles in this section &rarr;</a></div>';
+      }
+    } else {
+      bodyHtml = '<div class="wh-section-body" style="color:#94a3b8;font-size:13px;font-style:italic">No sub-articles yet.</div>';
+    }
+    sec.innerHTML = headHtml+bodyHtml;
+    page.appendChild(sec);
   });
 
-  // Unnumbered depth-0 articles
-  var unnumbered = flat.filter(function (a) { return a.depth === 0 && !a.gdd_num; });
+  var unnumbered = flat.filter(function(a){ return a.depth===0 && !a.gdd_num; });
   if (unnumbered.length) {
-    html += '<section class="wiki-body-section">';
-    html += '<h2 class="wiki-body-section-title" style="color:#72777d">Uncategorized</h2>';
-    html += '<ul class="wiki-body-children">';
-    unnumbered.forEach(function (a) {
-      html += '<li><a href="' + base + encodeURIComponent(a.slug) + '">' + escHtml(a.title) + '</a></li>';
-    });
-    html += '</ul></section>';
+    var sec=document.createElement('div'); sec.className='wh-section';
+    sec.innerHTML='<div class="wh-section-head"><div class="wh-section-accent" style="background:#94a3b8"></div><span class="wh-section-title-link" style="cursor:default">Uncategorized</span></div>'+
+      '<div class="wh-section-body"><ul class="wh-list">'+
+      unnumbered.map(function(a){ return '<li><a href="'+url(a)+'">'+esc(a.title)+'</a></li>'; }).join('')+
+      '</ul></div>';
+    page.appendChild(sec);
   }
 
-  bodyEl.innerHTML = html;
+  // Mode modal
+  var modal=document.getElementById('wh-mode-modal');
+  var modalTitle=document.getElementById('wh-mode-title');
+  var activeRootId=null;
+  page.addEventListener('click',function(e){
+    var btn=e.target.closest('.wh-section-settings');
+    if(!btn) return;
+    activeRootId=parseInt(btn.dataset.root,10);
+    var root=flat.find(function(a){ return a.id===activeRootId; });
+    var cur=getMode(activeRootId);
+    modalTitle.textContent='Display: '+(root?root.title:'');
+    modal.querySelectorAll('.wh-mode-opt').forEach(function(o){ o.classList.toggle('active',o.dataset.mode===cur); });
+    modal.style.display='flex';
+  });
+  modal.addEventListener('click',function(e){
+    var opt=e.target.closest('.wh-mode-opt');
+    if(opt){
+      var newMode=opt.dataset.mode;
+      setMode(activeRootId,newMode);
+      var root=flat.find(function(a){ return a.id===activeRootId; });
+      var children=childrenOf(root);
+      var bodyEl=document.getElementById('wh-body-'+activeRootId);
+      if(bodyEl) bodyEl.innerHTML=renderBody(root,children,newMode);
+      modal.style.display='none'; return;
+    }
+    if(e.target===modal) modal.style.display='none';
+  });
+  document.getElementById('wh-mode-close').addEventListener('click',function(){ modal.style.display='none'; });
 
-  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  // Search
+  var searchInput=document.getElementById('wh-search-input');
+  var searchDrop=document.getElementById('wh-search-dropdown');
+  var srActive=-1;
+  function srRender(results,q){
+    if(!results.length){ searchDrop.innerHTML='<div class="wh-sr-empty">No results for &ldquo;'+esc(q)+'&rdquo;</div>'; }
+    else {
+      var re=q?new RegExp('('+q.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')+')','gi'):null;
+      searchDrop.innerHTML=results.slice(0,50).map(function(a,i){
+        var title=esc(a.title);
+        if(re) title=title.replace(re,'<mark style="background:#fef08a;border-radius:2px">$1</mark>');
+        var indent=(a.depth||0)*12;
+        return '<a class="wh-sr-item" href="'+url(a)+'" data-idx="'+i+'" style="padding-left:'+(16+indent)+'px">'+
+          (a.gdd_num?'<span class="wh-sr-num">'+esc(a.gdd_num)+'</span>':'<span class="wh-sr-num"></span>')+
+          '<span class="wh-sr-title">'+title+'</span></a>';
+      }).join('');
+    }
+    srActive=-1; searchDrop.style.display='';
+  }
+  searchInput.addEventListener('input',function(){
+    var q=searchInput.value.trim();
+    if(!q){ searchDrop.style.display='none'; return; }
+    var ql=q.toLowerCase();
+    var res=flat.filter(function(a){ return a.title.toLowerCase().indexOf(ql)!==-1||(a.gdd_num||''). indexOf(ql)!==-1; });
+    srRender(res,q);
+  });
+  searchInput.addEventListener('keydown',function(e){
+    var items=searchDrop.querySelectorAll('.wh-sr-item');
+    if(e.key==='ArrowDown'){ e.preventDefault(); srActive=Math.min(srActive+1,items.length-1); items.forEach(function(el,i){el.classList.toggle('wh-sr-active',i===srActive);}); if(items[srActive]) items[srActive].scrollIntoView({block:'nearest'}); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); srActive=Math.max(srActive-1,0); items.forEach(function(el,i){el.classList.toggle('wh-sr-active',i===srActive);}); }
+    else if(e.key==='Enter'&&srActive>=0&&items[srActive]){ window.location.href=items[srActive].href; }
+    else if(e.key==='Escape'){ searchDrop.style.display='none'; searchInput.blur(); }
+  });
+  document.addEventListener('click',function(e){ if(!e.target.closest('.wh-search-wrap')) searchDrop.style.display='none'; });
 })();
 </script>
 
@@ -830,6 +852,49 @@
     });
   });
 
+})();
+</script>
+
+<style>
+/* ── Dark mode ── */
+body.wiki-dark { background:#0f1117; color:#e2e8f0; }
+body.wiki-dark .wiki-topbar { background:#1a1d2e; border-color:#2d3148; }
+body.wiki-dark .wiki-topbar-home,body.wiki-dark .wiki-topbar-crumb { color:#93c5fd; }
+body.wiki-dark .wh-hero { background:linear-gradient(135deg,#0d1117 0%,#161925 60%,#0d1117 100%); }
+body.wiki-dark .wh-search-box { background:#1a1d2e; border-color:#2d3148; color:#e2e8f0; }
+body.wiki-dark .wh-search-input { background:transparent; color:#e2e8f0; }
+body.wiki-dark .wh-search-input::placeholder { color:#64748b; }
+body.wiki-dark .wh-drop { background:#1a1d2e; border-color:#2d3148; }
+body.wiki-dark .wh-drop-item { color:#e2e8f0; }
+body.wiki-dark .wh-drop-item:hover { background:#1e2540; }
+body.wiki-dark .wh-panel { background:#161925; border-color:#2d3148; }
+body.wiki-dark .wh-panel-head { background:#1a1d2e; border-color:#2d3148; }
+body.wiki-dark .wh-panel-title { color:#f1f5f9; }
+body.wiki-dark .wh-panel-meta { color:#64748b; }
+body.wiki-dark .wh-card { background:#1a1d2e; border-color:#2d3148; color:#e2e8f0; }
+body.wiki-dark .wh-card:hover { border-color:#3b82f6; background:#1e2540; }
+body.wiki-dark .wh-card-title { color:#f1f5f9; }
+body.wiki-dark .wh-card-sub { color:#64748b; }
+body.wiki-dark .wh-list-item { border-color:#2d3148; color:#e2e8f0; }
+body.wiki-dark .wh-list-item:hover { background:#1a1d2e; }
+body.wiki-dark .wh-list-num { color:#64748b; }
+body.wiki-dark .wh-list-title { color:#93c5fd; }
+</style>
+
+<script>
+(function () {
+  var DARK_KEY = 'wiki_dark_mode';
+  var btn = document.getElementById('wiki-dark-toggle');
+  function applyDark(on) {
+    document.body.classList.toggle('wiki-dark', on);
+    if (btn) btn.textContent = on ? '☀️' : '🌙';
+  }
+  applyDark(localStorage.getItem(DARK_KEY) === '1');
+  if (btn) btn.addEventListener('click', function () {
+    var on = !document.body.classList.contains('wiki-dark');
+    localStorage.setItem(DARK_KEY, on ? '1' : '0');
+    applyDark(on);
+  });
 })();
 </script>
 </body>

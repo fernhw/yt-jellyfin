@@ -35,5 +35,8 @@ Hole in hand: a visible wound or injury on the hand caused by a sharp object or 
 Branch scars: visible scars on the skin caused by scratches or cuts from tree branches or other plants.
 Branch on head: A visible injury on the head caused by a sharp or blunt object, such as a branch or rock.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

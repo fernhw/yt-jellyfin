@@ -24,6 +24,8 @@
   <div class="wiki-topbar-right">
     {% if not article.is_published %}<span class="wiki-draft-badge">Draft</span>{% endif %}
     <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_gdd', project_id=project.id) }}">📄 GDD</a>
+    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_images_page', project_id=project.id) }}">🖼 Images</a>
+    <button class="btn btn-sm btn-ghost" id="wiki-dark-toggle" title="Toggle dark mode">🌙</button>
   </div>
 </div>
 
@@ -36,16 +38,36 @@
     <div class="wiki-toc" id="wiki-toc">
       {# Populated by JS from rendered headings #}
     </div>
-    <div class="wiki-aside-title" style="margin-top:20px">Articles</div>
-    {% for node in flat %}
-    {% if not node.parent_id %}
-    <div class="wiki-nav-item{% if node.slug == article.slug %} is-current{% endif %}"
-         style="padding-left: 8px">
-      <a href="{{ url_for('wiki_article', project_id=project.id, slug=node.slug) }}"
-         class="wiki-nav-link{% if node.slug == article.slug %} is-current{% endif %}">{{ node.title }}</a>
+
+    {# Parent article #}
+    {% if parent_art %}
+    <div class="wiki-aside-title" style="margin-top:18px">Parent</div>
+    <div class="wiki-nav-item">
+      <a href="{{ parent_art.url }}" class="wiki-nav-link">↑ {{ parent_art.title }}</a>
     </div>
     {% endif %}
+
+    {# Siblings (same parent) #}
+    {% if siblings %}
+    <div class="wiki-aside-title" style="margin-top:18px">{% if parent_art %}In {{ parent_art.title }}{% else %}Top-level{% endif %}</div>
+    {% for s in siblings %}
+    <div class="wiki-nav-item{% if s.slug == article.slug %} is-current{% endif %}">
+      <a href="{{ s.url }}" class="wiki-nav-link{% if s.slug == article.slug %} is-current{% endif %}">
+        {% if s.slug == article.slug %}<strong>{{ s.title }}</strong>{% else %}{{ s.title }}{% endif %}
+      </a>
+    </div>
     {% endfor %}
+    {% endif %}
+
+    {# Children of this article #}
+    {% if children %}
+    <div class="wiki-aside-title" style="margin-top:18px">Sub-articles</div>
+    {% for c in children %}
+    <div class="wiki-nav-item" style="padding-left:12px">
+      <a href="{{ c.url }}" class="wiki-nav-link">{{ c.title }}</a>
+    </div>
+    {% endfor %}
+    {% endif %}
   </aside>
 
   {# Article body: infobox floats right inside, text wraps around it (Wikipedia style) #}
@@ -157,7 +179,7 @@
   var imgBase  = data.img_base;
   var title    = data.title;
 
-  marked.setOptions({ breaks: false, gfm: true });
+  marked.use({ breaks: true, gfm: true });
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -175,7 +197,36 @@
     md = md.replace(/\|\|([^|]+)\|\|/g, function (_, text) {
       return '<span class="wiki-spoiler" title="Click to reveal" onclick="this.classList.toggle(\'revealed\')">' + text + '</span>';
     });
+    // [image name="file.jpg" caption="text"] shortcode → figure HTML (kept raw, not inside marked)
+    // Handled in postProcessShortcodes below after marked.parse
     return md;
+  }
+
+  // Resolve [image] shortcodes after marked renders the HTML
+  function postProcessShortcodes(el) {
+    el.innerHTML = el.innerHTML.replace(
+      /\[image\s+name="([^"]+)"(?:\s+caption="([^"]*)")?(?:\s+side="([^"]*)")?\s*\/?]/gi,
+      function (_, name, caption, side) {
+        var src = name.startsWith('http') || name.startsWith('/') ? name : imgBase + name;
+        var cap = caption || '';
+        var align = (side || '').toLowerCase();
+        var figStyle = 'display:inline-block;max-width:' + (align ? '48%' : '100%') + ';vertical-align:top;margin:8px ' + (align === 'left' ? '16px 8px 0' : align === 'right' ? '0 16px 8px' : '8px') + ';text-align:center;';
+        return '<figure style="' + figStyle + '">'
+          + '<img src="' + src + '" alt="' + cap + '" class="wiki-img wiki-lightbox-trigger" data-src="' + src + '" data-caption="' + cap + '" style="max-width:100%;cursor:zoom-in;border-radius:4px">'
+          + (cap ? '<figcaption style="font-size:12px;color:#54595d;margin-top:4px">' + cap + '</figcaption>' : '')
+          + '</figure>';
+      }
+    );
+    // Also make all regular images lightbox-triggerable
+    el.querySelectorAll('img.wiki-img').forEach(function (img) {
+      if (!img.classList.contains('wiki-infobox-img') && !img.dataset.lightboxDone) {
+        img.classList.add('wiki-lightbox-trigger');
+        img.dataset.src = img.src;
+        img.dataset.caption = img.alt || '';
+        img.style.cursor = 'zoom-in';
+        img.dataset.lightboxDone = '1';
+      }
+    });
   }
 
   function postProcess(el) {
@@ -269,13 +320,26 @@
   if (mainSection && mainSection.content.trim()) {
     contentEl.innerHTML = renderMd(mainSection.content);
     postProcess(contentEl);
+    postProcessShortcodes(contentEl);
   } else {
     contentEl.innerHTML = '<p class="wiki-empty-note">No content yet. <a href="{{ url_for("wiki_edit", project_id=project.id, slug=article.slug) }}">Add content →</a></p>';
   }
 
-  // ── Render extra sections (anything not META/HERO/MAIN_SECTION/REFERENCES) ─
+  // ── Render SECONDARY section (wiki-only — not in GDD) ─────────────────────
+  var secondarySection = sections.find(function (s) { return s.type === 'SECONDARY'; });
+  if (secondarySection && secondarySection.content.trim()) {
+    var secDiv = document.createElement('section');
+    secDiv.className = 'wiki-secondary-section';
+    secDiv.innerHTML = '<div class="wiki-secondary-divider"></div>'
+      + '<div class="wiki-secondary-body">' + renderMd(secondarySection.content) + '</div>';
+    postProcess(secDiv);
+    postProcessShortcodes(secDiv);
+    extraEl.appendChild(secDiv);
+  }
 
-  var skipTypes = { META: 1, HERO: 1, MAIN_SECTION: 1, REFERENCES: 1 };
+  // ── Render extra sections (anything not META/HERO/MAIN_SECTION/SECONDARY/REFERENCES) ─
+
+  var skipTypes = { META: 1, HERO: 1, MAIN_SECTION: 1, SECONDARY: 1, REFERENCES: 1 };
   sections.forEach(function (s) {
     if (skipTypes[s.type] || !s.content.trim()) return;
     var sLabel = s.type.replace(/_/g, ' ')
@@ -327,5 +391,103 @@
   });
 })();
 </script>
+
+<style>
+/* ── Lightbox ── */
+.wiki-lightbox-overlay {
+  display:none;position:fixed;inset:0;z-index:10000;
+  background:rgba(0,0,0,.88);align-items:center;justify-content:center;cursor:zoom-out;
+}
+.wiki-lightbox-overlay.active { display:flex; }
+.wiki-lightbox-inner { position:relative;max-width:90vw;max-height:90vh;text-align:center; }
+.wiki-lightbox-inner img { max-width:90vw;max-height:80vh;object-fit:contain;border-radius:4px;box-shadow:0 4px 40px rgba(0,0,0,.6); }
+.wiki-lightbox-caption { color:#e2e8f0;font-size:13px;margin-top:10px;max-width:600px; }
+.wiki-lightbox-close { position:absolute;top:-16px;right:-16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:36px;height:36px;border-radius:50%;cursor:pointer;line-height:36px;text-align:center;padding:0; }
+body.wiki-dark .wiki-topbar { background:#1a1d2e; border-color:#2d3148; }
+body.wiki-dark .wiki-topbar-home,body.wiki-dark .wiki-topbar-crumb { color:#93c5fd; }
+body.wiki-dark .wiki-topbar-current { color:#e2e8f0; }
+body.wiki-dark .wiki-aside-nav { background:#161925; border-color:#2d3148; }
+body.wiki-dark .wiki-aside-title { color:#94a3b8; border-color:#2d3148; }
+body.wiki-dark .wiki-nav-link { color:#93c5fd; }
+body.wiki-dark .wiki-nav-link:hover { background:#1e2540; }
+body.wiki-dark .wiki-nav-item.is-current { background:#1e2540; }
+body.wiki-dark .wiki-article-body { background:#161925; border-color:#2d3148; color:#e2e8f0; }
+body.wiki-dark .wiki-infobox { background:#1a1d2e; border-color:#2d3148; color:#cbd5e1; }
+body.wiki-dark .wiki-infobox-title { color:#f1f5f9; border-color:#2d3148; }
+body.wiki-dark .wiki-infobox-key { color:#94a3b8; }
+body.wiki-dark .wiki-infobox-row { border-color:#2d3148; }
+body.wiki-dark .wiki-article-body h1,body.wiki-dark .wiki-article-body h2,
+body.wiki-dark .wiki-article-body h3,body.wiki-dark .wiki-article-body h4 { color:#f1f5f9; border-color:#2d3148; }
+body.wiki-dark .wiki-article-body a { color:#93c5fd; }
+body.wiki-dark .wiki-article-body blockquote { border-color:#3b4fd8; background:#1a1d2e; color:#94a3b8; }
+body.wiki-dark .wiki-article-body code,body.wiki-dark .wiki-article-body pre { background:#0d1117; color:#c9d1d9; border-color:#30363d; }
+body.wiki-dark .wiki-article-body table th { background:#1e2540; }
+body.wiki-dark .wiki-article-body table td,body.wiki-dark .wiki-article-body table th { border-color:#2d3148; }
+body.wiki-dark .wiki-article-body table tr:nth-child(even) { background:#161925; }
+body.wiki-dark .wiki-children-section { border-color:#2d3148; }
+body.wiki-dark .wiki-children-heading { color:#94a3b8; }
+body.wiki-dark .wiki-prevnext { border-color:#2d3148; }
+body.wiki-dark .wiki-prevnext a { color:#93c5fd; }
+body.wiki-dark .wiki-extra-section { border-color:#2d3148; background:#161925; }
+body.wiki-dark .wiki-extra-section-title { color:#94a3b8; }
+body.wiki-dark .wiki-secondary-section .wiki-secondary-divider { border-color:#2d3148; }
+body.wiki-dark .wiki-editor-footer { background:#1a1d2e; border-color:#2d3148; }
+body.wiki-dark .wiki-editor-footer-link { color:#93c5fd; }
+</style>
+
+<script>
+(function () {
+  var DARK_KEY = 'wiki_dark_mode';
+  var btn = document.getElementById('wiki-dark-toggle');
+  function applyDark(on) {
+    document.body.classList.toggle('wiki-dark', on);
+    if (btn) btn.textContent = on ? '☀️' : '🌙';
+  }
+  applyDark(localStorage.getItem(DARK_KEY) === '1');
+  if (btn) btn.addEventListener('click', function () {
+    var on = !document.body.classList.contains('wiki-dark');
+    localStorage.setItem(DARK_KEY, on ? '1' : '0');
+    applyDark(on);
+  });
+})();
+</script>
+<div class="wiki-lightbox-overlay" id="wiki-lightbox">
+  <div class="wiki-lightbox-inner">
+    <button class="wiki-lightbox-close" id="wiki-lightbox-close">&times;</button>
+    <img id="wiki-lightbox-img" src="" alt="">
+    <div class="wiki-lightbox-caption" id="wiki-lightbox-caption"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var overlay = document.getElementById('wiki-lightbox');
+  var lbImg   = document.getElementById('wiki-lightbox-img');
+  var lbCap   = document.getElementById('wiki-lightbox-caption');
+
+  function openLightbox(src, caption) {
+    lbImg.src = src;
+    lbCap.textContent = caption || '';
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+    lbImg.src = '';
+  }
+
+  document.getElementById('wiki-lightbox-close').addEventListener('click', function (e) { e.stopPropagation(); closeLightbox(); });
+  overlay.addEventListener('click', closeLightbox);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLightbox(); });
+
+  // Delegate click on any lightbox trigger (added dynamically by postProcessShortcodes)
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('.wiki-lightbox-trigger');
+    if (t) { e.preventDefault(); openLightbox(t.dataset.src || t.src, t.dataset.caption || t.alt); }
+  });
+})();
+</script>
+
 </body>
 </html>

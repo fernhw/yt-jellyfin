@@ -37,5 +37,8 @@ Bluetooth Joins the bar if unlocked but her puzzle is different to the character
 God Seeds: As a final variant is eating the Kubler seed in ingersole after shooting light into Emerette, this allows Amy to consume Ross at a special ending variant.
 This changes endings and adds a post-ending if you don't eat it.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

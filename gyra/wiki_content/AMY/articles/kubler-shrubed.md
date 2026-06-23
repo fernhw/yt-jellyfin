@@ -16,5 +16,8 @@ The Kubler produces an abundance of spores that blanket surfaces quickly. In sea
 
 The infected experience paralysis, immobility, and ongoing distress as a hybrid life form. The infection progresses through five stages and can be counteracted by light exposure. However, once a fungal network forms inside the host, the infection becomes untreatable.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

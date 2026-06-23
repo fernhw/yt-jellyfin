@@ -1,13 +1,10 @@
 [META]
 title=Localization
 authors=Unknown
-template=mechanic
-category=?
+template=generic
 status=?
-complexity=?
-affects=?
-dependencies=?
 owner=?
+notes=?
 
 [HERO]
 
@@ -30,6 +27,12 @@ Spanish: Spanish is the second most widely spoken language globally and is a pre
 Japanese: Japan is one of THE largest and most lucrative markets for games, with a long-standing history of gaming culture and a large player base, Sony, Nintendo, Sega. By localizing a game in Japanese, developers can tap into this market and reach millions of potential players who value high-quality localization and immersive gameplay experience.
 
 Down to reality We're aiming at teens and bilinguality is not as common as we hope for. While english is widely spoken, this euro/japanese starting strategy will aid to our success, These languages are widely spoken and used in business settings, making them crucial for our global strategy. We are also considering the possibility of localizing our platform for other languages in the future, such as Korean, Indian, Chinese, Russian, Tagalog, Danish, Portuguese, and more. To further expand our reach and word of mouth capabilities there's people who can't recommend games.
+
+2.5 Unique Game Mechanics
+The game's puzzles and mechanics are specifically designed to challenge players emotionally, forcing them to confront their own values and beliefs. The hotel's twisted, nightmarish atmosphere is expertly crafted to unsettle players and create a sense of dread that permeates every aspect of the game.
+
+[SECONDARY]
+_Add more details here._
 
 [REFERENCES]
 

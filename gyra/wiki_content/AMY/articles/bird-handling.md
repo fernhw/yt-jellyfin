@@ -16,5 +16,8 @@ The bird is a significant character in the game and will interact with Amy by pe
 
 [Needs an image]
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

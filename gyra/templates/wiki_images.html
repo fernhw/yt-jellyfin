@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Images — {{ project.name }} Wiki</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}">
+</head>
+<body class="wiki-mode">
+
+<div class="wiki-topbar">
+  <div class="wiki-topbar-left">
+    <a class="wiki-topbar-home" href="{{ url_for('wiki_home', project_id=project.id) }}">📖 {{ project.name }} Wiki</a>
+    <span class="wiki-topbar-sep">›</span>
+    <span class="wiki-topbar-current">Images</span>
+  </div>
+  <div class="wiki-topbar-right">
+    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_home', project_id=project.id) }}">← Wiki Home</a>
+    <button class="btn btn-sm btn-ghost" id="wiki-dark-toggle" title="Toggle dark mode">🌙</button>
+  </div>
+</div>
+
+<div style="max-width:1100px;margin:0 auto;padding:28px 24px">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap">
+    <h1 style="font-size:24px;font-weight:600;margin:0">Image Library</h1>
+    <div style="display:flex;gap:10px;align-items:center">
+      <input type="text" id="img-search" placeholder="Search by filename or caption…"
+             style="border:1px solid #a2a9b1;border-radius:6px;padding:7px 12px;font-size:13px;width:220px;outline:none">
+      <label class="btn btn-primary" style="cursor:pointer;margin:0">
+        + Upload Images
+        <input type="file" id="bulk-upload-input" accept="image/*" multiple style="display:none">
+      </label>
+    </div>
+  </div>
+
+  {# Upload progress area #}
+  <div id="upload-status" style="display:none;margin-bottom:18px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534"></div>
+
+  {# Image grid #}
+  <div id="img-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px">
+    {% for img in images %}
+    <div class="img-card" data-id="{{ img.id }}" data-filename="{{ img.filename }}"
+         style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;display:flex;flex-direction:column">
+      <a href="{{ img.url }}" target="_blank" style="display:block;height:120px;overflow:hidden;background:#f8f9fa">
+        <img src="{{ img.thumb_url or img.url }}" alt="{{ img.caption or img.filename }}"
+             style="width:100%;height:100%;object-fit:cover;display:block">
+      </a>
+      <div style="padding:8px 10px;flex:1;display:flex;flex-direction:column;gap:4px">
+        <input type="text" class="img-caption-input" value="{{ img.caption or '' }}"
+               placeholder="Add caption…" data-id="{{ img.id }}"
+               style="border:none;border-bottom:1px solid #e2e8f0;padding:2px 0;font-size:12px;width:100%;outline:none;background:transparent">
+        <div style="font-size:10.5px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
+             title="{{ img.filename }}">{{ img.filename }}</div>
+        <div style="display:flex;gap:6px;margin-top:4px">
+          <button class="btn-copy-md btn btn-sm btn-ghost" data-filename="{{ img.filename }}"
+                  style="font-size:11px;padding:2px 7px" title="Copy markdown snippet">📋 Copy MD</button>
+          <button class="btn-delete btn btn-sm" data-id="{{ img.id }}"
+                  style="font-size:11px;padding:2px 7px;color:#ef4444;border-color:#fecaca" title="Delete">🗑</button>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div id="empty-msg" style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:48px;font-size:15px">
+      No images yet — upload some above.
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<input type="hidden" id="csrf-token" value="{{ csrf_token() }}">
+
+<style>
+body.wiki-dark { background:#0f1117; color:#e2e8f0; }
+body.wiki-dark .wiki-topbar { background:#1a1d2e; border-color:#2d3148; }
+body.wiki-dark .wiki-topbar-home { color:#93c5fd; }
+body.wiki-dark .img-card { background:#161925; border-color:#2d3148; }
+body.wiki-dark .img-caption-input { border-color:#2d3148; color:#e2e8f0; }
+.img-card:hover { border-color:#7c3aed; }
+</style>
+
+<script>
+(function () {
+  var CSRF      = document.getElementById('csrf-token').value;
+  var PROJECT   = {{ project.id }};
+  var statusEl  = document.getElementById('upload-status');
+  var grid      = document.getElementById('img-grid');
+  var searchEl  = document.getElementById('img-search');
+
+  // ── Dark mode ──
+  var DARK_KEY = 'wiki_dark_mode';
+  var darkBtn = document.getElementById('wiki-dark-toggle');
+  function applyDark(on) {
+    document.body.classList.toggle('wiki-dark', on);
+    if (darkBtn) darkBtn.textContent = on ? '☀️' : '🌙';
+  }
+  applyDark(localStorage.getItem(DARK_KEY) === '1');
+  if (darkBtn) darkBtn.addEventListener('click', function () {
+    var on = !document.body.classList.contains('wiki-dark');
+    localStorage.setItem(DARK_KEY, on ? '1' : '0');
+    applyDark(on);
+  });
+
+  // ── Search filter ──
+  searchEl.addEventListener('input', function () {
+    var q = this.value.toLowerCase();
+    document.querySelectorAll('.img-card').forEach(function (card) {
+      var fn = (card.dataset.filename || '').toLowerCase();
+      var cap = (card.querySelector('.img-caption-input') || {}).value || '';
+      card.style.display = (!q || fn.includes(q) || cap.toLowerCase().includes(q)) ? '' : 'none';
+    });
+  });
+
+  // ── Bulk upload ──
+  document.getElementById('bulk-upload-input').addEventListener('change', function () {
+    var files = Array.from(this.files);
+    if (!files.length) return;
+    var done = 0, failed = 0;
+    statusEl.style.display = '';
+    statusEl.textContent = 'Uploading ' + files.length + ' file(s)…';
+
+    var emptyMsg = document.getElementById('empty-msg');
+    if (emptyMsg) emptyMsg.remove();
+
+    files.forEach(function (file) {
+      var fd = new FormData();
+      fd.append('image', file);
+      fd.append('_csrf', CSRF);
+      fetch('/project/' + PROJECT + '/wiki/images/upload', { method: 'POST', body: fd, credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+          if (res.ok) {
+            done++;
+            addCard(res);
+          } else {
+            failed++;
+          }
+          finish();
+        })
+        .catch(function () { failed++; finish(); });
+    });
+
+    function finish() {
+      if (done + failed < files.length) return;
+      statusEl.textContent = '✓ ' + done + ' uploaded' + (failed ? ', ' + failed + ' failed' : '') + '.';
+      setTimeout(function () { statusEl.style.display = 'none'; }, 3000);
+    }
+
+    this.value = '';
+  });
+
+  function addCard(res) {
+    var card = document.createElement('div');
+    card.className = 'img-card';
+    card.dataset.id = res.id || '';
+    card.dataset.filename = res.filename;
+    card.style.cssText = 'border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;background:#fff;display:flex;flex-direction:column';
+    card.innerHTML =
+      '<a href="' + res.url + '" target="_blank" style="display:block;height:120px;overflow:hidden;background:#f8f9fa">'
+      + '<img src="' + (res.thumb_url || res.url) + '" style="width:100%;height:100%;object-fit:cover;display:block" alt="">'
+      + '</a>'
+      + '<div style="padding:8px 10px;flex:1;display:flex;flex-direction:column;gap:4px">'
+      + '<input type="text" class="img-caption-input" value="" placeholder="Add caption…" data-id="' + (res.id || '') + '"'
+      + ' style="border:none;border-bottom:1px solid #e2e8f0;padding:2px 0;font-size:12px;width:100%;outline:none;background:transparent">'
+      + '<div style="font-size:10.5px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + res.filename + '</div>'
+      + '<div style="display:flex;gap:6px;margin-top:4px">'
+      + '<button class="btn-copy-md btn btn-sm btn-ghost" data-filename="' + res.filename + '" style="font-size:11px;padding:2px 7px">📋 Copy MD</button>'
+      + '<button class="btn-delete btn btn-sm" data-id="' + (res.id || '') + '" style="font-size:11px;padding:2px 7px;color:#ef4444;border-color:#fecaca">🗑</button>'
+      + '</div></div>';
+    grid.prepend(card);
+    wireCard(card);
+  }
+
+  // ── Copy MD ──
+  function wireCard(card) {
+    var copyBtn = card.querySelector('.btn-copy-md');
+    if (copyBtn) copyBtn.addEventListener('click', function () {
+      var fn = this.dataset.filename;
+      var cap = (card.querySelector('.img-caption-input') || {}).value || fn;
+      navigator.clipboard.writeText('![' + cap + '](' + fn + ')').then(function () {
+        copyBtn.textContent = '✓ Copied';
+        setTimeout(function () { copyBtn.textContent = '📋 Copy MD'; }, 1200);
+      });
+    });
+    // Caption save on blur
+    var capInput = card.querySelector('.img-caption-input');
+    if (capInput) capInput.addEventListener('blur', function () {
+      var id = this.dataset.id;
+      if (!id) return;
+      fetch('/api/project/' + PROJECT + '/wiki/images/' + id + '/caption', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({ caption: this.value, _csrf: CSRF }),
+        credentials: 'same-origin'
+      });
+    });
+    // Delete
+    var delBtn = card.querySelector('.btn-delete');
+    if (delBtn) delBtn.addEventListener('click', function () {
+      var id = this.dataset.id;
+      if (!id || !confirm('Delete this image?')) return;
+      fetch('/api/project/' + PROJECT + '/wiki/images/' + id + '/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({ _csrf: CSRF }),
+        credentials: 'same-origin'
+      }).then(function (r) { return r.json(); }).then(function (res) {
+        if (res.ok) card.remove();
+      });
+    });
+  }
+
+  // Wire all existing cards
+  document.querySelectorAll('.img-card').forEach(wireCard);
+
+})();
+</script>
+</body>
+</html>

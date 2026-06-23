@@ -26,5 +26,8 @@ This section is related to the HUD and Amy's actions when she is injured. We hav
 [WIP] 2.13 MAIN MENU
 The initial element of any game is the main menu. In Amy's Escape, we will have an adaptive background that changes depending on the chapter the player is in. The game's title will be displayed in white in the foreground.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

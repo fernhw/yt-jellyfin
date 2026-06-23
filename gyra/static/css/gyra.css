@@ -4263,6 +4263,13 @@ body.wiki-mode a:visited { color: #6b4ba1; }
 
 /* Extra sections & references — full-width, below the float clearance */
 .wiki-extra-section { margin-top: 32px; }
+.wiki-secondary-section { margin-top: 36px; clear: both; }
+.wiki-secondary-divider {
+  border: none;
+  border-top: 2px dotted #a2a9b1;
+  margin-bottom: 28px;
+}
+.wiki-secondary-body { color: #202122; font-size: 15px; line-height: 1.7; }
 .wiki-extra-heading {
   font-size: 19px; font-weight: normal; color: #202122;
   border-bottom: 1px solid #a2a9b1; padding-bottom: 3px; margin-bottom: 12px;

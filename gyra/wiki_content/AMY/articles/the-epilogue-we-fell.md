@@ -17,5 +17,8 @@ location=?
 
 Amy eventually makes it to the penthouse, where she engages Mr. Ross in a tense standoff. ​​The game's outcome hinges on the solutions players choose for puzzles. Amy leaves the Ross Hotel at the end of the story, embarking on a quest to find her brother Custard with newfound resilience and resourcefulness. Or she doesn't.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

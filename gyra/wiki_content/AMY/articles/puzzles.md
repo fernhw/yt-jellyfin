@@ -14,5 +14,8 @@ notes=?
 
 The three puzzles to collect the key pieces are optional and some of the most challenging in the game:
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

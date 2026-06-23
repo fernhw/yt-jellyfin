@@ -1,0 +1,21 @@
+[META]
+title=The Knots (the couple whose names have been
+authors=Unknown
+template=generic
+status=?
+owner=?
+notes=?
+
+[HERO]
+
+
+[MAIN_SECTION]
+# The Knots (the couple whose names have been
+
+forgotten) are an inseparable couple who enjoy their golden years separated from society in the caverns. Their isolation and frugal lifestyle have driven them mad, but it hasn't changed their love for crunchy stuff.
+
+[SECONDARY]
+_Add more details here._
+
+[REFERENCES]
+

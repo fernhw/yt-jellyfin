@@ -35,6 +35,12 @@ This menu section notifies editors about important scene details, such as the sp
 
 [wip] 3.8 Inventory
 Amy's Escape will have a basic inventory system, with objects displayed in boxes that gradually enlarge in a visually pleasing and organized manner. The inventory will appear after the screen darkens slightly and will include a text box for exiting the inventory. Players will be able to examine items, but combining objects will not be a feature.
+4- Competition
+
+We don't consider games like UNDERTALE in competition, we also didn't put it as an outlier and hyper successful.
+
+[SECONDARY]
+_Add more details here._
 
 [REFERENCES]
 

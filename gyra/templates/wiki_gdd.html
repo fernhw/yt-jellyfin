@@ -133,7 +133,7 @@
 <script>
 (function () {
   if (typeof marked === 'undefined') return;
-  marked.setOptions({ breaks: false, gfm: true });
+  marked.use({ breaks: true, gfm: true });
   document.querySelectorAll('[id^="gdd-raw-"]').forEach(function (script) {
     var idx = script.id.replace('gdd-raw-', '');
     var el  = document.getElementById('gdd-content-' + idx);

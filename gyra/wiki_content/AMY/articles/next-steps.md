@@ -25,5 +25,8 @@ Release the game on targeted platforms and distribute it through appropriate cha
 Continue to engage with the gaming community, providing updates, bug fixes, and addressing player feedback.
 Develop and release DLCs and expansions to further enrich the game's experience, keep Top Of Mind, toying with the community.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

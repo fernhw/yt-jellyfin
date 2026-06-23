@@ -1,5 +1,5 @@
 [META]
-title=[wip] THE KNOTTS
+title=wip] THE KNOTTS
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# [wip] THE KNOTTS
+# wip] THE KNOTTS
 
 > _Add details here._
 
@@ -19,6 +19,9 @@ notes=?
 ## Notes
 
 -
+
+[SECONDARY]
+_Add more details here._
 
 [REFERENCES]
 

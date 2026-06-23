@@ -18,5 +18,8 @@ Art: Target Renders, Prop Design
 Modeling 3D: Rigging
 Animation: Character Main Animation
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

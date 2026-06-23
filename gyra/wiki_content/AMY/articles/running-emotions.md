@@ -16,5 +16,8 @@ Amy's running style will adapt to her emotions in certain situations. For exampl
 
 [Needs an image]
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

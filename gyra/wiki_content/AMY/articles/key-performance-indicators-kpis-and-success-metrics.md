@@ -32,5 +32,8 @@ Influencer and Media Coverage:
 Number of influencers and streamers showcasing the game
 Coverage in gaming media outlets (IGN, GameSpot, Kotaku, etc.)
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

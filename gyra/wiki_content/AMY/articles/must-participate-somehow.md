@@ -27,5 +27,8 @@ Recognizes achievements in Unity game development across various categories, inc
 
 Based on the estimated entry fees, the total cost to enter all of these competitions would be approximately $777 (not included in budget)
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

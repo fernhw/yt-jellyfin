@@ -17,5 +17,8 @@ location=?
 
 Numerous side quests and hidden lore await players, offering a rich and immersive world that will keep them engaged for hours on end.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

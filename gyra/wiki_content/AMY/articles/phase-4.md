@@ -16,5 +16,8 @@ Consumption: The plants seize control of the victim's respiratory and motor syst
 
 Amy starts limping as the infection impairs her movement.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

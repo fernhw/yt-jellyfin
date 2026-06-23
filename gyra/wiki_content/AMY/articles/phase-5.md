@@ -16,5 +16,8 @@ Ascension: The victim, now a permanent shrub-like entity, transcends their human
 
 Amy, now a permanent shrub-like entity, is trapped in a state of eternal torment. At this point, the infection is permanent, and Amy suffers the tragedy and game over.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

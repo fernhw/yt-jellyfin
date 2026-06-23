@@ -12,14 +12,16 @@ notes=?
 [MAIN_SECTION]
 # Trademark Section
 
-With the purpose of taking this seriously we have a slew of trademarks
-[[Article Name]]
+> _Add details here._
 
 ## Overview
 
 ## Notes
 
 -
+
+[SECONDARY]
+_Add more details here._
 
 [REFERENCES]
 

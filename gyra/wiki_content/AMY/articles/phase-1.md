@@ -14,5 +14,8 @@ notes=?
 
 Latchlings: The victim experiences intense itching as the spores attach themselves to the skin, initiating the growth of small flowers on the surface.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

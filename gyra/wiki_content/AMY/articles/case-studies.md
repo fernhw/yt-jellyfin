@@ -1,13 +1,10 @@
 [META]
 title=Case Studies
 authors=Unknown
-template=system
-system_category=?
+template=generic
 status=?
-complexity=?
 owner=?
-dependencies=?
-platform=?
+notes=?
 
 [HERO]
 
@@ -16,6 +13,9 @@ platform=?
 # Case Studies
 
 Games that have shocked the industry.
+
+[SECONDARY]
+_Add more details here._
 
 [REFERENCES]
 

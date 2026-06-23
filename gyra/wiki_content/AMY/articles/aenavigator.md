@@ -16,5 +16,8 @@ We created the AE Navigator to speed up game development in Unity's editor. It a
 
 AE Navigator simplifies game development workflows by facilitating scene navigation and layer activation/deactivation. Users can easily manage scene order and hide specific elements using the generated scene list and layer controls. It's important to place all game objects within layers to utilize this system effectively.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

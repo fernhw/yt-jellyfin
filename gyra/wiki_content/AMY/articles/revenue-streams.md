@@ -18,5 +18,8 @@ Possible DLC or expansion packs (released free for early release)
 Collectors Editions expected to Less than 5% of sales
 Merchandise sales (t-shirts, posters, collectibles)
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

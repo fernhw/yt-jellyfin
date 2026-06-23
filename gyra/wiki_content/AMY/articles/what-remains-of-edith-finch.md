@@ -20,5 +20,11 @@ Estimated revenue: $19.99 million
 Estimated distribution/platform fees (30%): $5.997 million
 Estimated net revenue: $13.993 million
 
+
+5- How do we stand out?
+
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

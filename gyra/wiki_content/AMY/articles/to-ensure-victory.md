@@ -19,5 +19,8 @@ Participating in industry events and networking opportunities to build relations
 Engaging with our community and fans, creating a strong base of support and generating positive word-of-mouth promotion.
 Continuously iterating and improving our game based on feedback and reviews from players and critics.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

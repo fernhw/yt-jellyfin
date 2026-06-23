@@ -1,13 +1,10 @@
 [META]
 title=Unity Modifications And External Libraries
 authors=Unknown
-template=system
-system_category=?
+template=generic
 status=?
-complexity=?
 owner=?
-dependencies=?
-platform=?
+notes=?
 
 [HERO]
 
@@ -15,13 +12,16 @@ platform=?
 [MAIN_SECTION]
 # Unity Modifications And External Libraries
 
-> _Describe the system's purpose, inputs/outputs, dependencies and known risks._
+> _Add details here._
 
 ## Overview
 
 ## Notes
 
 -
+
+[SECONDARY]
+_Add more details here._
 
 [REFERENCES]
 

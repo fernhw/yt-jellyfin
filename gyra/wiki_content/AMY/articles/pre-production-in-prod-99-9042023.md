@@ -18,5 +18,8 @@ Art: Concept Art, Color Scripts, Pre-Viz, Prop Design, Prop Turnarounds
 Writing: Event Design
 Modeling 3D: 3D Modeling, UV Mapping, UV Painting
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

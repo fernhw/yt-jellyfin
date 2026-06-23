@@ -16,5 +16,8 @@ Albert Ross desperately sought seeds that were left in the zone millions of year
 
 Not eating them will cause a happy ending to have a twist: "In the end, I found custard; my parents got mad at us but we returned home" Her brother is brought back to life with the seeds, without the audience knowing this. The implications are disgusting. But its great to see that the player has to put 2 and 2 together before feeling any dread.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

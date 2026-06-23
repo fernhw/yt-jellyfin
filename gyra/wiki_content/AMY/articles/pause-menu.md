@@ -25,5 +25,8 @@ Exit to Desktop
 [WIP] 2.15 END GAME MESSAGE
 After completing the game, we will display various messages to the player based on their gameplay results, before the credits start rolling. This is intended to provide feedback to the player about any outstanding objectives they may have missed.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

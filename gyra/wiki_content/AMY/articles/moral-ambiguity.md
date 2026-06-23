@@ -17,5 +17,8 @@ location=?
 
 The game presents players with moral dilemmas, where the line between right and wrong is often blurred. The choices players make will not only affect the game's outcome but also reveal more about Amy's own character and motivations.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

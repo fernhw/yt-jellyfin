@@ -24,5 +24,8 @@ Etc etc until we see negative value on promoting any more.
 
 Each quarter will have an important quarter review meeting with investors to showcase work. The goal is to keep everything in place and examine how to improve the timeline as well as any inefficiencies corrected we use each quarter. Its important to keep top of mind create campaigns and extend sales as
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 

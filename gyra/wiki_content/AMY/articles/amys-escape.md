@@ -18,5 +18,8 @@ This US trademark registration for "AMY'S ESCAPE" provides international legal p
 
 If someone else attempts to use a similar or identical mark for similar goods and services, the owner of this trademark can take legal action to prevent them from doing so.
 
+[SECONDARY]
+_Add more details here._
+
 [REFERENCES]
 
