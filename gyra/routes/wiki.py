@@ -423,7 +423,7 @@ def _get_tree(project_id: int) -> list:
     conn = get_db()
     rows = conn.execute(
         """SELECT id, slug, title, parent_id, order_index, is_published,
-                  params, updated_at
+                  params, updated_at, created_at
            FROM wiki_articles WHERE project_id=?
            ORDER BY order_index""",
         (project_id,)
@@ -504,6 +504,7 @@ def _get_numbered_flat(project_id: int, project_key: str = None) -> list:
             "is_published": n["is_published"],
             "params":       n.get("params"),
             "updated_at":   n.get("updated_at"),
+            "created_at":   n.get("created_at"),
             "gdd_num":      n["gdd_num"],
             "depth":        n["gdd_num"].count("."),
             "hero_image":   _extract_hero_filename(project_key, n["slug"]) if project_key else "",
@@ -905,6 +906,80 @@ def register(app) -> None:
             )
         conn.commit()
         return jsonify({"ok": True})
+
+    # ── Disk → DB sync ───────────────────────────────────────────────────────
+
+    @app.route("/api/project/<int:project_id>/wiki/sync-disk", methods=["POST"])
+    @login_required
+    def wiki_sync_disk(project_id):
+        """Register any .md files on disk that have no DB row yet.
+
+        Useful when articles are written directly in the editor/filesystem
+        rather than through the wiki UI. Safe to call repeatedly — only adds
+        rows that are missing, never modifies existing ones.
+
+        Returns JSON: {ok, added: [slug, ...], skipped: [slug, ...]}
+        """
+        project = _check_access(project_id)
+        if session.get("role") not in ("admin", "super_user"):
+            abort(403)
+
+        conn   = get_db()
+        key    = project["key"]
+        adir   = _articles_dir(key)
+        now    = int(time.time())
+        uid    = session["user_id"]
+        added  = []
+        skipped = []
+
+        if not os.path.isdir(adir):
+            return jsonify({"ok": True, "added": [], "skipped": [], "note": "articles dir missing"})
+
+        for fname in sorted(os.listdir(adir)):
+            if not fname.endswith(".md"):
+                continue
+            slug = fname[:-3]
+
+            exists = conn.execute(
+                "SELECT 1 FROM wiki_articles WHERE project_id=? AND slug=?",
+                (project_id, slug)
+            ).fetchone()
+            if exists:
+                skipped.append(slug)
+                continue
+
+            # Extract title from [META] section if present
+            raw = _read_md(key, slug)
+            title = slug  # fallback
+            in_meta = False
+            for line in raw.splitlines():
+                if line.strip() == "[META]":
+                    in_meta = True
+                    continue
+                if in_meta and line.startswith("["):
+                    break  # left META section
+                if in_meta and line.startswith("title="):
+                    t = line[6:].strip()
+                    if t:
+                        title = t
+                    break
+
+            max_order = conn.execute(
+                "SELECT COALESCE(MAX(order_index),0) FROM wiki_articles WHERE project_id=? AND parent_id IS NULL",
+                (project_id,)
+            ).fetchone()[0]
+
+            conn.execute(
+                """INSERT INTO wiki_articles
+                   (project_id, slug, title, parent_id, order_index, params,
+                    is_published, created_by, created_at, updated_by, updated_at)
+                   VALUES (?,?,?,NULL,?,?,1,?,?,?,?)""",
+                (project_id, slug, title, max_order + 1.0, "{}", uid, now, uid, now)
+            )
+            added.append(slug)
+
+        conn.commit()
+        return jsonify({"ok": True, "added": added, "skipped": skipped})
 
     # ── Image upload ─────────────────────────────────────────────────────────
 

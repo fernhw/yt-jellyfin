@@ -154,6 +154,12 @@
       if (src && !src.startsWith('http') && !src.startsWith('/'))
         img.src = '/project/{{ project.id }}/wiki/images/' + src;
     });
+    el.querySelectorAll('a').forEach(function (a) {
+      var href = a.getAttribute('href') || '';
+      if (href && !href.startsWith('http') && !href.startsWith('/') && !href.startsWith('#') && href.endsWith('.md')) {
+        a.setAttribute('href', '/project/{{ project.id }}/wiki/' + encodeURIComponent(href.slice(0, -3)));
+      }
+    });
   });
   var modal = document.getElementById('gdd-cover-modal');
   if (modal) modal.addEventListener('click', function (e) { if (e.target === this) this.style.display = 'none'; });

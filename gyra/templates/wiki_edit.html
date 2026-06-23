@@ -439,11 +439,17 @@ function renderPreview() {
   previewExtra.innerHTML = '';
   previewExtra.appendChild(extrasFragment);
 
-  // ── Fix all relative image paths across the entire preview ────────────────
+  // ── Fix all relative image paths + slug.md links across the entire preview ─
   preview.querySelectorAll('img').forEach(function (img) {
     var src = img.getAttribute('src') || '';
     if (src && !src.startsWith('http') && !src.startsWith('/') && !src.startsWith('data:')) {
       img.src = '/project/{{ project.id }}/wiki/images/' + src;
+    }
+  });
+  preview.querySelectorAll('a[href]').forEach(function (a) {
+    var href = a.getAttribute('href') || '';
+    if (href && !href.startsWith('http') && !href.startsWith('/') && !href.startsWith('#') && href.endsWith('.md')) {
+      a.setAttribute('href', '/project/{{ project.id }}/wiki/' + encodeURIComponent(href.slice(0, -3)));
     }
   });
 

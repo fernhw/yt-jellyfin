@@ -229,9 +229,18 @@
     });
   }
 
+  var wikiBase = '/project/{{ project.id }}/wiki/';
+
   function postProcess(el) {
     el.querySelectorAll('a').forEach(function (a) {
       var href = a.getAttribute('href') || '';
+      // slug.md links — rewrite to proper wiki URL
+      if (href && !href.startsWith('http') && !href.startsWith('/') && !href.startsWith('#') && href.endsWith('.md')) {
+        var slug = href.slice(0, -3);
+        a.setAttribute('href', wikiBase + encodeURIComponent(slug));
+        a.classList.add('wiki-link');
+        return;
+      }
       if (href.indexOf('/project/') === 0 && href.indexOf('/wiki/') > 0) {
         a.classList.add('wiki-link');
       } else if (href.startsWith('http') || href.startsWith('//')) {

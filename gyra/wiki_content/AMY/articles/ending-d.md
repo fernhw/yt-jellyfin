@@ -10,16 +10,47 @@ notes=?
 
 
 [MAIN_SECTION]
-# Ending D
+# Ending D — The Fishbowl
 
-Fishbowl (Half a Monster Ending #2)
-Conditions: poison Baya's tea, AND fail 4/10 of the story puzzles. I added that you talked to Evangeline before your confrontation with Ross
-Summary: Amy turns into an insect in a fishbowl, living with Evangeline and Ilina forever and ever.
-Evangeline has the power to see the future. She offers you a choice to stay with her, but if you choose to, you'll be stuck. She once shrunk her sister, Ilina, to the size of a pea to keep her safe. In a twist, Evangeline makes Amy super tiny over hundreds of years, turning her almost into an insect. Amy finds herself in a fishbowl, watching Ilina swim by while Evangeline sings a lullaby.
-This is the shock value ending. This is the ending that people will talk about.
+*The hidden ending. One of the most discussed in the game. One of the quietest.*
+
+**Conditions:** On the path toward the worst outcome — Baya's tea poisoned, enough puzzles failed that leaving is no longer safe for Amy. Must have consulted [Evangeline and Ilina](evangeline-aerona-and-ilina.md) at least once before the final confrontation.
+
+---
+
+[Evangeline](evangeline-aerona-and-ilina.md) is waiting. Amy did not seek her out. She is simply there.
+
+> *"You don't... want to go outside. We know."*
+
+Amy steps back. Of course they know.
+
+> *"I can take the pain away... but you have to stay. Would you stay? With us? Forever?"*
+
+**Yes / No.**
+
+---
+
+### If Yes
+
+[Ilina](evangeline-aerona-and-ilina.md) begins to hum. A lullaby — small, shapeless, coming from something the size of a pea. The screen dims slowly. Credits roll over the sound of it.
+
+Amy stays. The pain goes. She does not remember Custard in the way she did. She does not remember what she was going to do outside.
+
+Over hundreds of years, the same process that made Ilina pea-sized makes Amy smaller. The last image before the second credits sequence: Amy in a fishbowl, watching Ilina drift past while Evangeline hums. Tiny. Calm. Free of everything that hurt.
+
+This is not a horror ending. Amy did not regret it. The idea of forgetting was, genuinely, enticing. She said yes because she meant it.
+
+### If No
+
+Evangeline does not stop her. The path to the worst outcome resumes.
 
 [SECONDARY]
-_Add more details here._
+## Notes
+
+- Two credit sequences: one with the lullaby (Yes), one with silence (No path continues).
+- The most discussed ending post-release — not for the body horror (implied, not shown) but for the dialogue. Amy wasn't coerced. She wanted to forget. The game let her.
+- Cannot be found by trying to find it. Intercepts a route already in progress.
+- [Evangeline and Ilina](evangeline-aerona-and-ilina.md) are the only characters in the hotel who know Amy's true situation before Amy does.
 
 [REFERENCES]
 

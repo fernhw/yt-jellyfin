@@ -10,16 +10,36 @@ notes=?
 
 
 [MAIN_SECTION]
-# Ending E
+# Ending E — All Alone
 
-All Alone
-Conditions: poison Baya's tea, 2) fail purposefully all 10/10 of the story puzzles. 3) Kick Barret's head into the insole mines.
-Summary: Amy can't enter Ross' room and leaves the hotel. Nothing happens.
-Ross doesn't let Amy enter his room; his keys are at the door with a note, "Leave now". The goal is that it is still hard to get this ending. There is no catharsis, no conversation, or great or terrible things coming—just nothing. This ending shows isolation, but not only that, Amy keeps Darby in this ending. Symbolically, it is as if her brother is but a buried memory. Amy can get violent by knocking at the door as an optional thing.
-Its purpose is to subvert the Undertale endings. Being bad gets you nothing in this; its disappointing but also makes sense.
+*The nothing ending. Hard to get intentionally. Designed to be disappointing.*
+
+**Conditions:** Poison Baya's tea. Fail all 10 story puzzles. Kick [Barret](barret-aricson.md)'s head into the [Ingersole Caverns](ingersole-caverns.md).
+
+---
+
+Ross does not let Amy into his room. His keys are on the floor outside the door. There is a note:
+
+> *"Leave now."*
+
+Amy cannot enter. There is no confrontation. No conversation. No great or terrible thing coming. She picks up the keys. She leaves.
+
+That is the ending. Nothing happens.
+
+[Darby](darby-glowing-bird.md) is with her. Amy keeps Darby in this ending — the one ending where she has done everything wrong and Darby is still there. The game does not explain this. Symbolically, her brother is not gone — just buried so deep she stopped looking.
+
+The player can knock at Ross's door repeatedly before leaving. Amy gets increasingly violent about it. Ross says nothing. This is optional. It doesn't change anything.
+
+**"So long."**
+
+The exit line is two words. The game does not elaborate.
 
 [SECONDARY]
-_Add more details here._
+## Notes
+
+- A deliberate subversion of the Undertale genocide-run reward structure. In most games that track cruelty, doing everything wrong has a payoff. Here: nothing. Disappointment is the design.
+- Hard to reach intentionally — requires failing *all* puzzles and a specific violent act against Barret. Not something you stumble into.
+- "So long" is the canonical text shown when Amy leaves without enough reason to survive outside. The game is being literal.
 
 [REFERENCES]
 

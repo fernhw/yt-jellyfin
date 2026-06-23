@@ -42,14 +42,34 @@
 {# ── Reorder panel (hidden by default) ── #}
 {% if session.role in ('admin','super_user') %}
 <div id="wiki-reorder-panel" style="display:none;background:#f8f9fa;border-bottom:1px solid #a2a9b1;padding:12px 24px 16px;">
-  <div style="font-size:11px;color:#72777d;margin-bottom:10px;">
+  <div style="font-size:11px;color:#72777d;margin-bottom:8px;">
     <strong>⠿</strong> drag rows to reorder &nbsp;·&nbsp;
     <strong>←</strong> unindent &nbsp;·&nbsp;
     <strong>→</strong> indent &nbsp;·&nbsp;
     depth = parent/child relationship &nbsp;·&nbsp;
     GDD numbers update live
   </div>
-  <div id="wiki-te-list" style="max-height:480px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:4px;background:#fff;"></div>
+
+  {# ── New / unassigned bucket ── #}
+  <div id="wiki-te-new-bucket" style="display:none;margin-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <span style="font-size:11px;font-weight:600;color:#d97706;text-transform:uppercase;letter-spacing:.04em;">⬆ Recently Added — drag to place</span>
+      <span id="wiki-te-new-count" style="font-size:10px;background:#fef3c7;color:#92400e;border-radius:10px;padding:1px 7px;"></span>
+      <label style="font-size:11px;color:#72777d;margin-left:auto;display:flex;align-items:center;gap:4px;cursor:pointer;">
+        <input type="checkbox" id="wiki-te-new-only" style="cursor:pointer;"> Show new only
+      </label>
+    </div>
+    <div id="wiki-te-new-list" style="border:1px solid #fcd34d;border-radius:4px;background:#fffbeb;max-height:220px;overflow-y:auto;"></div>
+  </div>
+
+  {# ── Full list with optional filter ── #}
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+    <span style="font-size:11px;color:#72777d;">All articles</span>
+    <input type="search" id="wiki-te-filter" placeholder="Filter by title…"
+           style="font-size:12px;border:1px solid #c8ccd1;border-radius:3px;padding:2px 8px;flex:1;max-width:260px;outline:none;">
+    <span id="wiki-te-filter-count" style="font-size:11px;color:#a0a0a0;"></span>
+  </div>
+  <div id="wiki-te-list" style="max-height:420px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:4px;background:#fff;"></div>
   <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
     <button class="btn btn-sm btn-primary" id="wiki-te-save">💾 Save order</button>
     <button class="btn btn-sm btn-ghost" id="wiki-te-cancel">✕ Cancel</button>
@@ -282,7 +302,7 @@
 .wh-list { columns: 2; column-gap: 24px; list-style: none; margin: 0; padding: 0; }
 @media (max-width: 640px) { .wh-list { columns: 1; } }
 .wh-list li { break-inside: avoid; margin-bottom: 4px; display: flex; align-items: baseline; gap: 6px; font-size: 14px; }
-.wh-list a { color: #1d4ed8; text-decoration: none; line-height: 1.5; }
+.wh-list a { color: #1d4ed8; text-decoration: none; line-height: 1.5; white-space: normal; word-break: break-word; }
 .wh-list a:hover { text-decoration: underline; color: #1e40af; }
 .wh-list .wh-num { font-family: monospace; font-size: 10.5px; color: #94a3b8; flex-shrink: 0; }
 .wh-list .wh-more { font-size: 11px; color: #94a3b8; margin-left: 2px; }
@@ -315,6 +335,9 @@
 .wh-section-footer { padding: 10px 20px 14px; border-top: 1px solid #f1f5f9; font-size: 12.5px; }
 .wh-section-footer a { color: #3b82f6; text-decoration: none; font-weight: 500; }
 .wh-section-footer a:hover { text-decoration: underline; }
+.wh-section-solo .wh-solo-link { display: block; text-decoration: none; color: inherit; }
+.wh-section-solo .wh-solo-link:hover .wh-section-title-link { color: #3b82f6; }
+.wh-section-solo .wh-solo-link:hover { background: #f8fafc; }
 .wiki-draft-badge { font-size: 9.5px; background: #fee2e2; color: #991b1b; border-radius: 3px; padding: 1px 5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 /* MODAL */
 .wh-modal-backdrop { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; }
@@ -433,7 +456,21 @@
         bodyHtml += '<div class="wh-section-footer"><a href="'+url(root)+'">View all '+totalDesc+' articles in this section &rarr;</a></div>';
       }
     } else {
-      bodyHtml = '<div class="wh-section-body" style="color:#94a3b8;font-size:13px;font-style:italic">No sub-articles yet.</div>';
+      // No children — render as a plain direct link, not a section box
+      var col = accent;
+      var hero = heroSrc(root.hero_image || '');
+      sec.className = 'wh-section wh-section-solo';
+      sec.innerHTML = '<a class="wh-solo-link" href="'+url(root)+'">' +
+        (hero ? '<div class="wh-card-hero"><img src="'+hero+'" alt="" loading="lazy"></div>' : '') +
+        '<div class="wh-section-head" style="border-bottom:none">' +
+        '<div class="wh-section-accent" style="background:'+accent+'"></div>' +
+        (root.gdd_num ? '<span class="wh-section-num">'+esc(root.gdd_num)+'</span>' : '') +
+        '<span class="wh-section-title-link">'+esc(root.title)+'</span>' +
+        draft(root) +
+        '<span style="font-size:11px;color:#94a3b8;flex-shrink:0">→</span>' +
+        '</div></a>';
+      page.appendChild(sec);
+      return;
     }
     sec.innerHTML = headHtml+bodyHtml;
     page.appendChild(sec);
@@ -519,13 +556,22 @@
 
 <script>
 (function () {
-  var reorderBtn = document.getElementById('wiki-reorder-btn');
-  var panel      = document.getElementById('wiki-reorder-panel');
-  var teList     = document.getElementById('wiki-te-list');
-  var saveBtn    = document.getElementById('wiki-te-save');
-  var cancelBtn  = document.getElementById('wiki-te-cancel');
-  var statusEl   = document.getElementById('wiki-te-status');
+  var reorderBtn  = document.getElementById('wiki-reorder-btn');
+  var panel       = document.getElementById('wiki-reorder-panel');
+  var teList      = document.getElementById('wiki-te-list');
+  var newBucket   = document.getElementById('wiki-te-new-bucket');
+  var newList     = document.getElementById('wiki-te-new-list');
+  var newCount    = document.getElementById('wiki-te-new-count');
+  var newOnlyCb   = document.getElementById('wiki-te-new-only');
+  var filterInput = document.getElementById('wiki-te-filter');
+  var filterCount = document.getElementById('wiki-te-filter-count');
+  var saveBtn     = document.getElementById('wiki-te-save');
+  var cancelBtn   = document.getElementById('wiki-te-cancel');
+  var statusEl    = document.getElementById('wiki-te-status');
   if (!reorderBtn || !panel) return;
+
+  // NEW = created within last 7 days (unix seconds)
+  var NEW_THRESHOLD_SECS = 7 * 24 * 3600;
 
   // ── State ──────────────────────────────────────────────────────────────────
   // items: [{id, title, depth}] in display (pre-order) order
@@ -782,6 +828,8 @@
       onDropBefore(items.length);
     });
     teList.appendChild(endZone);
+    applyFilter();
+    renderNewBucket();
   }
 
   function clearDropIndicators() {
@@ -796,10 +844,87 @@
     var raw = JSON.parse(document.getElementById('wiki-flat-data').textContent);
     // raw is already in pre-order with depth computed server-side
     items = raw.map(function(a) {
-      return { id: a.id, title: a.title, depth: a.depth || 0, gdd_num: a.gdd_num || '' };
+      return { id: a.id, title: a.title, depth: a.depth || 0, gdd_num: a.gdd_num || '', created_at: a.created_at || 0 };
     });
     enforceInvariant();
     recomputeNumbers();
+  }
+
+  // ── New bucket ────────────────────────────────────────────────────────────
+
+  function renderNewBucket() {
+    var nowSecs = Math.floor(Date.now() / 1000);
+    var newItems = items.filter(function(it) {
+      return it.created_at && (nowSecs - it.created_at) < NEW_THRESHOLD_SECS;
+    });
+    if (newItems.length === 0) {
+      newBucket.style.display = 'none';
+      return;
+    }
+    newBucket.style.display = '';
+    newCount.textContent = newItems.length + ' article' + (newItems.length === 1 ? '' : 's');
+    newList.innerHTML = '';
+    newItems.forEach(function(item) {
+      var i = items.indexOf(item);
+      var row = document.createElement('div');
+      row.className = 'wiki-te-row';
+      row.style.background = '#fffbeb';
+      row.draggable = true;
+
+      var badge = document.createElement('span');
+      badge.style.cssText = 'font-size:9px;font-weight:700;background:#f59e0b;color:#fff;border-radius:3px;padding:1px 5px;margin-right:6px;flex-shrink:0;';
+      badge.textContent = 'NEW';
+
+      var handle = document.createElement('span');
+      handle.className = 'wiki-te-drag';
+      handle.textContent = '⠿';
+
+      var numSpan = document.createElement('span');
+      numSpan.className = 'wiki-te-num';
+      numSpan.textContent = item.gdd_num || '—';
+
+      var titleSpan = document.createElement('span');
+      titleSpan.className = 'wiki-te-title-text';
+      titleSpan.textContent = item.title;
+
+      row.appendChild(badge);
+      row.appendChild(handle);
+      row.appendChild(numSpan);
+      row.appendChild(titleSpan);
+
+      (function(idx) {
+        row.addEventListener('dragstart', function(e) {
+          dragSrcIdx = idx;
+          row.classList.add('wiki-te-dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', String(idx));
+        });
+        row.addEventListener('dragend', function() {
+          row.classList.remove('wiki-te-dragging');
+          dragSrcIdx = null;
+          clearDropIndicators();
+        });
+      }(i));
+
+      newList.appendChild(row);
+    });
+  }
+
+  // ── Filter ────────────────────────────────────────────────────────────────
+
+  function applyFilter() {
+    var q = filterInput ? filterInput.value.trim().toLowerCase() : '';
+    var rows = teList.querySelectorAll('.wiki-te-row');
+    var visible = 0;
+    rows.forEach(function(row) {
+      var title = (row.querySelector('.wiki-te-title-text') || {}).textContent || '';
+      var show = !q || title.toLowerCase().indexOf(q) !== -1;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    if (filterCount) {
+      filterCount.textContent = q ? (visible + ' match' + (visible === 1 ? '' : 'es')) : '';
+    }
   }
 
   reorderBtn.addEventListener('click', function () {
@@ -809,10 +934,32 @@
     } else {
       buildState();
       renderList();
+      renderNewBucket();
       panel.style.display = '';
       reorderBtn.textContent = '✕ Close';
     }
   });
+
+  if (filterInput) {
+    filterInput.addEventListener('input', applyFilter);
+  }
+
+  if (newOnlyCb) {
+    newOnlyCb.addEventListener('change', function() {
+      var nowSecs = Math.floor(Date.now() / 1000);
+      var rows = teList.querySelectorAll('.wiki-te-row');
+      if (newOnlyCb.checked) {
+        rows.forEach(function(row, i) {
+          var item = items[i];
+          var isNew = item && item.created_at && (nowSecs - item.created_at) < NEW_THRESHOLD_SECS;
+          row.style.display = isNew ? '' : 'none';
+        });
+        if (filterCount) filterCount.textContent = '';
+      } else {
+        applyFilter();
+      }
+    });
+  }
 
   cancelBtn.addEventListener('click', function () {
     panel.style.display = 'none';

@@ -10,12 +10,29 @@ notes=?
 
 
 [MAIN_SECTION]
-# The "Genocide Run" Ending
+# The Genocide Run
 
-One of the unique game mechanics in Amy's Escape is the ability to play a "genocide run" similar to Undertale. In this mode, players take on the role of a villainous version of Amy, who is tasked with condemning the hotel's inhabitants to an even worse fate. The genocide run in Amy's Escape is designed to be emotionally challenging, forcing players to confront the consequences of their actions and the impact they have on the characters and story. Each character in the game has their own unique storyline, and playing the genocide run offers a different perspective on their struggles and suffering. One of the most unique aspects of the genocide run in Amy's Escape is its impact on the game's ending; it's emotionally devastating in the worst way. You need an effort to run this; it's not by accident. The game knows this and becomes harder.
+*A separate mode. Not an ending you fall into — one you have to build toward deliberately. The game knows what you're doing and gets harder.*
+
+The genocide run is not accessible by default. It requires deliberate, sustained cruelty across every character interaction in the game. Each character has a storyline that can be made worse. The genocide run is playing every one of them wrong, on purpose, without stopping.
+
+This is not Undertale's genocide route in structure — Amy does not kill anyone (the [Kubler](the-kubler.md) prevents permanent death for most residents). What she does instead is choose the worst available option for every person she meets: the option that deepens their loop, isolates them further, takes from them the one thing keeping them functional.
+
+The game tracks this. It does not announce it. It becomes harder — puzzles change, characters become less responsive, the hotel becomes more hostile. The game is not punishing the player. It is reflecting what Amy is doing to herself.
+
+The ending is emotionally devastating. Not dramatically — quietly. The kind of devastating that doesn't have a big moment.
+
+Every bad solution is also an achievement. The game will give you the achievement. It will not congratulate you.
+
+For why the achievement system is designed this way — and what the one achievement the genocide run *cannot* give you means — see [Achievements](achievements.md).
 
 [SECONDARY]
-_Add more details here._
+## Notes
+
+- Designed so that you have to *mean* it. A few bad choices across the run is not enough — the threshold requires sustained, deliberate cruelty across the full game.
+- Characters in the genocide run do not die. They are made worse. This is considered more disturbing in playtesting.
+- The [Sin System](amelia-amy-loevinger.md) marks Amy's body throughout the genocide run — by the end she is visibly different from a normal playthrough Amy.
+- Completing the genocide run and starting a new game carries a flag. The game remembers.
 
 [REFERENCES]
 
