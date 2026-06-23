@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-22
 
-> *Good evening! Here's what landed on Monday, June 22, 2026 at 08:06 PM.*
-> **YT Mirror:** 642.30 GB used · 0.57 TB free
+> *Good evening! Here's what landed on Monday, June 22, 2026 at 09:06 PM.*
+> **YT Mirror:** 642.34 GB used · 0.57 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **This SUCKS. I'm buying it** — *TechLinked* · downloaded 09:05 PM · podcastable
 - **The Steam Machine Price Is Actually Insane** — *Spawn Wave* · downloaded 08:04 PM · not podcastable
 - **They Used AI For Crazy Taxi. Players Torched It.** — *Bellular News* · downloaded 05:09 PM · podcastable
 - **WWE 2K26 – Official Season 3 Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 05:08 PM · not podcastable

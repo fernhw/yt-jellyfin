@@ -10,7 +10,9 @@ authors=Fernando
 [MAIN_SECTION]
 # Welcome to the Amy's Escape Wiki
 
-This is your project's Game Design Wiki. Every article lives as a Markdown file on disk, fully editable by your team and exportable as a GDD.
+This is your project's Game Design Wiki. 
+Every article lives as a Markdown file on disk, fully editable by your team and exportable as a GDD.
+A cat cannot fly
 
 ## Getting started
 

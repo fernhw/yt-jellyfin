@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>{{ project.name }} — GDD</title>
-<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
 <style>
 /* ── Reset / base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -35,40 +34,52 @@ html, body { background: #fff; color: #111; font-family: Georgia, 'Times New Rom
 .cover-desc { font-size: 10.5pt; color: #444; max-width: 480px; margin: 0 auto; line-height: 1.6; border-top: 1pt solid #ccc; padding-top: 18px; }
 
 /* ── TOC page ── */
-.toc-page {
-  page-break-after: always; break-after: page;
-  padding: 0.4in 0 0.4in;
-}
+.toc-page { page-break-after: always; break-after: page; padding: 0.4in 0 0.4in; }
 .toc-heading { font-size: 22pt; font-weight: normal; border-bottom: 1pt solid #aaa; padding-bottom: 6pt; margin-bottom: 20pt; }
-.toc-entry { display: flex; align-items: baseline; gap: 6pt; padding: 5pt 0; border-bottom: 0.5pt dotted #ccc; font-size: 10.5pt; text-decoration: none; color: #111; }
-.toc-d1 { font-size: 12pt; font-weight: 600; padding-top: 9pt; }
-.toc-d3, .toc-d4 { color: #444; font-size: 9.5pt; }
-.toc-num { min-width: 36pt; flex-shrink: 0; color: #777; font-size: 9pt; }
-.toc-d1 .toc-num { color: #444; }
+.toc-entry { display: flex; align-items: baseline; gap: 6pt; padding: 4pt 0; border-bottom: 0.5pt dotted #ccc; font-size: 10.5pt; text-decoration: none; color: #111; }
+.toc-d1 { font-size: 12pt; font-weight: 600; padding-top: 8pt; }
+.toc-d3, .toc-d4, .toc-d5 { color: #555; font-size: 9pt; }
+.toc-num { min-width: 44pt; flex-shrink: 0; color: #777; font-size: 9pt; }
+.toc-d1 .toc-num { color: #444; font-size: 10pt; }
 .toc-ttl { flex: 1; }
 .toc-dots { flex: 1; min-width: 20pt; border-bottom: 0.5pt dotted #aaa; margin: 0 6pt 3pt; }
 
-/* ── Section pages ── */
-.gdd-section { margin-bottom: 16pt; }
+/* ── GDD content flow ── */
+/* Only top-level (depth 1) articles start on a new page.
+   Everything else flows naturally — a stub section is just a heading + a line,
+   not a wasted page. */
+.gdd-section { margin-bottom: 12pt; orphans: 3; widows: 3; }
 .gdd-depth-1 { page-break-before: always; break-before: page; }
-.gdd-h1 { font-size: 20pt; font-weight: normal; border-bottom: 1pt solid #aaa; padding-bottom: 4pt; margin-bottom: 14pt; }
-.gdd-h2 { font-size: 15pt; font-weight: normal; margin: 18pt 0 8pt; }
-.gdd-h3 { font-size: 12pt; font-weight: bold; margin: 14pt 0 5pt; }
-.gdd-h4 { font-size: 10.5pt; font-weight: bold; color: #333; margin: 10pt 0 4pt; }
-.gdd-num { color: #888; margin-right: 6pt; font-size: 0.82em; }
+.gdd-depth-2, .gdd-depth-3, .gdd-depth-4, .gdd-depth-5 {
+  margin-top: 14pt;
+  page-break-inside: avoid; break-inside: avoid;
+}
+
+/* ── Section headings ── */
+.gdd-h1 { font-size: 20pt; font-weight: normal; border-bottom: 1pt solid #aaa; padding-bottom: 4pt; margin-bottom: 14pt; page-break-after: avoid; }
+.gdd-h2 { font-size: 15pt; font-weight: normal; margin: 18pt 0 6pt; page-break-after: avoid; }
+.gdd-h3 { font-size: 12pt; font-weight: bold; margin: 13pt 0 4pt; page-break-after: avoid; }
+.gdd-h4 { font-size: 10.5pt; font-weight: bold; color: #333; margin: 10pt 0 3pt; page-break-after: avoid; }
+.gdd-h5 { font-size: 10pt; font-weight: bold; color: #555; margin: 8pt 0 2pt; page-break-after: avoid; }
+.gdd-num { color: #999; margin-right: 5pt; font-size: 0.8em; }
+
+/* ── Content typography ── */
 .gdd-content { font-size: 10.5pt; line-height: 1.7; }
-.gdd-content p { margin-bottom: 8pt; }
-.gdd-content ul, .gdd-content ol { margin: 4pt 0 10pt 20pt; }
-.gdd-content li { margin-bottom: 3pt; }
-.gdd-content h2 { font-size: 14pt; font-weight: normal; margin: 14pt 0 6pt; }
-.gdd-content h3 { font-size: 11.5pt; font-weight: bold; margin: 10pt 0 4pt; }
-.gdd-content code { font-family: Menlo, Courier, monospace; font-size: 9pt; background: #f5f5f5; border: 0.5pt solid #ddd; padding: 0 3pt; }
-.gdd-content pre  { font-family: Menlo, Courier, monospace; font-size: 8.5pt; background: #f5f5f5; border: 0.5pt solid #ddd; padding: 8pt 10pt; margin: 8pt 0; white-space: pre-wrap; word-break: break-word; }
-.gdd-content a { color: #111; text-decoration: none; }
-.gdd-content table { border-collapse: collapse; width: 100%; margin: 8pt 0; font-size: 9.5pt; }
+.gdd-content p { margin-bottom: 7pt; }
+.gdd-content ul, .gdd-content ol { margin: 3pt 0 9pt 20pt; }
+.gdd-content li { margin-bottom: 2pt; }
+.gdd-content h2 { font-size: 14pt; font-weight: normal; margin: 13pt 0 5pt; page-break-after: avoid; }
+.gdd-content h3 { font-size: 11.5pt; font-weight: bold; margin: 10pt 0 3pt; page-break-after: avoid; }
+.gdd-content h4 { font-size: 10pt; font-weight: bold; color: #333; margin: 8pt 0 2pt; }
+.gdd-content code { font-family: Menlo, Courier, monospace; font-size: 8.5pt; background: #f5f5f5; border: 0.5pt solid #ddd; padding: 0 3pt; border-radius: 2pt; }
+.gdd-content pre  { font-family: Menlo, Courier, monospace; font-size: 8pt; background: #f5f5f5; border: 0.5pt solid #ddd; padding: 8pt 10pt; margin: 7pt 0; white-space: pre-wrap; word-break: break-word; page-break-inside: avoid; }
+.gdd-content a { color: #1a0dab; text-decoration: none; }
+.gdd-content table { border-collapse: collapse; width: 100%; margin: 7pt 0; font-size: 9.5pt; page-break-inside: avoid; }
 .gdd-content th, .gdd-content td { border: 0.5pt solid #ccc; padding: 4pt 6pt; text-align: left; }
-.gdd-content th { background: #f0f0f0; }
-.gdd-content blockquote { border-left: 3pt solid #aaa; padding-left: 12pt; margin: 8pt 0; color: #444; font-style: italic; }
+.gdd-content th { background: #f0f0f0; font-weight: bold; }
+.gdd-content blockquote { border-left: 3pt solid #bbb; padding-left: 12pt; margin: 7pt 0; color: #444; font-style: italic; }
+.gdd-content hr { border: none; border-top: 0.5pt solid #ccc; margin: 12pt 0; }
+.gdd-empty { color: #aaa; font-style: italic; font-size: 9.5pt; }
 </style>
 </head>
 <body>
@@ -77,7 +88,7 @@ html, body { background: #fff; color: #111; font-family: Georgia, 'Times New Rom
 <div class="cover-page">
   {% if cover.cover_image %}
   <div class="cover-hero">
-    <img src="{{ url_for('wiki_image_serve', project_id=project.id, filename=cover.cover_image) }}" alt="{{ project.name }}">
+    <img src="{{ cover_img_abs }}" alt="{{ project.name }}">
   </div>
   {% endif %}
   {% if cover.studio %}<div class="cover-studio">{{ cover.studio }}</div>{% endif %}
@@ -103,49 +114,30 @@ html, body { background: #fff; color: #111; font-family: Georgia, 'Times New Rom
   <h2 class="toc-heading">Table of Contents</h2>
   {% for section in sections %}
   {% set depth = section.gdd_num.split('.')|length %}
-  <a class="toc-entry toc-d{{ depth }}" href="#gdd-{{ section.slug }}" style="padding-left:{{ (depth-1)*18 }}pt">
+  <div class="toc-entry toc-d{{ depth }}" style="padding-left:{{ (depth-1)*16 }}pt">
     <span class="toc-num">{{ section.gdd_num }}</span>
     <span class="toc-ttl">{{ section.title }}</span>
     <span class="toc-dots"></span>
-  </a>
+  </div>
   {% endfor %}
 </div>
 
-{# ─── SECTIONS ─── #}
+{# ─── SECTIONS — all pre-rendered, flow freely. Only depth-1 breaks pages. ─── #}
 {% for section in sections %}
 {% set depth = section.gdd_num.split('.')|length %}
 <div class="gdd-section gdd-depth-{{ depth }}" id="gdd-{{ section.slug }}">
   {% if depth == 1 %}<h2 class="gdd-h1"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h2>
   {% elif depth == 2 %}<h3 class="gdd-h2"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h3>
   {% elif depth == 3 %}<h4 class="gdd-h3"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h4>
-  {% else %}<h5 class="gdd-h4"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h5>
+  {% elif depth == 4 %}<h5 class="gdd-h4"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h5>
+  {% else %}<h6 class="gdd-h5"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h6>
   {% endif %}
-  <div class="gdd-content" id="pdf-content-{{ loop.index }}"></div>
-  <script type="application/json" id="pdf-raw-{{ loop.index }}">{{ section.content | tojson }}</script>
+  {% if section.html %}
+  <div class="gdd-content">{{ section.html | safe }}</div>
+  {% else %}
+  <p class="gdd-empty">(no content)</p>
+  {% endif %}
 </div>
 {% endfor %}
 
-<script>
-(function () {
-  if (typeof marked === 'undefined') { setTimeout(arguments.callee, 100); return; }
-  marked.setOptions({ breaks: false, gfm: true });
-  document.querySelectorAll('[id^="pdf-raw-"]').forEach(function (script) {
-    var idx = script.id.replace('pdf-raw-', '');
-    var el  = document.getElementById('pdf-content-' + idx);
-    if (!el) return;
-    var md  = JSON.parse(script.textContent);
-    md = md.replace(/^\[[A-Z][A-Z_0-9]*\]\s*/gm, '');
-    md = md.replace(/^#{1,6}[^\n]*\n/, '').trim();
-    el.innerHTML = marked.parse(md);
-    el.querySelectorAll('img').forEach(function (img) {
-      var src = img.getAttribute('src');
-      if (src && !src.startsWith('http') && !src.startsWith('/'))
-        img.src = '/project/{{ project.id }}/wiki/images/' + src;
-    });
-    el.querySelectorAll('a').forEach(function (a) { a.style.color = '#111'; a.style.textDecoration = 'none'; });
-  });
-  window.onload = function () { window.print(); };
-})();
-</script>
 </body>
-</html>

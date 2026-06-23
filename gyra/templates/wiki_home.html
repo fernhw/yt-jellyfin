@@ -264,9 +264,17 @@
     if (insertAt > b.start) insertAt -= subtree.length;
     insertAt = Math.max(0, Math.min(insertAt, items.length));
 
-    // Determine new root depth: keep same depth, clamped to insertAt context
+    // Determine new root depth: become sibling of the item we drop before.
+    // maxDepth caps how deep the first slot allows (tree validity).
     var maxDepth = insertAt === 0 ? 0 : items[insertAt - 1].depth + 1;
-    var newRootDepth = Math.min(subtree[0].depth, maxDepth);
+    var newRootDepth;
+    if (insertAt < items.length) {
+      // Sibling of the item at insertAt — adopt its depth, clamped by parent slot
+      newRootDepth = Math.min(items[insertAt].depth, maxDepth);
+    } else {
+      // Dropping at end: preserve depth if valid, otherwise go to root
+      newRootDepth = Math.min(subtree[0].depth, maxDepth);
+    }
     newRootDepth = Math.max(0, newRootDepth);
 
     var delta = newRootDepth - subtree[0].depth;
@@ -315,6 +323,7 @@
       btnOut.className = 'wiki-te-indent-btn';
       btnOut.title     = 'Unindent (move left)';
       btnOut.textContent = '←';
+      btnOut.draggable  = false;
       btnOut.disabled  = (item.depth === 0);
       (function(idx) {
         btnOut.addEventListener('click', function(e) { e.stopPropagation(); unindent(idx); });
@@ -326,6 +335,7 @@
       btnIn.className = 'wiki-te-indent-btn';
       btnIn.title     = 'Indent (move right, becomes child of item above)';
       btnIn.textContent = '→';
+      btnIn.draggable  = false;
       btnIn.disabled  = (i === 0 || item.depth > items[i - 1].depth);
       (function(idx) {
         btnIn.addEventListener('click', function(e) { e.stopPropagation(); indent(idx); });
@@ -357,31 +367,29 @@
 
       // ── Drag events ────────────────────────────────────────────────────────
       (function(idx) {
-        handle.addEventListener('dragstart', function(e) {
-          e.stopPropagation();
-          onDragStart(idx);
+        // dragstart/dragend live on the ROW so dragging from anywhere on it works
+        row.addEventListener('dragstart', function(e) {
+          dragSrcIdx = idx;
           row.classList.add('wiki-te-dragging');
           e.dataTransfer.effectAllowed = 'move';
           e.dataTransfer.setData('text/plain', String(idx));
         });
-        handle.addEventListener('dragend', function() {
+        row.addEventListener('dragend', function() {
           row.classList.remove('wiki-te-dragging');
           dragSrcIdx = null;
           clearDropIndicators();
         });
 
         row.addEventListener('dragover', function(e) {
-          if (dragSrcIdx === null) return;
+          if (dragSrcIdx === null || dragSrcIdx === idx) return;
           e.preventDefault();
           e.dataTransfer.dropEffect = 'move';
           clearDropIndicators();
           row.classList.add('wiki-te-drop-before');
         });
         row.addEventListener('dragleave', function(e) {
-          // Only clear if leaving to outside this row entirely
-          if (!row.contains(e.relatedTarget)) {
-            row.classList.remove('wiki-te-drop-before');
-          }
+          if (e.relatedTarget && row.contains(e.relatedTarget)) return;
+          row.classList.remove('wiki-te-drop-before');
         });
         row.addEventListener('drop', function(e) {
           e.preventDefault();

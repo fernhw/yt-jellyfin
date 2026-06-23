@@ -83,7 +83,7 @@
     {# Right: live preview #}
     <div class="wiki-preview-pane" id="wiki-preview-pane">
       <div class="wiki-preview-label">Preview</div>
-      <div class="wiki-preview-body" id="wiki-preview-body"></div>
+      <div class="wiki-preview-body" id="wiki-preview-body" style="padding:16px 20px;font-family:Georgia,serif;font-size:14px;line-height:1.7"></div>
     </div>
   </div>
 
@@ -100,17 +100,6 @@
       <div class="wiki-img-loading">Loading…</div>
     </div>
   </div>
-
-  {# ── Infobox / params ── #}
-  <details class="wiki-params-section">
-    <summary class="wiki-params-toggle">⚙ Infobox / params (optional)</summary>
-    <div class="wiki-params-body">
-      <p class="wiki-params-hint">JSON object — key/value pairs shown in the right sidebar of the article.<br>
-      Example: <code>{"Engine": "Unity", "Platform": "iOS, Android", "Genre": "Action"}</code></p>
-      <textarea name="params" id="wiki-params" class="wiki-params-ta"
-                placeholder='{"Key": "Value"}'>{{ article.params if article else '{}' }}</textarea>
-    </div>
-  </details>
 
   <div class="wiki-edit-actions">
     <button type="submit" class="btn btn-primary">💾 Save Article</button>
@@ -183,35 +172,55 @@ var view = new EditorView({
   parent: cmWrap
 });
 
-// ── Live preview ────────────────────────────────────────────────────────────
-function renderPreview() {
-  if (!preview || typeof marked === 'undefined') return;
-  var md = view.state.doc.toString();
-  // Stub [[links]]
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function resolveLinks(md) {
+  // [[wikilink]] → stub link
   md = md.replace(/\[\[([^\]]+)\]\]/g, function (_, inner) {
     var parts = inner.split('|');
     var label = (parts[1] || parts[0]).trim();
-    return '<a class="wiki-link" href="#">' + label + '</a>';
+    return '[' + label + '](#)';
   });
-  // Spoiler preview
+  // ||spoiler|| → blurred span (after marked renders it as <p>, we fix in post)
   md = md.replace(/\|\|([^|]+)\|\|/g, function (_, text) {
-    return '<span class="wiki-spoiler" title="Click to reveal" onclick="this.classList.toggle(\'revealed\')">' + text + '</span>';
+    return '<span style="background:#111;color:#111;border-radius:2px;padding:0 3px;cursor:pointer" onclick="var s=this.style;s.background=\'transparent\';s.color=\'inherit\'">' + text + '</span>';
   });
-  var html = marked.parse(md);
-  preview.innerHTML = html;
+  return md;
+}
+
+function stripSectionTags(raw) {
+  // Remove [TAG] section markers — keep all content
+  return raw.replace(/^\[[A-Z][A-Z_0-9]*\]\s*$/gm, '').trim();
+}
+
+// ── Live preview ─────────────────────────────────────────────────────────────
+function renderPreview() {
+  if (!preview) return;
+  var raw     = view.state.doc.toString();
+  var cleaned = resolveLinks(stripSectionTags(raw));
+  // Use marked if available, otherwise plain text
+  if (typeof marked !== 'undefined') {
+    preview.innerHTML = marked.parse(cleaned);
+  } else {
+    // marked not ready yet — try again shortly
+    setTimeout(renderPreview, 80);
+    return;
+  }
+  // Fix relative image paths
   preview.querySelectorAll('img').forEach(function (img) {
-    var src = img.getAttribute('src');
-    if (src && !src.startsWith('http') && !src.startsWith('/')) {
+    var src = img.getAttribute('src') || '';
+    if (src && !src.startsWith('http') && !src.startsWith('/') && !src.startsWith('data:')) {
       img.src = '/project/{{ project.id }}/wiki/images/' + src;
     }
   });
 }
-renderPreview();
 
 // Sync back to textarea before form submit
 form.addEventListener('submit', function () {
   ta.value = view.state.doc.toString();
 });
+
+// Trigger initial render after a short delay to ensure marked is loaded
+setTimeout(renderPreview, 50);
 
 // ── Toolbar ─────────────────────────────────────────────────────────────────
 var CMDS = {

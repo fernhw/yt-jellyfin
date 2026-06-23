@@ -1002,7 +1002,132 @@ def register(app) -> None:
         import datetime as _dt
         import subprocess
         import tempfile
+        import markdown as _md
         project = _check_access(project_id)
+        flat = _get_tree(project_id)
+        tree = _build_nested(flat)
+        numbered = _assign_numbers(tree)
+        num_map        = {a["slug"]: a["gdd_num"] for a in numbered}
+        slug_url_map   = {a["slug"]: "#gdd-" + a["slug"] for a in numbered}
+        title_slug_map = {a["title"].lower(): a["slug"] for a in numbered}
+
+        _GDD_SKIP = {"META", "HERO"}
+        _md_renderer = _md.Markdown(
+            extensions=["tables", "fenced_code", "nl2br", "sane_lists"],
+            output_format="html",
+        )
+
+        def _render_md(text: str) -> str:
+            _md_renderer.reset()
+            return _md_renderer.convert(text)
+
+        def _resolve_links(text: str) -> str:
+            """Replace [[wiki links]] with plain text for PDF."""
+            def _repl(m):
+                inner = m.group(1)
+                parts = inner.split("|")
+                key   = parts[0].strip()
+                label = parts[-1].strip()
+                resolved_slug = key if key in num_map else title_slug_map.get(key.lower(), key)
+                ref = num_map.get(resolved_slug, "")
+                return f"§{ref} {label}" if ref else label
+            return re.sub(r"\[\[([^\]]+)\]\]", _repl, text)
+
+        sections = []
+        for a in numbered:
+            raw_full = _read_md(project["key"], a["slug"])
+            parsed   = _parse_sections(raw_full)
+            # Collect only non-skipped sections, concatenate their content
+            body_parts = []
+            for s in parsed:
+                if s["type"] in _GDD_SKIP:
+                    continue
+                content = s["content"].strip()
+                if not content:
+                    continue
+                # Strip [SECTION_TAG] lines and leading h1 (the article title)
+                content = re.sub(r"^\[[A-Z][A-Z_0-9]*\]\s*", "", content, flags=re.MULTILINE)
+                content = re.sub(r"^#{1}\s+[^\n]*\n?", "", content, count=1)
+                content = content.strip()
+                if content:
+                    body_parts.append(content)
+            body = "\n\n".join(body_parts)
+            body = _resolve_links(body)
+            html = _render_md(body) if body else ""
+            sections.append({**a, "html": html})
+
+        max_ts        = max((a.get("updated_at") or 0 for a in numbered), default=0)
+        last_modified = _dt.datetime.fromtimestamp(max_ts).strftime("%-d %B %Y") if max_ts else ""
+        cover         = _read_gdd_cover(project["key"])
+
+        # Build absolute file:// path for cover image so headless Brave can load it
+        cover_img_abs = ""
+        if cover.get("cover_image"):
+            img_path = os.path.join(_images_dir(project["key"]), cover["cover_image"])
+            if os.path.exists(img_path):
+                cover_img_abs = "file://" + img_path
+
+        from flask import render_template as _rt
+        html = _rt("wiki_gdd_pdf.html",
+                   project=project,
+                   sections=sections,
+                   last_modified=last_modified,
+                   cover=cover,
+                   cover_img_abs=cover_img_abs)
+
+        BRAVE = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+        if not os.path.exists(BRAVE):
+            from flask import Response
+            return Response(
+                html,
+                mimetype="text/html",
+                headers={"Content-Disposition": f'attachment; filename="{project["key"]}_GDD.html"'}
+            )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            html_path = os.path.join(tmpdir, "gdd.html")
+            pdf_path  = os.path.join(tmpdir, "gdd.pdf")
+            # Rewrite local static asset URLs to absolute file:// paths
+            static_dir = os.path.join(Config.BASE_DIR, "static")
+            html_out = html.replace(
+                'href="/static/', f'href="file://{static_dir}/'
+            ).replace(
+                'src="/static/', f'src="file://{static_dir}/'
+            )
+            with open(html_path, "w", encoding="utf-8") as f:
+                f.write(html_out)
+
+            try:
+                subprocess.run(
+                    [
+                        BRAVE,
+                        "--headless",
+                        "--disable-gpu",
+                        "--no-sandbox",
+                        "--no-pdf-header-footer",
+                        "--print-to-pdf=" + pdf_path,
+                        "--print-to-pdf-no-header",
+                        "file://" + html_path,
+                    ],
+                    check=True,
+                    timeout=60,
+                    capture_output=True,
+                )
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                abort(500)
+
+            with open(pdf_path, "rb") as f:
+                pdf_bytes = f.read()
+
+        from flask import Response
+        filename = f"{project['key']}_GDD.pdf"
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+
+
         flat = _get_tree(project_id)
         tree = _build_nested(flat)
         numbered = _assign_numbers(tree)
