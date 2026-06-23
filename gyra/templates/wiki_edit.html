@@ -80,10 +80,24 @@
       <div id="wiki-codemirror" style="position:relative"></div>
     </div>
 
-    {# Right: live preview #}
+    {# Right: live preview — mirrors wiki_article.html layout exactly #}
     <div class="wiki-preview-pane" id="wiki-preview-pane">
       <div class="wiki-preview-label">Preview</div>
-      <div class="wiki-preview-body" id="wiki-preview-body" style="padding:16px 20px;font-family:Georgia,serif;font-size:14px;line-height:1.7"></div>
+      <div id="wiki-preview-body" style="padding:16px 20px;position:relative">
+        {# Infobox: floated right, same DOM position as wiki_article.html #}
+        <aside class="wiki-aside-info" id="preview-infobox-wrap" style="display:none">
+          <div class="wiki-infobox" id="preview-infobox"></div>
+        </aside>
+        {# H1 + meta bar — identical structure to article page #}
+        <h1 class="wiki-article-h1" id="preview-h1"></h1>
+        <div class="wiki-article-meta" id="preview-meta"></div>
+        {# Main body — text wraps around floated infobox #}
+        <div class="wiki-article-content" id="preview-content"></div>
+        {# Float clear — only set after content+secondary balance decision #}
+        <div id="preview-flow-clear" style="clear:both"></div>
+        {# Extra sections, secondary (if taller than infobox), refs #}
+        <div id="preview-extra"></div>
+      </div>
     </div>
   </div>
 
@@ -112,6 +126,7 @@
       </div>
     </div>
   </div>
+  <div id="wiki-img-palette" class="wiki-img-palette" style="display:none">
     <div class="wiki-img-palette-head">
       <span>Image Pool — click to insert · drag to reorder</span>
       <label class="wiki-img-upload-label">
@@ -181,7 +196,13 @@ var ta      = document.getElementById('wiki-textarea');
 // Populate textarea from JSON-injected content (safe: avoids HTML-escaping issues)
 try { var _ic = document.getElementById('wiki-init-content'); if (_ic) ta.value = JSON.parse(_ic.textContent); } catch(e) {}
 var cmWrap  = document.getElementById('wiki-codemirror');
-var preview = document.getElementById('wiki-preview-body');
+var preview        = document.getElementById('wiki-preview-body');
+var previewInfWrap = document.getElementById('preview-infobox-wrap');
+var previewInf     = document.getElementById('preview-infobox');
+var previewH1      = document.getElementById('preview-h1');
+var previewMeta    = document.getElementById('preview-meta');
+var previewContent = document.getElementById('preview-content');
+var previewExtra   = document.getElementById('preview-extra');
 var form    = document.getElementById('wiki-edit-form');
 
 if (!ta || !cmWrap) { console.error('wiki editor: missing elements'); }
@@ -276,90 +297,158 @@ function parseSections(raw) {
 
 // ── Live preview ─────────────────────────────────────────────────────────────
 function renderPreview() {
-  if (!preview) return;
+  if (!previewContent) return;
   if (typeof marked === 'undefined') { setTimeout(renderPreview, 80); return; }
   marked.use({ breaks: true, gfm: true });
 
   var raw      = view.state.doc.toString();
   var sections = parseSections(raw);
 
-  // Find the sections the article page actually renders
   var mainS      = sections.find(function (s) { return s.type === 'MAIN_SECTION'; });
   var heroS      = sections.find(function (s) { return s.type === 'HERO'; });
+  var metaS      = sections.find(function (s) { return s.type === 'META'; });
   var secondaryS = sections.find(function (s) { return s.type === 'SECONDARY'; });
   var extras     = sections.filter(function (s) {
-    return s.type !== 'META' && s.type !== 'HERO' && s.type !== 'MAIN_SECTION'
-        && s.type !== 'SECONDARY' && s.type !== 'REFERENCES';
+    var skip = { META: 1, HERO: 1, MAIN_SECTION: 1, SECONDARY: 1, REFERENCES: 1 };
+    return !skip[s.type] && s.content.trim();
   });
-  var refsS  = sections.find(function (s) { return s.type === 'REFERENCES'; });
+  var refsS = sections.find(function (s) { return s.type === 'REFERENCES'; });
 
-  // If no sections at all, treat entire doc as body
   var hasAny = sections.length > 0;
   var mainMd = hasAny ? (mainS ? mainS.content : '') : raw;
 
-  function renderMd(md) {
-    return marked.parse(resolveLinks(md || ''));
+  function renderMd(md) { return marked.parse(resolveLinks(md || '')); }
+
+  function parseMeta(content) {
+    var rows = {};
+    content.split('\n').forEach(function (line) {
+      line = line.trim();
+      if (!line || line.startsWith('#')) return;
+      var idx = line.indexOf('=');
+      if (idx < 0) return;
+      var k = line.slice(0, idx).trim();
+      var v = line.slice(idx + 1).trim();
+      if (k) rows[k] = v;
+    });
+    return rows;
   }
 
-  var html = '';
-
-  // Section label helper for preview
-  function sectionLabel(type, color) {
-    return '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:' + color + ';margin:20px 0 6px;font-family:-apple-system,sans-serif;opacity:.7">[' + type + ']</div>';
+  // ── H1 + meta bar — identical to wiki_article.html ───────────────────────
+  // Title: live from META title= field; falls back to article.title from server
+  var liveTitle = '{{ (article.title if article else "New Article") | e }}';
+  if (metaS && metaS.content) {
+    var mTitle = metaS.content.match(/^title=(.*)$/m);
+    if (mTitle) liveTitle = mTitle[1].trim();
   }
+  var gddNum = '{{ current_gdd_num | e }}';
+  previewH1.innerHTML = (gddNum ? '<div class="wiki-gdd-num-above">' + gddNum + '</div>' : '')
+                      + liveTitle.replace(/</g, '&lt;');
 
-  // Hero infobox — always show section, placeholder if no image set
-  html += sectionLabel('HERO', '#7c3aed');
+  // Meta bar — static from server (matches article page)
+  {% if article and article.updated_at %}
+  var _updDate = new Date({{ article.updated_at }} * 1000)
+    .toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  previewMeta.innerHTML = 'Last edited'
+    + '{% if article.updated_name %} by <strong>{{ article.updated_name | e }}</strong>{% endif %}'
+    + ' \u00b7 ' + _updDate;
+  {% elif article %}
+  previewMeta.innerHTML = 'Not yet saved';
+  {% else %}
+  previewMeta.innerHTML = 'New article &mdash; not yet saved';
+  {% endif %}
+
+  // ── Infobox — identical to wiki_article.html build logic ─────────────────
+  var infoHtml = '<div class="wiki-infobox-title">' + liveTitle.replace(/</g, '&lt;') + '</div>';
+
   if (heroS && heroS.content.trim()) {
-    var heroLines = heroS.content.trim().split('\n');
-    var heroFile  = heroLines[0].trim();
-    var heroCapt  = heroLines[1] ? heroLines[1].trim() : '';
-    var heroSrc   = heroFile.startsWith('http') ? heroFile : '/project/{{ project.id }}/wiki/images/' + heroFile;
-    html += '<div style="float:right;margin:0 0 12px 20px;max-width:220px;border:1px solid #a2a9b1;padding:6px;background:#f8f9fa;font-size:12px">';
-    html += '<img src="' + heroSrc + '" style="width:100%;display:block" alt="">';
-    if (heroCapt) html += '<div style="text-align:center;margin-top:4px;color:#555">' + heroCapt + '</div>';
-    html += '</div>';
-  } else {
-    html += '<div style="float:right;margin:0 0 12px 20px;width:160px;height:80px;border:2px dashed #c8d0d8;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#94a3b8;font-family:-apple-system,sans-serif">No hero image set</div>';
+    var heroLines   = heroS.content.trim().split('\n');
+    var heroFile    = heroLines[0].trim();
+    var heroCaption = heroLines.slice(1).join(' ').trim();
+    if (heroFile) {
+      var heroSrc = heroFile.startsWith('http') || heroFile.startsWith('/') ? heroFile
+                    : '/project/{{ project.id }}/wiki/images/' + heroFile;
+      infoHtml += '<div class="wiki-infobox-hero">'
+        + '<img src="' + heroSrc + '" alt="' + (heroCaption || liveTitle).replace(/"/g, '&quot;') + '" class="wiki-infobox-img" loading="lazy">'
+        + (heroCaption ? '<div class="wiki-infobox-caption">' + heroCaption.replace(/</g, '&lt;') + '</div>' : '')
+        + '</div>';
+    }
   }
 
-  // Main body
-  html += sectionLabel('MAIN_SECTION', '#0ea5e9');
-  html += renderMd(mainMd);
-
-  // SECONDARY — wiki-only content, dotted divider
-  html += '<div style="clear:both;border-top:2px dotted #a2a9b1;margin:32px 0 8px"></div>';
-  html += sectionLabel('SECONDARY', '#10b981');
-  if (secondaryS && secondaryS.content.trim()) {
-    html += renderMd(secondaryS.content);
-  } else {
-    html += '<p style="color:#94a3b8;font-style:italic;font-size:13px">Empty — wiki-only details go here.</p>';
+  // ALL META rows except 'title' — exactly as article page does
+  if (metaS && metaS.content.trim()) {
+    var meta = parseMeta(metaS.content);
+    Object.keys(meta).forEach(function (k) {
+      if (k.toLowerCase() === 'title') return;
+      var val = resolveLinks(meta[k]);
+      var labelK = k.charAt(0).toUpperCase() + k.slice(1).replace(/_/g, ' ');
+      infoHtml += '<div class="wiki-infobox-row">'
+        + '<span class="wiki-infobox-key">' + labelK.replace(/</g, '&lt;') + '</span>'
+        + '<span class="wiki-infobox-val">' + val + '</span>'
+        + '</div>';
+    });
   }
 
-  // Extra sections
-  extras.forEach(function (s) {
-    html += '<hr style="margin:20px 0">';
-    html += sectionLabel(s.type, '#64748b');
-    html += renderMd(s.content);
-  });
+  previewInf.innerHTML = infoHtml;
+  var hasInfoContent = !!(heroS && heroS.content.trim())
+                    || previewInf.querySelectorAll('.wiki-infobox-row').length > 0;
+  previewInfWrap.style.display = hasInfoContent ? '' : 'none';
 
-  // References
-  html += sectionLabel('REFERENCES', '#f59e0b');
-  if (refsS && refsS.content.trim()) {
-    html += renderMd(refsS.content);
-  } else {
-    html += '<p style="color:#94a3b8;font-style:italic;font-size:13px">No references.</p>';
-  }
-
-  preview.innerHTML = html;
-
-  // Fix relative image paths
-  preview.querySelectorAll('img').forEach(function (img) {
+  // ── Main content ─────────────────────────────────────────────────────────
+  previewContent.innerHTML = renderMd(mainMd);
+  // Fix relative image paths in main content
+  previewContent.querySelectorAll('img').forEach(function (img) {
     var src = img.getAttribute('src') || '';
     if (src && !src.startsWith('http') && !src.startsWith('/') && !src.startsWith('data:')) {
       img.src = '/project/{{ project.id }}/wiki/images/' + src;
     }
   });
+
+  // ── Secondary section element (placement decided after height measure) ─────
+  var secEl = null;
+  if (secondaryS && secondaryS.content.trim()) {
+    secEl = document.createElement('section');
+    secEl.className = 'wiki-secondary-section';
+    secEl.innerHTML = '<div class="wiki-secondary-divider"></div>'
+      + '<div class="wiki-secondary-body">' + renderMd(secondaryS.content) + '</div>';
+  }
+
+  // ── Extra sections + references ───────────────────────────────────────────
+  var extrasFragment = document.createDocumentFragment();
+  extras.forEach(function (s) {
+    var sLabel = s.type.replace(/_/g, ' ')
+      .split(' ').map(function (w) { return w.charAt(0) + w.slice(1).toLowerCase(); }).join(' ');
+    var sec = document.createElement('section');
+    sec.className = 'wiki-extra-section';
+    sec.innerHTML = '<h2 class="wiki-extra-heading">' + sLabel.replace(/</g, '&lt;') + '</h2>'
+      + '<div class="wiki-extra-body">' + renderMd(s.content) + '</div>';
+    extrasFragment.appendChild(sec);
+  });
+  if (refsS && refsS.content.trim()) {
+    var refsWrap = document.createElement('div');
+    refsWrap.innerHTML = '<h2 class="wiki-refs-heading">References</h2>'
+      + '<div class="wiki-refs-body">' + renderMd(refsS.content) + '</div>';
+    extrasFragment.appendChild(refsWrap);
+  }
+  previewExtra.innerHTML = '';
+  previewExtra.appendChild(extrasFragment);
+
+  // ── Balance layout: pull secondary into float area when main body is short ─
+  // Matches wiki_article.html balanceLayout behaviour exactly
+  if (secEl) {
+    requestAnimationFrame(function () {
+      var infoH = hasInfoContent ? previewInfWrap.offsetHeight : 0;
+      var mainH = previewContent.offsetHeight;
+      if (infoH > 0 && mainH < infoH) {
+        // Main content is shorter than infobox — include secondary in float area
+        secEl.classList.remove('wiki-secondary-section');
+        secEl.style.marginTop = '20px';
+        previewContent.appendChild(secEl);
+      } else {
+        // Secondary goes below the float (full-width, with dotted divider)
+        previewExtra.insertBefore(secEl, previewExtra.firstChild);
+      }
+    });
+  }
 }
 
 // Sync back to textarea before form submit

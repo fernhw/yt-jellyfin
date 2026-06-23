@@ -327,14 +327,15 @@
 
   // ── Render SECONDARY section (wiki-only — not in GDD) ─────────────────────
   var secondarySection = sections.find(function (s) { return s.type === 'SECONDARY'; });
+  var secDiv = null;
   if (secondarySection && secondarySection.content.trim()) {
-    var secDiv = document.createElement('section');
+    secDiv = document.createElement('section');
     secDiv.className = 'wiki-secondary-section';
     secDiv.innerHTML = '<div class="wiki-secondary-divider"></div>'
       + '<div class="wiki-secondary-body">' + renderMd(secondarySection.content) + '</div>';
     postProcess(secDiv);
     postProcessShortcodes(secDiv);
-    extraEl.appendChild(secDiv);
+    // Placement decided in balanceLayout below
   }
 
   // ── Render extra sections (anything not META/HERO/MAIN_SECTION/SECONDARY/REFERENCES) ─
@@ -389,6 +390,26 @@
     el.textContent = new Date(ts * 1000).toLocaleDateString(undefined,
       { year: 'numeric', month: 'short', day: 'numeric' });
   });
+
+  // ── Balance layout: pull secondary into float area when main body is short ─
+  // If MAIN_SECTION rendered height < infobox height, secondary flows inline
+  // (wraps around the infobox); otherwise it sits full-width below clear:both.
+  if (secDiv) {
+    requestAnimationFrame(function () {
+      var infoboxWrap = document.getElementById('wiki-infobox-wrap');
+      var infoH = infoboxWrap ? infoboxWrap.offsetHeight : 0;
+      var mainH = contentEl.offsetHeight;
+      if (infoH > 0 && mainH < infoH) {
+        // Short main content — pull secondary into float area (no clear:both)
+        secDiv.classList.remove('wiki-secondary-section');
+        secDiv.style.marginTop = '20px';
+        contentEl.appendChild(secDiv);
+      } else {
+        // Normal — secondary full-width below the float
+        extraEl.insertBefore(secDiv, extraEl.firstChild);
+      }
+    });
+  }
 })();
 </script>
 

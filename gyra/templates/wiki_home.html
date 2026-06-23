@@ -293,6 +293,8 @@
 .wh-card-num { font-family: monospace; font-size: 10px; color: #94a3b8; margin-bottom: 5px; }
 .wh-card-title { font-size: 13.5px; font-weight: 600; color: #1e293b; line-height: 1.4; }
 .wh-card-more { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+.wh-card-hero { margin: -14px -14px 10px; overflow: hidden; border-radius: 7px 7px 0 0; height: 90px; background: #f1f5f9; }
+.wh-card-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* PORTRAIT */
 .wh-portraits { display: grid; grid-template-columns: repeat(auto-fill,minmax(110px,1fr)); gap: 14px; }
 .wh-portrait { text-align: center; text-decoration: none; color: #1e293b; transition: transform .12s; display: block; }
@@ -362,11 +364,18 @@
   function draft(a){ return a.is_published?'':'<span class="wiki-draft-badge">Draft</span>'; }
   function url(a){ return base+encodeURIComponent(a.slug); }
 
+  function heroSrc(heroImage) {
+    if (!heroImage) return '';
+    if (heroImage.slice(0,4) === 'http' || heroImage[0] === '/') return heroImage;
+    return '/project/{{ project.id }}/wiki/images/' + heroImage;
+  }
+
   function renderBody(root, children, mode) {
     if (mode === 'grid') {
       return '<div class="wh-grid">'+children.map(function(c){
-        var g=gc(c);
+        var g=gc(c); var hero=heroSrc(c.hero_image||'');
         return '<a class="wh-card" href="'+url(c)+'">'+
+          (hero?'<div class="wh-card-hero"><img src="'+hero+'" alt="" loading="lazy"></div>':'')+
           (c.gdd_num?'<div class="wh-card-num">'+esc(c.gdd_num)+'</div>':'')+
           '<div class="wh-card-title">'+esc(c.title)+draft(c)+'</div>'+
           (g?'<div class="wh-card-more">+'+g+' sub-articles</div>':'')+'</a>';
@@ -375,10 +384,11 @@
     if (mode === 'portrait') {
       return '<div class="wh-portraits">'+children.map(function(c){
         var col=titleColor(c.title), ini=initials(c.title);
+        var hero=heroSrc(c.hero_image||'');
         return '<a class="wh-portrait" href="'+url(c)+'">'+
           '<div class="wh-portrait-img" style="background:'+col+'">'+
-          '<img src="/project/{{ project.id }}/wiki/images/'+esc(c.slug)+'-hero.jpg" onerror="this.style.display=\'none\'" alt="" loading="lazy">'+
-          '<span style="position:relative">'+esc(ini)+'</span></div>'+
+          (hero?'<img src="'+hero+'" alt="" loading="lazy">':'<span>'+esc(ini)+'</span>')+
+          '</div>'+
           '<div class="wh-portrait-name">'+esc(c.title)+draft(c)+'</div>'+
           (c.gdd_num?'<div class="wh-portrait-num">'+esc(c.gdd_num)+'</div>':'')+'</a>';
       }).join('')+'</div>';

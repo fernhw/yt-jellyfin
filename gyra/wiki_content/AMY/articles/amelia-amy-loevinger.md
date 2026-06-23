@@ -7,7 +7,7 @@ owner=?
 notes=?
 
 [HERO]
-
+screenshot-2026-06-22-at-233406-1782190119.png
 
 [MAIN_SECTION]
 # Amelia “Amy" Loevinger
@@ -16,7 +16,10 @@ a sweet maid at the Albert Ross Hotel, is responsible for maintaining the cleanl
 
 [SECONDARY]
 _Add more details here._
-agosagosngoasnpgansgpiasngpan
+agosagosngoasnpgansgpiasngpan 
+
+![screenshot-2026-06-22-at-233406-1782190119.png](screenshot-2026-06-22-at-233406-1782190119.png)
+
 as
 gsanglnsagna
 gsang

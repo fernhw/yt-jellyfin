@@ -449,8 +449,22 @@ def _assign_numbers(tree: list, prefix: str = "") -> list:
     return result
 
 
-def _get_numbered_flat(project_id: int) -> list:
-    """Return pre-order flat list with gdd_num and depth computed. No children key."""
+def _extract_hero_filename(project_key: str, slug: str) -> str:
+    """Return the hero image filename/URL from an article's [HERO] section (first non-empty line)."""
+    path = _article_path(project_key, slug)
+    if not os.path.exists(path):
+        return ""
+    with open(path, "r", encoding="utf-8") as f:
+        content = f.read()
+    for s in _parse_sections(content):
+        if s["type"] == "HERO" and s["content"].strip():
+            return s["content"].strip().splitlines()[0].strip()
+    return ""
+
+
+def _get_numbered_flat(project_id: int, project_key: str = None) -> list:
+    """Return pre-order flat list with gdd_num and depth computed. No children key.
+    Pass project_key to populate hero_image from each article's [HERO] section."""
     flat = _get_tree(project_id)
     tree = _build_nested(flat)
     numbered = _assign_numbers(tree)
@@ -466,6 +480,7 @@ def _get_numbered_flat(project_id: int) -> list:
             "updated_at":   n.get("updated_at"),
             "gdd_num":      n["gdd_num"],
             "depth":        n["gdd_num"].count("."),
+            "hero_image":   _extract_hero_filename(project_key, n["slug"]) if project_key else "",
         }
         for n in numbered
     ]
@@ -581,7 +596,7 @@ def register(app) -> None:
     def wiki_home(project_id):
         project = _check_access(project_id)
         _ensure_wiki(project_id, project["key"], project["name"])
-        flat = _get_numbered_flat(project_id)
+        flat = _get_numbered_flat(project_id, project["key"])
         return render_template("wiki_home.html", project=project, flat=flat)
 
     # ── Read article ─────────────────────────────────────────────────────────
@@ -767,7 +782,10 @@ def register(app) -> None:
         project = _check_access(project_id)
         conn = get_db()
         article = conn.execute(
-            "SELECT * FROM wiki_articles WHERE project_id=? AND slug=?",
+            """SELECT a.*, u2.display_name AS updated_name
+               FROM wiki_articles a
+               LEFT JOIN users u2 ON a.updated_by = u2.id
+               WHERE a.project_id=? AND a.slug=?""",
             (project_id, slug)
         ).fetchone()
         if not article:
