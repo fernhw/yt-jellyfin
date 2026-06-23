@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-23
 
-> *Good evening! Here's what landed on Tuesday, June 23, 2026 at 05:05 PM.*
-> **YT Mirror:** 645.05 GB used · 0.57 TB free
+> *Good evening! Here's what landed on Tuesday, June 23, 2026 at 06:07 PM.*
+> **YT Mirror:** 646.27 GB used · 0.56 TB free
 
 ### Priority Videos
 
@@ -14,6 +14,7 @@
 
 ### Non-Priority Videos
 
+- **Steam Gave Indies a Heart Attack** — *Bellular News* · downloaded 06:06 PM · podcastable
 - **Valve Responds To Steam Machine Price...** — *Spawn Wave* · downloaded 03:13 PM · not podcastable
 - **Valve just made people mad..** — *Asmongold TV* · downloaded 03:12 PM · not podcastable
 - **The Story Behind Star Wars Galaxies' Notorious Jedi Problem - /noclip** — */noclip* · downloaded 03:11 PM · not podcastable · *53 days since their last upload*
