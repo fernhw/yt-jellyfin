@@ -188,7 +188,7 @@
       <div class="title-wrap">
         <div class="kicker">Recent Download Report</div>
         <h1>Latest downloads</h1>
-        <p class="lede">Good morning. This view keeps the latest 4 days in download order, split into priority, podcastable, rare drops, and everything else.</p>
+        <p class="lede">Good afternoon. This view keeps the latest 4 days in download order, split into priority, podcastable, rare drops, and everything else.</p>
       </div>
       <div class="top-meta">
         <button class="notify-btn" onclick="subscribeNotify()">Get notified</button>
@@ -204,13 +204,30 @@
       <button class="filter-chip active" type="button" data-filter-bucket="all">All</button>
       <button class="filter-chip" type="button" data-filter-bucket="priority">Priority</button>
       <button class="filter-chip" type="button" data-filter-bucket="nonpriority">Non-Priority</button>
-      <div class="filter-status" id="filterStatus">Showing all 52 videos.</div>
+      <div class="filter-status" id="filterStatus">Showing all 57 videos.</div>
     </section>
 
     <div id="filterResults"><div class="cards" id="filterCards"></div></div>
 
     <main id="feedMain">
-      <section class="day-section"><div class="day-header"><h2>Today <span>Tuesday, June 23</span></h2></div><section class="category"><h3>Podcasts</h3><div class="cards"><a class="card-link" href="#" data-app-urls="audiobooth://" data-filter-text="the craziest ai pivot yet the primetime" data-bucket="nonpriority" aria-label="Open in AudioBooth: The Craziest AI Pivot yet">
+      <section class="day-section"><div class="day-header"><h2>Today <span>Tuesday, June 23</span></h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="midjourney wants to delete 30% of all death... fireship" data-bucket="priority" aria-label="Open in Jellyfin or AudioBooth: Midjourney wants to delete 30% of all death...">
+  <article class="card priority podcast">
+    <img src="thumbs/fireship.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Midjourney wants to delete 30% of all death...</div>
+      <div class="meta-row">Fireship <span>&middot;</span> Jun 23, 2026 <span class="pod-cap">&clubsuit; podcast</span></div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="the steam machine is the world's most powerful console videogamedunkey" data-bucket="priority" aria-label="Open in Jellyfin: The Steam Machine is The World's Most Powerful Console">
+  <article class="card priority">
+    <img src="thumbs/videogamedunkey.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">The Steam Machine is The World's Most Powerful Console</div>
+      <div class="meta-row">videogamedunkey <span>&middot;</span> Jun 23, 2026</div>
+    </div>
+  </article>
+</a></div></section><section class="category"><h3>Podcasts</h3><div class="cards"><a class="card-link" href="#" data-app-urls="audiobooth://" data-filter-text="the craziest ai pivot yet the primetime" data-bucket="nonpriority" aria-label="Open in AudioBooth: The Craziest AI Pivot yet">
   <article class="card podcast">
     <img src="thumbs/theprimetime.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -236,7 +253,34 @@
       <div class="meta-row">Retro Game Corps <span>&middot;</span> Jun 23, 2026</div>
     </div>
   </article>
-</a></div></section><section class="category"><h3>Other Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="star wars galactic racer first look: ps5 tech preview + ps5/pc/xbox series s details! digital foundry" data-bucket="nonpriority" aria-label="Open in Jellyfin: Star Wars Galactic Racer First Look: PS5 Tech Preview + PS5/PC/Xbox Series S Details!">
+</a></div></section><section class="category"><h3>Other Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="valve responds to steam machine price... spawn wave" data-bucket="nonpriority" aria-label="Open in Jellyfin: Valve Responds To Steam Machine Price...">
+  <article class="card">
+    <img src="thumbs/spawnwave.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Valve Responds To Steam Machine Price...</div>
+      <div class="meta-row">Spawn Wave <span>&middot;</span> Jun 23, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="valve just made people mad.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Jellyfin: Valve just made people mad..">
+  <article class="card">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Valve just made people mad..</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Jun 23, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="the story behind star wars galaxies' notorious jedi problem - /noclip /noclip" data-bucket="nonpriority" aria-label="Open in Jellyfin: The Story Behind Star Wars Galaxies' Notorious Jedi Problem - /noclip">
+  <article class="card rare">
+    <img src="thumbs/noclip.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">The Story Behind Star Wars Galaxies' Notorious Jedi Problem - /noclip</div>
+      <div class="meta-row">/noclip <span>&middot;</span> Jun 23, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="star wars galactic racer first look: ps5 tech preview + ps5/pc/xbox series s details! digital foundry" data-bucket="nonpriority" aria-label="Open in Jellyfin: Star Wars Galactic Racer First Look: PS5 Tech Preview + PS5/PC/Xbox Series S Details!">
   <article class="card">
     <img src="thumbs/digitalfoundry.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -676,10 +720,10 @@
     <section class="bottom-panel">
       <div class="bottom-head">
         <h2>Report details</h2>
-        <p>Good morning. 52 items from the last 4 days.</p>
+        <p>Good afternoon. 57 items from the last 4 days.</p>
       </div>
 
-      <div class="warn-stack"><div class="warn-banner"><strong>HTTP 403 detected</strong><span>11:38: HTTP 403 on https://www.youtube.com/watch?v=J3NZVdRglqE</span></div></div>
+      <div class="warn-stack"></div>
 
       <section class="summary-bar">
         <div class="summary-tile">
@@ -688,24 +732,24 @@
         </div>
         <div class="summary-tile">
           <strong>Updated</strong>
-          <span>2026-06-23 11:47</span>
+          <span>2026-06-23 15:16</span>
         </div>
         <div class="summary-tile">
           <strong>Today</strong>
-          <span>7 downloads on Tuesday</span>
+          <span>12 downloads on Tuesday</span>
         </div>
         <div class="summary-tile">
           <strong>Recent Downloads</strong>
-          <span>52 items across 4 days</span>
+          <span>57 items across 4 days</span>
         </div>
         <div class="summary-tile">
           <strong>Library Storage</strong>
-          <span>642.67 GB used &middot; 0.57 TB free</span>
+          <span>645.05 GB used &middot; 0.56 TB free</span>
         </div>
       </section>
     </section>
 
-    <footer>report.fernhw.com &middot; updated 2026-06-23 11:47</footer>
+    <footer>report.fernhw.com &middot; updated 2026-06-23 15:16</footer>
   </div>
 </div>
 

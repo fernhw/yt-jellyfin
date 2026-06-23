@@ -2,17 +2,21 @@
 
 ## What to Watch — 2026-06-23
 
-> *Good morning! Here's what landed on Tuesday, June 23, 2026 at 11:47 AM.*
-> **YT Mirror:** 642.67 GB used · 0.57 TB free
+> *Good afternoon! Here's what landed on Tuesday, June 23, 2026 at 03:15 PM.*
+> **YT Mirror:** 645.05 GB used · 0.56 TB free
 
 ### Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **Midjourney wants to delete 30% of all death...** — *Fireship* · downloaded 03:06 PM · podcastable
+- **The Steam Machine is The World's Most Powerful Console** — *videogamedunkey* · downloaded 03:05 PM · not podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **Valve Responds To Steam Machine Price...** — *Spawn Wave* · downloaded 03:13 PM · not podcastable
+- **Valve just made people mad..** — *Asmongold TV* · downloaded 03:12 PM · not podcastable
+- **The Story Behind Star Wars Galaxies' Notorious Jedi Problem - /noclip** — */noclip* · downloaded 03:11 PM · not podcastable · *53 days since their last upload*
 - **Star Wars Galactic Racer First Look: PS5 Tech Preview + PS5/PC/Xbox Series S Details!** — *Digital Foundry* · downloaded 11:43 AM · not podcastable
 - **The Craziest AI Pivot yet** — *The PrimeTime* · downloaded 11:42 AM · podcastable
 - **Every Single Video Game Is Afraid of GTA 6** — *Second Wind* · downloaded 11:39 AM · podcastable
