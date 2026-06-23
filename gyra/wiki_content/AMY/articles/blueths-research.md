@@ -1,5 +1,5 @@
 [META]
-title=Blueth’s research
+title=Blueth’s Research
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Blueth’s research
+# Blueth’s Research
 
 Blueth was among the group of scientists called upon by Albert to examine the seeds found in the mines. After witnessing the mishaps caused by the experimentation, she created natural enemies for the Kubler plants called aphids. However, despite her efforts, these insects were ineffective against the plants and wandered aimlessly around the map for years.
 

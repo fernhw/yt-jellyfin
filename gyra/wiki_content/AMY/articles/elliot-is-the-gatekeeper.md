@@ -1,5 +1,5 @@
 [META]
-title=Elliot is the gatekeeper
+title=Elliot Is The Gatekeeper
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Elliot is the gatekeeper
+# Elliot Is The Gatekeeper
 
 Not much is known about him other than the fact that he never fails his paperwork, he's a he, and he's called a good father by his wife, whom no one has seen before. It's hard to know if Elliot even exists.
 

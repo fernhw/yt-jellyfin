@@ -1,5 +1,5 @@
 [META]
-title=READABILITY
+title=Readability
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# READABILITY
+# Readability
 
 Make it readable in all sizes
 

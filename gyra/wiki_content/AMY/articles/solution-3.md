@@ -1,5 +1,5 @@
 [META]
-title=SOLUTION 3
+title=Solution 3
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# SOLUTION 3
+# Solution 3
 
 CURE HER
 If Amy grabs and build the perfect outfit Francena will snap out of it, breaking the curse that 

@@ -1,5 +1,5 @@
 [META]
-title=Jackal/Joker
+title=Jackal/joker
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Jackal/Joker
+# Jackal/joker
 
 Puzzles and Stealth - Normal
 -The base game

@@ -1,5 +1,5 @@
 [META]
-title=Modding The Engine To Match:
+title=Modding The Engine To Match
 authors=Unknown
 template=system
 system_category=?
@@ -13,7 +13,7 @@ platform=?
 
 
 [MAIN_SECTION]
-# Modding The Engine To Match:
+# Modding The Engine To Match
 
 We have a modded version of unity and additional tooling explained in 3.1.2 Modifications.
 

@@ -1,5 +1,5 @@
 [META]
-title=City of Quitters
+title=City Of Quitters
 authors=Unknown
 template=location
 region=?
@@ -15,7 +15,7 @@ music=?
 
 
 [MAIN_SECTION]
-# City of Quitters
+# City Of Quitters
 
 ingersole’s Embrace
 All the miners and people in general who have stayed inside the mines live there. It's like a cocoon that houses a city that is quite unstable.

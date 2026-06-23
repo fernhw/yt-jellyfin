@@ -1,5 +1,5 @@
 [META]
-title=Ace of Hearts
+title=Ace Of Hearts
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Ace of Hearts
+# Ace Of Hearts
 
 Puzzles - Normal, Stealth - Hard
 - For those who want it hard

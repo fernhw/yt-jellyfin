@@ -1,5 +1,5 @@
 [META]
-title=Multi-Platform Puzzle
+title=Multi-platform Puzzle
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Multi-Platform Puzzle
+# Multi-platform Puzzle
 
 The ARG will use fake websites, real-world locations, and hidden messages in 20 languages, providing a complex and challenging experience for players. Melina is a walking enciclopedia.
 

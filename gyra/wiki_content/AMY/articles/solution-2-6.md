@@ -1,5 +1,5 @@
 [META]
-title=SOLUTION 2
+title=Solution 2
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# SOLUTION 2
+# Solution 2
 
 AVOID HIM
 If Nettle decapitates Barry, Amy can avoid him as he will no longer be able to control his movements.

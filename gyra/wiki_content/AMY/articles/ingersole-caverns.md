@@ -1,5 +1,5 @@
 [META]
-title=ingersole Caverns
+title=Ingersole Caverns
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# ingersole Caverns
+# Ingersole Caverns
 
 ingersole was created to find the great secret to immortality, it is a large space filled with flowers and rays of light falling from the ceiling.
 

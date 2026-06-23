@@ -1,5 +1,5 @@
 [META]
-title=Downloadable Content (DLC) and Expansions
+title=Downloadable Content (DLC) And Expansions
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Downloadable Content (DLC) and Expansions
+# Downloadable Content (DLC) And Expansions
 
 We're also charting audacious territory with an M-rated DLC. This isn't merely about added challenges. It unveils a game-changing limb-loss mechanism: when Amy's caught, she might lose a limb, radically altering gameplay dynamics. It's a daring move, crafted to stir conversation and solidify "Amy's Escape" as a standout title.
 

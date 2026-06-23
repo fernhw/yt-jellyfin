@@ -1,5 +1,5 @@
 [META]
-title=SOLUTION 3
+title=Solution 3
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# SOLUTION 3
+# Solution 3
 
 STALE SOUP
 Amy ignores the couple and Julianne, They keep on their quarrel until the end of existence. Or until it all falls.

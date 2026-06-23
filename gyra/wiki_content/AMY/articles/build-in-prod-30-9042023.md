@@ -1,5 +1,5 @@
 [META]
-title=Build [IN PROD 30%] 9/04/2023
+title=Build [In Prod 30%] 9/04/2023
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Build [IN PROD 30%] 9/04/2023
+# Build [In Prod 30%] 9/04/2023
 
 Engineering: Event Engineering, Remaining Systems, Level Specific Engineering, Mini Game Engineering
 Scripting: Grey Boxing, BlackJack Integration

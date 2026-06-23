@@ -1,5 +1,5 @@
 [META]
-title=SOLUTION 1
+title=Solution 1
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# SOLUTION 1
+# Solution 1
 
 ASK HIM KINDLY
 Amy meets Nettle again as she is about to reach the Ingersol mines. Nettle expresses her desire to leave the hotel and asks Amy to take her to the nearest river. However, Amy chooses not to help her and Nettle starts to dehydrate, eventually disappearing.

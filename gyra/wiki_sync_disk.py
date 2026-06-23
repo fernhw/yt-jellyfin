@@ -6,12 +6,15 @@ Run this whenever you've written or dropped .md files directly into
 and want them to appear in the wiki without going through the site UI.
 
 Usage:
-    python3 wiki_sync_disk.py                    # sync ALL projects
-    python3 wiki_sync_disk.py AMY                # sync one project by key
-    python3 wiki_sync_disk.py AMY --dry-run      # show what would be added
+    python3 wiki_sync_disk.py                           # sync ALL projects (add missing)
+    python3 wiki_sync_disk.py AMY                       # sync one project by key
+    python3 wiki_sync_disk.py AMY --dry-run             # show what would be added
+    python3 wiki_sync_disk.py AMY --sync-titles         # push title= from .md files → DB for ALL articles
+    python3 wiki_sync_disk.py AMY --sync-titles --dry-run
 
-Safe to run repeatedly — only inserts rows that are missing, never touches
-existing DB rows or .md file content.
+The .md files are the source of truth for titles.  --sync-titles reads every
+article's [META] title= and writes it to the DB row, so the wiki UI reflects
+what the files actually say.
 """
 
 import os
@@ -95,10 +98,55 @@ def sync_project(conn: sqlite3.Connection, project_id: int, project_key: str,
     return added, skipped
 
 
+def sync_titles_project(conn: sqlite3.Connection, project_id: int,
+                        project_key: str, dry_run: bool) -> list:
+    """Push title= from every .md file into the matching DB row.
+    MD files are the source of truth. Only updates rows where title differs."""
+    adir = os.path.join(WIKI_ROOT, project_key.upper(), "articles")
+    if not os.path.isdir(adir):
+        return []
+
+    now     = int(time.time())
+    updated = []
+
+    for fname in sorted(os.listdir(adir)):
+        if not fname.endswith(".md"):
+            continue
+        slug  = fname[:-3]
+        path  = os.path.join(adir, fname)
+        title = _read_title(path, slug)
+
+        row = conn.execute(
+            "SELECT id, title FROM wiki_articles WHERE project_id=? AND slug=?",
+            (project_id, slug)
+        ).fetchone()
+
+        if row is None:
+            continue  # not registered — use --sync to add it first
+
+        if row[1] == title:
+            continue  # already correct
+
+        updated.append((slug, row[1], title))
+
+        if not dry_run:
+            conn.execute(
+                "UPDATE wiki_articles SET title=?, updated_at=? WHERE id=?",
+                (title, now, row[0])
+            )
+
+    if not dry_run:
+        conn.commit()
+
+    return updated
+
+
 def main():
-    args      = [a for a in sys.argv[1:] if a != "--dry-run"]
-    dry_run   = "--dry-run" in sys.argv
-    key_filter = args[0].upper() if args else None
+    flags       = {a for a in sys.argv[1:] if a.startswith("--")}
+    args        = [a for a in sys.argv[1:] if not a.startswith("--")]
+    dry_run     = "--dry-run" in flags
+    sync_titles = "--sync-titles" in flags
+    key_filter  = args[0].upper() if args else None
 
     if dry_run:
         print("[DRY RUN] No changes will be written.\n")
@@ -117,6 +165,26 @@ def main():
         conn.close()
         sys.exit(1)
 
+    if sync_titles:
+        # Push title= from MD files → DB for all registered articles
+        total_updated = 0
+        for p in projects:
+            updated = sync_titles_project(conn, p["id"], p["key"], dry_run)
+            label   = f"[{p['key']}] {p['name']}"
+            if updated:
+                print(f"\n{label} — {len(updated)} title(s) {'would be updated' if dry_run else 'updated'}:")
+                for slug, old, new in updated:
+                    print(f"  {slug}")
+                    print(f"    - {old!r}")
+                    print(f"    + {new!r}")
+            else:
+                print(f"\n{label} — all titles already in sync")
+            total_updated += len(updated)
+        conn.close()
+        print(f"\nDone. {total_updated} title(s) {'would be updated' if dry_run else 'updated'}.")
+        return
+
+    # Default: add missing articles
     total_added = 0
     for p in projects:
         added, skipped = sync_project(conn, p["id"], p["key"], dry_run)
@@ -131,6 +199,7 @@ def main():
 
     conn.close()
     print(f"\nDone. {total_added} article(s) {'would be registered' if dry_run else 'registered'}.")
+
 
 
 if __name__ == "__main__":

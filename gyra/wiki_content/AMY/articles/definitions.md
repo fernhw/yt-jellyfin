@@ -1,5 +1,5 @@
 [META]
-title=DEFINITIONS
+title=Definitions
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# DEFINITIONS
+# Definitions
 
 > _Add details here._
 

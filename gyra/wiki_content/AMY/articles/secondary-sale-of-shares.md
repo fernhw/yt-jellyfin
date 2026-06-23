@@ -1,5 +1,5 @@
 [META]
-title=Secondary Sale of Shares
+title=Secondary Sale Of Shares
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Secondary Sale of Shares
+# Secondary Sale Of Shares
 
 Investors may sell their shares to other interested parties in private transactions, providing a return on their investment while still allowing the company to remain privately held. This option is dependent on the availability of interested buyers and the willingness of the company to facilitate such transactions.
 

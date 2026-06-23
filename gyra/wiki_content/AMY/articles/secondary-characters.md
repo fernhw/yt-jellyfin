@@ -1,5 +1,5 @@
 [META]
-title=Secondary characters
+title=Secondary Characters
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Secondary characters
+# Secondary Characters
 
 > _Add details here._
 

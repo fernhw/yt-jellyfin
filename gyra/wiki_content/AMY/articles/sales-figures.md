@@ -1,5 +1,5 @@
 [META]
-title=Sales Figures:
+title=Sales Figures
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Sales Figures:
+# Sales Figures
 
 > _Add details here._
 

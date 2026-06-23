@@ -1,5 +1,5 @@
 [META]
-title=Masked emotions
+title=Masked Emotions
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Masked emotions
+# Masked Emotions
 
 Masks
 Amy can acquire diverse masks with unique designs and functions, altering certain facets of her personality, such as her gait or speech. This is reminiscent of the Legend of Zelda series, where the protagonist undergoes a transformation with each mask.

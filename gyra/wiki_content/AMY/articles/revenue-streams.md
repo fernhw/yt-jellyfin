@@ -1,5 +1,5 @@
 [META]
-title=Revenue Streams:
+title=Revenue Streams
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Revenue Streams:
+# Revenue Streams
 
 Game sales on PC (Steam, GOG, Epic Games Store)
 Game sales on consoles (PS5, Switch, Xbox Series X)

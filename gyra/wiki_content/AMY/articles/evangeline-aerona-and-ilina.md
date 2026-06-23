@@ -1,5 +1,5 @@
 [META]
-title=Evangeline Aerona and Ilina
+title=Evangeline Aerona And Ilina
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Evangeline Aerona and Ilina
+# Evangeline Aerona And Ilina
 
 Evangeline and Ilina are two women who descended into the [Ingersole Caverns](ingersole-caverns.md) as medical assistants to [Dr. Daniel Cadwallader](dr-daniel-cadwallader.md) and did not come back as what they went in as. Evangeline is now a semi-fluid presence spread across two floors. Ilina is the size of a large pea. Between them, they can tell the past and the future. They are not consulted lightly.
 

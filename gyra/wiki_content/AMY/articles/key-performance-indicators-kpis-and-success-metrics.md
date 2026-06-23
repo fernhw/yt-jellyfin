@@ -1,5 +1,5 @@
 [META]
-title=Key Performance Indicators (KPIs) and Success Metrics:
+title=Key Performance Indicators (Kpis) And Success Metrics
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Key Performance Indicators (KPIs) and Success Metrics:
+# Key Performance Indicators (Kpis) And Success Metrics
 
 Sales and Revenue:
 Units sold within the first month, quarter, and year of release

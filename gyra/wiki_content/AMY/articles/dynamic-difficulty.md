@@ -1,5 +1,5 @@
 [META]
-title=Dynamic difficulty
+title=Dynamic Difficulty
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Dynamic difficulty
+# Dynamic Difficulty
 
 The game adjusts its difficulty based on player actions and choices, providing a personalized experience.
 

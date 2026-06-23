@@ -1,5 +1,5 @@
 [META]
-title=STORY
+title=Story
 authors=Unknown
 template=story_beat
 act=?
@@ -13,7 +13,7 @@ location=?
 
 
 [MAIN_SECTION]
-# STORY
+# Story
 
 In short, Bound by a sinister contract. Amy's only hope to save her brother is to escape the Ross Hotel. Yet, in this place where no one can die, she learns that there are things worse than death. 
 

@@ -1,5 +1,5 @@
 [META]
-title=wip] NETTLE 2
+title=wip] Nettle 2
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# wip] NETTLE 2
+# wip] Nettle 2
 
 The following solutions unlock after Nettle cuts off Barry's head.
 

@@ -369,7 +369,7 @@
   function childrenOf(root) {
     if (!root.gdd_num) return [];
     var pfx = root.gdd_num + '.';
-    return flat.filter(function(a){ return a.depth === 1 && a.gdd_num && a.gdd_num.slice(0,pfx.length) === pfx; });
+    return flat.filter(function(a){ return a.gdd_num && a.gdd_num.slice(0,pfx.length) === pfx; });
   }
   function descendantCount(a) {
     var pfx = a.gdd_num ? a.gdd_num + '.' : null;
@@ -418,16 +418,16 @@
     }
     if (mode === 'compact') {
       return '<ul class="wh-compact">'+children.map(function(c){
-        var g=gc(c);
-        return '<li>'+(c.gdd_num?'<span class="wh-num">'+esc(c.gdd_num)+'</span>':'')+
-          '<a href="'+url(c)+'">'+esc(c.title)+'</a>'+draft(c)+(g?' <span class="wh-more">+'+g+'</span>':'')+'</li>';
+        var indent = Math.max(0, (c.depth||0) - 1) * 16;
+        return '<li style="'+(indent?'padding-left:'+indent+'px':'')+'">'+(c.gdd_num?'<span class="wh-num">'+esc(c.gdd_num)+'</span>':'')+
+          '<a href="'+url(c)+'">'+esc(c.title)+'</a>'+draft(c)+'</li>';
       }).join('')+'</ul>';
     }
     // list (default)
     return '<ul class="wh-list">'+children.map(function(c){
-      var g=gc(c);
-      return '<li>'+(c.gdd_num?'<span class="wh-num">'+esc(c.gdd_num)+'</span>':'')+
-        '<a href="'+url(c)+'">'+esc(c.title)+'</a>'+draft(c)+(g?' <span class="wh-more">+'+g+'</span>':'')+'</li>';
+      var indent = Math.max(0, (c.depth||0) - 1) * 16;
+      return '<li style="'+(indent?'padding-left:'+indent+'px':'')+'">'+(c.gdd_num?'<span class="wh-num">'+esc(c.gdd_num)+'</span>':'')+
+        '<a href="'+url(c)+'">'+esc(c.title)+'</a>'+draft(c)+'</li>';
     }).join('')+'</ul>';
   }
 
@@ -452,9 +452,6 @@
     var bodyHtml = '';
     if (children.length) {
       bodyHtml = '<div class="wh-section-body" id="wh-body-'+root.id+'">'+renderBody(root,children,mode)+'</div>';
-      if (totalDesc > children.length) {
-        bodyHtml += '<div class="wh-section-footer"><a href="'+url(root)+'">View all '+totalDesc+' articles in this section &rarr;</a></div>';
-      }
     } else {
       // No children — render as a plain direct link, not a section box
       var col = accent;

@@ -1,5 +1,5 @@
 [META]
-title=BLUETH
+title=Blueth
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# BLUETH
+# Blueth
 
 Blueth is stuck playing a card game for eternity, and it's up to you whether or not to help her escape.
 

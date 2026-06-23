@@ -1,5 +1,5 @@
 [META]
-title=SOLUTION 3
+title=Solution 3
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# SOLUTION 3
+# Solution 3
 
 A DREAM TEA
 One of the teas listed in Martha's recipe book is a potent sleeping agent that Amy uses to easily weaken Baya.

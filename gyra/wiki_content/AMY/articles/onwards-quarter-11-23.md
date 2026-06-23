@@ -1,5 +1,5 @@
 [META]
-title=ONWARDS Quarter 11-23:
+title=Onwards Quarter 11-23
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# ONWARDS Quarter 11-23:
+# Onwards Quarter 11-23
 
 We make individual releases for remaining consoles, we focus on top of mind above all else, each new console will increase visibility
 We will work on translating to new languages we couldn’t afford to keep top of mind and release on other territories

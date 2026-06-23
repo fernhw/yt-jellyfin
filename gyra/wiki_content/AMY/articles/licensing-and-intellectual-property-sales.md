@@ -1,5 +1,5 @@
 [META]
-title=Licensing and Intellectual Property Sales
+title=Licensing And Intellectual Property Sales
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Licensing and Intellectual Property Sales
+# Licensing And Intellectual Property Sales
 
 Studio High Ground can monetize its intellectual property by licensing it to other companies for merchandise, film or TV adaptations, or other commercial purposes. This would provide additional revenue streams for the company and its investors.
 

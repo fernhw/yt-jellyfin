@@ -1,5 +1,5 @@
 [META]
-title=wip] BARRY
+title=wip] Barry
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# wip] BARRY
+# wip] Barry
 
 > _Add details here._
 

@@ -1,5 +1,5 @@
 [META]
-title=Scenario A Realistic Lower Bound:
+title=Scenario A Realistic Lower Bound
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Scenario A Realistic Lower Bound:
+# Scenario A Realistic Lower Bound
 
 Total Revenue (3 years): $3,523,750
 Estimated distribution/platform fees (30%): $1,057,125

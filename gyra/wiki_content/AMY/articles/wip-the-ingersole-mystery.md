@@ -1,5 +1,5 @@
 [META]
-title=wip] THE ingersole MYSTERY
+title=wip] The Ingersole Mystery
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# wip] THE ingersole MYSTERY
+# wip] The Ingersole Mystery
 
 > _Add details here._
 

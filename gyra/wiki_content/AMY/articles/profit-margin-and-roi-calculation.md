@@ -1,5 +1,5 @@
 [META]
-title=Profit Margin and ROI Calculation:
+title=Profit Margin And ROI Calculation
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Profit Margin and ROI Calculation:
+# Profit Margin And ROI Calculation
 
 > _Add details here._
 

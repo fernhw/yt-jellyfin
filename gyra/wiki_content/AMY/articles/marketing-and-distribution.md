@@ -1,5 +1,5 @@
 [META]
-title=Marketing and Distribution
+title=Marketing And Distribution
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Marketing and Distribution
+# Marketing And Distribution
 
 $100,000
 Ads at Release: $54,000

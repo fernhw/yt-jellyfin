@@ -1,5 +1,5 @@
 [META]
-title=wip] ROSS
+title=wip] Ross
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# wip] ROSS
+# wip] Ross
 
 > _Add details here._
 

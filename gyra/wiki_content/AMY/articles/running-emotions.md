@@ -1,5 +1,5 @@
 [META]
-title=Running emotions
+title=Running Emotions
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Running emotions
+# Running Emotions
 
 Amy's running style will adapt to her emotions in certain situations. For example, if she is scared, she may run differently than if she is calm.
 

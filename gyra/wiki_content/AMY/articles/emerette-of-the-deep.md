@@ -1,5 +1,5 @@
 [META]
-title=Emerette of the deep
+title=Emerette Of The Deep
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Emerette of the deep
+# Emerette Of The Deep
 
 The first immortal, walks towards you in the ingersole Mines trying to catch Amy.
 

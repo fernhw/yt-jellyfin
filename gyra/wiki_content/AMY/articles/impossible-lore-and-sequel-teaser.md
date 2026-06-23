@@ -1,5 +1,5 @@
 [META]
-title=Impossible Lore and Sequel Teaser
+title=Impossible Lore And Sequel Teaser
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Impossible Lore and Sequel Teaser
+# Impossible Lore And Sequel Teaser
 
 The ARG will provide a deeper understanding of the game's lore, hinting at a possible sequel, Amy's Escape: Eye Of God. (not started).
 

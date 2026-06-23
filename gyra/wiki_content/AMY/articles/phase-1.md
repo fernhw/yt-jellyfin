@@ -1,5 +1,5 @@
 [META]
-title=Phase 1:
+title=Phase 1
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Phase 1:
+# Phase 1
 
 Latchlings: The victim experiences intense itching as the spores attach themselves to the skin, initiating the growth of small flowers on the surface.
 

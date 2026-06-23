@@ -1,5 +1,5 @@
 [META]
-title=Acquisition by a larger game development studio or publisher
+title=Acquisition By A Larger Game Development Studio Or Publisher
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Acquisition by a larger game development studio or publisher
+# Acquisition By A Larger Game Development Studio Or Publisher
 
 Studio High Ground may be acquired by a more prominent game development studio or publisher that recognizes the potential of Amy's Escape and the team behind it. This acquisition would provide investors with a return on their investment and the opportunity for the team to continue developing games under the new ownership.
 

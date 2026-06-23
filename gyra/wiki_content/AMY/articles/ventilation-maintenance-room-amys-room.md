@@ -1,5 +1,5 @@
 [META]
-title=Ventilation Maintenance Room (Amy’s room)
+title=Ventilation Maintenance Room (amy’s Room)
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Ventilation Maintenance Room (Amy’s room)
+# Ventilation Maintenance Room (amy’s Room)
 
 Amy's room is inside the hotel's ventilation system, the vents create shadows that are noticeable in the area where Amy is.
 

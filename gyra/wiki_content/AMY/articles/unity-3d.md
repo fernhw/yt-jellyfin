@@ -1,5 +1,5 @@
 [META]
-title=Unity 3D
+title=Unity 3d
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Unity 3D
+# Unity 3d
 
 Main Engine
 

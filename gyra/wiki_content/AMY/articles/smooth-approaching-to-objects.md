@@ -1,5 +1,5 @@
 [META]
-title=Smooth approaching to objects
+title=Smooth Approaching To Objects
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Smooth approaching to objects
+# Smooth Approaching To Objects
 
 We'll create a set of animations to ensure that Amy can realistically pick up important objects in her environment instead of them magically appearing in her inventory.
 

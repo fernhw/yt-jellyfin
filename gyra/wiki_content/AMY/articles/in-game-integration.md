@@ -1,5 +1,5 @@
 [META]
-title=In-Game Integration
+title=In-game Integration
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# In-Game Integration
+# In-game Integration
 
 The ARG will be seamlessly integrated into the game, with clues and messages hidden within the game world that Melina left in her computer.
 

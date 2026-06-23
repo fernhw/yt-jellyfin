@@ -1,5 +1,5 @@
 [META]
-title=TARGET (12-16 teenagers) Young teens
+title=Target (12-16 Teenagers) Young Teens
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# TARGET (12-16 teenagers) Young teens
+# Target (12-16 Teenagers) Young Teens
 
 and market appeal.
 "Amy's Escape" delves into the largely unexplored realm of horror for the 12–16 age bracket, drawing inspiration from giants like "Coraline," "Undertale," and "Little Nightmares"—titles that collectively sold tens of millions.

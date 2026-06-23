@@ -1,5 +1,5 @@
 [META]
-title=Our plan is to provide streamers with tools
+title=Our Plan Is To Provide Streamers With Tools
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Our plan is to provide streamers with tools
+# Our Plan Is To Provide Streamers With Tools
 
 that enable audience interaction
 Our plan is to provide streamers with interactive tools that will enable their audience to participate in choosing answers within the game. Drawing inspiration from games like the Jackbox Party Pack, we will develop a phone-based service that will be available for five years after the game's release. This interactive feature will require the development of a web service, WebSocket integration. Goal is to need accounts to lower barriers.

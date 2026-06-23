@@ -1,5 +1,5 @@
 [META]
-title=NETTLE
+title=Nettle
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# NETTLE
+# Nettle
 
 > _Add details here._
 

@@ -1,5 +1,5 @@
 [META]
-title=In case of exclusivity acquisition by Microsoft
+title=In Case Of Exclusivity Acquisition By Microsoft
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# In case of exclusivity acquisition by Microsoft
+# In Case Of Exclusivity Acquisition By Microsoft
 
 Nintendo, or Sony
 In the event of an exclusivity acquisition offer from a platform such as Epic Games, Steam, Sony, or Microsoft, we have outlined a clear exit strategy for investors. If the acquisition offer is $4 million USD or more, we will use this amount to repay the initial investment made by our investors, cover any extra expenses, and distribute the remaining profits according to the agreed-upon revenue-sharing plan.

@@ -1,5 +1,5 @@
 [META]
-title=Besides the main storyline:
+title=Besides The Main Storyline
 authors=Unknown
 template=story_beat
 act=?
@@ -13,7 +13,7 @@ location=?
 
 
 [MAIN_SECTION]
-# Besides the main storyline:
+# Besides The Main Storyline
 
 Numerous side quests and hidden lore await players, offering a rich and immersive world that will keep them engaged for hours on end.
 

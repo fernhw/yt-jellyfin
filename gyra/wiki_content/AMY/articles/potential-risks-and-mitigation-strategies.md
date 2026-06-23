@@ -1,5 +1,5 @@
 [META]
-title=Potential Risks and Mitigation Strategies:
+title=Potential Risks And Mitigation Strategies
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Potential Risks and Mitigation Strategies:
+# Potential Risks And Mitigation Strategies
 
 > _Add details here._
 

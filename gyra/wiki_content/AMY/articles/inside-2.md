@@ -1,5 +1,5 @@
 [META]
-title=INSIDE:
+title=Inside
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# INSIDE:
+# Inside
 
 Inside is a puzzle-platformer game developed by Playdead, the same studio behind Limbo. The game features a young boy who must navigate through a dark and dystopian world filled with dangers and puzzles to uncover the truth behind the world he's exploring. Like Amy's Escape, Inside is a story-driven game that uses puzzles and exploration as gameplay mechanics.
 Development budget: $4.5 million

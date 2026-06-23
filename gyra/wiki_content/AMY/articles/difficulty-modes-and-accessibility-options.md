@@ -1,5 +1,5 @@
 [META]
-title=Difficulty Modes and Accessibility Options
+title=Difficulty Modes And Accessibility Options
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Difficulty Modes and Accessibility Options
+# Difficulty Modes And Accessibility Options
 
 > _Add details here._
 

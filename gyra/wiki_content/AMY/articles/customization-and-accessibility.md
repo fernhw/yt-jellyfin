@@ -1,5 +1,5 @@
 [META]
-title=Customization and Accessibility
+title=Customization And Accessibility
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Customization and Accessibility
+# Customization And Accessibility
 
 The controller remapping tool allows players to fully customize their control scheme to suit their preferences and needs. By offering the ability to reassign button functions, we ensure that our game can accommodate various playstyles and physical abilities, making it accessible to a wider range of gamers.
 

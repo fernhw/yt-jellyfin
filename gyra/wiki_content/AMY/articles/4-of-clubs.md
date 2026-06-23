@@ -1,5 +1,5 @@
 [META]
-title=4 of Clubs
+title=4 Of Clubs
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# 4 of Clubs
+# 4 Of Clubs
 
 Puzzles - Hard, Stealth - Normal
 - For second playthroughs

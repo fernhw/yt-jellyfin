@@ -1,5 +1,5 @@
 [META]
-title=Phase 5:
+title=Phase 5
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Phase 5:
+# Phase 5
 
 Ascension: The victim, now a permanent shrub-like entity, transcends their human and fungal origins to become a unique, undying life form, trapped in a state of eternal torment. At this point, the infection is permanent.
 

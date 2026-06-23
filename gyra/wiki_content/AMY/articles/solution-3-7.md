@@ -1,5 +1,5 @@
 [META]
-title=SOLUTION 3
+title=Solution 3
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# SOLUTION 3
+# Solution 3
 
 NO PLAY
 Amy doesn't interact with Nettle in this solution, so Nettle becomes dehydrated and dies on her own.

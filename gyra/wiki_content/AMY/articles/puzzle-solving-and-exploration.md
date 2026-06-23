@@ -1,5 +1,5 @@
 [META]
-title=Puzzle Solving and Exploration:
+title=Puzzle Solving And Exploration
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Puzzle Solving and Exploration:
+# Puzzle Solving And Exploration
 
 Throughout Amy's journey, players will encounter numerous puzzles that require critical thinking and resourcefulness. The hotel is filled with hidden rooms and secret passages waiting to be discovered, rewarding curious players with new insights into the hotel's backstory and its inhabitants.
 

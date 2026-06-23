@@ -1,5 +1,5 @@
 [META]
-title=Kane's Room and Rewards
+title=Kane's Room And Rewards
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Kane's Room and Rewards
+# Kane's Room And Rewards
 
 Combining all three key pieces grants Amy access to Kane's room, a horrifying space filled with body parts, puppet parts, and unsettling notes detailing Kane's work. Amidst the chaos, players will discover Kane's trapped body with his virtuous personality, the Puppet's Mask that allows bypassing the Theater of Dreams, and a shortcut that enables players to skip half of the ingersole Mines.
 Kane's Key collectibles offer a challenging series of puzzles for players who enjoy testing their problem-solving skills, while providing significant rewards that alter the course of the game.

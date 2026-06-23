@@ -1,5 +1,5 @@
 [META]
-title=IGNORE HER
+title=Ignore Her
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# IGNORE HER
+# Ignore Her
 
 When you first meet Blueth, she is too busy to pay attention to you, so Amy follows suit and doesn't speak to her.
 

@@ -1,5 +1,5 @@
 [META]
-title=wip] EMERETTE
+title=wip] Emerette
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# wip] EMERETTE
+# wip] Emerette
 
 SOLUTION 1: MIRROR PLAN
 To defeat Emerette, the player needs a plan as this powerful being controls the ingersole mines and is a constant danger to Amy. Barry shares a solution: the area has mirrors that reflect sunlight into the mines. Amy decides to use the mirrors to burn Emerette by creating a path that leads to a spot where the sunlight is concentrated.

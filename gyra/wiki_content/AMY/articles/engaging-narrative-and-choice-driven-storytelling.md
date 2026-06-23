@@ -1,5 +1,5 @@
 [META]
-title=Engaging Narrative and Choice-Driven Storytelling:
+title=Engaging Narrative And Choice-driven Storytelling
 authors=Unknown
 template=story_beat
 act=?
@@ -13,7 +13,7 @@ location=?
 
 
 [MAIN_SECTION]
-# Engaging Narrative and Choice-Driven Storytelling:
+# Engaging Narrative And Choice-driven Storytelling
 
 Amy's Escape features a rich, character-driven narrative that evolves based on the choices players make throughout the game. These choices can lead to different outcomes, revealing more about the hotel's mysterious past and its enigmatic residents.
 

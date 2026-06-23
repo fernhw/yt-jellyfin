@@ -1,5 +1,5 @@
 [META]
-title=FRANCENA
+title=Francena
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# FRANCENA
+# Francena
 
 > _Add details here._
 

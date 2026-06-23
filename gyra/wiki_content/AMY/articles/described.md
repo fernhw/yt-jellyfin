@@ -1,5 +1,5 @@
 [META]
-title=DESCRIBED
+title=Described
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# DESCRIBED
+# Described
 
 Amy's Escape is a terrifying and engrossing story-driven game about loss, trauma, and being trapped by a hell of your own making. Players are drawn into a twisted world full of eccentric characters, each with their own secrets and tragedies that unfold as you play.
 

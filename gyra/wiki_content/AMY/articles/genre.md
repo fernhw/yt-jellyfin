@@ -1,5 +1,5 @@
 [META]
-title=GENRE
+title=Genre
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# GENRE
+# Genre
 
 Amy's Escape is a dark, horror, coming-of-age, and psychological horror story with elements of adventure, puzzles, and stealth.
 

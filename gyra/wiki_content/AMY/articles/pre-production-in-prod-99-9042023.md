@@ -1,5 +1,5 @@
 [META]
-title=Pre-Production [IN PROD 99%] 9/04/2023
+title=Pre-production [In Prod 99%] 9/04/2023
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Pre-Production [IN PROD 99%] 9/04/2023
+# Pre-production [In Prod 99%] 9/04/2023
 
 Engineering: Tooling (AENavigator, Culling System, RUSTLE, RUSTLE Arena Edition Suite, Black Jack, Direction Engine, FernParticles, ProController Input)
 Scripting: Whole Game Layout, Grey Boxing, BlackJack Integration

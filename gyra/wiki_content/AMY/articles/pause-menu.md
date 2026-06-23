@@ -1,5 +1,5 @@
 [META]
-title=PAUSE MENU
+title=Pause Menu
 authors=Unknown
 template=ui_screen
 screen_type=?
@@ -12,7 +12,7 @@ mockup=?
 
 
 [MAIN_SECTION]
-# PAUSE MENU
+# Pause Menu
 
 The pause menu design is minimalistic with 5 interactive buttons. The screen will be covered by a slightly transparent black solid color, and the following buttons will appear:
 

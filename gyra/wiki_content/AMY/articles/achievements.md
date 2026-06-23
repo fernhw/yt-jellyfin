@@ -17,6 +17,7 @@ notes=This article must be read before the achievement list makes any sense. The
 
 ## Story Puzzles (10)
 
+
 **[Sam Bernal](sam-bernal.md) — Room 509**
 | Solution | Outcome |
 |---|---|
@@ -90,11 +91,11 @@ notes=This article must be read before the achievement list makes any sense. The
 **[The City of Quitters](city-of-quitters.md) and [Emerette](emerette-of-the-deep.md)**
 | Solution | Outcome |
 |---|---|
-| 🏆 *Skip Town* — Abandon the miners, run around Emerette to the VIP elevator | Emerette kills the miners. Game ends differently. No God Seed access. |
+| 🏆 *Skip Town* — Abandon the miners, run around Emerette to the VIP elevator | Without intervention, Emerette deforms the miners into small creatures. Their numbers dwindle over years. They stop fighting and retreat into the nest. No God Seed access. |
 | Get the City to help neutrally | Neutral assist. Miners survive but don't commit. |
 | *(good)* Use the mirrors / burn Emerette with light | Emerette destroyed. City joins the bar. God Seed accessible. |
 
-*(The miners are killed by Emerette if Amy never returns. Even using the secret skip doesn't spare them — if Amy doesn't save them, they die.)*
+*(If Amy never returns, the miners are not killed outright — they are slowly broken and deformed by Emerette, numbers dwindling, until the survivors retreat into the nest and stop fighting.)*
 
 ---
 

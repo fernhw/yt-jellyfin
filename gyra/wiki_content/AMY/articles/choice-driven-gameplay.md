@@ -1,5 +1,5 @@
 [META]
-title=Choice-driven gameplay
+title=Choice-driven Gameplay
 authors=Unknown
 template=mechanic
 category=?
@@ -13,7 +13,7 @@ owner=?
 
 
 [MAIN_SECTION]
-# Choice-driven gameplay
+# Choice-driven Gameplay
 
 Choices made throughout the game impact the story, leading to different endings and experiences.
 

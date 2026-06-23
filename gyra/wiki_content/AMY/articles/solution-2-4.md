@@ -1,5 +1,5 @@
 [META]
-title=SOLUTION 2
+title=Solution 2
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# SOLUTION 2
+# Solution 2
 
 THE PROFESSIONAL WINGMAN
 If the player is clever enough they can listen to what each one says use the information

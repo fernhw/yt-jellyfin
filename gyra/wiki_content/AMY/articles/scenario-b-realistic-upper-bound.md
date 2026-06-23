@@ -1,5 +1,5 @@
 [META]
-title=Scenario B Realistic Upper Bound:
+title=Scenario B Realistic Upper Bound
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Scenario B Realistic Upper Bound:
+# Scenario B Realistic Upper Bound
 
 Total Revenue (3 years): $10,646,300
 Estimated distribution/platform fees (30%): $3,193,890

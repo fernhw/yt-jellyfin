@@ -1,5 +1,5 @@
 [META]
-title=Speedy our Grey-Boxing tool
+title=Speedy Our Grey-boxing Tool
 authors=Unknown
 template=level_design
 biome=?
@@ -14,7 +14,7 @@ time_limit=?
 
 
 [MAIN_SECTION]
-# Speedy our Grey-Boxing tool
+# Speedy Our Grey-boxing Tool
 
 Greyboxing, a crucial step in level design, entails crafting a basic, playable prototype of a stage to evaluate its gameplay potential prior to refining its aesthetics. This widely-used approach allows designers to assess the layout's effectiveness in delivering an engaging gaming experience. By focusing on functionality first, greyboxing ensures a solid foundation for visually stunning and enjoyable levels.
 

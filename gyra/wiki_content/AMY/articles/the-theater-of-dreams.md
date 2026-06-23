@@ -1,5 +1,5 @@
 [META]
-title=The Theater of dreams
+title=The Theater Of Dreams
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# The Theater of dreams
+# The Theater Of Dreams
 
 For the entertainment of the guests there is a theater in the basement, but currently they cannot use it because it is always full.
 

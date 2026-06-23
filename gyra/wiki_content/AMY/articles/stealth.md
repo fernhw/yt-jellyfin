@@ -1,5 +1,5 @@
 [META]
-title=STEALTH
+title=Stealth
 authors=Unknown
 template=mechanic
 category=?
@@ -13,7 +13,7 @@ owner=?
 
 
 [MAIN_SECTION]
-# STEALTH
+# Stealth
 
 The game's mechanics are designed to constantly challenge players, encouraging them to think and react to the world around them.
 

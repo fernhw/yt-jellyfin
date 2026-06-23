@@ -1,5 +1,5 @@
 [META]
-title=BOTHER HER
+title=Bother Her
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# BOTHER HER
+# Bother Her
 
 Blueth is busy, but Amy wants to talk to her. So, she starts annoying her to get her attention.
 

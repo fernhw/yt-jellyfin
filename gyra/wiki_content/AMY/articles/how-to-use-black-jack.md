@@ -1,5 +1,5 @@
 [META]
-title=How To Use Black Jack:
+title=How To Use Black Jack
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# How To Use Black Jack:
+# How To Use Black Jack
 
 Load Blackjack in an empty Unity scene. Blackjack is a separate scene from the game arena.
 Connect the start nodes in Blackjack with linkers. These linkers are connected to dialog boxes, event boxes, and arena starting events.

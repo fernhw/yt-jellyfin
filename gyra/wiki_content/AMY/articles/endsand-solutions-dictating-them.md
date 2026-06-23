@@ -1,5 +1,5 @@
 [META]
-title=Ends—and solutions dictating them
+title=Ends—and Solutions Dictating Them
 authors=Unknown
 template=story_beat
 act=?
@@ -13,7 +13,7 @@ location=?
 
 
 [MAIN_SECTION]
-# Ends—and solutions dictating them
+# Ends—and Solutions Dictating Them
 
 All of these puzzles have three solutions—solutions that affect the ending the most are the multi-solution story puzzles listed below. Only the good ending gives a "Thank You For Playing," and that is the canon one, as we do have a sequel planned.
 

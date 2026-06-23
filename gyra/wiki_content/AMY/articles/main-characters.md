@@ -1,5 +1,5 @@
 [META]
-title=Main characters
+title=Main Characters
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Main characters
+# Main Characters
 
 > _Add details here._
 

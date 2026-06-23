@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Endings A, B, and C — Half a Monster
+# Endings A, B, And C — Half A Monster
 
 *Three variations on the same failure. The most common ending family. Designed to send you back in.*
 

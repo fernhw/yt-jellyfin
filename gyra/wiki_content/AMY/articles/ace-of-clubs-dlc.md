@@ -1,5 +1,5 @@
 [META]
-title=Ace of Clubs (DLC)
+title=Ace Of Clubs (DLC)
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Ace of Clubs (DLC)
+# Ace Of Clubs (DLC)
 
 Puzzles - Hard, Stealth - Hard
 An expansion pack that adds new content, including a side quest to collect all Seeds and a new character. Puzzles and stealth mechanics are significantly more challenging, requiring players to have a deep understanding of the base game. This mode also incorporates changes in geometry from the 4 of Clubs difficulty.

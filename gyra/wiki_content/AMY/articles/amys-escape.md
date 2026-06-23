@@ -1,5 +1,5 @@
 [META]
-title=AMY'S ESCAPE
+title=Amy's Escape
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# AMY'S ESCAPE
+# Amy's Escape
 
 The trademark "AMY'S ESCAPE" was filed by Fernando Holguin Owner of Studio High Ground, Game Developer Group, on February 25, 2023. The trademark, which is currently pending, covers downloadable video game software and multimedia software recorded on CD-ROM featuring video games, and falls under International Classes 009, which includes computer software and electronic publications. The trademark has been filed under the standard character mark code (4) and claims a 1B basis for registration. The attorney of record is Marek Krizka, and the trademark is registered as live on the principal register with a serial number of 97811847.
 

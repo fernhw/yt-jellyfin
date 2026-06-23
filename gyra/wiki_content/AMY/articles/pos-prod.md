@@ -1,5 +1,5 @@
 [META]
-title=Pos-Prod
+title=Pos-prod
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Pos-Prod
+# Pos-prod
 
 Animation: Cinematics, Special Events
 Sound: Music Composition, Sound Effects, Sound Mix

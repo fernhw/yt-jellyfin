@@ -1,5 +1,5 @@
 [META]
-title=Ross died ages ago.
+title=Ross Died Ages Ago.
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Ross died ages ago.
+# Ross Died Ages Ago.
 
 After playing for a while, it becomes easy to understand Albert Ross's secret. His main goal in life was to find the source of immortality
 

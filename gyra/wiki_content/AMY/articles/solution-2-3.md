@@ -1,5 +1,5 @@
 [META]
-title=SOLUTION 2
+title=Solution 2
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# SOLUTION 2
+# Solution 2
 
 HER FAVORITE TEA
 Amy can obtain the recipe book of Marta, just like in the previous solution, but this time the user must choose to make Baya's favorite tea to make her more friendly after giving it to her.

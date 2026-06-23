@@ -1,5 +1,5 @@
 [META]
-title=SOLUTION 1
+title=Solution 1
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# SOLUTION 1
+# Solution 1
 
 DON’T GO INTO THE BATHROOM
 If the player never goes to the main hotel restroom, Amy will never meet Nettle and therefore the missions involving this character will not progress.

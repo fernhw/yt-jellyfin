@@ -1,5 +1,5 @@
 [META]
-title=Start [COMPLETE]
+title=Start [Complete]
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Start [COMPLETE]
+# Start [Complete]
 
 Engineering: Tooling, Engine Code (Engine, Cluster Based Architecture, Shading, Animation)
 Writing: Overall Game Design, Design Bible Master, Whole Game Walkthrough

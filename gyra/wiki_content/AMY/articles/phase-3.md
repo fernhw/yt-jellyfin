@@ -1,5 +1,5 @@
 [META]
-title=Phase 3:
+title=Phase 3
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# Phase 3:
+# Phase 3
 
 Branching: The spores burrow into the bone, transforming it into branch-like structures as they continue to establish their presence within the host, the host will experience cough.
 

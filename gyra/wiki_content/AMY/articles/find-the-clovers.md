@@ -1,5 +1,5 @@
 [META]
-title=FIND THE CLOVERS
+title=Find The Clovers
 authors=Unknown
 template=generic
 status=?
@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-# FIND THE CLOVERS
+# Find The Clovers
 
 If you manage to find 4 hidden clovers throughout the adventure, you can give them to Blueth and break her eternal card game.
 
