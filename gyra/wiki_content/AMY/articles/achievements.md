@@ -20,9 +20,9 @@ notes=This article must be read before the achievement list makes any sense. The
 **[Sam Bernal](sam-bernal.md) — Room 509**
 | Solution | Outcome |
 |---|---|
-| 🏆 *Smoke Signals* — Set the lamp on fire | Sam wakes badly. **First Sin Mark: soot on Amy.** Sam does not appear in the bar. |
-| Confront him with his fear | Moderate. Sam may appear in bar. |
-| *(good)* Talk with him for 4–5 minutes | Sam wakes naturally. Joins the [Liminal Bar](the-liminal-bar.md). |
+| 🏆 *Firey Wakeup* — Set the lamp on fire | Sam wakes badly. **First Sin Mark: soot on Amy.** Sam does not appear in the bar. |
+| Scare him with his fear | Moderate. |
+| *(good)* Talk with him for 4–5 minutes | Sam wakes naturally. Joins the bar. |
 
 **[Aaron Kane](aaron-kane.md) — Theater of Dreams**
 | Solution | Outcome |
@@ -31,31 +31,38 @@ notes=This article must be read before the achievement list makes any sense. The
 | Redirect Kane into the Ingersole | Neutral disruption. |
 | *(good)* Give a good show | Kane joins the bar (as a statue). |
 
-**[Barret Aricson](barret-aricson.md) — The Lobby**
+**[Barret Aricson](barret-aricson.md) — Mine Hospital**
 | Solution | Outcome |
 |---|---|
-| 🏆 *Header* — Kick his head into the Ingersole | Barret is removed. Ending gate cannot open the good way. |
-| Ignore him | Neutral. No bar entry. |
-| *(good)* Give him the cigar after the Ingersole | The ending gate opens. Barret joins the bar. |
+| 🏆 *Header* — Let him become a bush (mine hospital spores) → his head ends up kicked into the Ingersole | Barret lost. Ending gate cannot open the good way. |
+| Avoid him after Nettle's intervention | Neutral. No bar entry. |
+| *(good)* Give him a cigarette at the bar | Barret joins the bar. Ending gate opens. |
 
 **[Eila Bartlett](eila-bartlett.md) — The Sky Garden**
 | Solution | Outcome |
 |---|---|
-| 🏆 *Deep Freeze* — Freeze him solid | Eila halted. Garden dies. |
+| 🏆 *Heart of Stone* — Show him his family photo | Eila's emotional response completes his transformation. He becomes a full plant. No recovery. |
 | Ignore him | Neutral. Loop continues. |
 | *(good)* Get eaten by the plant (willingly) | Eila joins the bar (as a statue). |
+
+**[Baya Ross](baya-ross.md) — The Ballroom**
+| Solution | Outcome |
+|---|---|
+| 🏆 *Frozen Solid* — Give the bad tea (Martha's preparation) | Baya goes solid — the same process that turned [Martha](martha-gioseppy-waliger.md) into a bush. Affects Ross access and ending branch. |
+| Baya mid-state tea | Partial. Affects ending. |
+| *(good)* Baya best tea | Good state. Full ending access. |
 
 **[Francena Cadwallader](francena-cadwallader.md) — The Attic Studio**
 | Solution | Outcome |
 |---|---|
-| 🏆 *Corner Office* — Trap her in a corner | Dress never finished. Francena isolated. |
+| 🏆 *Tangled Hag* — Trap her in a corner | Dress never finished. Francena isolated. |
 | Ignore her | Neutral. Loop continues. |
 | *(good)* Get the perfect dress | Francena joins the bar. |
 
 **[Clementine & Julianne Wellington](clementine-and-julianne.md) — Kitchen / Bakery**
 | Solution | Outcome |
 |---|---|
-| 🏆 *Too Much Salt* — Deliberately worsen things | Couple's rift deepens. Neither joins the bar. |
+| 🏆 *Fail at Helping Clementine* — Be a dick, make things worse | Couple's rift deepens. Neither joins the bar. |
 | Lie to Clementine | Partial reconciliation. |
 | *(good)* Play cupid correctly | Both join the bar. |
 
@@ -83,23 +90,18 @@ notes=This article must be read before the achievement list makes any sense. The
 **[The City of Quitters](city-of-quitters.md) and [Emerette](emerette-of-the-deep.md)**
 | Solution | Outcome |
 |---|---|
-| 🏆 *Skip Town* — Use the secret skip, ignore the City | City abandoned. No God Seed access path. |
-| Get the City to help | Neutral assist. |
-| *(good)* Kill Emerette with light | City joins the bar. God Seed accessible. Enables secret ending branch. |
+| 🏆 *Skip Town* — Abandon the miners, run around Emerette to the VIP elevator | Emerette kills the miners. Game ends differently. No God Seed access. |
+| Get the City to help neutrally | Neutral assist. Miners survive but don't commit. |
+| *(good)* Use the mirrors / burn Emerette with light | Emerette destroyed. City joins the bar. God Seed accessible. |
+
+*(The miners are killed by Emerette if Amy never returns. Even using the secret skip doesn't spare them — if Amy doesn't save them, they die.)*
 
 ---
 
-## Collectable Puzzles
-
-**[Jenna Martina](jenna-martina.md)'s Birthday — The Liminal Bar**
-| State | Achievement |
-|---|---|
-| 🏆 *Quiet Night* — Fewer than 2 guests at ending | Awarded. |
-| 10 guests only | Partial. |
-| *(good)* Deirdre joins; full bar | Jenna's quest unlocks (100% reward). No achievement — this is the reward. |
+## Collectable Achievements
 
 **[Dr. Blueth Needham](dr-elizabeth-blueth-needham.md)'s Moonlight Alphyd Rescue**
-Requires solving puzzles across the full hotel. Blueth joins the bar if completed. Her puzzle is a rescue mission rather than a confrontation — it functions separately from the ten story puzzles above.
+Requires solving puzzles across the full hotel. Blueth joins the bar if completed. Her puzzle is a rescue mission — functions separately from the 10 story puzzles.
 
 ---
 
