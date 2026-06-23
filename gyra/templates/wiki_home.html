@@ -128,30 +128,360 @@
 </style>
 {% endif %}
 
-{# ── Article grid ── #}
-<div class="wiki-home-content">
-  {% if flat %}
-  <div class="wiki-home-grid">
-    {% for item in flat %}
-    <a class="wiki-home-card" href="{{ url_for('wiki_article', project_id=project.id, slug=item.slug) }}">
-      <div style="flex:1;min-width:0">
-        <div class="wiki-home-card-title" style="{% if item.depth > 0 %}font-size:12.5px;color:#54595d;{% endif %}">
-          {% if item.gdd_num %}<span style="font-size:10px;color:#a0a0a0;margin-right:4px;font-family:monospace">{{ item.gdd_num }}</span>{% endif %}
-          {{ item.title }}
-        </div>
-        {% if not item.is_published %}<span class="wiki-draft-badge">Draft</span>{% endif %}
+{# ── Wiki main layout ── #}
+<div class="wiki-main-layout">
+
+  {# ── Left sidebar: collapsible tree nav ── #}
+  <nav class="wiki-sidenav" id="wiki-sidenav">
+    <div class="wiki-sidenav-search">
+      <input type="search" id="wiki-search" placeholder="Search articles…" autocomplete="off">
+    </div>
+    <div class="wiki-sidenav-tree" id="wiki-sidenav-tree">
+      {% for item in flat %}
+      <a class="wiki-sidenav-item wiki-sidenav-d{{ [item.depth, 4] | min }}"
+         href="{{ url_for('wiki_article', project_id=project.id, slug=item.slug) }}"
+         data-title="{{ item.title | lower }}"
+         data-num="{{ item.gdd_num or '' }}"
+         style="padding-left:{{ 12 + item.depth * 14 }}px">
+        {% if item.gdd_num %}<span class="wiki-sidenav-num">{{ item.gdd_num }}</span>{% endif %}
+        <span class="wiki-sidenav-label">{{ item.title }}</span>
+      </a>
+      {% endfor %}
+      {% if not flat %}
+      <div style="padding:16px 14px;font-size:13px;color:#a0a0a0">No articles yet.</div>
+      {% endif %}
+    </div>
+  </nav>
+
+  {# ── Right: main content area ── #}
+  <main class="wiki-main-body">
+    {% if flat %}
+
+    {# Search results (hidden by default) #}
+    <div id="wiki-search-results" style="display:none">
+      <h2 class="wiki-body-section-title">Search Results</h2>
+      <ul id="wiki-search-list" class="wiki-body-search-list"></ul>
+    </div>
+
+    {# Normal view: root sections with children — rendered by JS from flat data #}
+    <div id="wiki-body-normal"></div>
+
+    {% else %}
+    <div class="wiki-empty-state">
+      <div class="wiki-empty-icon">📖</div>
+      <h2>This wiki is empty</h2>
+      <p>Import a GDD or create your first article to get started.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <a class="btn btn-primary" href="{{ url_for('wiki_new', project_id=project.id) }}">+ New Article</a>
+        {% if session.role in ('admin','super_user') %}
+        <a class="btn btn-secondary" href="{{ url_for('wiki_import', project_id=project.id) }}">⬆ Import GDD</a>
+        {% endif %}
       </div>
-    </a>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="empty-state" style="margin:60px auto;max-width:400px;text-align:center;">
-    <h2 style="font-weight:normal;color:#202122;">Your wiki is empty</h2>
-    <p style="color:#54595d;">Create your first article to get started.</p>
-    <a class="btn btn-primary" href="{{ url_for('wiki_new', project_id=project.id) }}">+ New Article</a>
-  </div>
-  {% endif %}
+    </div>
+    {% endif %}
+  </main>
+
 </div>
+
+<style>
+/* ── Layout ────────────────────────────────────────────────────────────────── */
+.wiki-main-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: calc(100vh - 52px);
+  align-items: start;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+.wiki-sidenav {
+  position: sticky;
+  top: 52px;
+  height: calc(100vh - 52px);
+  overflow-y: auto;
+  border-right: 1px solid #a2a9b1;
+  background: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+}
+.wiki-sidenav-search {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.wiki-sidenav-search input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #a2a9b1;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+  color: #202122;
+}
+.wiki-sidenav-search input:focus { border-color: #3366cc; box-shadow: 0 0 0 2px rgba(51,102,204,.15); }
+.wiki-sidenav-tree { flex: 1; overflow-y: auto; padding: 6px 0; }
+.wiki-sidenav-item {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 4px 12px;
+  font-size: 13px;
+  color: #0645ad;
+  text-decoration: none;
+  line-height: 1.4;
+  border-left: 2px solid transparent;
+  transition: background .1s;
+}
+.wiki-sidenav-item:hover { background: #eaf0ff; border-left-color: #3366cc; }
+.wiki-sidenav-d0 { font-weight: 600; color: #202122; font-size: 13px; margin-top: 4px; }
+.wiki-sidenav-d0:hover { color: #0645ad; }
+.wiki-sidenav-d1 { font-size: 13px; }
+.wiki-sidenav-d2 { font-size: 12.5px; color: #54595d; }
+.wiki-sidenav-d3, .wiki-sidenav-d4 { font-size: 12px; color: #72777d; }
+.wiki-sidenav-num {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #a0a0a0;
+  flex-shrink: 0;
+  min-width: 32px;
+}
+.wiki-sidenav-label { flex: 1; }
+.wiki-sidenav-item.wiki-search-hidden { display: none; }
+
+/* ── Main body ────────────────────────────────────────────────────────────── */
+.wiki-main-body {
+  padding: 28px 40px 60px;
+  max-width: 860px;
+}
+.wiki-body-section {
+  margin-bottom: 32px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid #eaecf0;
+}
+.wiki-body-section:last-child { border-bottom: none; }
+.wiki-body-section-title {
+  font-size: 20px;
+  font-weight: normal;
+  font-family: 'Linux Libertine', Georgia, serif;
+  color: #202122;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.wiki-body-section-title a { color: #0645ad; text-decoration: none; }
+.wiki-body-section-title a:hover { text-decoration: underline; }
+.wiki-body-gdd-num {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: #a0a0a0;
+  flex-shrink: 0;
+}
+.wiki-body-children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 2;
+  column-gap: 24px;
+}
+.wiki-body-children li {
+  break-inside: avoid;
+  padding: 3px 0;
+  font-size: 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.wiki-body-children a { color: #0645ad; text-decoration: none; }
+.wiki-body-children a:hover { text-decoration: underline; }
+.wiki-body-child-num {
+  font-family: ui-monospace, monospace;
+  font-size: 10.5px;
+  color: #a0a0a0;
+  flex-shrink: 0;
+}
+.wiki-body-child-more {
+  font-size: 11px;
+  color: #a0a0a0;
+  margin-left: 2px;
+}
+.wiki-draft-badge {
+  font-size: 10px;
+  background: #f8d7da;
+  color: #721c24;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+/* ── Search results ───────────────────────────────────────────────────────── */
+.wiki-body-search-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.wiki-body-search-list li { padding: 6px 0; border-bottom: 1px solid #eaecf0; font-size: 14px; }
+.wiki-body-search-list li:last-child { border-bottom: none; }
+.wiki-body-search-list a { color: #0645ad; text-decoration: none; }
+.wiki-body-search-list a:hover { text-decoration: underline; }
+.wiki-body-search-list .sr-num { font-family: monospace; font-size: 11px; color: #a0a0a0; margin-right: 4px; }
+.wiki-body-search-list .sr-depth { font-size: 11px; color: #a0a0a0; margin-left: 4px; }
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.wiki-empty-state {
+  text-align: center;
+  margin: 80px auto;
+  max-width: 420px;
+}
+.wiki-empty-icon { font-size: 48px; margin-bottom: 12px; }
+.wiki-empty-state h2 { font-weight: normal; color: #202122; margin-bottom: 8px; }
+.wiki-empty-state p { color: #54595d; margin-bottom: 20px; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .wiki-main-layout { grid-template-columns: 1fr; }
+  .wiki-sidenav { position: static; height: auto; border-right: none; border-bottom: 1px solid #a2a9b1; }
+  .wiki-main-body { padding: 20px 16px; }
+  .wiki-body-children { columns: 1; }
+}
+</style>
+
+<script>
+// ── Search ──────────────────────────────────────────────────────────────────
+(function () {
+  var searchInput   = document.getElementById('wiki-search');
+  var normalView    = document.getElementById('wiki-body-normal');
+  var resultsView   = document.getElementById('wiki-search-results');
+  var resultsList   = document.getElementById('wiki-search-list');
+  var sidenavItems  = document.querySelectorAll('.wiki-sidenav-item');
+  if (!searchInput) return;
+
+  var flat = JSON.parse(document.getElementById('wiki-flat-data').textContent);
+
+  searchInput.addEventListener('input', function () {
+    var q = searchInput.value.trim().toLowerCase();
+    if (!q) {
+      // reset
+      normalView && (normalView.style.display = '');
+      resultsView && (resultsView.style.display = 'none');
+      sidenavItems.forEach(function (el) { el.classList.remove('wiki-search-hidden'); });
+      return;
+    }
+
+    // filter sidebar
+    sidenavItems.forEach(function (el) {
+      var match = (el.dataset.title || '').indexOf(q) !== -1 || (el.dataset.num || '').indexOf(q) !== -1;
+      el.classList.toggle('wiki-search-hidden', !match);
+    });
+
+    // build results
+    var hits = flat.filter(function (a) {
+      return a.title.toLowerCase().indexOf(q) !== -1
+          || (a.gdd_num || '').indexOf(q) !== -1;
+    });
+
+    normalView && (normalView.style.display = 'none');
+    resultsView && (resultsView.style.display = '');
+    if (resultsList) {
+      if (!hits.length) {
+        resultsList.innerHTML = '<li style="color:#72777d;font-style:italic">No articles match.</li>';
+      } else {
+        resultsList.innerHTML = hits.map(function (a) {
+          var indent = '&nbsp;'.repeat(a.depth * 3);
+          return '<li>' + indent
+            + '<a href="/project/{{ project.id }}/wiki/' + encodeURIComponent(a.slug) + '">'
+            + (a.gdd_num ? '<span class="sr-num">' + a.gdd_num + '</span> ' : '')
+            + escHtml(a.title) + '</a>'
+            + (a.depth ? '<span class="sr-depth">depth ' + a.depth + '</span>' : '')
+            + '</li>';
+        }).join('');
+      }
+    }
+  });
+
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+})();
+
+// ── Build body sections from flat data ─────────────────────────────────────
+(function () {
+  var flat     = JSON.parse(document.getElementById('wiki-flat-data').textContent);
+  var bodyEl   = document.getElementById('wiki-body-normal');
+  if (!bodyEl || !flat.length) return;
+
+  var base = '/project/{{ project.id }}/wiki/';
+
+  // Separate root items (depth 0) and build index by id
+  var roots = flat.filter(function (a) { return a.depth === 0; });
+
+  // For each root, collect depth-1 children whose gdd_num starts with root.gdd_num + '.'
+  function directChildren(root) {
+    if (!root.gdd_num) return [];
+    var prefix = root.gdd_num + '.';
+    return flat.filter(function (a) {
+      return a.depth === 1 && a.gdd_num && a.gdd_num.indexOf(prefix) === 0;
+    });
+  }
+
+  function grandchildCount(child) {
+    if (!child.gdd_num) return 0;
+    var prefix = child.gdd_num + '.';
+    return flat.filter(function (a) {
+      return a.depth === 2 && a.gdd_num && a.gdd_num.indexOf(prefix) === 0;
+    }).length;
+  }
+
+  var html = '';
+  roots.forEach(function (root) {
+    var children = directChildren(root);
+    html += '<section class="wiki-body-section">';
+    html += '<h2 class="wiki-body-section-title">';
+    if (root.gdd_num) html += '<span class="wiki-body-gdd-num">' + escHtml(root.gdd_num) + '</span>';
+    html += '<a href="' + base + encodeURIComponent(root.slug) + '">' + escHtml(root.title) + '</a>';
+    if (!root.is_published) html += '<span class="wiki-draft-badge">Draft</span>';
+    html += '</h2>';
+
+    if (children.length) {
+      html += '<ul class="wiki-body-children">';
+      children.forEach(function (c) {
+        var gc = grandchildCount(c);
+        html += '<li>';
+        html += '<a href="' + base + encodeURIComponent(c.slug) + '">';
+        if (c.gdd_num) html += '<span class="wiki-body-child-num">' + escHtml(c.gdd_num) + '</span> ';
+        html += escHtml(c.title) + '</a>';
+        if (!c.is_published) html += ' <span class="wiki-draft-badge">Draft</span>';
+        if (gc) html += ' <span class="wiki-body-child-more">+' + gc + ' more</span>';
+        html += '</li>';
+      });
+      html += '</ul>';
+    }
+    html += '</section>';
+  });
+
+  // Unnumbered depth-0 articles
+  var unnumbered = flat.filter(function (a) { return a.depth === 0 && !a.gdd_num; });
+  if (unnumbered.length) {
+    html += '<section class="wiki-body-section">';
+    html += '<h2 class="wiki-body-section-title" style="color:#72777d">Uncategorized</h2>';
+    html += '<ul class="wiki-body-children">';
+    unnumbered.forEach(function (a) {
+      html += '<li><a href="' + base + encodeURIComponent(a.slug) + '">' + escHtml(a.title) + '</a></li>';
+    });
+    html += '</ul></section>';
+  }
+
+  bodyEl.innerHTML = html;
+
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+})();
+</script>
 
 <script id="wiki-flat-data" type="application/json">{{ flat | tojson }}</script>
 

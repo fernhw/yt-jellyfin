@@ -1348,8 +1348,10 @@ def register(app) -> None:
             # Build parent title map for detection context
             num_title_map = {item["num"]: item["title"] for item in parsed}
 
-            id_map = {}
-            for item in parsed:
+            id_map   = {}
+            used_slugs: set = set()  # track slugs allocated this import run
+
+            for doc_pos, item in enumerate(parsed):
                 num   = item["num"]
                 title = item["title"]
                 body  = "\n".join(item["body"]).strip()
@@ -1360,10 +1362,20 @@ def register(app) -> None:
                 parent_title = num_title_map.get(parent_num, "")
                 template_id = assignments.get(num) or _detect_wiki_template(title, parent_title)
 
-                slug    = _unique_slug(project_id, _slugify(title))
+                # Deduplicate slug against both DB and already-inserted batch rows
+                base = _slugify(title)
+                slug = base
+                n = 2
+                while slug in used_slugs or conn.execute(
+                    "SELECT 1 FROM wiki_articles WHERE project_id=? AND slug=?",
+                    (project_id, slug)
+                ).fetchone():
+                    slug = f"{base}-{n}"
+                    n += 1
+                used_slugs.add(slug)
                 content = _build_wiki_article_content(title, body, template_id)
                 parent_id = id_map.get(parent_num)
-                order   = float(parts[-1])
+                order   = float(doc_pos)
 
                 _write_md(project["key"], slug, content)
                 cur = conn.execute(

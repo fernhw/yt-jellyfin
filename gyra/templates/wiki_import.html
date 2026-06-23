@@ -36,6 +36,10 @@
 3.1. World Map
 14.4 Combat System</pre>
       <p>Any depth works. Body text below each heading becomes the article content.</p>
+      <p style="margin-top:8px;font-size:12px;color:#72777d">
+        ⚠ Lines with &gt;19 words are treated as content, not headings.<br>
+        Ordered list items (1–9) inside a section are absorbed automatically.
+      </p>
       <hr style="border:none;border-top:1px solid #eaecf0;margin:16px 0">
       <strong>Import mode</strong>
       <div class="wiki-import-mode-choice" style="margin-top:10px">
@@ -81,8 +85,10 @@
     <button type="button" class="btn btn-primary" id="import-confirm-btn">Generate Articles →</button>
   </div>
   <div class="import-preview-hint">
-    Each section gets an <strong>auto-detected template</strong> that pre-fills its infobox fields.
-    Change any template below — but you <strong>cannot edit content here</strong>. Do that after import.
+    Auto-detected templates assigned. Change any below.<br>
+    <strong>Ordered list items</strong> (single digits 1–9) are absorbed into the section above them automatically.
+    For edge cases like <code>11.</code> inside a list — use <strong>⤴ to merge</strong> a row into the one above.
+    Duplicate section numbers are <span style="background:#fffbea;border:1px solid #f0d060;border-radius:3px;padding:0 4px;font-size:11px">highlighted</span>.
   </div>
   <div class="import-preview-table-wrap">
     <table class="import-preview-table">
@@ -93,6 +99,7 @@
           <th style="width:60px">Depth</th>
           <th style="width:200px">Template</th>
           <th>Fields that will be created</th>
+          <th style="width:46px" title="Merge this row into the row above">⤴</th>
         </tr>
       </thead>
       <tbody id="import-preview-body"></tbody>
@@ -131,21 +138,57 @@
   var TEMPLATES = JSON.parse(document.getElementById('wiki-templates-data').textContent);
   var TEMPLATE_LIST = JSON.parse(document.getElementById('wiki-template-list').textContent);
 
-  // ── Heading parser (mirrors Python regex) ─────────────────────────────────
-  var HEAD_RE = /^(\d+(?:\.\d+)*)\.?[ \t]*(?:[-\u2013\u2014][ \t]*)?(.*)$/;
+  // ── Heading parser ─────────────────────────────────────────────────────────
+  // Require dot or whitespace IMMEDIATELY after the number — prevents
+  // "0%Vat", "16 are bridging..." etc. from being parsed as section numbers.
+  var HEAD_RE = /^(\d+(?:\.\d+)*)(?=[\s.])\.?[ \t]*(?:[-\u2013\u2014][ \t]*)?(.*)$/;
+
+  // Count only tokens that contain at least one letter (ignore $894,000 etc.)
+  function wordCount(str) {
+    return (str.match(/[a-zA-Z]+/g) || []).length;
+  }
 
   function parseGDD(text) {
     var lines = text.split('\n');
     var parsed = [], current = null;
+    var listSeqNext = null; // tracks sequential ordered list (catches 10., 11., etc.)
+
     for (var i = 0; i < lines.length; i++) {
-      var m = HEAD_RE.exec(lines[i].trim());
+      var line    = lines[i];
+      var trimmed = line.trim();
+      var m       = HEAD_RE.exec(trimmed);
+
       if (m) {
+        var numStr     = m[1];
+        var parts      = numStr.split('.');
+        var isSingleSeg = parts.length === 1;
+        var numVal      = isSingleSeg ? parseInt(numStr, 10) : NaN;
+        var titleText   = m[2].trim();
+
+        // Rule 1: single-digit (1-9), no dots, inside a section → list item
+        var isSingleDigit = isSingleSeg && numVal >= 1 && numVal <= 9;
+
+        // Rule 2: continues a sequential ordered list already underway
+        var isSeqCont = isSingleSeg && listSeqNext !== null && numVal === listSeqNext;
+
+        // Rule 3: title too long (>19 real words) → this is a sentence, not a heading
+        var isTooLong = wordCount(titleText) > 19;
+
+        if (current && (isSingleDigit || isSeqCont || isTooLong)) {
+          current.body.push(line);
+          if (isSingleDigit || isSeqCont) listSeqNext = numVal + 1;
+          continue;
+        }
+
+        // Real heading
+        listSeqNext = null;
         if (current) parsed.push(current);
-        var num   = m[1];
-        var title = m[2].trim() || 'Section ' + m[1];
-        current = { num: num, title: title, body: [] };
+        var title = titleText || 'Section ' + numStr;
+        current = { num: numStr, title: title, body: [] };
       } else if (current) {
-        current.body.push(lines[i]);
+        current.body.push(line);
+        // Non-blank non-number line breaks sequential list tracking
+        if (trimmed !== '') listSeqNext = null;
       }
     }
     if (current) parsed.push(current);
@@ -174,7 +217,8 @@
   }
 
   // ── Build dropdown HTML ───────────────────────────────────────────────────
-  function buildDropdown(num, selectedId) {
+  // idx = position in parsed[] — used as stable key (avoids duplicate-num collisions)
+  function buildDropdown(idx, selectedId) {
     var cats = {}, catOrder = [];
     TEMPLATE_LIST.forEach(function (tid) {
       var tpl = TEMPLATES[tid];
@@ -182,7 +226,7 @@
       if (!cats[tpl.category]) { cats[tpl.category] = []; catOrder.push(tpl.category); }
       cats[tpl.category].push(tid);
     });
-    var html = '<select class="import-tpl-select" data-num="' + escAttr(num) + '">';
+    var html = '<select class="import-tpl-select" data-idx="' + idx + '">';
     catOrder.forEach(function (cat) {
       html += '<optgroup label="' + escHtml(cat) + '">';
       cats[cat].forEach(function (tid) {
@@ -193,6 +237,17 @@
     });
     html += '</select>';
     return html;
+  }
+
+  // ── Merge row idx into the row above it ───────────────────────────────────
+  function mergeUp(idx) {
+    if (idx <= 0 || idx >= parsed.length) return;
+    var victim = parsed[idx];
+    var prev   = parsed[idx - 1];
+    // Append as a bold sub-heading + body into prev
+    prev.body = prev.body.concat(['', '**' + victim.title + '**'], victim.body);
+    parsed.splice(idx, 1);
+    renderPreviewTable();
   }
 
   function fieldBadges(templateId) {
@@ -230,31 +285,111 @@
   });
 
   function renderPreviewTable() {
+    // ── Duplicate detection ─────────────────────────────────────────────────
+    // Count exact occurrences of each num string
+    var numCount = {};
+    parsed.forEach(function (p) { numCount[p.num] = (numCount[p.num] || 0) + 1; });
+
+    // Collect dup nums in first-appearance order
+    var dupsByOrder = [];
+    var seenDup = {};
+    parsed.forEach(function (p) {
+      if (numCount[p.num] > 1 && !seenDup[p.num]) {
+        seenDup[p.num] = true;
+        dupsByOrder.push(p.num);
+      }
+    });
+
+    // Build rootDupSet: process in first-appearance order.
+    // Suppress a dup if:
+    //   (a) a strict ancestor is already a root dup, OR
+    //   (b) an earlier sibling (same parent prefix) is already a root dup
+    //       — handles 1.0 dup ➜ 1.1, 1.2 siblings auto-suppressed
+    var rootDupSet = {};
+
+    function parentPrefix(numStr) {
+      var parts = numStr.split('.');
+      return parts.slice(0, -1).join('.');
+    }
+
+    dupsByOrder.forEach(function (numStr) {
+      var parts = numStr.split('.');
+      // (a) strict ancestor check
+      for (var k = 1; k < parts.length; k++) {
+        if (rootDupSet[parts.slice(0, k).join('.')]) return; // suppressed
+      }
+      // (b) earlier root-dup sibling check
+      var myParent = parentPrefix(numStr);
+      for (var n in rootDupSet) {
+        if (parentPrefix(n) === myParent) return; // suppressed
+      }
+      rootDupSet[numStr] = true;
+    });
+
+    var rootDups = Object.keys(rootDupSet);
+
+    var dupeWarn = document.getElementById('import-dupe-warning');
+    if (rootDups.length) {
+      if (!dupeWarn) {
+        dupeWarn = document.createElement('div');
+        dupeWarn.id = 'import-dupe-warning';
+        dupeWarn.className = 'import-dupe-banner';
+        var wrap = document.querySelector('.import-preview-table-wrap');
+        wrap.parentNode.insertBefore(dupeWarn, wrap);
+      }
+      dupeWarn.innerHTML = '<strong>⚠ Repeated section numbers:</strong> '
+        + rootDups.map(function (n) {
+            return '<code>' + escHtml(n) + '</code> ×' + numCount[n];
+          }).join(', ')
+        + ' — and their subtrees (highlighted). Use <strong>⤴</strong> to merge a row into the one above.';
+    } else if (dupeWarn) {
+      dupeWarn.remove();
+    }
+
     document.getElementById('import-count-badge').textContent = parsed.length + ' articles';
     var tbody = document.getElementById('import-preview-body');
     tbody.innerHTML = '';
-    parsed.forEach(function (p) {
-      var depth = p.num.split('.').length;
-      var tr = document.createElement('tr');
-      tr.className = 'import-pr-depth-' + Math.min(depth, 4);
+
+    parsed.forEach(function (p, i) {
+      var depth      = p.num.split('.').length;
+      var isRootDup  = rootDupSet[p.num] || false;
+      var tr         = document.createElement('tr');
+      tr.className = 'import-pr-depth-' + Math.min(depth, 4) + (isRootDup ? ' import-pr-dupe' : '');
+      tr.dataset.idx = i;
+
+      var dupeBadge = isRootDup
+        ? ' <span class="import-dupe-badge">dup ×' + numCount[p.num] + '</span>'
+        : '';
+
+      var mergeBtn = i > 0
+        ? '<button type="button" class="import-merge-btn" title="Merge into row above — content becomes part of the previous article">⤴</button>'
+        : '<span style="color:#ccc;font-size:11px">—</span>';
+
       tr.innerHTML =
-        '<td class="import-pr-num">' + escHtml(p.num) + '</td>' +
+        '<td class="import-pr-num">' + escHtml(p.num) + dupeBadge + '</td>' +
         '<td class="import-pr-title" style="padding-left:' + ((depth-1)*14+8) + 'px">' + escHtml(p.title) + '</td>' +
         '<td class="import-pr-depth">' + depth + '</td>' +
-        '<td>' + buildDropdown(p.num, p.template) + '</td>' +
-        '<td class="import-pr-fields" id="fields-' + escAttr(p.num) + '">' + fieldBadges(p.template) + '</td>';
+        '<td>' + buildDropdown(i, p.template) + '</td>' +
+        '<td class="import-pr-fields" id="import-fields-' + i + '">' + fieldBadges(p.template) + '</td>' +
+        '<td class="import-pr-merge">' + mergeBtn + '</td>';
       tbody.appendChild(tr);
+    });
+
+    // Merge button events
+    tbody.querySelectorAll('.import-merge-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = parseInt(btn.closest('tr').dataset.idx, 10);
+        mergeUp(idx);
+      });
     });
 
     // Live update fields badge on dropdown change
     tbody.querySelectorAll('.import-tpl-select').forEach(function (sel) {
       sel.addEventListener('change', function () {
-        var num = sel.dataset.num;
-        var tid = sel.value;
-        var idx = parsed.findIndex(function (p) { return p.num === num; });
-        if (idx !== -1) parsed[idx].template = tid;
-        var fieldsEl = document.getElementById('fields-' + num);
-        if (fieldsEl) fieldsEl.innerHTML = fieldBadges(tid);
+        var idx = parseInt(sel.dataset.idx, 10);
+        if (idx >= 0 && idx < parsed.length) parsed[idx].template = sel.value;
+        var fieldsEl = document.getElementById('import-fields-' + idx);
+        if (fieldsEl) fieldsEl.innerHTML = fieldBadges(sel.value);
       });
     });
   }
@@ -356,6 +491,26 @@
   border-radius: 3px; padding: 1px 5px; margin: 1px 2px;
   font-family: ui-monospace, Menlo, monospace;
 }
+.import-pr-dupe td { background: #fffbea !important; }
+.import-dupe-badge {
+  display: inline-block; font-size: 9px; font-weight: 700;
+  background: #f5c518; color: #333; border-radius: 3px; padding: 0 4px;
+  vertical-align: middle; text-transform: uppercase; letter-spacing: .03em;
+}
+.import-dupe-banner {
+  background: #fffbea; border: 1px solid #f0d060; border-radius: 5px;
+  padding: 9px 14px; font-size: 13px; color: #5a4a00; margin-bottom: 12px;
+}
+.import-dupe-banner code {
+  background: #f0d060; border-radius: 3px; padding: 0 4px; font-size: 11px;
+}
+.import-pr-merge { text-align: center; white-space: nowrap; width: 40px; }
+.import-merge-btn {
+  background: none; border: 1px solid #a2a9b1; border-radius: 4px;
+  cursor: pointer; font-size: 13px; padding: 1px 6px; color: #54595d;
+  transition: background .1s;
+}
+.import-merge-btn:hover { background: #f0f4ff; border-color: #3355aa; color: #3355aa; }
 @media (max-width: 700px) {
   .import-layout { grid-template-columns: 1fr; }
   .import-screen { padding: 16px; }
