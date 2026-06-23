@@ -24,12 +24,14 @@
 
   {# ── Title + parent ── #}
   <div class="wiki-edit-meta-row">
+    {% if mode == 'new' %}
     <div class="wiki-edit-field" style="flex:2">
       <label class="wiki-edit-label">Title <span class="req">*</span></label>
       <input type="text" name="title" class="form-input"
              value="{{ article.title if article else '' }}"
              placeholder="Article title" required autofocus>
     </div>
+    {% endif %}
     <div class="wiki-edit-field" style="flex:1">
       <label class="wiki-edit-label">Parent article</label>
       <select name="parent_id" class="form-input">
@@ -648,6 +650,36 @@ previewBtn.addEventListener('click', function () {
     previewOpen ? '1fr 1fr' : '1fr';
   previewBtn.textContent = previewOpen ? '👁 Preview' : '👁 Show Preview';
 });
+
+// ── Scroll sync (editor → preview, 1:1 percentage) ───────────────────────────
+(function () {
+  var syncLock    = false;
+  var previewBody = document.getElementById('wiki-preview-body');
+
+  function getScroller() {
+    return cmWrap.querySelector('.cm-scroller');
+  }
+
+  function syncPreviewToEditor() {
+    if (syncLock || !previewBody) return;
+    var scroller = getScroller();
+    if (!scroller) return;
+    var editorMax  = scroller.scrollHeight - scroller.clientHeight;
+    if (editorMax <= 0) return;
+    var pct        = scroller.scrollTop / editorMax;
+    var previewMax = previewBody.scrollHeight - previewBody.clientHeight;
+    syncLock = true;
+    previewBody.scrollTop = pct * previewMax;
+    syncLock = false;
+  }
+
+  function attachScrollListener() {
+    var scroller = getScroller();
+    if (!scroller) { setTimeout(attachScrollListener, 100); return; }
+    scroller.addEventListener('scroll', syncPreviewToEditor, { passive: true });
+  }
+  attachScrollListener();
+})();
 
 } // end if ta
 </script>

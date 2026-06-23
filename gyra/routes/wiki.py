@@ -824,25 +824,25 @@ def register(app) -> None:
 
         if request.method == "POST":
             enforce_csrf()
-            title     = request.form.get("title", "").strip()
             content   = request.form.get("content", "")  # assembled by JS as [SECTION]...[/SECTION]
             parent_id = request.form.get("parent_id") or None
             if parent_id:
                 parent_id = int(parent_id)
 
-            if not title:
-                flash("Title is required.", "error")
-                sections = _heal_sections(_parse_sections(content))
-                return render_template("wiki_edit.html", project=project,
-                                       article=article, flat=flat, mode="edit",
-                                       current_gdd_num=current_gdd_num,
-                                       prefill_content=_serialize_sections(sections),
-                                       sections_json=json.dumps(sections),
-                                       articles_json=json.dumps([{"slug": a["slug"], "title": a["title"]} for a in flat]))
-
             # Heal: silently restore any deleted required sections before saving
             sections = _heal_sections(_parse_sections(content))
             healed_content = _serialize_sections(sections)
+
+            # Title is source-of-truth from the [META] block in the MD content
+            title = article["title"]  # fallback: keep existing
+            for s in sections:
+                if s["type"] == "META":
+                    for line in s["content"].splitlines():
+                        if line.startswith("title="):
+                            t = line[6:].strip()
+                            if t:
+                                title = t
+                    break
 
             now = int(time.time())
             _write_md(project["key"], slug, healed_content)
@@ -980,6 +980,74 @@ def register(app) -> None:
 
         conn.commit()
         return jsonify({"ok": True, "added": added, "skipped": skipped})
+
+    @app.route("/api/project/<int:project_id>/wiki/sync-titles", methods=["POST"])
+    @login_required
+    def wiki_sync_titles(project_id):
+        """Push title= from every .md file into the matching DB row.
+
+        MD files are the source of truth for titles. Only updates rows where
+        the DB title differs from what the file declares in [META] title=.
+
+        Returns JSON: {ok, updated: [{slug, old, new}, ...], unchanged: count}
+        """
+        project = _check_access(project_id)
+        if session.get("role") not in ("admin", "super_user"):
+            abort(403)
+
+        conn    = get_db()
+        key     = project["key"]
+        adir    = _articles_dir(key)
+        now     = int(time.time())
+        uid     = session["user_id"]
+        updated = []
+        unchanged = 0
+
+        if not os.path.isdir(adir):
+            return jsonify({"ok": True, "updated": [], "unchanged": 0,
+                            "note": "articles dir missing"})
+
+        rows = conn.execute(
+            "SELECT id, slug, title FROM wiki_articles WHERE project_id=?",
+            (project_id,)
+        ).fetchall()
+        slug_map = {r["slug"]: r for r in rows}
+
+        for fname in sorted(os.listdir(adir)):
+            if not fname.endswith(".md"):
+                continue
+            slug = fname[:-3]
+            row  = slug_map.get(slug)
+            if row is None:
+                continue  # not registered — sync-disk first
+
+            raw   = _read_md(key, slug)
+            title = None
+            in_meta = False
+            for line in raw.splitlines():
+                if line.strip() == "[META]":
+                    in_meta = True
+                    continue
+                if in_meta and line.startswith("["):
+                    break
+                if in_meta and line.startswith("title="):
+                    t = line[6:].strip()
+                    if t:
+                        title = t
+                    break
+
+            if title is None or title == row["title"]:
+                unchanged += 1
+                continue
+
+            conn.execute(
+                "UPDATE wiki_articles SET title=?, updated_at=? WHERE id=?",
+                (title, now, row["id"])
+            )
+            updated.append({"slug": slug, "old": row["title"], "new": title})
+
+        conn.commit()
+        return jsonify({"ok": True, "updated": updated, "unchanged": unchanged})
 
     # ── Image upload ─────────────────────────────────────────────────────────
 

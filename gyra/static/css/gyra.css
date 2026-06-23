@@ -4353,6 +4353,12 @@ body.wiki-mode a:visited { color: #6b4ba1; }
   font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: .5px; color: var(--c-gray-500);
 }
+.wiki-edit-title-hint {
+  font-size: 12px; color: var(--c-gray-500);
+  padding: 6px 10px; background: #f8f9fa; border: 1px solid #e2e8f0;
+  border-radius: 4px; line-height: 1.5;
+}
+.wiki-edit-title-hint code { background: #e2e8f0; padding: 1px 4px; border-radius: 3px; font-size: 11px; }
 
 .wiki-split-editor {
   display: grid;

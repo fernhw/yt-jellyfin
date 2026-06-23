@@ -8,6 +8,7 @@ notes=?
 
 [HERO]
 screenshot-2026-06-22-at-233406-1782190119.png
+Our Hero
 
 [MAIN_SECTION]
 # Amelia “Amy" Loevinger

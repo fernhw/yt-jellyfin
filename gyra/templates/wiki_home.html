@@ -32,6 +32,7 @@
     {% if session.role in ('admin','super_user') %}
     <button class="btn btn-sm btn-ghost" id="wiki-reorder-btn">⇄ Reorder</button>
     <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_import', project_id=project.id) }}">⬆ Import</a>
+    <button class="btn btn-sm btn-ghost" id="wiki-sync-titles-btn" title="Push title= from .md files → database">↺ Sync Titles</button>
     {% endif %}
     <a class="btn btn-sm btn-primary" href="{{ url_for('wiki_new', project_id=project.id) }}">+ New Article</a>
     {% endif %}
@@ -1044,11 +1045,49 @@ body.wiki-dark .wh-list-title { color:#93c5fd; }
     if (btn) btn.textContent = on ? '☀️' : '🌙';
   }
   applyDark(localStorage.getItem(DARK_KEY) === '1');
+  var btn = document.getElementById('wiki-dark-toggle');
+  function applyDark(on) {
+    document.body.classList.toggle('wiki-dark', on);
+    if (btn) btn.textContent = on ? '☀️' : '🌙';
+  }
+  applyDark(localStorage.getItem(DARK_KEY) === '1');
   if (btn) btn.addEventListener('click', function () {
     var on = !document.body.classList.contains('wiki-dark');
     localStorage.setItem(DARK_KEY, on ? '1' : '0');
     applyDark(on);
   });
+
+  var syncTitlesBtn = document.getElementById('wiki-sync-titles-btn');
+  if (syncTitlesBtn) {
+    syncTitlesBtn.addEventListener('click', function () {
+      syncTitlesBtn.disabled = true;
+      syncTitlesBtn.textContent = '↺ Syncing…';
+      fetch('/api/project/{{ project.id }}/wiki/sync-titles', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': document.querySelector('meta[name="csrf-token"]') &&
+                         document.querySelector('meta[name="csrf-token"]').content || ''
+        }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        syncTitlesBtn.disabled = false;
+        syncTitlesBtn.textContent = '↺ Sync Titles';
+        if (data.ok) {
+          var n = (data.updated || []).length;
+          alert(n > 0 ? ('Synced ' + n + ' title' + (n===1?'':'s') + ' from .md files.') : 'All titles already in sync.');
+          if (n > 0) location.reload();
+        } else {
+          alert('Sync failed: ' + (data.error || 'unknown error'));
+        }
+      })
+      .catch(function(err) {
+        syncTitlesBtn.disabled = false;
+        syncTitlesBtn.textContent = '↺ Sync Titles';
+        alert('Sync error: ' + err);
+      });
+    });
+  }
 })();
 </script>
 </body>
