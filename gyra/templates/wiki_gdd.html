@@ -144,6 +144,10 @@
     md = md.replace(/\|\|([^|]+)\|\|/g, function (_, t) {
       return '<span class="wiki-spoiler" onclick="this.classList.toggle(\'revealed\')">' + t + '</span>';
     });
+    // [image name="file.jpg" caption="text"] shortcode → standard markdown img
+    md = md.replace(/\[image\s+name="([^"]+)"(?:\s+caption="([^"]*)")?(?:\s+side="[^"]*")?\s*\/?\]/gi, function (_, name, caption) {
+      return '![' + (caption || '') + '](' + name + ')';
+    });
     el.innerHTML = marked.parse(md);
     el.querySelectorAll('img').forEach(function (img) {
       var src = img.getAttribute('src');

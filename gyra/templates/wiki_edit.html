@@ -317,7 +317,14 @@ function renderPreview() {
   var hasAny = sections.length > 0;
   var mainMd = hasAny ? (mainS ? mainS.content : '') : raw;
 
-  function renderMd(md) { return marked.parse(resolveLinks(md || '')); }
+  function expandImageShortcodes(md) {
+    // Convert [image name="file.jpg" caption="text"] shortcodes to standard markdown images
+    return md.replace(/\[image\s+name="([^"]+)"(?:\s+caption="([^"]*)")?(?:\s+side="[^"]*")?\s*\/?]/gi, function(_, name, caption) {
+      return '![' + (caption || '') + '](' + name + ')';
+    });
+  }
+
+  function renderMd(md) { return marked.parse(resolveLinks(expandImageShortcodes(md || ''))); }
 
   function parseMeta(content) {
     var rows = {};
@@ -395,7 +402,7 @@ function renderPreview() {
 
   // ── Main content ─────────────────────────────────────────────────────────
   previewContent.innerHTML = renderMd(mainMd);
-  // Fix relative image paths in main content
+  // Fix relative image paths in main content and all child sections
   previewContent.querySelectorAll('img').forEach(function (img) {
     var src = img.getAttribute('src') || '';
     if (src && !src.startsWith('http') && !src.startsWith('/') && !src.startsWith('data:')) {
@@ -431,6 +438,14 @@ function renderPreview() {
   }
   previewExtra.innerHTML = '';
   previewExtra.appendChild(extrasFragment);
+
+  // ── Fix all relative image paths across the entire preview ────────────────
+  preview.querySelectorAll('img').forEach(function (img) {
+    var src = img.getAttribute('src') || '';
+    if (src && !src.startsWith('http') && !src.startsWith('/') && !src.startsWith('data:')) {
+      img.src = '/project/{{ project.id }}/wiki/images/' + src;
+    }
+  });
 
   // ── Balance layout: pull secondary into float area when main body is short ─
   // Matches wiki_article.html balanceLayout behaviour exactly

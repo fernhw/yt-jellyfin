@@ -462,6 +462,32 @@ def _extract_hero_filename(project_key: str, slug: str) -> str:
     return ""
 
 
+_IMAGE_SHORTCODE_RE = re.compile(
+    r'\[image\s+name="([^"]+)"(?:\s+caption="([^"]*)")?(?:\s+side="[^"]*")?\s*\/?\]',
+    re.IGNORECASE,
+)
+
+
+def _expand_image_shortcodes(text: str) -> str:
+    """Convert [image name="file.jpg" caption="cap"] shortcodes to standard markdown ![cap](file.jpg)."""
+    def _repl(m):
+        name    = m.group(1)
+        caption = m.group(2) or name
+        return f"![{caption}]({name})"
+    return _IMAGE_SHORTCODE_RE.sub(_repl, text)
+
+
+def _rewrite_img_srcs(html_str: str, img_base: str) -> str:
+    """Rewrite relative <img src="filename"> paths to img_base + filename.
+    Leaves http/https/file:///data: URIs untouched."""
+    def _sub(m):
+        src = m.group(1)
+        if src.startswith(("http://", "https://", "/", "file://", "data:")):
+            return m.group(0)
+        return f'src="{img_base}{src}"'
+    return re.sub(r'src="([^"]*)"', _sub, html_str)
+
+
 def _get_numbered_flat(project_id: int, project_key: str = None) -> list:
     """Return pre-order flat list with gdd_num and depth computed. No children key.
     Pass project_key to populate hero_image from each article's [HERO] section."""
@@ -1146,6 +1172,7 @@ def register(app) -> None:
                 if content:
                     body_parts.append(content)
             body = "\n\n".join(body_parts)
+            body = _expand_image_shortcodes(body)
             body = _resolve_links(body)
             html = _render_md(body) if body else ""
             sections.append({**a, "html": html})
@@ -1169,11 +1196,17 @@ def register(app) -> None:
                    cover=cover,
                    cover_img_abs=cover_img_abs)
 
+        _wiki_img_dir = _images_dir(project["key"])
+
         BRAVE = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
         if not os.path.exists(BRAVE):
-            from flask import Response
+            from flask import Response, request as _req
+            # HTML download fallback: rewrite img srcs to absolute HTTP URLs so
+            # images load when the downloaded file is opened in a browser.
+            _http_base = _req.url_root.rstrip('/') + f'/project/{project_id}/wiki/images/'
+            html_http = _rewrite_img_srcs(html, _http_base)
             return Response(
-                html,
+                html_http,
                 mimetype="text/html",
                 headers={"Content-Disposition": f'attachment; filename="{project["key"]}_GDD.html"'}
             )
@@ -1183,11 +1216,14 @@ def register(app) -> None:
             pdf_path  = os.path.join(tmpdir, "gdd.pdf")
             # Rewrite local static asset URLs to absolute file:// paths
             static_dir = os.path.join(Config.BASE_DIR, "static")
+            # Rewrite wiki image srcs to absolute file:// paths for headless Brave
+            _file_base = "file://" + _wiki_img_dir + "/"
             html_out = html.replace(
                 'href="/static/', f'href="file://{static_dir}/'
             ).replace(
                 'src="/static/', f'src="file://{static_dir}/'
             )
+            html_out = _rewrite_img_srcs(html_out, _file_base)
             with open(html_path, "w", encoding="utf-8") as f:
                 f.write(html_out)
 
