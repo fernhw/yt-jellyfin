@@ -12,7 +12,8 @@ notes=?
 [MAIN_SECTION]
 # Trademark Section
 
-> _Add details here._
+With the purpose of taking this seriously we have a slew of trademarks
+[[Article Name]]
 
 ## Overview
 

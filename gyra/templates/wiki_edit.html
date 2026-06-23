@@ -73,11 +73,6 @@
       <textarea id="wiki-textarea" name="content" style="display:none"></textarea>
       <script type="application/json" id="wiki-init-content">{{ prefill_content | tojson if prefill_content else '""' }}</script>
       <div id="wiki-codemirror" style="position:relative"></div>
-      {# [[autocomplete dropdown #}
-      <div id="wiki-ac-dropdown" style="display:none;position:fixed;z-index:9999;
-           background:#fff;border:1px solid #a2a9b1;border-radius:3px;
-           box-shadow:0 3px 8px rgba(0,0,0,.2);min-width:200px;max-height:220px;overflow-y:auto;
-           font-size:13px;font-family:-apple-system,sans-serif;"></div>
     </div>
 
     {# Right: live preview #}
@@ -119,7 +114,25 @@
   </div>
 </form>
 
-{# CodeMirror 6 via CDN #}
+{# ── [[Wikilink search modal ── #}
+<div id="wiki-link-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:flex-start;justify-content:center;padding-top:80px">
+  <div style="background:#fff;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.25);width:520px;max-width:96vw;overflow:hidden">
+    <div style="padding:14px 16px;border-bottom:1px solid #eaecf0;display:flex;align-items:center;gap:10px">
+      <span style="font-size:13px;color:#72777d;white-space:nowrap">Insert link</span>
+      <input id="wiki-link-search" type="search" placeholder="Search articles by title or number…"
+             autocomplete="off"
+             style="flex:1;border:1px solid #a2a9b1;border-radius:4px;padding:7px 11px;font-size:14px;outline:none">
+      <button id="wiki-link-modal-close" type="button"
+              style="background:none;border:none;font-size:18px;color:#72777d;cursor:pointer;line-height:1;padding:0 4px">&times;</button>
+    </div>
+    <div id="wiki-link-results"
+         style="max-height:360px;overflow-y:auto;font-size:13px;font-family:-apple-system,sans-serif">
+    </div>
+    <div style="padding:8px 14px;font-size:11px;color:#a0a0a0;border-top:1px solid #eaecf0">
+      ↑↓ navigate &nbsp;·&nbsp; Enter to insert &nbsp;·&nbsp; Esc to cancel
+    </div>
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/@codemirror/state@6/dist/index.js"    type="module" id="cm-state"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@codemirror/view@6/dist/style.css">
 <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
@@ -233,52 +246,87 @@ var CMDS = {
   'hr':        function ()    { return '\n---\n'; },
   'ul':        function (sel) { return '- ' + (sel || 'item'); },
   'link':      function (sel) { return '[' + (sel || 'text') + '](https://)'; },
-  'wikilink':  function (sel) { return '[[' + (sel || 'Article Name') + ']]'; },
+  'wikilink':  function (sel) { return '[[' + (sel || '') + ']]'; },
   'spoiler':   function (sel) { return '||' + (sel || 'spoiler text') + '||'; },
 };
 
-// ── [[Article autocomplete ─────────────────────────────────────────────────
-var acDropdown = document.getElementById('wiki-ac-dropdown');
-var acArticles = [];
+// ── [[Article link modal ─────────────────────────────────────────────────
+var acModal     = document.getElementById('wiki-link-modal');
+var acSearchEl  = document.getElementById('wiki-link-search');
+var acResultsEl = document.getElementById('wiki-link-results');
+var acArticles  = [];
 try { acArticles = JSON.parse(document.getElementById('wiki-articles-json').textContent); } catch(e) {}
 
-var acActive = false;
-var acFrom   = 0;    // position of the opening [[
+var acFrom      = 0;   // position of the opening [[
+var acActive    = false;
+var acSelected  = -1;  // keyboard selection index
 
-function acFilter(query) {
-  var q = query.toLowerCase();
-  return acArticles.filter(function (a) {
-    return a.title.toLowerCase().indexOf(q) !== -1 || a.slug.indexOf(q) !== -1;
-  }).slice(0, 10);
+// Close on backdrop
+acModal.addEventListener('click', function (e) {
+  if (e.target === acModal) acHide();
+});
+document.getElementById('wiki-link-modal-close').addEventListener('click', acHide);
+
+function acFilter(q) {
+  if (!q) return acArticles.slice(0, 40);
+  q = q.toLowerCase();
+  var exact = [], partial = [];
+  acArticles.forEach(function (a) {
+    var t = a.title.toLowerCase(), n = (a.gdd_num || '').toLowerCase();
+    if (t.indexOf(q) === 0 || n.indexOf(q) === 0) exact.push(a);
+    else if (t.indexOf(q) !== -1 || n.indexOf(q) !== -1) partial.push(a);
+  });
+  return exact.concat(partial).slice(0, 60);
 }
 
-function acShow(results, query) {
-  if (!results.length) { acHide(); return; }
-  acDropdown.innerHTML = '';
-  results.forEach(function (a) {
-    var item = document.createElement('div');
-    item.className = 'wiki-ac-item';
-    item.textContent = a.title;
-    item.dataset.title = a.title;
-    item.addEventListener('mousedown', function (e) {
-      e.preventDefault();
-      acInsert(a.title);
-    });
-    acDropdown.appendChild(item);
-  });
-  // Position near cursor
-  var coords = view.coordsAtPos(view.state.selection.main.head);
-  if (coords) {
-    acDropdown.style.left  = coords.left + 'px';
-    acDropdown.style.top   = (coords.bottom + 2) + 'px';
+function acRender(results) {
+  acSelected = results.length ? 0 : -1;
+  if (!results.length) {
+    acResultsEl.innerHTML = '<div style="padding:18px 16px;color:#72777d;font-style:italic">No articles found.</div>';
+    return;
   }
-  acDropdown.style.display = '';
+  acResultsEl.innerHTML = results.map(function (a, i) {
+    var q = (acSearchEl.value || '').toLowerCase();
+    var title = escHtml(a.title);
+    if (q) title = title.replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'), '<mark style="background:#fff3b0;border-radius:2px">$1</mark>');
+    var depth = (a.gdd_num || '').split('.').length - 1;
+    var indent = depth * 14;
+    return '<div class="wiki-link-row" data-idx="' + i + '" data-title="' + escAttr(a.title) + '"'
+      + ' style="padding:8px 16px 8px ' + (16 + indent) + 'px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;align-items:baseline;gap:8px">'
+      + (a.gdd_num ? '<span style="font-family:monospace;font-size:10.5px;color:#a0a0a0;flex-shrink:0">' + escHtml(a.gdd_num) + '</span>' : '')
+      + '<span>' + title + '</span>'
+      + '</div>';
+  }).join('');
+  acHighlight();
+}
+
+function acHighlight() {
+  acResultsEl.querySelectorAll('.wiki-link-row').forEach(function (row, i) {
+    row.style.background = i === acSelected ? '#eaf0ff' : '';
+    if (i === acSelected) row.scrollIntoView({ block: 'nearest' });
+  });
+}
+
+function acShow(query) {
   acActive = true;
+  acModal.style.display = 'flex';
+  acSearchEl.value = query;
+  acRender(acFilter(query));
+  // bind result clicks
+  acResultsEl.querySelectorAll('.wiki-link-row').forEach(function (row) {
+    row.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      acInsert(row.dataset.title);
+    });
+  });
+  // Focus search input (not editor, so CodeMirror doesn't capture keys)
+  setTimeout(function () { acSearchEl.focus(); }, 10);
 }
 
 function acHide() {
-  acDropdown.style.display = 'none';
+  acModal.style.display = 'none';
   acActive = false;
+  view.focus();
 }
 
 function acInsert(title) {
@@ -288,10 +336,40 @@ function acInsert(title) {
     selection: { anchor: acFrom + title.length + 4 }
   });
   acHide();
-  view.focus();
 }
 
-// Watch for [[ pattern as user types
+// Search input → filter
+acSearchEl.addEventListener('input', function () {
+  var results = acFilter(acSearchEl.value);
+  acRender(results);
+  acResultsEl.querySelectorAll('.wiki-link-row').forEach(function (row) {
+    row.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      acInsert(row.dataset.title);
+    });
+  });
+});
+
+// Keyboard in search input
+acSearchEl.addEventListener('keydown', function (e) {
+  var rows = acResultsEl.querySelectorAll('.wiki-link-row');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acSelected = Math.min(acSelected + 1, rows.length - 1);
+    acHighlight();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acSelected = Math.max(acSelected - 1, 0);
+    acHighlight();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (rows[acSelected]) acInsert(rows[acSelected].dataset.title);
+  } else if (e.key === 'Escape') {
+    acHide();
+  }
+});
+
+// Watch for [[ pattern as user types in CodeMirror
 EditorView.updateListener.of(function (update) {
   if (!update.docChanged && !update.selectionSet) return;
   var cursor = update.state.selection.main.head;
@@ -300,11 +378,22 @@ EditorView.updateListener.of(function (update) {
   var m      = before.match(/\[\[([^\]]*)$/);
   if (m) {
     acFrom = cursor - m[0].length;
-    acShow(acFilter(m[1]), m[1]);
-  } else {
+    if (!acActive) acShow(m[1]);
+    else {
+      acSearchEl.value = m[1];
+      var results = acFilter(m[1]);
+      acRender(results);
+      acResultsEl.querySelectorAll('.wiki-link-row').forEach(function (row) {
+        row.addEventListener('mousedown', function (e) { e.preventDefault(); acInsert(row.dataset.title); });
+      });
+    }
+  } else if (acActive) {
     acHide();
   }
 });
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s) { return String(s).replace(/"/g,'&quot;'); }
 
 document.querySelectorAll('.wiki-editor-toolbar button[data-cmd]').forEach(function (btn) {
   btn.addEventListener('click', function (e) {
