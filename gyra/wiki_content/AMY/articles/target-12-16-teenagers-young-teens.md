@@ -1,5 +1,5 @@
 [META]
-title=Target (12-16 Teenagers) Young Teens
+title=Target Group
 authors=Unknown
 template=generic
 status=?
@@ -10,24 +10,29 @@ notes=?
 
 
 [MAIN_SECTION]
-and market appeal.
-"Amy's Escape" delves into the largely unexplored realm of horror for the 12–16 age bracket, drawing inspiration from giants like "Coraline," "Undertale," and "Little Nightmares"—titles that collectively sold tens of millions.
+### Target Audience (12-16 Young Teens)
 
-While designed for teens, the rich narrative ensures it's not just dismissed as 'childish' by adults. Younger players, always keen to engage with older content, naturally gravitate towards it. This sets a wide net for audiences.
+"Amy's Escape" is a horror-adventure game made specifically for **12–16 year olds**.
 
-Amy's gender-neutral design, short hair, not too feminine yet cute, reminiscent of beloved characters like Link (Latest Zeldas), Six (Little Nightmares), and Frisk (Undertale), has broad appeal. Whether it's girls resonating with her journey or boys drawn to the dark tones and monsters, there's something for everyone. These characters are vehicles for the player, so having it be easy to jump in their shoes helps.
+**Market Appeal**
+- Inspired by **Coraline**, **Undertale**, and **Little Nightmares** (games that sold tens of millions).
+- Perfect for the gap between “too childish” and “too mature”.
+- Appeals to both boys and girls.
+- Deep story so adults can enjoy it too.
+- Younger players who want scarier games will also be attracted.
 
-12–16 are bridging childhood and adolescence. While under-11–15 content can seem too juvenile, the more common 13–17 often veers towards adult themes.
+**Why Amy is perfect for this age group:**
+- Gender-neutral design (short hair, cute but not overly feminine).
+- Similar to beloved characters: **Link** (Zelda), **Six** (Little Nightmares), **Frisk** (Undertale).
+- Easy for players to imagine themselves as her.
 
-(Though our goal is a T For Teen release.)
+**Rating Goal:**  
+**T for Teen**
 
-Check more on the DLC section for info on extra stuff on a possible M-rated DLC, as it affects this section too.
-Kole1.6 THE CHARACTERS
-The game will feature a diverse cast of characters, including:
+> Note: Optional M-rated DLC possible (see DLC section for details).
 
 [SECONDARY]
 _Add more details here._
 
 [REFERENCES]
-
 

@@ -22,16 +22,8 @@
                 else url_for('wiki_edit', project_id=project.id, slug=article.slug) }}">
   <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
-  {# ── Title + parent ── #}
+  {# ── Parent ── #}
   <div class="wiki-edit-meta-row">
-    {% if mode == 'new' %}
-    <div class="wiki-edit-field" style="flex:2">
-      <label class="wiki-edit-label">Title <span class="req">*</span></label>
-      <input type="text" name="title" class="form-input"
-             value="{{ article.title if article else '' }}"
-             placeholder="Article title" required autofocus>
-    </div>
-    {% endif %}
     <div class="wiki-edit-field" style="flex:1">
       <label class="wiki-edit-label">Parent article</label>
       <select name="parent_id" class="form-input">

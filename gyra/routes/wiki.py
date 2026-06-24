@@ -749,35 +749,42 @@ def register(app) -> None:
 
         if request.method == "POST":
             enforce_csrf()
-            title = request.form.get("title", "").strip()
+            content   = request.form.get("content", "")
             parent_id = request.form.get("parent_id") or None
             if parent_id:
                 parent_id = int(parent_id)
+
+            # Title is read from META — MD is source of truth
+            sections = _heal_sections(_parse_sections(content))
+            title = ""
+            for s in sections:
+                if s["type"] == "META":
+                    for line in s["content"].splitlines():
+                        if line.startswith("title="):
+                            title = line[6:].strip()
+                    break
+
             if not title:
-                flash("Title is required.", "error")
+                flash("No title found. Add  title=Your Article Name  in the [META] section at the top of the editor. The markdown file is the source of truth — there is no separate title field.", "error")
+                articles_list = [{"slug": a["slug"], "title": a["title"]} for a in flat]
                 return render_template("wiki_edit.html", project=project,
                                        article=None, flat=flat, mode="new",
                                        current_gdd_num='',
-                                       articles_json=json.dumps([{"slug": a["slug"], "title": a["title"]} for a in flat]))
+                                       prefill_parent=str(parent_id or ""),
+                                       prefill_content=content,
+                                       sections_json=json.dumps(sections),
+                                       articles_json=json.dumps(articles_list))
 
             base_slug = _slugify(title)
             slug = _unique_slug(project_id, base_slug)
 
-            # Find max order_index among siblings
             max_order = conn.execute(
                 "SELECT COALESCE(MAX(order_index),0) FROM wiki_articles WHERE project_id=? AND parent_id IS ?",
                 (project_id, parent_id)
             ).fetchone()[0]
 
             now = int(time.time())
-            initial_content = _serialize_sections([
-                {'type': 'META',         'content': f'title={title}\nauthors=\n'},
-                {'type': 'HERO',         'content': ''},
-                {'type': 'MAIN_SECTION', 'content': f'# {title}\n\n'},
-                {'type': 'SECONDARY',    'content': ''},
-                {'type': 'REFERENCES',   'content': ''},
-            ])
-            _write_md(project["key"], slug, initial_content)
+            _write_md(project["key"], slug, _serialize_sections(sections))
 
             conn.execute(
                 """INSERT INTO wiki_articles
@@ -788,7 +795,7 @@ def register(app) -> None:
                  "{}", session["user_id"], now, session["user_id"], now)
             )
             conn.commit()
-            return redirect(url_for("wiki_edit", project_id=project_id, slug=slug))
+            return redirect(url_for("wiki_article", project_id=project_id, slug=slug))
 
         parent_id = request.args.get("parent_id")
         articles_list = [{"slug": a["slug"], "title": a["title"]} for a in flat]
