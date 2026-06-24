@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-24
 
-> *Good evening! Here's what landed on Wednesday, June 24, 2026 at 05:13 PM.*
-> **YT Mirror:** 648.48 GB used · 0.56 TB free
+> *Good evening! Here's what landed on Wednesday, June 24, 2026 at 06:06 PM.*
+> **YT Mirror:** 647.82 GB used · 0.56 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,7 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **I TOLD you this would happen..** — *Asmongold TV* · downloaded 06:05 PM · not podcastable
 - **They Basically Told Valve To F*ck Off** — *Bellular News* · downloaded 05:10 PM · podcastable
 - **This Doesn't Look Good For Physical Games** — *Spawn Wave* · downloaded 05:07 PM · not podcastable
 - **Top 5 Android 17 Features: I Swear It's New!** — *Marques Brownlee* · downloaded 05:05 PM · not podcastable
