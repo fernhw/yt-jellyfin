@@ -39,7 +39,7 @@ The game constructs a careful lie about Amy's circumstances, and it maintains th
 
 **What the game presents:** Amy came to the hotel searching for a way to help her brother Custard. She mentions him once, early, as if it's a small and slightly funny story. She woke up here. She wants to leave.
 
-**What actually happened:** Custard Loevinger, Amy's eight-year-old brother, climbed a tree and fell. He died. Amy, consumed by a guilt she could not carry, took her own life outside the hotel. Barret Aricson found what remained of her. The Kubler organism — whose immortality-sustaining spore field permeates the hotel — kept her from dying permanently. She was put back together. She woke up in the Ventilation Maintenance Room.
+**What actually happened:** [Custard Loevinger](custard-loevinger.md), Amy's younger brother, drank a cleaning product at home while Amy watched. He died. Amy, consumed by a guilt she could not carry, took her own life outside the hotel. Barret Aricson found what remained of her. The Kubler organism — whose immortality-sustaining spore field permeates the hotel — kept her from dying permanently. She was put back together. She woke up in the Ventilation Maintenance Room.
 
 Amy does not know this is what she is doing here. She represses it. The game represses it *with* her. The player is never told. It is assembled over time through observation: the reassembly scars on her hands (visible in the opening, still healing), the flatness with which she processes mortal danger, the moments she almost says something true and pulls back.
 

@@ -22,7 +22,21 @@ relationships
 A small, loud, and angry woman, Clementine runs the hotel's kitchen. Her skills were honed through worldwide travels before settling at the prestigious Ross Hotel.
 
 [SECONDARY]
-_Add more details here._
+## Overview
+
+Clementine Wellington is the hotel cook and the wife of [Julianne Wellington](julianne-wellington.md). She has held the cook position for as long as the hotel has functioned with a kitchen, which is to say for most of its existence. Clementine's Kitchen is her workspace and effectively her home — she is always in it or directly adjacent to it.
+
+Her marriage to Julianne is long, loud, and ongoing. She hears what she wants to hear. He hears what he wants to hear. The quarrel between them has been running for so long that it has become part of the hotel's ambient noise, like the pipes or the smell of the Kubler's flowers.
+
+## In Gameplay
+
+[Clementine's Kitchen](clementines-kitchen.md) is accessible from [Chapter 1](chapter-1.md) — nothing physically prevents Amy from reaching it early. It becomes more relevant in [Chapter 2](chapter-2.md), where the kitchen is part of Amy's path downward through the hotel. Clementine herself is an active presence throughout Chapter 2 in the way that large people in small kitchens tend to be: unavoidable.
+
+The lover's quarrel between Clementine and [Julianne](julianne-wellington.md) is a puzzle of its own. Both are technically correct about different things and neither is listening. [Amy](amelia-amy-loevinger.md)'s job is to navigate, not mediate, although the distinction blurs.
+
+## The Name
+
+Clementine is a small orange, which is either thematically meaningful or a coincidence, depending on how much credit you give the naming choices in this game. The kitchen is warm. She is not, as a rule, warm toward people who enter it uninvited.
 
 [REFERENCES]
 
