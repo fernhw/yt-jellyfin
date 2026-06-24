@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-23
 
-> *Good evening! Here's what landed on Tuesday, June 23, 2026 at 08:04 PM.*
-> **YT Mirror:** 646.27 GB used · 0.57 TB free
+> *Good evening! Here's what landed on Tuesday, June 23, 2026 at 09:06 PM.*
+> **YT Mirror:** 646.02 GB used · 0.57 TB free
 
 ### Priority Videos
 
@@ -14,6 +14,7 @@
 
 ### Non-Priority Videos
 
+- **Trump Claims Leftist Vandals Destroyed His Disgusting Reflecting Pool?!** — *Internet Today* · downloaded 09:05 PM · not podcastable
 - **Steam Gave Indies a Heart Attack** — *Bellular News* · downloaded 06:06 PM · podcastable
 - **Valve Responds To Steam Machine Price...** — *Spawn Wave* · downloaded 03:13 PM · not podcastable
 - **Valve just made people mad..** — *Asmongold TV* · downloaded 03:12 PM · not podcastable
