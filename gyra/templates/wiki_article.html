@@ -106,19 +106,10 @@
       <div class="wiki-refs-body"></div>
     </div>
 
-    {# Child articles #}
+    {# Child articles — rendered inline like GDD sections, content-first #}
     {% if children %}
-    <div class="wiki-children-section">
-      <h2 class="wiki-children-heading">Sub-articles</h2>
-      <ul class="wiki-children-list">
-        {% for child in children %}
-        <li class="wiki-children-item">
-          {% if child.gdd_num %}<span class="wiki-children-num">{{ child.gdd_num }}.</span>{% endif %}
-          <a href="{{ child.url }}" class="wiki-link">{{ child.title }}</a>
-        </li>
-        {% endfor %}
-      </ul>
-    </div>
+    <div id="wiki-children-inline"></div>
+    <script id="wiki-children-data" type="application/json">{{ children | tojson }}</script>
     {% endif %}
 
   </article>
@@ -464,6 +455,171 @@
       }
     });
   }
+})();
+</script>
+
+<style>
+/* ── Inline child article sections ── */
+.wiki-child-section {
+  margin-top: 40px;
+  border-top: 2px solid #a2a9b1;
+  padding-top: 24px;
+  clear: both;
+}
+.wiki-child-section + .wiki-child-section {
+  margin-top: 36px;
+}
+.wiki-child-heading {
+  font-size: 21px; font-weight: normal;
+  font-family: 'Linux Libertine', Georgia, serif;
+  color: #202122;
+  margin: 0 0 4px;
+  display: flex; align-items: baseline; gap: 10px;
+}
+.wiki-child-heading a {
+  color: #202122; text-decoration: none;
+}
+.wiki-child-heading a:hover { color: #3366cc; text-decoration: underline; }
+.wiki-child-num {
+  font-family: ui-monospace, monospace; font-size: 12px;
+  color: #72777d; flex-shrink: 0;
+}
+.wiki-child-body {
+  font-size: 15px; line-height: 1.75; color: #202122;
+  font-family: 'Linux Libertine', Georgia, serif;
+  margin-top: 10px;
+}
+.wiki-child-body h2 { font-size: 18px; font-weight: normal; margin: 20px 0 8px; border-bottom: 1px solid #eaecf0; padding-bottom: 3px; }
+.wiki-child-body h3 { font-size: 15px; font-weight: bold; margin: 16px 0 6px; }
+.wiki-child-body p  { margin-bottom: 10px; }
+.wiki-child-body ul, .wiki-child-body ol { margin: 6px 0 10px 24px; }
+.wiki-child-body li { margin-bottom: 3px; }
+.wiki-child-body code { background:#f0f0f0; border:1px solid #d0d0d0; padding:1px 5px; border-radius:3px; font-size:13px; color:#202122; }
+.wiki-child-body pre  { background:#f6f8fa; border:1px solid #d0d0d0; border-left:3px solid #3366cc; padding:12px 14px; border-radius:4px; overflow-x:auto; margin:10px 0; }
+.wiki-child-body pre code { background:none; border:none; padding:0; font-size:13px; color:#202122; }
+.wiki-child-readmore {
+  display: flex; justify-content: flex-end;
+  margin-top: 12px;
+}
+.wiki-child-readmore a {
+  font-size: 13px; font-family: -apple-system, sans-serif;
+  color: #3366cc; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border: 1px solid #a2c4e0; border-radius: 4px;
+  transition: background .12s, border-color .12s;
+}
+.wiki-child-readmore a:hover {
+  background: #eaf0ff; border-color: #3366cc;
+  text-decoration: none;
+}
+.wiki-child-empty-note {
+  font-size: 13.5px; color: #72777d; font-style: italic;
+  font-family: -apple-system, sans-serif;
+  margin-top: 10px;
+}
+body.wiki-dark .wiki-child-section { border-color: #2d3148; }
+body.wiki-dark .wiki-child-heading a { color: #e2e8f0; }
+body.wiki-dark .wiki-child-heading a:hover { color: #93c5fd; }
+body.wiki-dark .wiki-child-num { color: #94a3b8; }
+body.wiki-dark .wiki-child-body { color: #e2e8f0; }
+body.wiki-dark .wiki-child-body h2 { color: #f1f5f9; border-color: #2d3148; }
+body.wiki-dark .wiki-child-body h3 { color: #f1f5f9; }
+body.wiki-dark .wiki-child-body code { background:#0d1117; border-color:#30363d; color:#c9d1d9; }
+body.wiki-dark .wiki-child-body pre  { background:#0d1117; border-color:#30363d; border-left-color:#93c5fd; }
+body.wiki-dark .wiki-child-body pre code { color:#c9d1d9; }
+body.wiki-dark .wiki-child-readmore a { color:#93c5fd; border-color:#2d3148; }
+body.wiki-dark .wiki-child-readmore a:hover { background:#1e2540; border-color:#93c5fd; }
+</style>
+
+<script>
+(function () {
+  var childrenEl = document.getElementById('wiki-children-inline');
+  var dataEl = document.getElementById('wiki-children-data');
+  if (!childrenEl || !dataEl) return;
+  var children = JSON.parse(dataEl.textContent);
+  if (!children.length) return;
+
+  // Reuse the same resolveLinks + renderMd from the parent IIFE by re-declaring
+  var linkMapEl = document.getElementById('wiki-data');
+  var linkMap = linkMapEl ? JSON.parse(linkMapEl.textContent).link_map : {};
+  var imgBase = '/project/{{ project.id }}/wiki/images/';
+  var wikiBase = '/project/{{ project.id }}/wiki/';
+
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function resolveLinks(md) {
+    md = md.replace(/\[\[([^\]]+)\]\]/g, function(_, inner) {
+      var parts = inner.split('|');
+      var key = parts[0].trim().toLowerCase();
+      var label = (parts[1] || parts[0]).trim();
+      var entry = linkMap[key] || linkMap[parts[0].trim()];
+      if (entry) return '[' + label + '](' + entry.url + ')';
+      return '<span class="wiki-link-missing">' + label + '</span>';
+    });
+    md = md.replace(/\|\|([^|]+)\|\|/g, function(_, t) {
+      return '<span class="wiki-spoiler" onclick="this.classList.toggle(\'revealed\')">' + t + '</span>';
+    });
+    return md;
+  }
+
+  function renderMd(md) {
+    if (typeof marked === 'undefined') return '<pre>' + escHtml(md) + '</pre>';
+    return marked.parse(resolveLinks(md || ''));
+  }
+
+  function fixLinks(el) {
+    el.querySelectorAll('a[href]').forEach(function(a) {
+      var href = a.getAttribute('href') || '';
+      if (href && !href.startsWith('http') && !href.startsWith('/') && !href.startsWith('#') && href.endsWith('.md')) {
+        a.setAttribute('href', wikiBase + encodeURIComponent(href.slice(0, -3)));
+        a.classList.add('wiki-link');
+      } else if (href.startsWith('/project/')) {
+        a.classList.add('wiki-link');
+      }
+    });
+    el.querySelectorAll('img').forEach(function(img) {
+      var src = img.getAttribute('src') || '';
+      if (src && !src.startsWith('http') && !src.startsWith('/')) img.src = imgBase + src;
+      img.classList.add('wiki-img'); img.loading = 'lazy';
+    });
+  }
+
+  children.forEach(function(child) {
+    var section = document.createElement('div');
+    section.className = 'wiki-child-section';
+
+    // Heading
+    var h = document.createElement('h2');
+    h.className = 'wiki-child-heading';
+    if (child.gdd_num) h.innerHTML = '<span class="wiki-child-num">' + escHtml(child.gdd_num) + '</span>';
+    var a = document.createElement('a');
+    a.href = child.url;
+    a.textContent = child.title;
+    h.appendChild(a);
+    section.appendChild(h);
+
+    // Body content
+    var body = document.createElement('div');
+    body.className = 'wiki-child-body';
+    var mc = (child.main_content || '').trim();
+    // Strip leading section heading (the # Title line) to avoid duplication
+    mc = mc.replace(/^#[^\n]*\n/, '').trim();
+    if (mc) {
+      body.innerHTML = renderMd(mc);
+      fixLinks(body);
+    } else {
+      body.innerHTML = '<p class="wiki-child-empty-note">No content yet.</p>';
+    }
+    section.appendChild(body);
+
+    // Read more
+    var rm = document.createElement('div');
+    rm.className = 'wiki-child-readmore';
+    rm.innerHTML = '<a href="' + child.url + '">Read full article →</a>';
+    section.appendChild(rm);
+
+    childrenEl.appendChild(section);
+  });
 })();
 </script>
 

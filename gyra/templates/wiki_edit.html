@@ -93,9 +93,16 @@
         <div id="preview-flow-clear" style="clear:both"></div>
         {# Extra sections, secondary (if taller than infobox), refs #}
         <div id="preview-extra"></div>
+        {# Child articles inline preview #}
+        <div id="preview-children"></div>
       </div>
     </div>
   </div>
+
+  {# ── Children data for edit preview ── #}
+  {% if edit_children is defined and edit_children %}
+  <script id="wiki-edit-children-data" type="application/json">{{ edit_children | tojson }}</script>
+  {% endif %}
 
   {# ── Hero image picker modal ── #}
   <div id="wiki-hero-modal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.5);align-items:flex-start;justify-content:center;padding-top:60px">
@@ -591,6 +598,35 @@ function renderPreview() {
       a.setAttribute('href', '/project/{{ project.id }}/wiki/' + encodeURIComponent(href.slice(0, -3)));
     }
   });
+
+  // ── Render child article previews ────────────────────────────────────────
+  var previewChildrenEl = document.getElementById('preview-children');
+  if (previewChildrenEl) {
+    var childDataEl = document.getElementById('wiki-edit-children-data');
+    var editChildren = childDataEl ? JSON.parse(childDataEl.textContent) : [];
+    previewChildrenEl.innerHTML = '';
+    editChildren.forEach(function(child) {
+      var section = document.createElement('div');
+      section.className = 'wiki-child-section';
+      var h = document.createElement('h2');
+      h.className = 'wiki-child-heading';
+      if (child.gdd_num) h.innerHTML = '<span class="wiki-child-num">' + child.gdd_num.replace(/</g,'&lt;') + '</span>';
+      var a = document.createElement('a');
+      a.href = child.url; a.textContent = child.title;
+      h.appendChild(a); section.appendChild(h);
+      var body = document.createElement('div');
+      body.className = 'wiki-child-body';
+      var mc = (child.main_content || '').trim().replace(/^#[^\n]*\n/, '').trim();
+      if (mc) { body.innerHTML = renderMd(mc); }
+      else { body.innerHTML = '<p class="wiki-child-empty-note">No content yet.</p>'; }
+      section.appendChild(body);
+      var rm = document.createElement('div');
+      rm.className = 'wiki-child-readmore';
+      rm.innerHTML = '<a href="' + child.url + '">Read full article →</a>';
+      section.appendChild(rm);
+      previewChildrenEl.appendChild(section);
+    });
+  }
 
   // ── Balance layout: pull secondary into float area when main body is short ─
   // Matches wiki_article.html balanceLayout behaviour exactly

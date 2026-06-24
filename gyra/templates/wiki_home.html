@@ -22,22 +22,24 @@
     </div>
     <div>
       <div class="wiki-topbar-name">{{ project.name }}</div>
-      <div class="wiki-topbar-sub">Game Design Wiki</div>
+      <div class="wiki-topbar-sub">Wiki</div>
     </div>
   </div>
-  <div class="wiki-topbar-right">
+  <nav class="wh-topbar-nav">
     {% if session.role != 'viewer' %}
-    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_gdd', project_id=project.id) }}">📄 GDD</a>
-    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_images_page', project_id=project.id) }}">🖼 Images</a>
+    <a class="wh-nav-btn" href="{{ url_for('wiki_gdd', project_id=project.id) }}">GDD</a>
+    <a class="wh-nav-btn" href="{{ url_for('wiki_images_page', project_id=project.id) }}">Images</a>
     {% if session.role in ('admin','super_user') %}
-    <button class="btn btn-sm btn-ghost" id="wiki-reorder-btn">⇄ Reorder</button>
-    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_import', project_id=project.id) }}">⬆ Import</a>
-    <button class="btn btn-sm btn-ghost" id="wiki-sync-titles-btn" title="Push title= from .md files → database">↺ Sync Titles</button>
+    <span class="wh-nav-sep"></span>
+    <button class="wh-nav-btn" id="wiki-reorder-btn">⇄ Reorder</button>
+    <a class="wh-nav-btn" href="{{ url_for('wiki_import', project_id=project.id) }}">⬆ Import</a>
+    <button class="wh-nav-btn" id="wiki-sync-titles-btn" title="Push title= from .md files → database">↺ Sync</button>
     {% endif %}
-    <a class="btn btn-sm btn-primary" href="{{ url_for('wiki_new', project_id=project.id) }}">+ New Article</a>
+    <span class="wh-nav-sep"></span>
+    <a class="wh-nav-btn wh-nav-btn-primary" href="{{ url_for('wiki_new', project_id=project.id) }}">+ New Article</a>
     {% endif %}
-    <button class="btn btn-sm btn-ghost" id="wiki-dark-toggle" title="Toggle dark mode">🌙</button>
-  </div>
+    <button class="wh-nav-btn wh-nav-icon" id="wiki-dark-toggle" title="Toggle dark mode">🌙</button>
+  </nav>
 </div>
 
 {# ── Reorder panel (hidden by default) ── #}
@@ -194,6 +196,15 @@
         <strong>Compact</strong>
         <small>Dense single-column list</small>
       </button>
+    </div>
+    <div class="wh-modal-depth">
+      <span class="wh-modal-depth-label">Depth</span>
+      <div class="wh-depth-opts">
+        <button class="wh-depth-opt" data-depth="1">Direct only</button>
+        <button class="wh-depth-opt" data-depth="2">2 levels</button>
+        <button class="wh-depth-opt" data-depth="3">3 levels</button>
+        <button class="wh-depth-opt" data-depth="0">All</button>
+      </div>
     </div>
   </div>
 </div>
@@ -367,6 +378,43 @@
 .wh-mode-opt strong { font-size: 13px; color: #1e293b; }
 .wh-mode-opt small { font-size: 11px; color: #64748b; }
 @media (max-width: 700px) { .wh-page { padding: 20px 12px 60px; } .wh-hero { padding: 36px 16px 32px; } .wh-section-head { flex-wrap: wrap; } }
+/* ── Home topbar nav buttons ── */
+.wh-topbar-nav { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; margin-left: auto; }
+.wh-nav-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 32px; padding: 0 11px;
+  background: transparent; border: 1px solid transparent; border-radius: 6px;
+  font-size: 13px; font-weight: 500; color: #475569;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: background .12s, border-color .12s, color .12s;
+  font-family: -apple-system, system-ui, sans-serif;
+}
+.wh-nav-btn:hover { background: #f1f5f9; border-color: #e2e8f0; color: #0f172a; text-decoration: none; }
+.wh-nav-btn-primary { background: #6d28d9; color: #fff !important; border-color: transparent; font-weight: 600; }
+.wh-nav-btn-primary:hover { background: #5b21b6; color: #fff; text-decoration: none; }
+.wh-nav-icon { width: 32px; padding: 0; justify-content: center; font-size: 15px; }
+.wh-nav-sep { width: 1px; height: 20px; background: #e2e8f0; margin: 0 4px; flex-shrink: 0; align-self: center; }
+body.wiki-dark .wh-nav-btn { color: #94a3b8; }
+body.wiki-dark .wh-nav-btn:hover { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+body.wiki-dark .wh-nav-btn-primary { background: #7c3aed !important; color: #fff !important; }
+body.wiki-dark .wh-nav-btn-primary:hover { background: #6d28d9 !important; }
+body.wiki-dark .wh-nav-sep { background: #334155; }
+@media (max-width: 640px) {
+  .wiki-topbar { padding: 8px 12px; flex-wrap: wrap; height: auto; min-height: 52px; }
+  .wh-topbar-nav { gap: 2px; }
+  .wh-nav-sep { display: none; }
+}
+/* ── Depth picker in section settings modal ── */
+.wh-modal-depth { padding: 12px 16px 14px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.wh-modal-depth-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #64748b; white-space: nowrap; }
+.wh-depth-opts { display: flex; gap: 5px; flex-wrap: wrap; }
+.wh-depth-opt {
+  padding: 5px 11px; border: 1.5px solid #e2e8f0; border-radius: 6px;
+  background: #fff; cursor: pointer; font-size: 12px; font-weight: 500; color: #475569;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.wh-depth-opt:hover { border-color: #6d28d9; color: #6d28d9; background: #f5f3ff; }
+.wh-depth-opt.active { background: #f5f3ff; border-color: #6d28d9; color: #6d28d9; font-weight: 700; }
 </style>
 
 <script>
@@ -375,15 +423,27 @@
   var base = '/project/{{ project.id }}/wiki/';
   if (!flat.length) return;
   var ACCENTS = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#ec4899','#6366f1','#14b8a6'];
-  var MODES_KEY = 'wh_modes_{{ project.id }}';
-  var modes = {};
-  try { modes = JSON.parse(localStorage.getItem(MODES_KEY) || '{}'); } catch(e) {}
-  function getMode(id) { return modes[id] || 'list'; }
-  function setMode(id, m) { modes[id] = m; try { localStorage.setItem(MODES_KEY, JSON.stringify(modes)); } catch(e) {} }
-  function childrenOf(root) {
+  var MODES_KEY  = 'wh_modes_{{ project.id }}';
+  var DEPTHS_KEY  = 'wh_depths_{{ project.id }}';
+  var modes = {}; var depths = {};
+  try { modes  = JSON.parse(localStorage.getItem(MODES_KEY)  || '{}'); } catch(e) {}
+  try { depths = JSON.parse(localStorage.getItem(DEPTHS_KEY) || '{}'); } catch(e) {}
+  function getMode(id)  { return modes[id]  || 'list'; }
+  function setMode(id, m)  { modes[id]  = m; try { localStorage.setItem(MODES_KEY,  JSON.stringify(modes));  } catch(e) {} }
+  function getDepth(id) { return depths[id] !== undefined ? depths[id] : 0; }
+  function setDepth(id, d) { depths[id] = d; try { localStorage.setItem(DEPTHS_KEY, JSON.stringify(depths)); } catch(e) {} }
+  function childrenOf(root, maxRelDepth) {
     if (!root.gdd_num) return [];
     var pfx = root.gdd_num + '.';
-    return flat.filter(function(a){ return a.gdd_num && a.gdd_num.slice(0,pfx.length) === pfx; });
+    var rootDots = (root.gdd_num.match(/\./g) || []).length;
+    return flat.filter(function(a) {
+      if (!a.gdd_num || a.gdd_num.slice(0, pfx.length) !== pfx) return false;
+      if (maxRelDepth) {
+        var aDots = (a.gdd_num.match(/\./g) || []).length;
+        return (aDots - rootDots) <= maxRelDepth;
+      }
+      return true;
+    });
   }
   function descendantCount(a) {
     var pfx = a.gdd_num ? a.gdd_num + '.' : null;
@@ -474,7 +534,8 @@
   chunks.forEach(function(chunk) {
     if (chunk.type === 'section') {
       var root = chunk.root, ri = chunk.ri;
-      var children  = childrenOf(root);
+      var depthLimit = getDepth(root.id);
+      var children  = childrenOf(root, depthLimit);
       var totalDesc = descendantCount(root);
       var accent    = ACCENTS[ri%ACCENTS.length];
       var mode      = getMode(root.id);
@@ -535,9 +596,11 @@
     if(!btn) return;
     activeRootId=parseInt(btn.dataset.root,10);
     var root=flat.find(function(a){ return a.id===activeRootId; });
-    var cur=getMode(activeRootId);
+    var curMode=getMode(activeRootId);
+    var curDepth=getDepth(activeRootId);
     modalTitle.textContent='Display: '+(root?root.title:'');
-    modal.querySelectorAll('.wh-mode-opt').forEach(function(o){ o.classList.toggle('active',o.dataset.mode===cur); });
+    modal.querySelectorAll('.wh-mode-opt').forEach(function(o){ o.classList.toggle('active',o.dataset.mode===curMode); });
+    modal.querySelectorAll('.wh-depth-opt').forEach(function(o){ o.classList.toggle('active',parseInt(o.dataset.depth,10)===curDepth); });
     modal.style.display='flex';
   });
   modal.addEventListener('click',function(e){
@@ -546,10 +609,21 @@
       var newMode=opt.dataset.mode;
       setMode(activeRootId,newMode);
       var root=flat.find(function(a){ return a.id===activeRootId; });
-      var children=childrenOf(root);
+      var children=childrenOf(root, getDepth(activeRootId));
       var bodyEl=document.getElementById('wh-body-'+activeRootId);
       if(bodyEl) bodyEl.innerHTML=renderBody(root,children,newMode);
       modal.style.display='none'; return;
+    }
+    var dopt=e.target.closest('.wh-depth-opt');
+    if(dopt){
+      var newDepth=parseInt(dopt.dataset.depth,10);
+      setDepth(activeRootId,newDepth);
+      var root=flat.find(function(a){ return a.id===activeRootId; });
+      var children=childrenOf(root, newDepth);
+      var bodyEl=document.getElementById('wh-body-'+activeRootId);
+      if(bodyEl) bodyEl.innerHTML=renderBody(root,children,getMode(activeRootId));
+      modal.querySelectorAll('.wh-depth-opt').forEach(function(o){ o.classList.toggle('active',parseInt(o.dataset.depth,10)===newDepth); });
+      return; // stay open — user may also want to change display mode
     }
     if(e.target===modal) modal.style.display='none';
   });

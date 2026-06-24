@@ -875,13 +875,39 @@ def register(app) -> None:
         content  = _read_md(project["key"], slug)
         sections = _heal_sections(_parse_sections(content))
         articles_list = [{"slug": a["slug"], "title": a["title"]} for a in flat]
+
+        # Children with main_content for edit preview
+        edit_children_rows = conn.execute(
+            """SELECT id, slug, title, order_index FROM wiki_articles
+               WHERE project_id=? AND parent_id=?
+               ORDER BY order_index""",
+            (project_id, article["id"])
+        ).fetchall()
+        def _child_main_edit(child_slug):
+            try:
+                raw = _read_md(project["key"], child_slug)
+                secs = _parse_sections(raw)
+                ms = next((s for s in secs if s["type"] == "MAIN_SECTION"), None)
+                return ms["content"] if ms else ""
+            except Exception:
+                return ""
+        edit_num_map = {a["id"]: a["gdd_num"] for a in flat}
+        edit_children = [
+            {"slug": c["slug"], "title": c["title"],
+             "gdd_num": edit_num_map.get(c["id"], ""),
+             "url": url_for("wiki_article", project_id=project_id, slug=c["slug"]),
+             "main_content": _child_main_edit(c["slug"])}
+            for c in edit_children_rows
+        ]
+
         return render_template("wiki_edit.html",
                                project=project, article=article,
                                flat=flat, mode="edit",
                                current_gdd_num=current_gdd_num,
                                prefill_content=_serialize_sections(sections),
                                sections_json=json.dumps(sections),
-                               articles_json=json.dumps(articles_list))
+                               articles_json=json.dumps(articles_list),
+                               edit_children=edit_children)
 
     # ── Delete article ───────────────────────────────────────────────────────
 
