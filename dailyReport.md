@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-24
 
-> *Good morning! Here's what landed on Wednesday, June 24, 2026 at 09:37 AM.*
-> **YT Mirror:** 647.65 GB used · 0.56 TB free
+> *Good morning! Here's what landed on Wednesday, June 24, 2026 at 11:37 AM.*
+> **YT Mirror:** 647.70 GB used · 0.56 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,9 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **Sony Reacts to the Steam Machine Price** — *SAMTIME* · downloaded 11:35 AM · not podcastable
+- **The 2026 Summer Game Drought Vote | Fully Ramblomatic** — *Second Wind* · downloaded 11:34 AM · podcastable
+- **Make New Memories with Nintendo Classics** — *Nintendo of America* · downloaded 11:34 AM · not podcastable
 - **Clavicular Gets Rejected** — *Lessons in Meme Culture* · downloaded 09:35 AM · not podcastable
 - **I recommend: Star Fox (2026) - Review** — *Skill Up* · downloaded 09:34 AM · not podcastable
 - **Star Fox - Nintendo Switch 2 Review - A Refined Return Of An Iconic Game** — *Digital Foundry* · downloaded 07:18 AM · not podcastable
