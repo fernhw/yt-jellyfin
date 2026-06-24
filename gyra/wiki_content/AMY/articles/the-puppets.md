@@ -1,10 +1,16 @@
 [META]
 title=The Puppets
 authors=Unknown
-template=generic
-status=?
-owner=?
-notes=?
+template=character
+role=Kane's Distributed Bodies / Theater Performers
+age=Varies — oldest ~100 years; newest unknown
+birth_date=N/A (constructed, not born)
+height=Varies by puppet body
+status=Active — Theater of Dreams; ~40 bodies in continuous performance
+faction=Theater of Dreams / Aaron Kane
+voice_actor=N/A (controlled by Kane)
+first_appearance=Chapter 3 (Theater of Dreams)
+relationships
 
 [HERO]
 

@@ -4386,22 +4386,41 @@ body.wiki-dark .wiki-infobox-sep { color: #64748b; border-color: #2d3148; }
   overflow: hidden;
 }
 .wiki-editor-toolbar {
-  display: flex; align-items: center; gap: 2px; flex-wrap: wrap;
-  padding: 5px 8px;
-  background: var(--c-gray-50);
-  border-bottom: 1px solid var(--c-gray-200);
+  display: flex; align-items: center; gap: 1px; flex-wrap: nowrap;
+  padding: 6px 10px;
+  background: #18181b;
+  border-bottom: 1px solid #27272a;
   flex-shrink: 0;
+  overflow-x: auto;
 }
+.wiki-editor-toolbar::-webkit-scrollbar { height: 3px; }
+.wiki-editor-toolbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 2px; }
 .wiki-editor-toolbar button {
   background: none; border: none; cursor: pointer;
-  padding: 3px 7px; border-radius: 3px; font-size: 12px; font-weight: 600;
-  color: var(--c-gray-600); line-height: 1.5;
-  transition: background .1s, color .1s;
+  padding: 5px 8px; border-radius: 5px; font-size: 12px; font-weight: 700;
+  color: #a1a1aa; line-height: 1; display: flex; align-items: center; gap: 4px;
+  transition: background .12s, color .12s; flex-shrink: 0;
 }
-.wiki-editor-toolbar button:hover { background: var(--c-gray-200); color: var(--c-gray-900); }
-.wiki-tb-sep { width: 1px; height: 18px; background: var(--c-gray-200); margin: 0 3px; flex-shrink: 0; }
-.wiki-tb-spacer { flex: 1; }
+.wiki-editor-toolbar button:hover { background: #3f3f46; color: #f4f4f5; }
+.wiki-editor-toolbar button:active { background: #52525b; }
+.wiki-tb-sep { width: 1px; height: 18px; background: #3f3f46; margin: 0 4px; flex-shrink: 0; }
+.wiki-tb-spacer { flex: 1; min-width: 8px; }
 .wiki-tb-right { margin-left: 0; }
+.wiki-tb-icon-btn {
+  display: flex; align-items: center; padding: 5px 8px; border-radius: 5px;
+  color: #a1a1aa; cursor: pointer; transition: background .12s, color .12s; flex-shrink: 0;
+}
+.wiki-tb-icon-btn:hover { background: #3f3f46; color: #f4f4f5; }
+.wiki-tb-hero { color: #a78bfa !important; }
+.wiki-tb-hero:hover { background: #2e1065 !important; color: #c4b5fd !important; }
+.wiki-tb-pill {
+  padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  border: 1px solid #3f3f46 !important; letter-spacing: .3px;
+  display: flex; align-items: center; gap: 5px;
+}
+.wiki-tb-pill:hover { border-color: #71717a !important; }
+.wiki-tb-pill-purple { color: #a78bfa !important; border-color: #4c1d95 !important; }
+.wiki-tb-pill-purple:hover { background: #1e0a3c !important; color: #c4b5fd !important; border-color: #7c3aed !important; }
 #wiki-codemirror {
   flex: 1; overflow: hidden;
 }

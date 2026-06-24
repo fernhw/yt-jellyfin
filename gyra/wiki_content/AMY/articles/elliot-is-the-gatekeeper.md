@@ -1,10 +1,16 @@
 [META]
 title=Elliot Is The Gatekeeper
 authors=Unknown
-template=generic
-status=?
-owner=?
-notes=?
+template=character
+role=The Gatekeeper / Possibly Fictional Figure
+age=Unknown
+birth_date=Unknown
+height=Unknown
+status=Uncertain — existence unconfirmed; paperwork always complete
+faction=Ross Hotel (administrative)
+voice_actor=?
+first_appearance=Referenced; never directly encountered
+relationships
 
 [HERO]
 

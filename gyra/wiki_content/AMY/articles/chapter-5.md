@@ -1,5 +1,5 @@
 [META]
-title=Chapter 5
+title=Chapter 5 - (Throe)
 authors=Unknown
 template=story_beat
 act=?
@@ -20,5 +20,4 @@ Amy navigates the treacherous Ingersole Caverns and discovers the City of Quitte
 _Add more details here._
 
 [REFERENCES]
-
 

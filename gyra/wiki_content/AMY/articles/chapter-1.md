@@ -1,5 +1,5 @@
 [META]
-title=Chapter 1
+title=Chapter 1 - (Raphe)
 authors=Unknown
 template=story_beat
 act=1
@@ -96,5 +96,4 @@ Reunited, he writes one instruction: *the elevator*. Go down. He does not explai
 - The Sin System begins here: each bad-path solution leaves a physical mark on [Amy](amelia-amy-loevinger.md) (soot from the lamp fire, for example) that persists visually. These marks are also the game's achievement triggers for bad decisions.
 
 [REFERENCES]
-
 

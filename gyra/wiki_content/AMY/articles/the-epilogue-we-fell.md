@@ -1,5 +1,5 @@
 [META]
-title=The Epilogue "We Fell"
+title=The Epilogue
 authors=Unknown
 template=story_beat
 act=?
@@ -19,5 +19,4 @@ Amy eventually makes it to the penthouse, where she engages Mr. Ross in a tense 
 _Add more details here._
 
 [REFERENCES]
-
 

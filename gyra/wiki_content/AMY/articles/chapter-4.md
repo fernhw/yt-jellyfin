@@ -1,5 +1,5 @@
 [META]
-title=Chapter 4
+title=Chapter 4 - (Sen)
 authors=Unknown
 template=story_beat
 act=?
@@ -20,5 +20,4 @@ Amy delves into the ancient mines beneath the hotel, where she encounters the mo
 _Add more details here._
 
 [REFERENCES]
-
 

@@ -1,10 +1,10 @@
 [META]
-title=Jackal/joker
+title=Jackal/Joker (Difficulty Mode)
 authors=Unknown
 template=generic
-status=?
-owner=?
-notes=?
+status=canonical
+owner=design
+notes=Base difficulty mode — standard puzzles and stealth mechanics
 
 [HERO]
 

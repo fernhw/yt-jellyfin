@@ -46,28 +46,30 @@
     {# Left: CodeMirror #}
     <div class="wiki-editor-pane" id="wiki-editor-pane">
       <div class="wiki-editor-toolbar">
-        <button type="button" data-cmd="h2"       title="Heading 2">H2</button>
-        <button type="button" data-cmd="h3"       title="Heading 3">H3</button>
+        <button type="button" data-cmd="h2" title="Heading 2 (##)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><text x="0" y="12" font-family="system-ui,sans-serif" font-weight="800" font-size="11" fill="currentColor">H2</text></svg></button>
+        <button type="button" data-cmd="h3" title="Heading 3 (###)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><text x="0" y="12" font-family="system-ui,sans-serif" font-weight="800" font-size="11" fill="currentColor">H3</text></svg></button>
         <span class="wiki-tb-sep"></span>
-        <button type="button" data-cmd="bold"     title="Bold"><strong>B</strong></button>
-        <button type="button" data-cmd="italic"   title="Italic"><em>I</em></button>
-        <button type="button" data-cmd="code"     title="Inline code"><code>`</code></button>
-        <button type="button" data-cmd="codeblock" title="Code block">```</button>
+        <button type="button" data-cmd="bold" title="Bold (**text**)"><svg width="16" height="16" viewBox="0 0 16 16"><text x="2" y="13" font-family="Georgia,serif" font-weight="900" font-size="14" fill="currentColor">B</text></svg></button>
+        <button type="button" data-cmd="italic" title="Italic (*text*)"><svg width="16" height="16" viewBox="0 0 16 16"><text x="4" y="13" font-family="Georgia,serif" font-style="italic" font-size="14" fill="currentColor">I</text></svg></button>
+        <button type="button" data-cmd="code" title="Inline code"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="5,4 1,8 5,12"/><polyline points="11,4 15,8 11,12"/></svg></button>
+        <button type="button" data-cmd="codeblock" title="Code block"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="2" width="14" height="12" rx="2"/><line x1="4" y1="6" x2="8" y2="6"/><line x1="4" y1="9" x2="11" y2="9"/><line x1="4" y1="12" x2="7" y2="12"/></svg></button>
         <span class="wiki-tb-sep"></span>
-        <button type="button" data-cmd="hr"       title="Horizontal rule">―</button>
-        <button type="button" data-cmd="ul"       title="List">• List</button>
-        <button type="button" data-cmd="link"     title="External link">🔗</button>
-        <button type="button" data-cmd="wikilink" title="Wiki link">[[link]]</button>
-        <button type="button" data-cmd="spoiler"  title="Spoiler tag">👁 Spoiler</button>
+        <button type="button" data-cmd="ul" title="Bullet list"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="2.5" cy="5" r="1.5"/><rect x="5" y="4" width="9" height="2" rx="1"/><circle cx="2.5" cy="9.5" r="1.5"/><rect x="5" y="8.5" width="9" height="2" rx="1"/><circle cx="2.5" cy="14" r="1.5"/><rect x="5" y="13" width="6" height="2" rx="1"/></svg></button>
+        <button type="button" data-cmd="hr" title="Horizontal rule"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="8" x2="15" y2="8"/></svg></button>
         <span class="wiki-tb-sep"></span>
-        <label id="wiki-img-upload-label" title="Upload image → inserts at cursor" style="cursor:pointer">
-          <span class="btn" style="font-size:12px;padding:4px 8px;border:1px solid #a2a9b1;border-radius:4px;background:#fff;cursor:pointer">🖼 Add Image</span>
+        <button type="button" data-cmd="link" title="External link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a3.5 3.5 0 0 0 5 0l2-2a3.5 3.5 0 0 0-5-5L7 3"/><path d="M10 7a3.5 3.5 0 0 0-5 0L3 9a3.5 3.5 0 0 0 5 5l1-1"/></svg></button>
+        <button type="button" id="wiki-wikilink-btn" title="Insert wiki link — opens article search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.4"/><text x="3" y="11" font-family="system-ui,sans-serif" font-weight="800" font-size="8.5" fill="currentColor">[[W]]</text></svg></button>
+        <button type="button" data-cmd="spoiler" title="Spoiler — hidden until clicked"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><ellipse cx="8" cy="8" rx="7" ry="4.5"/><circle cx="8" cy="8" r="2" fill="currentColor" stroke="none"/><line x1="2" y1="14" x2="14" y2="2" stroke-width="1.8"/></svg></button>
+        <span class="wiki-tb-sep"></span>
+        <label id="wiki-img-upload-label" title="Upload image → inserts at cursor" class="wiki-tb-icon-btn">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="14" height="10" rx="2"/><circle cx="5.5" cy="7" r="1.3" fill="currentColor" stroke="none"/><polyline points="1,13 5,9 8,12 11,8 15,13"/><polyline points="11,3 11,7 13,5"/><line x1="11" y1="3" x2="9" y2="5"/></svg>
           <input type="file" id="wiki-img-upload-direct" accept="image/*" style="display:none">
         </label>
-        <button type="button" id="wiki-img-toggle" title="Browse already-uploaded images" style="font-size:12px;padding:4px 8px">Browse</button>
-        <button type="button" id="wiki-hero-btn" title="Set hero / infobox image" style="border-color:#7c3aed;color:#7c3aed">🖼 Set Hero</button>
+        <button type="button" id="wiki-img-toggle" title="Browse uploaded images"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="14" height="10" rx="2"/><circle cx="5.5" cy="7" r="1.3" fill="currentColor" stroke="none"/><polyline points="1,13 5,9 8,12 11,8 15,13"/></svg></button>
+        <button type="button" id="wiki-hero-btn" title="Set hero / infobox image" class="wiki-tb-hero"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M1 11l4-4 3 3 2-2 5 5" stroke-width="1.4"/><circle cx="11.5" cy="6" r="1.5" fill="#7c3aed" stroke="none"/></svg></button>
         <span class="wiki-tb-spacer"></span>
-        <button type="button" id="wiki-preview-toggle" class="wiki-tb-right">👁 Preview</button>
+        <button type="button" id="wiki-preview-toggle" class="wiki-tb-pill" title="Toggle live preview"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><ellipse cx="8" cy="8" rx="7" ry="5"/><circle cx="8" cy="8" r="2.5" fill="currentColor" stroke="none"/></svg> Preview</button>
+        <button type="button" id="wiki-format-guide-btn" class="wiki-tb-pill wiki-tb-pill-purple" title="HolguinWiki format guide"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="8" r="7"/><path d="M6 6c0-1.1.9-2 2-2s2 .9 2 2c0 1-.6 1.5-1.4 2C7.8 8.7 8 9.3 8 10"/><circle cx="8" cy="13" r=".8" fill="currentColor" stroke="none"/></svg> Format</button>
       </div>
       <textarea id="wiki-textarea" name="content" style="display:none"></textarea>
       <script type="application/json" id="wiki-init-content">{{ prefill_content | tojson if prefill_content else '""' }}</script>
@@ -152,28 +154,135 @@
 </form>
 
 {# ── [[Wikilink search modal ── #}
-<div id="wiki-link-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:flex-start;justify-content:center;padding-top:80px">
-  <div style="background:#fff;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.25);width:520px;max-width:96vw;overflow:hidden">
-    <div style="padding:14px 16px;border-bottom:1px solid #eaecf0;display:flex;align-items:center;gap:10px">
-      <span style="font-size:13px;color:#72777d;white-space:nowrap">Insert link</span>
-      <input id="wiki-link-search" type="search" placeholder="Search articles by title or number…"
+<div id="wiki-link-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);align-items:flex-start;justify-content:center;padding-top:100px">
+  <div style="background:#18181b;border:1px solid #3f3f46;border-radius:10px;box-shadow:0 16px 60px rgba(0,0,0,.7);width:540px;max-width:96vw;overflow:hidden">
+    <div style="padding:12px 14px;border-bottom:1px solid #27272a;display:flex;align-items:center;gap:10px">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;color:#71717a"><rect x="1" y="1" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.4"/><text x="3" y="11" font-family="system-ui,sans-serif" font-weight="800" font-size="8.5" fill="currentColor">[[W]]</text></svg>
+      <input id="wiki-link-search" type="search" placeholder="Search articles…"
              autocomplete="off"
-             style="flex:1;border:1px solid #a2a9b1;border-radius:4px;padding:7px 11px;font-size:14px;outline:none">
+             style="flex:1;background:transparent;border:none;outline:none;font-size:15px;color:#f4f4f5;font-family:inherit;caret-color:#a78bfa">
       <button id="wiki-link-modal-close" type="button"
-              style="background:none;border:none;font-size:18px;color:#72777d;cursor:pointer;line-height:1;padding:0 4px">&times;</button>
+              style="background:none;border:none;font-size:20px;color:#52525b;cursor:pointer;line-height:1;padding:0 2px;transition:color .1s" onmouseover="this.style.color='#a1a1aa'" onmouseout="this.style.color='#52525b'">&times;</button>
     </div>
     <div id="wiki-link-results"
-         style="max-height:360px;overflow-y:auto;font-size:13px;font-family:-apple-system,sans-serif">
+         style="max-height:380px;overflow-y:auto;font-size:13px;font-family:-apple-system,sans-serif">
     </div>
-    <div style="padding:8px 14px;font-size:11px;color:#a0a0a0;border-top:1px solid #eaecf0">
-      ↑↓ navigate &nbsp;·&nbsp; Enter to insert &nbsp;·&nbsp; Esc to cancel
+    <div style="padding:7px 14px;font-size:11px;color:#52525b;border-top:1px solid #27272a;letter-spacing:.2px">
+      ↑↓ navigate &nbsp;·&nbsp; <kbd style="background:#27272a;border:1px solid #3f3f46;border-radius:3px;padding:1px 5px;font-size:10px;color:#a1a1aa">Enter</kbd> insert &nbsp;·&nbsp; <kbd style="background:#27272a;border:1px solid #3f3f46;border-radius:3px;padding:1px 5px;font-size:10px;color:#a1a1aa">Esc</kbd> cancel
     </div>
   </div>
 </div>
+
+{# ── HolguinWiki Format Guide modal ── #}
+<div id="wiki-format-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto">
+  <div style="background:#fff;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.3);width:760px;max-width:96vw;overflow:hidden;position:relative">
+    <div style="padding:16px 22px;border-bottom:1px solid #eaecf0;display:flex;align-items:center;justify-content:space-between;background:#1e1b4b">
+      <div>
+        <strong style="font-size:16px;color:#fff;letter-spacing:-.3px">HolguinWiki Format Guide</strong>
+        <span style="font-size:11px;color:#a5b4fc;margin-left:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase">A format we made up</span>
+      </div>
+      <button id="wiki-format-modal-close" type="button" style="background:none;border:none;font-size:22px;color:#a5b4fc;cursor:pointer;line-height:1;padding:0">&times;</button>
+    </div>
+
+    <div style="padding:22px 26px;font-size:14px;line-height:1.7;color:#374151;max-height:80vh;overflow-y:auto" id="wiki-format-modal-body">
+
+      {# ── SECTION STRUCTURE ── #}
+      <h2 style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#7c3aed;border-bottom:2px solid #ede9fe;padding-bottom:6px;margin:0 0 14px">Article Structure — Required Tags</h2>
+      <p style="margin:0 0 10px;color:#6b7280">Every article <strong>must</strong> contain these five section tags in order. They are the backbone of the format. Missing tags are added automatically on save — but <strong>title=</strong> is your responsibility.</p>
+      <div style="background:#1e1b4b;border-radius:8px;padding:16px 20px;font-family:monospace;font-size:13px;color:#e0e7ff;margin:0 0 18px;white-space:pre-wrap">[META]
+title=Your Article Title Here
+authors=Studio High Ground
+template=character
+
+[HERO]
+filename.jpg
+Optional caption line
+
+[MAIN_SECTION]
+# Your Article Title Here
+
+The main body of the article goes here.
+Markdown works fully in this section.
+
+[SECONDARY]
+## Extra Notes
+
+Background detail, lore depth, design notes.
+
+[REFERENCES]
+- Source one
+- Source two</div>
+
+      <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:12px 16px;margin:0 0 24px;font-size:13px">
+        <strong>⚠️ The golden rule:</strong> <code style="background:#fde68a;padding:1px 5px;border-radius:3px">title=</code> in <code style="background:#fde68a;padding:1px 5px;border-radius:3px">[META]</code> is the <em>only</em> place the title lives. The database reads it from here on every save. If it's blank or missing, the article will not save.
+      </div>
+
+      {# ── META FIELDS ── #}
+      <h2 style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#7c3aed;border-bottom:2px solid #ede9fe;padding-bottom:6px;margin:0 0 14px">[META] Fields</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin:0 0 24px">
+        <thead><tr style="background:#f5f3ff"><th style="text-align:left;padding:7px 10px;border-bottom:2px solid #ede9fe;font-weight:700;color:#5b21b6">Field</th><th style="text-align:left;padding:7px 10px;border-bottom:2px solid #ede9fe;font-weight:700;color:#5b21b6">Required?</th><th style="text-align:left;padding:7px 10px;border-bottom:2px solid #ede9fe;font-weight:700;color:#5b21b6">Notes</th></tr></thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="padding:7px 10px;font-family:monospace;color:#7c3aed">title=</td><td style="padding:7px 10px"><strong style="color:#dc2626">Yes</strong></td><td style="padding:7px 10px">The article title. Shown in the infobox, nav, and GDD. Required to save.</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6;background:#fafafa"><td style="padding:7px 10px;font-family:monospace;color:#7c3aed">authors=</td><td style="padding:7px 10px">Recommended</td><td style="padding:7px 10px">Who wrote this. Comma-separated.</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="padding:7px 10px;font-family:monospace;color:#7c3aed">template=</td><td style="padding:7px 10px">Recommended</td><td style="padding:7px 10px"><code>character</code>, <code>location</code>, <code>mechanic</code>, <code>generic</code></td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6;background:#fafafa"><td style="padding:7px 10px;font-family:monospace;color:#7c3aed">status=</td><td style="padding:7px 10px">Optional</td><td style="padding:7px 10px"><code>draft</code>, <code>canonical</code>, <code>wip</code></td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="padding:7px 10px;font-family:monospace;color:#7c3aed">owner=</td><td style="padding:7px 10px">Optional</td><td style="padding:7px 10px">Team owner: <code>design</code>, <code>narrative</code>, <code>art</code>, etc.</td></tr>
+          <tr style="background:#fafafa"><td style="padding:7px 10px;font-family:monospace;color:#7c3aed"><em>any_key=</em></td><td style="padding:7px 10px">Optional</td><td style="padding:7px 10px">Custom infobox rows. <code>born=1842</code> → shows as "Born · 1842" in the sidebar.</td></tr>
+        </tbody>
+      </table>
+
+      {# ── WIKILINKS ── #}
+      <h2 style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#7c3aed;border-bottom:2px solid #ede9fe;padding-bottom:6px;margin:0 0 14px">Wikilinks</h2>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;font-family:monospace;font-size:13px;margin:0 0 8px">[[Article Title]]<br>[[Article Title|Display Text]]</div>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 24px">Use the <strong>[[link]]</strong> toolbar button to search and insert. Links resolve to the article by slug automatically.</p>
+
+      {# ── SPOILERS ── #}
+      <h2 style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#7c3aed;border-bottom:2px solid #ede9fe;padding-bottom:6px;margin:0 0 14px">Spoiler Tags</h2>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;font-family:monospace;font-size:13px;margin:0 0 8px">||This text is hidden until the reader clicks it.||</div>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 24px">Wrap content in double pipes. On the article page it renders as a blurred block the reader must click to reveal.</p>
+
+      {# ── IMAGES ── #}
+      <h2 style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#7c3aed;border-bottom:2px solid #ede9fe;padding-bottom:6px;margin:0 0 14px">Images</h2>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;font-family:monospace;font-size:13px;margin:0 0 8px;white-space:pre">![Caption text](filename.jpg)
+
+[image name="filename.jpg" caption="Caption" side="right"]
+
+{# Hero / infobox image — goes inside [HERO]: #}
+[HERO]
+filename.jpg
+Optional caption</div>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 24px">Upload via the <strong>🖼 Add Image</strong> button. The filename is inserted at the cursor. Use <strong>🖼 Set Hero</strong> to set the infobox image.</p>
+
+      {# ── MARKDOWN REFERENCE ── #}
+      <h2 style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#7c3aed;border-bottom:2px solid #ede9fe;padding-bottom:6px;margin:0 0 14px">Markdown Reference</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin:0 0 8px">
+        <thead><tr style="background:#f5f3ff"><th style="text-align:left;padding:7px 10px;border-bottom:2px solid #ede9fe;font-weight:700;color:#5b21b6;width:40%">Syntax</th><th style="text-align:left;padding:7px 10px;border-bottom:2px solid #ede9fe;font-weight:700;color:#5b21b6">Result</th></tr></thead>
+        <tbody>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="padding:7px 10px;font-family:monospace"># Heading 1</td><td style="padding:7px 10px">Large article heading (use for the article title in [MAIN_SECTION])</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6;background:#fafafa"><td style="padding:7px 10px;font-family:monospace">## Heading 2</td><td style="padding:7px 10px">Section heading</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="padding:7px 10px;font-family:monospace">### Heading 3</td><td style="padding:7px 10px">Sub-section heading</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6;background:#fafafa"><td style="padding:7px 10px;font-family:monospace">**bold text**</td><td style="padding:7px 10px"><strong>bold text</strong></td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="padding:7px 10px;font-family:monospace">*italic text*</td><td style="padding:7px 10px"><em>italic text</em></td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6;background:#fafafa"><td style="padding:7px 10px;font-family:monospace">~~strikethrough~~</td><td style="padding:7px 10px"><del>strikethrough</del></td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="padding:7px 10px;font-family:monospace">`inline code`</td><td style="padding:7px 10px"><code style="background:#f1f5f9;padding:1px 5px;border-radius:3px">inline code</code></td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6;background:#fafafa"><td style="padding:7px 10px;font-family:monospace">```<br>code block<br>```</td><td style="padding:7px 10px">Fenced code block</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="padding:7px 10px;font-family:monospace">&gt; blockquote</td><td style="padding:7px 10px">Indented callout block</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6;background:#fafafa"><td style="padding:7px 10px;font-family:monospace">- item<br>- item</td><td style="padding:7px 10px">Unordered list</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="padding:7px 10px;font-family:monospace">1. item<br>2. item</td><td style="padding:7px 10px">Ordered list</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6;background:#fafafa"><td style="padding:7px 10px;font-family:monospace">---</td><td style="padding:7px 10px">Horizontal rule</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6"><td style="padding:7px 10px;font-family:monospace">[text](url)</td><td style="padding:7px 10px">External hyperlink</td></tr>
+          <tr style="border-bottom:1px solid #f3f4f6;background:#fafafa"><td style="padding:7px 10px;font-family:monospace">| Col | Col |<br>|---|---|<br>| A | B |</td><td style="padding:7px 10px">Table</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:12px;color:#9ca3af;margin:4px 0 0">Standard GitHub Flavoured Markdown. Line breaks are honoured.</p>
+
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@codemirror/state@6/dist/index.js"    type="module" id="cm-state"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@codemirror/view@6/dist/style.css">
-<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
-{# Article list for [[ autocomplete #}
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>{# Article list for [[ autocomplete #}
 <script id="wiki-articles-json" type="application/json">{{ articles_json | safe }}</script>
 
 {# We use a simpler CDN bundle that exposes window.CodeMirror-free approach:
@@ -487,8 +596,98 @@ function renderPreview() {
 }
 
 // Sync back to textarea before form submit
-form.addEventListener('submit', function () {
-  ta.value = view.state.doc.toString();
+// ── HolguinWiki format enforcement before save ────────────────────────────────
+var REQUIRED_TAGS   = ['META', 'HERO', 'MAIN_SECTION', 'SECONDARY', 'REFERENCES'];
+
+function enforceAndValidate(raw) {
+  /* Returns { ok: bool, fixed: string, error: string|null }
+     - Always heals missing tags (adds them in correct order)
+     - Blocks save if title= is absent or empty in [META]
+  */
+  var sections = parseSections(raw);
+
+  // Build a map of what we have
+  var byType = {};
+  sections.forEach(function (s) { byType[s.type] = s; });
+
+  // Rebuild in canonical order, adding any missing sections
+  var canonical = REQUIRED_TAGS.map(function (tag) {
+    return byType[tag] || { type: tag, content: '' };
+  });
+
+  // Re-serialise
+  var fixed = canonical.map(function (s) {
+    return '[' + s.type + ']\n' + (s.content || '');
+  }).join('\n\n');
+
+  // Now validate title= in META
+  var metaSec = canonical[0]; // META is always first
+  var titleMatch = (metaSec.content || '').match(/^title=(.+)$/m);
+  var hasTitle = titleMatch && titleMatch[1].trim().length > 0;
+
+  if (!hasTitle) {
+    return { ok: false, fixed: fixed, error: 'no-title' };
+  }
+
+  return { ok: true, fixed: fixed, error: null };
+}
+
+var saveErrorBanner = null;
+
+function showSaveError(type) {
+  if (!saveErrorBanner) {
+    saveErrorBanner = document.createElement('div');
+    saveErrorBanner.id = 'wiki-save-error';
+    saveErrorBanner.style.cssText = [
+      'position:fixed;bottom:0;left:0;right:0;z-index:99999',
+      'background:#dc2626;color:#fff;padding:14px 24px 18px',
+      'font-size:14px;line-height:1.6;box-shadow:0 -4px 20px rgba(0,0,0,.3)',
+      'display:flex;gap:16px;align-items:flex-start'
+    ].join(';');
+    document.body.appendChild(saveErrorBanner);
+  }
+
+  var icon = '⚠️';
+  var html = '';
+
+  if (type === 'no-title') {
+    html = '<div style="flex:1">'
+      + '<strong style="font-size:15px;display:block;margin-bottom:6px">🚫 Article cannot be saved — <code style="background:rgba(255,255,255,.2);padding:2px 6px;border-radius:3px">[META]</code> is missing <code style="background:rgba(255,255,255,.2);padding:2px 6px;border-radius:3px">title=</code></strong>'
+      + '<span style="opacity:.92">Every HolguinWiki article requires a title in the <strong>[META]</strong> block at the very top of the editor. '
+      + 'Find <strong>[META]</strong> and add a line that looks like:</span><br>'
+      + '<code style="display:inline-block;margin-top:8px;background:rgba(0,0,0,.25);padding:4px 12px;border-radius:4px;font-size:13px;letter-spacing:.3px">title=Your Article Title Here</code>'
+      + '</div>'
+      + '<button type="button" id="wiki-save-error-close" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;padding:0;flex-shrink:0;opacity:.8">&times;</button>';
+  }
+
+  saveErrorBanner.innerHTML = html;
+  saveErrorBanner.style.display = 'flex';
+
+  // Scroll editor to top so user sees [META]
+  var scroller = cmWrap.querySelector('.cm-scroller');
+  if (scroller) scroller.scrollTop = 0;
+
+  document.getElementById('wiki-save-error-close').addEventListener('click', function () {
+    saveErrorBanner.style.display = 'none';
+  });
+}
+
+form.addEventListener('submit', function (e) {
+  var raw = view.state.doc.toString();
+  var result = enforceAndValidate(raw);
+
+  if (!result.ok) {
+    e.preventDefault();
+    // Push the healed (tags fixed) version back into editor before blocking
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: result.fixed } });
+    ta.value = result.fixed;
+    showSaveError(result.error);
+    return;
+  }
+
+  // All good — push healed content to textarea and submit
+  view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: result.fixed } });
+  ta.value = result.fixed;
 });
 
 // Trigger initial render after a short delay to ensure marked is loaded
@@ -505,7 +704,6 @@ var CMDS = {
   'hr':        function ()    { return '\n---\n'; },
   'ul':        function (sel) { return '- ' + (sel || 'item'); },
   'link':      function (sel) { return '[' + (sel || 'text') + '](https://)'; },
-  'wikilink':  function (sel) { return '[[' + (sel || '') + ']]'; },
   'spoiler':   function (sel) { return '||' + (sel || 'spoiler text') + '||'; },
 };
 
@@ -516,9 +714,9 @@ var acResultsEl = document.getElementById('wiki-link-results');
 var acArticles  = [];
 try { acArticles = JSON.parse(document.getElementById('wiki-articles-json').textContent); } catch(e) {}
 
-var acFrom      = 0;   // position of the opening [[
+var acFrom      = 0;   // cursor position when modal was opened (for insertion)
 var acActive    = false;
-var acSelected  = -1;  // keyboard selection index
+var acSelected  = -1;
 
 // Close on backdrop
 acModal.addEventListener('click', function (e) {
@@ -541,19 +739,19 @@ function acFilter(q) {
 function acRender(results) {
   acSelected = results.length ? 0 : -1;
   if (!results.length) {
-    acResultsEl.innerHTML = '<div style="padding:18px 16px;color:#72777d;font-style:italic">No articles found.</div>';
+    acResultsEl.innerHTML = '<div style="padding:20px 16px;color:#52525b;font-style:italic;text-align:center">No articles found.</div>';
     return;
   }
   acResultsEl.innerHTML = results.map(function (a, i) {
     var q = (acSearchEl.value || '').toLowerCase();
     var title = escHtml(a.title);
-    if (q) title = title.replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'), '<mark style="background:#fff3b0;border-radius:2px">$1</mark>');
+    if (q) title = title.replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'), '<mark style="background:#4c1d95;color:#c4b5fd;border-radius:2px;padding:0 2px">$1</mark>');
     var depth = (a.gdd_num || '').split('.').length - 1;
     var indent = depth * 14;
     return '<div class="wiki-link-row" data-idx="' + i + '" data-title="' + escAttr(a.title) + '"'
-      + ' style="padding:8px 16px 8px ' + (16 + indent) + 'px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;align-items:baseline;gap:8px">'
-      + (a.gdd_num ? '<span style="font-family:monospace;font-size:10.5px;color:#a0a0a0;flex-shrink:0">' + escHtml(a.gdd_num) + '</span>' : '')
-      + '<span>' + title + '</span>'
+      + ' style="padding:9px 16px 9px ' + (16 + indent) + 'px;cursor:pointer;border-bottom:1px solid #27272a;display:flex;align-items:baseline;gap:10px;color:#d4d4d8;transition:background .08s">'
+      + (a.gdd_num ? '<span style="font-family:monospace;font-size:10px;color:#52525b;flex-shrink:0;letter-spacing:.3px">' + escHtml(a.gdd_num) + '</span>' : '')
+      + '<span style="font-size:13px">' + title + '</span>'
       + '</div>';
   }).join('');
   acHighlight();
@@ -561,7 +759,8 @@ function acRender(results) {
 
 function acHighlight() {
   acResultsEl.querySelectorAll('.wiki-link-row').forEach(function (row, i) {
-    row.style.background = i === acSelected ? '#eaf0ff' : '';
+    row.style.background = i === acSelected ? '#27272a' : '';
+    row.style.color      = i === acSelected ? '#a78bfa' : '#d4d4d8';
     if (i === acSelected) row.scrollIntoView({ block: 'nearest' });
   });
 }
@@ -589,11 +788,26 @@ function acHide() {
 }
 
 function acInsert(title) {
+  // Insert at the saved cursor position (acFrom), replacing any partial text typed after [[
   var cursor = view.state.selection.main.head;
-  view.dispatch({
-    changes: { from: acFrom, to: cursor, insert: '[[' + title + ']]' },
-    selection: { anchor: acFrom + title.length + 4 }
-  });
+  // If triggered from toolbar button, acFrom === cursor (no [[ to replace)
+  var from = acFrom;
+  var to   = cursor;
+  // Detect if the user typed [[ manually and the modal triggered from the updateListener
+  var docSlice = view.state.sliceDoc(from, to);
+  if (docSlice.startsWith('[[')) {
+    // Remove the [[ the user typed, replace with full link
+    view.dispatch({
+      changes: { from: from, to: to, insert: '[[' + title + ']]' },
+      selection: { anchor: from + title.length + 4 }
+    });
+  } else {
+    // Toolbar-triggered: insert fresh link at cursor
+    view.dispatch({
+      changes: { from: from, to: from, insert: '[[' + title + ']]' },
+      selection: { anchor: from + title.length + 4 }
+    });
+  }
   acHide();
 }
 
@@ -660,7 +874,9 @@ previewBtn.addEventListener('click', function () {
   previewPane.style.display = previewOpen ? '' : 'none';
   document.getElementById('wiki-split-editor').style.gridTemplateColumns =
     previewOpen ? '1fr 1fr' : '1fr';
-  previewBtn.textContent = previewOpen ? '👁 Preview' : '👁 Show Preview';
+  previewBtn.innerHTML = previewOpen
+    ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><ellipse cx="8" cy="8" rx="7" ry="5"/><circle cx="8" cy="8" r="2.5" fill="currentColor" stroke="none"/></svg> Preview'
+    : '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><ellipse cx="8" cy="8" rx="7" ry="5"/><circle cx="8" cy="8" r="2.5" fill="currentColor" stroke="none"/><line x1="2" y1="14" x2="14" y2="2" stroke-width="1.8"/></svg> Preview';
 });
 
 // ── Scroll sync (editor → preview, 1:1 percentage) ───────────────────────────
@@ -691,6 +907,25 @@ previewBtn.addEventListener('click', function () {
     scroller.addEventListener('scroll', syncPreviewToEditor, { passive: true });
   }
   attachScrollListener();
+})();
+
+// ── Format Guide modal ───────────────────────────────────────────────────────
+(function () {
+  var fgModal = document.getElementById('wiki-format-modal');
+  var fgBtn   = document.getElementById('wiki-format-guide-btn');
+  var fgClose = document.getElementById('wiki-format-modal-close');
+  if (!fgModal || !fgBtn) return;
+  fgBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    fgModal.style.display = 'flex';
+  });
+  fgClose.addEventListener('click', function () { fgModal.style.display = 'none'; });
+  fgModal.addEventListener('click', function (e) {
+    if (e.target === fgModal) fgModal.style.display = 'none';
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && fgModal.style.display === 'flex') fgModal.style.display = 'none';
+  });
 })();
 
 } // end if ta

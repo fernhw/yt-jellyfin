@@ -1,5 +1,5 @@
 [META]
-title=Chapter 2
+title=Chapter 2 - (Thorn)
 authors=Unknown
 template=story_beat
 act=?
@@ -20,5 +20,4 @@ Amy must reactivate an elevator. Kole tells Amy not to dare go there, but if she
 _Add more details here._
 
 [REFERENCES]
-
 

@@ -1,5 +1,5 @@
 [META]
-title=Chapter 3
+title=Chapter 3 - (Graft)
 authors=Unknown
 template=story_beat
 act=?
@@ -20,5 +20,4 @@ Amy ventures into the hotel's theater, where she meets the enigmatic Kane and hi
 _Add more details here._
 
 [REFERENCES]
-
 
