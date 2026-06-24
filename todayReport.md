@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-24
 
-> *Good morning! Here's what landed on Wednesday, June 24, 2026 at 11:37 AM.*
-> **YT Mirror:** 647.70 GB used · 0.56 TB free
+> *Good afternoon! Here's what landed on Wednesday, June 24, 2026 at 03:08 PM.*
+> **YT Mirror:** 646.94 GB used · 0.56 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,8 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **DELTARUNE Chapter 5 – Launch Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:07 PM · not podcastable
+- **The Strange World Of Biohacking ** — *Papa Meat* · downloaded 03:06 PM · not podcastable
 - **Sony Reacts to the Steam Machine Price** — *SAMTIME* · downloaded 11:35 AM · not podcastable
 - **The 2026 Summer Game Drought Vote | Fully Ramblomatic** — *Second Wind* · downloaded 11:34 AM · podcastable
 - **Make New Memories with Nintendo Classics** — *Nintendo of America* · downloaded 11:34 AM · not podcastable
