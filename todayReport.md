@@ -1,29 +1,17 @@
-# What to Watch — 2026-06-23
+# What to Watch — 2026-06-24
 
-> *Good evening! Here's what landed on Tuesday, June 23, 2026 at 11:34 PM.*
-> **YT Mirror:** 646.02 GB used · 0.56 TB free
+> *Good morning! Here's what landed on Wednesday, June 24, 2026 at 12:37 AM.*
+> **YT Mirror:** 646.50 GB used · 0.56 TB free
 
 ## Priority Videos
 
-- **Midjourney wants to delete 30% of all death...** — *Fireship* · downloaded 03:06 PM · podcastable
-- **The Steam Machine is The World's Most Powerful Console** — *videogamedunkey* · downloaded 03:05 PM · not podcastable
+No priority uploads today — your favorites are taking a break.
 
 ---
 
 ## Non-Priority Videos
 
-- **Trump Claims Leftist Vandals Destroyed His Disgusting Reflecting Pool?!** — *Internet Today* · downloaded 09:05 PM · not podcastable
-- **Steam Gave Indies a Heart Attack** — *Bellular News* · downloaded 06:06 PM · podcastable
-- **Valve Responds To Steam Machine Price...** — *Spawn Wave* · downloaded 03:13 PM · not podcastable
-- **Valve just made people mad..** — *Asmongold TV* · downloaded 03:12 PM · not podcastable
-- **The Story Behind Star Wars Galaxies' Notorious Jedi Problem - /noclip** — */noclip* · downloaded 03:11 PM · not podcastable · *53 days since their last upload*
-- **Star Wars Galactic Racer First Look: PS5 Tech Preview + PS5/PC/Xbox Series S Details!** — *Digital Foundry* · downloaded 11:43 AM · not podcastable
-- **The Craziest AI Pivot yet** — *The PrimeTime* · downloaded 11:42 AM · podcastable
-- **Every Single Video Game Is Afraid of GTA 6** — *Second Wind* · downloaded 11:39 AM · podcastable
-- **It's happening everywhere now..** — *Asmongold TV* · downloaded 11:37 AM · not podcastable
-- **Hasan just hit rock bottom..** — *Asmongold TV* · downloaded 09:36 AM · not podcastable
-- **MSI Claw 8 EX AI+: Ugly, Expensive, Awesome** — *Retro Game Corps* · downloaded 09:35 AM · podcastable
-- **Everyone waited for this..** — *Asmongold TV* · downloaded 07:04 AM · not podcastable
+- **Excellent Repairability: Steam Machine Tear-Down and Accessing RAM & SSD** — *Gamers Nexus* · downloaded 12:36 AM · not podcastable
 
 ---
 
