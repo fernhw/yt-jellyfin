@@ -699,16 +699,25 @@ def register(app) -> None:
         num_map  = {a["slug"]: a["gdd_num"] for a in numbered}
         gdd_num  = num_map.get(slug, "")
 
-        # Direct children of this article
+        # Direct children of this article (include MAIN_SECTION content for inline preview)
         children = conn.execute(
             """SELECT id, slug, title, order_index FROM wiki_articles
                WHERE project_id=? AND parent_id=?
                ORDER BY order_index""",
             (project_id, article["id"])
         ).fetchall()
+        def _child_main(child_slug):
+            try:
+                raw = _read_md(project["key"], child_slug)
+                secs = _parse_sections(raw)
+                ms = next((s for s in secs if s["type"] == "MAIN_SECTION"), None)
+                return ms["content"] if ms else ""
+            except Exception:
+                return ""
         children = [
             {**dict(c), "gdd_num": num_map.get(c["slug"], ""),
-             "url": url_for("wiki_article", project_id=project_id, slug=c["slug"])}
+             "url": url_for("wiki_article", project_id=project_id, slug=c["slug"]),
+             "main_content": _child_main(c["slug"])}
             for c in children
         ]
 

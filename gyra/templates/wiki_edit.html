@@ -143,15 +143,31 @@
     <a class="btn btn-secondary" href="{{ url_for('wiki_home', project_id=project.id) }}">Cancel</a>
     {% endif %}
     {% if mode == 'edit' and session.role in ('admin', 'super_user') %}
-    <form method="post" action="{{ url_for('wiki_delete', project_id=project.id, slug=article.slug) }}"
-          style="margin:0"
-          onsubmit="return confirm('Delete \'{{ article.title }}\'? This cannot be undone.')">
-      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-      <button type="submit" class="btn btn-danger">🗑 Delete</button>
-    </form>
+    <button type="button" class="btn btn-danger" id="wiki-delete-btn">🗑 Delete</button>
     {% endif %}
   </div>
 </form>
+
+{# Delete form lives OUTSIDE the edit form to avoid nested-form browser bug #}
+{% if mode == 'edit' and session.role in ('admin', 'super_user') %}
+<form id="wiki-delete-form" method="post"
+      action="{{ url_for('wiki_delete', project_id=project.id, slug=article.slug) }}"
+      style="display:none">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+</form>
+<script>
+  (function () {
+    var deleteBtn  = document.getElementById('wiki-delete-btn');
+    var deleteForm = document.getElementById('wiki-delete-form');
+    if (!deleteBtn || !deleteForm) return;
+    deleteBtn.addEventListener('click', function () {
+      if (confirm('Delete "{{ article.title | e }}"? This cannot be undone.')) {
+        deleteForm.submit();
+      }
+    });
+  })();
+</script>
+{% endif %}
 
 {# ── [[Wikilink search modal ── #}
 <div id="wiki-link-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);align-items:flex-start;justify-content:center;padding-top:100px">

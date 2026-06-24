@@ -39,7 +39,7 @@ Darby returns. Amy stands up. The rest of the chapter is quieter than the openin
 ## Chapter Beats
 
 ### The Exit
-[Amy](amelia-amy-loevinger.md) wakes in the [Ventilation Maintenance Room](ventilation-maintenance-room-amys-room.md) — her room inside the [Ross Hotel](ross-hotel.md)'s duct system, striped with vent-cast shadows. An odd set of keys is already in her inventory. The game teaches items, doors, and [Darby](darby-glowing-bird.md)'s mechanics here in a natural, momentum-driven sequence. Amy reaches the exit. The keys fit. She opens it.
+[Amy](amelia-amy-loevinger.md) is in the [Ventilation Maintenance Room](ventilation-maintenance-room-amys-room.md) — her room inside the [Ross Hotel](ross-hotel.md)'s duct system, striped with vent-cast shadows. She has been serving at the hotel for an unspecified number of days. Tonight she stole [Barret](barret-aricson.md)'s keys. They are already in her inventory. The game teaches items, doors, and [Darby](darby-glowing-bird.md)'s mechanics here in a natural, momentum-driven sequence. Amy reaches the exit. The keys fit. She opens it.
 
 The camera cuts. Close on her hands — reassembly scars, healing in real time, evidence of what the hotel put back together before she woke. She is outside. Something is wrong with the outside. She sits down.
 

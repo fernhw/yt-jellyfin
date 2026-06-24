@@ -1,5 +1,5 @@
 [META]
-title=The Knots (The Couple Whose Names Have Been Forgotten)
+title=The Knots
 authors=Unknown
 template=character
 role=Inseparable Couple / Cavern Residents
@@ -22,5 +22,4 @@ forgotten) are an inseparable couple who enjoy their golden years separated from
 _Add more details here._
 
 [REFERENCES]
-
 

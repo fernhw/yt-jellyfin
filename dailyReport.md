@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-24
 
-> *Good afternoon! Here's what landed on Wednesday, June 24, 2026 at 03:08 PM.*
-> **YT Mirror:** 646.94 GB used · 0.56 TB free
+> *Good evening! Here's what landed on Wednesday, June 24, 2026 at 05:13 PM.*
+> **YT Mirror:** 648.48 GB used · 0.56 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,9 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **They Basically Told Valve To F*ck Off** — *Bellular News* · downloaded 05:10 PM · podcastable
+- **This Doesn't Look Good For Physical Games** — *Spawn Wave* · downloaded 05:07 PM · not podcastable
+- **Top 5 Android 17 Features: I Swear It's New!** — *Marques Brownlee* · downloaded 05:05 PM · not podcastable
 - **DELTARUNE Chapter 5 – Launch Trailer – Nintendo Switch 2** — *Nintendo of America* · downloaded 03:07 PM · not podcastable
 - **The Strange World Of Biohacking ** — *Papa Meat* · downloaded 03:06 PM · not podcastable
 - **Sony Reacts to the Steam Machine Price** — *SAMTIME* · downloaded 11:35 AM · not podcastable

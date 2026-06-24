@@ -1,5 +1,5 @@
 [META]
-title=Darby (Glowing Bird)
+title=Darby
 authors=Unknown
 template=character
 role=Firebird Companion / Primary Light Source
@@ -11,9 +11,9 @@ faction=N/A (experimental organism; last of a sterile line)
 voice_actor=N/A
 first_appearance=Chapter 1 — Raphe (storage room cage)
 relationships
-[Dr. Elizabeth Blueth Needham](dr-elizabeth-blueth-needham.md) — creator; Darby was Blueth's second failed experiment; she caged it in 1960 and forgot about it for 65 years
-[Amelia Loevinger](amelia-amy-loevinger.md) — bonded companion; Amy named it; Darby cannot cross the hotel threshold
-[The Moonlight Aphids](the-12-moonlight-aphids.md) — Darby's original hunt target; was engineered to eat them; never did
+[Dr. Elizabeth Blueth Needham](dr-elizabeth-blueth-needham.md) = creator; Darby was Blueth's second failed experiment; she caged it in 1960 and forgot about it for 65 years
+[Amelia Loevinger](amelia-amy-loevinger.md) = bonded companion; Amy named it; Darby cannot cross the hotel threshold
+[The Moonlight Aphids](the-12-moonlight-aphids.md) = Darby's original hunt target; was engineered to eat them; never did
 
 [HERO]
 
@@ -67,5 +67,4 @@ Amy does not understand this distinction at the time. Most players won't either.
 - The name Darby was never chosen by Blueth. Amy named it herself, in Chapter 1, without ceremony.
 
 [REFERENCES]
-
 

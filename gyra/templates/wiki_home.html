@@ -339,6 +339,19 @@
 .wh-section-solo .wh-solo-link { display: block; text-decoration: none; color: inherit; }
 .wh-section-solo .wh-solo-link:hover .wh-section-title-link { color: #3b82f6; }
 .wh-section-solo .wh-solo-link:hover { background: #f8fafc; }
+/* SOLO ROW — bare grid of solo root articles, no wrapper box */
+.wh-solo-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
+@media (max-width: 560px) { .wh-solo-row { grid-template-columns: 1fr; } }
+.wh-solo-tile { display: flex; align-items: stretch; gap: 0; border: 1px solid #e2e8f0; border-radius: 10px; text-decoration: none; color: #1e293b; background: #fff; overflow: hidden; transition: box-shadow .15s, border-color .15s, transform .1s; min-width: 0; min-height: 76px; }
+.wh-solo-tile:hover { box-shadow: 0 4px 18px rgba(59,130,246,.16); border-color: #93c5fd; transform: translateY(-2px); }
+.wh-solo-tile-accent { width: 6px; align-self: stretch; flex-shrink: 0; }
+.wh-solo-tile-img { width: 76px; height: 76px; flex-shrink: 0; overflow: hidden; }
+.wh-solo-tile-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wh-solo-tile-body { flex: 1; min-width: 0; padding: 16px 18px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.wh-solo-tile-title { font-size: 16px; font-weight: 700; line-height: 1.3; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wh-solo-tile-num { font-family: monospace; font-size: 11px; color: #94a3b8; }
+.wh-solo-tile-arrow { font-size: 14px; color: #cbd5e1; padding: 0 16px 0 6px; flex-shrink: 0; align-self: center; transition: color .15s, transform .15s; }
+.wh-solo-tile:hover .wh-solo-tile-arrow { color: #3b82f6; transform: translateX(2px); }
 .wiki-draft-badge { font-size: 9.5px; background: #fee2e2; color: #991b1b; border-radius: 3px; padding: 1px 5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
 /* MODAL */
 .wh-modal-backdrop { position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; }
@@ -434,44 +447,73 @@
 
   var page = document.getElementById('wh-page');
   var roots = flat.filter(function(a){ return a.depth===0; });
-  roots.forEach(function(root, ri){
-    var children  = childrenOf(root);
-    var totalDesc = descendantCount(root);
-    var accent    = ACCENTS[ri%ACCENTS.length];
-    var mode      = getMode(root.id);
-    var sec = document.createElement('div');
-    sec.className = 'wh-section';
-    sec.dataset.rootId = root.id;
-    var headHtml = '<div class="wh-section-head">'+
-      '<div class="wh-section-accent" style="background:'+accent+'"></div>'+
-      (root.gdd_num?'<span class="wh-section-num">'+esc(root.gdd_num)+'</span>':'')+
-      '<a class="wh-section-title-link" href="'+url(root)+'">'+esc(root.title)+'</a>'+
-      draft(root)+
-      (totalDesc?'<span class="wh-section-count">'+totalDesc+' articles</span>':'')+
-      (children.length?'<button class="wh-section-settings" data-root="'+root.id+'" title="Change display mode">&#9881;</button>':'')+
-      '</div>';
-    var bodyHtml = '';
+
+  // Build a sequence of render-chunks: either a single section-with-children,
+  // or a run of consecutive solo roots. Solos render as a bare grid row — no
+  // wrapper header, no grouping label, just tiles side-by-side.
+  var chunks = []; // [{type:'section',root,ri} | {type:'group',items:[{root,ri}]}]
+  var i = 0;
+  while (i < roots.length) {
+    var root = roots[i];
+    var children = childrenOf(root);
     if (children.length) {
-      bodyHtml = '<div class="wh-section-body" id="wh-body-'+root.id+'">'+renderBody(root,children,mode)+'</div>';
+      chunks.push({type:'section', root:root, ri:i});
+      i++;
     } else {
-      // No children — render as a plain direct link, not a section box
-      var col = accent;
-      var hero = heroSrc(root.hero_image || '');
-      sec.className = 'wh-section wh-section-solo';
-      sec.innerHTML = '<a class="wh-solo-link" href="'+url(root)+'">' +
-        (hero ? '<div class="wh-card-hero"><img src="'+hero+'" alt="" loading="lazy"></div>' : '') +
-        '<div class="wh-section-head" style="border-bottom:none">' +
-        '<div class="wh-section-accent" style="background:'+accent+'"></div>' +
-        (root.gdd_num ? '<span class="wh-section-num">'+esc(root.gdd_num)+'</span>' : '') +
-        '<span class="wh-section-title-link">'+esc(root.title)+'</span>' +
-        draft(root) +
-        '<span style="font-size:11px;color:#94a3b8;flex-shrink:0">→</span>' +
-        '</div></a>';
-      page.appendChild(sec);
-      return;
+      var run = [{root:root, ri:i}];
+      var j = i + 1;
+      while (j < roots.length && !childrenOf(roots[j]).length) {
+        run.push({root:roots[j], ri:j});
+        j++;
+      }
+      chunks.push({type:'group', items:run});
+      i = j;
     }
-    sec.innerHTML = headHtml+bodyHtml;
-    page.appendChild(sec);
+  }
+
+  chunks.forEach(function(chunk) {
+    if (chunk.type === 'section') {
+      var root = chunk.root, ri = chunk.ri;
+      var children  = childrenOf(root);
+      var totalDesc = descendantCount(root);
+      var accent    = ACCENTS[ri%ACCENTS.length];
+      var mode      = getMode(root.id);
+      var sec = document.createElement('div');
+      sec.className = 'wh-section';
+      sec.dataset.rootId = root.id;
+      var headHtml = '<div class="wh-section-head">'+
+        '<div class="wh-section-accent" style="background:'+accent+'"></div>'+
+        (root.gdd_num?'<span class="wh-section-num">'+esc(root.gdd_num)+'</span>':'')+
+        '<a class="wh-section-title-link" href="'+url(root)+'">'+esc(root.title)+'</a>'+
+        draft(root)+
+        (totalDesc?'<span class="wh-section-count">'+totalDesc+' articles</span>':'')+
+        '<button class="wh-section-settings" data-root="'+root.id+'" title="Change display mode">&#9881;</button>'+
+        '</div>';
+      var bodyHtml = '<div class="wh-section-body" id="wh-body-'+root.id+'">'+renderBody(root,children,mode)+'</div>';
+      sec.innerHTML = headHtml+bodyHtml;
+      page.appendChild(sec);
+
+    } else if (chunk.type === 'group') {
+      // Bare grid — no wrapper box, no section header. Each tile is its own
+      // distinct card. They just sit side-by-side to save vertical space.
+      var row = document.createElement('div');
+      row.className = 'wh-solo-row';
+      row.innerHTML = chunk.items.map(function(r){
+        var root = r.root;
+        var col  = ACCENTS[r.ri % ACCENTS.length];
+        var hero = heroSrc(root.hero_image || '');
+        return '<a class="wh-solo-tile" href="'+url(root)+'">'+
+          '<div class="wh-solo-tile-accent" style="background:'+col+'"></div>'+
+          (hero ? '<div class="wh-solo-tile-img"><img src="'+hero+'" alt="" loading="lazy"></div>' : '')+
+          '<div class="wh-solo-tile-body">'+
+            (root.gdd_num ? '<span class="wh-solo-tile-num">'+esc(root.gdd_num)+'</span>' : '')+
+            '<span class="wh-solo-tile-title">'+esc(root.title)+draft(root)+'</span>'+
+          '</div>'+
+          '<span class="wh-solo-tile-arrow">→</span>'+
+          '</a>';
+      }).join('');
+      page.appendChild(row);
+    }
   });
 
   var unnumbered = flat.filter(function(a){ return a.depth===0 && !a.gdd_num; });

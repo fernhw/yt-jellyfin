@@ -10,7 +10,9 @@ notes=?
 
 
 [MAIN_SECTION]
-place with bluish-toned lights, this is a resting place for the guests of the hotel. You will be received by Raeburn Chastel, a man so big that his head touches the ceiling and Jenna Martina a woman who drinks there very often.
+A bar with bluish-toned lights at the threshold of the hotel's reality. Staffed by [Raeburn Chastel](raeburn-rae-chastel.md), whose head touches the ceiling. [Jenna Martina](jenna-martina.md) drinks there often. Characters who receive good-path resolutions are sent here.
+
+For the full entry, see [The Liminal Bar](the-liminal-bar.md).
 
 [SECONDARY]
 _Add more details here._

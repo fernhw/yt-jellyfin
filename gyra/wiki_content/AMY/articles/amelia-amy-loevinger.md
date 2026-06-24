@@ -2,14 +2,15 @@
 title=Amelia “Amy" Loevinger
 authors=Unknown
 template=character
-role=Protagonist / 7th Maid of the Ross Hotel
-age=14
-height=1.3m / 4'3"
+role=Protagonist
+age=14 (regardless of when the game starts)
+height=1.3m / 4'3" very short
 status=Active — present throughout
 birth_date=2011
 faction=Loevinger Family (outsider)
-voice_actor=Lizzie Freeman
 first_appearance=Chapter 1 — Raphe
+Actress
+English=Lizzie Freeman
 relationships
 [Custard Loevinger](custard-loevinger.md)=Younger brother; his death is the hidden wound the entire game is built around
 [Darby](darby-glowing-bird.md)=firebird companion; found in Chapter 1; her light in the dark
@@ -37,9 +38,9 @@ She is not supposed to be here. She is also, though the game will never say so d
 
 The game constructs a careful lie about Amy's circumstances, and it maintains that lie throughout.
 
-**What the game presents:** Amy came to the hotel searching for a way to help her brother Custard. She mentions him once, early, as if it's a small and slightly funny story. She woke up here. She wants to leave.
+**What the game presents:** Amy came to the hotel searching for a way to help her brother Custard. She mentions him once, early, as if it's a small and slightly funny story. She has been here for some number of days — working, serving, keeping her head down. The night the game begins, she has stolen [Barret](barret-aricson.md)'s keys. She wants to leave.
 
-**What actually happened:** [Custard Loevinger](custard-loevinger.md), Amy's younger brother, drank a cleaning product at home while Amy watched. He died. Amy, consumed by a guilt she could not carry, took her own life outside the hotel. Barret Aricson found what remained of her. The Kubler organism — whose immortality-sustaining spore field permeates the hotel — kept her from dying permanently. She was put back together. She woke up in the Ventilation Maintenance Room.
+**What actually happened:** [Custard Loevinger](custard-loevinger.md), Amy's younger brother, drank a cleaning product at home while Amy watched. He died. Amy, consumed by a guilt she could not carry, took her own life outside the hotel. [Barret Aricson](barret-aricson.md) found what remained of her. The [Kubler](the-kubler.md) organism — whose immortality-sustaining spore field permeates the hotel — kept her from dying permanently. She was put back together and put to work. She has been in the [Ross Hotel](ross-hotel.md) for an unannounced number of days, serving. The [Ventilation Maintenance Room](ventilation-maintenance-room-amys-room.md) is her room. On the night the game begins, she steals Barret's keys and plans to escape.
 
 Amy does not know this is what she is doing here. She represses it. The game represses it *with* her. The player is never told. It is assembled over time through observation: the reassembly scars on her hands (visible in the opening, still healing), the flatness with which she processes mortal danger, the moments she almost says something true and pulls back.
 
@@ -71,5 +72,4 @@ Her body is a record of what she did and what she chose.
 - Her design philosophy: she should look like she wandered in from the real world and hasn't fully realized she hasn't left it.
 
 [REFERENCES]
-
 
