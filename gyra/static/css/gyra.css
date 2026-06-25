@@ -4709,6 +4709,17 @@ body.wiki-dark .wiki-infobox-sep { color: #64748b; border-color: #2d3148; }
 }
 .gdd-ref-link:hover { background: #cee0f2; }
 
+.gdd-heading-wrap { display: flex; align-items: center; gap: 8px; }
+.gdd-wiki-link {
+  display: inline-flex; align-items: center; justify-content: center;
+  opacity: 0; color: #a2a9b1; flex-shrink: 0;
+  padding: 2px 3px; text-decoration: none;
+  transition: opacity .15s, color .12s, background .12s;
+  border-radius: 3px;
+}
+.gdd-heading-wrap:hover .gdd-wiki-link { opacity: 1; }
+.gdd-wiki-link:hover { color: #3366cc; background: #eaf0ff; }
+
 /* ── Cover edit modal ── */
 .gdd-cover-modal {
   position: fixed; inset: 0; z-index: 1000;

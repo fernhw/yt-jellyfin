@@ -82,11 +82,12 @@
   {# ─── PAGES 3+: SECTIONS ─── #}
   {% for section in sections %}
   {% set depth = section.gdd_num.split('.')|length %}
+  {% set wiki_url = url_for('wiki_article', project_id=project.id, slug=section.slug) %}
   <section class="gdd-section gdd-depth-{{ depth }}" id="gdd-{{ section.slug }}">
-    {% if depth == 1 %}<h2 class="gdd-h1"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h2>
-    {% elif depth == 2 %}<h3 class="gdd-h2"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h3>
-    {% elif depth == 3 %}<h4 class="gdd-h3"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h4>
-    {% else %}<h5 class="gdd-h4"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}</h5>
+    {% if depth == 1 %}<h2 class="gdd-h1 gdd-heading-wrap"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}<a href="{{ wiki_url }}" class="gdd-wiki-link no-print" title="Open in Wiki">{% include 'wiki_icon_twosquares.svg' ignore missing %}<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="7" y="7" width="7" height="7" rx="1"/></svg></a></h2>
+    {% elif depth == 2 %}<h3 class="gdd-h2 gdd-heading-wrap"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}<a href="{{ wiki_url }}" class="gdd-wiki-link no-print" title="Open in Wiki"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="7" y="7" width="7" height="7" rx="1"/></svg></a></h3>
+    {% elif depth == 3 %}<h4 class="gdd-h3 gdd-heading-wrap"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}<a href="{{ wiki_url }}" class="gdd-wiki-link no-print" title="Open in Wiki"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="7" y="7" width="7" height="7" rx="1"/></svg></a></h4>
+    {% else %}<h5 class="gdd-h4 gdd-heading-wrap"><span class="gdd-num">{{ section.gdd_num }}</span>{{ section.title }}<a href="{{ wiki_url }}" class="gdd-wiki-link no-print" title="Open in Wiki"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="7" y="7" width="7" height="7" rx="1"/></svg></a></h5>
     {% endif %}
     <div class="gdd-section-content" id="gdd-content-{{ loop.index }}"></div>
     <script type="application/json" id="gdd-raw-{{ loop.index }}">{{ section.content | tojson }}</script>
