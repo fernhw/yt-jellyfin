@@ -1,5 +1,5 @@
 [META]
-title=Story
+title=Chapters
 authors=Unknown
 template=story_beat
 act=?
@@ -21,5 +21,4 @@ Each chapter is a stage of grief: denial, anger, bargaining, depression, and acc
 _Add more details here._
 
 [REFERENCES]
-
 

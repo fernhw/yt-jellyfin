@@ -4550,8 +4550,18 @@ body.wiki-dark .wiki-infobox-sep { color: #64748b; border-color: #2d3148; }
 .gdd-section-content { font-size: 14px; line-height: 1.75; color: var(--c-gray-700); padding-left: 4px; }
 .gdd-section-content p  { margin-bottom: 12px; }
 .gdd-section-content ul, .gdd-section-content ol { margin: 6px 0 12px 20px; }
+.gdd-section-content li { margin-bottom: 3px; }
 .gdd-section-content code { background: var(--c-gray-100); padding: 1px 4px; border-radius: 3px; font-size: 12px; }
 .gdd-section-content pre { background: var(--c-gray-100); padding: 12px; border-radius: 5px; overflow-x: auto; margin: 10px 0; }
+.gdd-section-content h2 { font-size: 17px; font-weight: 600; margin: 18px 0 6px; }
+.gdd-section-content h3 { font-size: 15px; font-weight: 600; margin: 14px 0 4px; }
+.gdd-section-content h4 { font-size: 13px; font-weight: 700; margin: 12px 0 3px; }
+.gdd-section-content blockquote { border-left: 3px solid var(--c-gray-300); padding: 4px 0 4px 14px; margin: 10px 0; color: var(--c-gray-500); font-style: italic; }
+.gdd-section-content hr { border: none; border-top: 1px solid var(--c-gray-200); margin: 16px 0; }
+.gdd-section-content table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 13.5px; }
+.gdd-section-content th, .gdd-section-content td { border: 1px solid var(--c-gray-300); padding: 7px 12px; text-align: left; }
+.gdd-section-content th { background: var(--c-gray-100); font-weight: 700; }
+.gdd-section-content tbody tr:nth-child(even) { background: var(--c-gray-50); }
 
 /* ── GDD Document layout ─────────────────────────────────────────────────── */
 
@@ -4682,6 +4692,16 @@ body.wiki-dark .wiki-infobox-sep { color: #64748b; border-color: #2d3148; }
 .gdd-section-content code { background: #f6f8fa; padding: 1px 5px; border-radius: 3px; font-size: 13px; border: 1px solid #eaecf0; }
 .gdd-section-content pre { background: #f6f8fa; padding: 14px 16px; border-radius: 5px; overflow-x: auto; margin: 12px 0; border: 1px solid #eaecf0; }
 .gdd-section-content h1,.gdd-section-content h2,.gdd-section-content h3 { font-weight: normal; font-family: 'Linux Libertine', Georgia, serif; color: #202122; }
+.gdd-section-content h2 { font-size: 18px; margin: 20px 0 6px; border-bottom: 1px solid #eaecf0; padding-bottom: 3px; }
+.gdd-section-content h3 { font-size: 15px; font-weight: bold; margin: 16px 0 4px; }
+.gdd-section-content h4 { font-size: 13.5px; font-weight: bold; color: #54595d; margin: 12px 0 3px; }
+.gdd-section-content blockquote { border-left: 3px solid #a2a9b1; padding: 4px 0 4px 16px; margin: 12px 0; color: #54595d; font-style: italic; }
+.gdd-section-content hr { border: none; border-top: 1px solid #eaecf0; margin: 18px 0; }
+.gdd-section-content table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14px; }
+.gdd-section-content th, .gdd-section-content td { border: 1px solid #a2a9b1; padding: 8px 13px; text-align: left; vertical-align: top; }
+.gdd-section-content th { background: #eaecf0; font-weight: bold; font-size: 13px; }
+.gdd-section-content tbody tr:nth-child(even) { background: #f8f9fa; }
+.gdd-section-content tbody tr:hover { background: #eaf3fb; }
 .gdd-ref-link {
   color: #3366cc; text-decoration: none;
   background: #eaf3fb; border: 1px solid #cee0f2;

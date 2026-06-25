@@ -1,5 +1,5 @@
 [META]
-title=Tragedies
+title=Tragedies - Game Overs
 authors=Unknown
 template=generic
 status=?
@@ -16,5 +16,4 @@ Instead of just dying and restarting, players experience the harrowing outcomes 
 _Add more details here._
 
 [REFERENCES]
-
 
