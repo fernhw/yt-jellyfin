@@ -7,7 +7,18 @@
   <title>{% if mode == 'new' %}New Article{% else %}Edit: {{ article.title }}{% endif %} — {{ project.name }} Wiki</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}?v=1782411831">
-  ← Wiki</a>
+  <link rel="modulepreload" crossorigin href="https://esm.sh/@codemirror/state@6">
+  <link rel="modulepreload" crossorigin href="https://esm.sh/@codemirror/view@6">
+  <link rel="modulepreload" crossorigin href="https://esm.sh/@codemirror/commands@6">
+  <link rel="modulepreload" crossorigin href="https://esm.sh/@codemirror/lang-markdown@6">
+  <link rel="modulepreload" crossorigin href="https://esm.sh/@codemirror/theme-one-dark@6">
+  <link rel="modulepreload" crossorigin href="https://esm.sh/@codemirror/language@6">
+</head>
+<body class="wiki-mode">
+<script>(function(){var s=localStorage.getItem('wiki_dark_mode'),q=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)');if(s==='1'||(s===null&&q&&q.matches))document.body.classList.add('wiki-dark');})();</script>
+
+<div class="wiki-topbar wiki-edit-topbar">
+  <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_home', project_id=project.id) }}">← Wiki</a>
   {% if mode == 'edit' %}
   <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_article', project_id=project.id, slug=article.slug) }}">← Read</a>
   {% endif %}
@@ -70,7 +81,9 @@
       </div>
       <textarea id="wiki-textarea" name="content" style="display:none"></textarea>
       <script type="application/json" id="wiki-init-content">{{ prefill_content | tojson if prefill_content else '""' }}</script>
-      <div id="wiki-codemirror" style="position:relative"></div>
+      <div id="wiki-codemirror" style="position:relative">
+        <div id="wiki-cm-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#71717a;font-size:13px;font-family:ui-monospace,monospace;pointer-events:none;user-select:none">Loading editor…</div>
+      </div>
     </div>
 
     {# Right: live preview — mirrors wiki_article.html layout exactly #}
@@ -386,6 +399,9 @@ var view = new EditorView({
 
 // Expose view for non-module scripts (hero picker, image insert)
 window._wikiCmView = view;
+// Remove loading placeholder — editor is ready
+var _cmLoading = document.getElementById('wiki-cm-loading');
+if (_cmLoading) _cmLoading.remove();
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function resolveLinks(md) {
@@ -1010,7 +1026,58 @@ previewBtn.addEventListener('click', function () {
   var uploadIn  = document.getElementById('wiki-img-upload-input');
   var loaded    = false;
 
-  if (!toggleBtn || !palette) return;
+  // ── Toast notification ────────────────────────────────────────────────────
+  function showToast(msg, isError) {
+    var t = document.getElementById('wiki-upload-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'wiki-upload-toast';
+      t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.3);transition:opacity .3s;pointer-events:none;opacity:0';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.background = isError ? '#dc2626' : '#059669';
+    t.style.opacity = '1';
+    clearTimeout(t._hide);
+    t._hide = setTimeout(function () { t.style.opacity = '0'; }, 2800);
+  }
+
+  // ── Shared upload helper ──────────────────────────────────────────────────
+  function doUpload(file, onSuccess, onDone) {
+    if (!file) return;
+    var csrfInput = document.querySelector('input[name="_csrf"]');
+    if (!csrfInput) { showToast('Upload error: page not ready, please refresh', true); if (onDone) onDone(); return; }
+    var fd = new FormData();
+    fd.append('image', file);
+    fd.append('_csrf', csrfInput.value);
+    fetch('/project/{{ project.id }}/wiki/images/upload', {
+      method: 'POST', body: fd, credentials: 'same-origin'
+    })
+    .then(function (r) {
+      if (!r.ok) { return r.text().then(function (t) { throw new Error('Server error ' + r.status + (t ? ': ' + t.slice(0,120) : '')); }); }
+      return r.json();
+    })
+    .then(function (res) {
+      if (!res.ok) {
+        showToast('Upload failed: ' + (res.error || 'unknown error'), true);
+        if (onDone) onDone();
+        return;
+      }
+      onSuccess(res);
+      loaded = false;
+      if (toggleBtn && palette && palette.style.display !== 'none') loadImages();
+      if (onDone) onDone();
+    })
+    .catch(function (err) {
+      showToast('Upload error: ' + err.message, true);
+      console.error('[wiki upload]', err);
+      if (onDone) onDone();
+    });
+  }
+
+  if (!toggleBtn || !palette) {
+    // Palette not present but still wire up the direct upload + hero buttons below
+  } else {
 
   toggleBtn.addEventListener('click', function () {
     var open = palette.style.display === 'none' || !palette.style.display;
@@ -1043,38 +1110,15 @@ previewBtn.addEventListener('click', function () {
       .catch(function () { grid.innerHTML = '<div class="wiki-img-empty">Failed to load images.</div>'; });
   }
 
-  // Shared upload helper — used by both palette and direct toolbar button
-  function doUpload(file, onSuccess) {
-    if (!file) return;
-    var fd = new FormData();
-    fd.append('image', file);
-    fd.append('_csrf', document.querySelector('input[name="_csrf"]').value);
-    fetch('/project/{{ project.id }}/wiki/images/upload', {
-      method: 'POST', body: fd, credentials: 'same-origin'
-    })
-    .then(function (r) { return r.json(); })
-    .then(function (res) {
-      if (!res.ok) {
-        alert('Upload failed: ' + (res.error || 'unknown error'));
-        var _sp = uploadLabel ? uploadLabel.querySelector('span') : null;
-        if (_sp) _sp.textContent = '🖼 Add Image';
-        return;
-      }
-      onSuccess(res);
-      loaded = false;
-      loadImages();
-    })
-    .catch(function (err) {
-      alert('Upload error: ' + err.message);
-      var _sp = uploadLabel ? uploadLabel.querySelector('span') : null;
-      if (_sp) _sp.textContent = '🖼 Add Image';
-    });
-  }
-
   uploadIn.addEventListener('change', function () {
     var file = uploadIn.files[0]; uploadIn.value = '';
-    doUpload(file, function (res) { insertMd(res.md_snippet); });
+    doUpload(file, function (res) {
+      showToast('✓ Image uploaded and inserted');
+      insertMd(res.md_snippet);
+    }, null);
   });
+
+  } // end if(toggleBtn && palette)
 
   // Direct upload button in toolbar — pick file → upload → insert at cursor
   var directUpload = document.getElementById('wiki-img-upload-direct');
@@ -1083,16 +1127,13 @@ previewBtn.addEventListener('click', function () {
     directUpload.addEventListener('change', function () {
       var file = this.files[0]; this.value = '';
       if (!file) return;
-      // Show uploading state on the label
-      var _sp = uploadLabel ? uploadLabel.querySelector('span') : null;
-      if (_sp) _sp.textContent = '⏳ Uploading…';
+      // Dim the label icon to signal uploading
+      if (uploadLabel) uploadLabel.style.opacity = '0.4';
       doUpload(file, function (res) {
         insertMd(res.md_snippet);
-        var _sp2 = uploadLabel ? uploadLabel.querySelector('span') : null;
-        if (_sp2) {
-          _sp2.textContent = '✓ Inserted!';
-          setTimeout(function () { _sp2.textContent = '🖼 Add Image'; }, 1500);
-        }
+        showToast('✓ Image uploaded and inserted at cursor');
+      }, function () {
+        if (uploadLabel) uploadLabel.style.opacity = '';
       });
     });
   }
