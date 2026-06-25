@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Blueth was among the group of scientists called upon by Albert to examine the seeds found in the mines. After witnessing the mishaps caused by the experimentation, she created natural enemies for the Kubler plants called aphids. However, despite her efforts, these insects were ineffective against the plants and wandered aimlessly around the map for years.
+[Blueth](dr-elizabeth-blueth-needham.md) was among the group of scientists called upon by [Albert](albert-ross.md) to examine the seeds found in the mines. After witnessing the mishaps caused by the experimentation, she created natural enemies for the [Kubler](the-kubler.md) plants called [aphids](the-12-moonlight-aphids.md). However, despite her efforts, these insects were ineffective against the plants and wandered aimlessly around the map for years.
 
 [SECONDARY]
 _Add more details here._

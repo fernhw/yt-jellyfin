@@ -31,7 +31,7 @@ A woman of simple needs, Dr. Blueth enjoys playing solitaire and drinking tea. S
 ## The Research
 Blueth's assignment within the scientific cohort was entomology and biological countermeasures. When the Kubler organism began spreading through the hotel, she was tasked with stopping it.
 
-**Attempt 1 — The [Moonlight Aphids](the-12-moonlight-aphids.md):** She engineered a species of bioluminescent, firefly-like insects to feed on the [Kubler](the-kubler.md) and suppress its growth. They didn't work. The aphids ignored the Kubler and wandered the hotel eating other insects instead. They became a permanent fixture — now the game's primary collectible, scattered through every area.
+**Attempt 1 — The [Moonlight Aphids](the-12-moonlight-aphids.md):** She engineered a species of bioluminescent, firefly-like insects to feed on the [Kubler](the-kubler.md) and suppress its growth. They didn't work. The aphids ignored the [Kubler](the-kubler.md) and wandered the hotel eating other insects instead. They became a permanent fixture, now the game's primary collectible, scattered through every area.
 
 **Attempt 2 — The Firebirds ([Darby](darby-glowing-bird.md)):** She engineered a line of firebirds to hunt the aphids. These also failed to perform their function. She made the entire line sterile. She put the last surviving bird in a storage cage, forgot about it, and went back to solitaire.
 
@@ -47,7 +47,7 @@ Blueth has adapted her room into a terrarium facility housing **543 individual i
 ## Meeting Amy — The Solitaire Cards
 Blueth's door in Chapter 1 is covered in cobwebs. Behind it she is at her table, mid-game, polite but closed.
 
-**Optional:** [Amy](amelia-amy-loevinger.md) can find two missing solitaire cards elsewhere in the hotel and return them to Blueth. Blueth looks at the now-complete deck, realizes it was *always* an unwinnable configuration, and kicks the entire spread off the table in quiet fury. This moment — small, private, absurd — breaks something loose. She becomes warm. She tells Amy what [Sam Bernal](sam-bernal.md) fears most. She becomes an ally.
+**Optional:** [Amy](amelia-amy-loevinger.md) can find two missing solitaire cards elsewhere in the hotel and return them to Blueth. Blueth looks at the now-complete deck, realizes it was *always* an unwinnable configuration, and kicks the entire spread off the table in quiet fury. This moment, small, private, and absurd, breaks something loose. She becomes warm. She tells [Amy](amelia-amy-loevinger.md) what [Sam Bernal](sam-bernal.md) fears most. She becomes an ally.
 
 ---
 

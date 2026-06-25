@@ -43,9 +43,9 @@ The smell of the flowers is described in-world as rotting meat. The source of th
 ---
 
 ## Notes
-- The poster covering the body door was placed deliberately, at some point, by someone. Chapter 1 does not address when or why.
-- Access to the attic requires clearing a spider-covered wall section with the cleaning duster from Room 509 — which creates a natural sequence of dependencies in Chapter 1's structure.
-- Daniel and Francena's physical proximity in this space — his neck anchored above her room, her at the table just below — is not accidental design.
+- The poster covering the body door was placed deliberately, at some point, by someone. [Chapter 1](chapter-1.md) does not address when or why.
+- Access to the attic requires clearing a spider-covered wall section with the cleaning duster from Room 509, which creates a natural sequence of dependencies in [Chapter 1](chapter-1.md)'s structure.
+- [Daniel](dr-daniel-cadwallader.md) and [Francena](francena-cadwallader.md)'s physical proximity in this space, his neck anchored above her room and her at the table just below, is not accidental design.
 
 [REFERENCES]
 

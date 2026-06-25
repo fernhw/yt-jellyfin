@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Blueth managed to adapt her room into a place where she keeps insects in a bunch of jars.
+[Blueth](dr-elizabeth-blueth-needham.md) managed to adapt her room into a place where she keeps insects in a bunch of jars.
 
 [SECONDARY]
 _Add more details here._

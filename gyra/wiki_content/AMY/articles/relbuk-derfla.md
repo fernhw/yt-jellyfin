@@ -19,14 +19,14 @@ relationships
 
 
 [MAIN_SECTION]
-The self-proclaimed major of the city of quitters, is no longer human but a crow. You see him as a crow, but you can incite his original self. Whoever he was, he's not good at hiding his old name.
+The self-proclaimed mayor of the [city of quitters](city-of-quitters.md), is no longer human but a crow. You see him as a crow, but you can incite his original self. Whoever he was, he's not good at hiding his old name.
 
 [SECONDARY]
 ## Overview
 
 Relbuk Derfla is what [Alfred Kubler](alfred-kubler.md) became when he stayed in the [Ingersole Mines](ingersole-caverns.md) with the miners. The name is Alfred Kubler spelled backwards. He looks like a crow. He became one, more or less, through the same slow process of transformation that the [Kubler](the-kubler.md) organism applies to everything organic when left to work without interference.
 
-The crow form was intentional, at least initially. Kubler wanted to fly away. The miners watched him try. The miners stayed too, for their own reasons, and he became their patriarch — the oldest presence in a place full of people who had been underground for generations.
+The crow form was intentional, at least initially. [Kubler](alfred-kubler.md) wanted to fly away. The miners watched him try. The miners stayed too, for their own reasons, and he became their patriarch: the oldest presence in a place full of people who had been underground for generations.
 
 ## The City of Quitters
 
@@ -36,7 +36,7 @@ Relbuk is patriarch of this community. He is neither a tyrant nor a figurehead. 
 
 ## In Chapter 5
 
-[Chapter 5](chapter-5.md) — Throe, the acceptance chapter — takes place almost entirely in Ingersole and the City of Quitters. Relbuk is a central figure. [Amy](amelia-amy-loevinger.md)'s navigation of the chapter involves understanding what the miners chose and why, and Relbuk is the most direct articulation of that choice: he stopped moving, and he found it was enough.
+[Chapter 5](chapter-5.md), Throe, the acceptance chapter, takes place almost entirely in [Ingersole](ingersole-caverns.md) and the [City of Quitters](city-of-quitters.md). [Relbuk](relbuk-derfla.md) is a central figure. [Amy](amelia-amy-loevinger.md)'s navigation of the chapter involves understanding what the miners chose and why, and Relbuk is the most direct articulation of that choice: he stopped moving, and he found it was enough.
 
 [REFERENCES]
 

@@ -30,17 +30,17 @@ She has been in the hotel since the sealing. She is first seen in [Chapter 1](ch
 
 ## The 1985 Party
 
-The last recorded motion in the hotel — the last event with any meaningful external footprint — was Jenna's birthday party in 1985. [Jone Ross](jone-ross.md) died at the party. Nobody expected it; he had died and come back so many times that his deaths had stopped being alarming. This one triggered something different: multiple temporal loops activated simultaneously. The hotel, already strange, became stranger in ways that have not fully resolved.
+The last recorded motion in the hotel, the last event with any meaningful external footprint, was Jenna's birthday party in 1985. [Jone Ross](jone-ross.md) died at the party. Nobody expected it; he had died and come back so many times that his deaths had stopped being alarming. This one triggered something different: multiple temporal loops activated simultaneously. The hotel, already strange, became stranger in ways that have not fully resolved.
 
 Jenna has been drinking, on and off, since 1985. This is not entirely unrelated.
 
 ## Current State
 
-Jenna is affected by the hotel's current condition — specifically by the multi-loop overlap that started that night. She is present in [Chapter 4](chapter-4.md) and [Chapter 5](chapter-5.md) as Amy moves through the hospital and the mines. Her arc involves, in its simplest form, a scientist who made correct decisions and has been living in those decisions' consequences ever since.
+Jenna is affected by the hotel's current condition, specifically by the multi-loop overlap that started that night. She is present in [Chapter 4](chapter-4.md) and [Chapter 5](chapter-5.md) as [Amy](amelia-amy-loevinger.md) moves through the hospital and the mines. Her arc involves, in its simplest form, a scientist who made correct decisions and has been living in those decisions' consequences ever since.
 
 ## Sam Bernal
 
-[Sam Bernal](sam-bernal.md) was a contracted specialist — an entomologist, though the word barely captures his range — who was stationed at Ingersole with Jenna during the sealing. They were colleagues. He was present for the same events she was. He is, in [Chapter 1](chapter-1.md), deeply unconscious in Room 509, and has been for several days by [Blueth](dr-elizabeth-blueth-needham.md)'s estimation.
+[Sam Bernal](sam-bernal.md) was a contracted specialist, an entomologist though the word barely captures his range, who was stationed at [Ingersole](ingersole-caverns.md) with Jenna during the sealing. They were colleagues. He was present for the same events she was. He is, in [Chapter 1](chapter-1.md), deeply unconscious in Room 509, and has been for several days by [Blueth](dr-elizabeth-blueth-needham.md)'s estimation.
 
 [REFERENCES]
 

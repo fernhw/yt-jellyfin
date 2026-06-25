@@ -34,15 +34,15 @@ He reported this to [Albert Ross](albert-ross.md). Ross understood immediately w
 
 The organism Kubler identified is now referred to simply as "the Kubler" throughout the hotel. Its spores permeate the [Ross Hotel](ross-hotel.md) entirely, having been cultivated and spread over 180 years. The effect is simple in principle: death does not take hold. Wounds close, eventually. Organs regenerate, badly. What the body does without oxygen or blood is creative and usually painful. The Kubler does not care about quality of life. It only prevents the conclusion.
 
-Kubler himself was [Eila Bartlett](eila-bartlett.md)'s student and [Albert Ross](albert-ross.md)'s closest friend. He was a scientist and then something more than that, in the way that people become something more than themselves when they find the thing they cannot walk away from. He has no regrets about any of it.
+Kubler himself was [Eila Bartlett](eila-bartlett.md)'s student and [Albert Ross](albert-ross.md)'s closest friend. He was a scientist, and then something more than that in the way that people become something more than themselves when they find the thing they cannot walk away from. He has no regrets about any of it.
 
 ## Current State
 
-At 246 years old, Kubler's own Kubler exposure has produced results. He is in the [Ingersole Mines](ingersole-caverns.md), lying down. At some point he attempted to use the organism's transformative properties to make himself more birdlike — with the goal of eventually flying away. He failed at the flying part. He is dressed as a crow. He is lying in the dark in the mines, in a sorry state. He does not appear to mind.
+At 246 years old, Kubler's own [Kubler](the-kubler.md) exposure has produced results. He is in the [Ingersole Mines](ingersole-caverns.md), lying down. At some point he attempted to use the organism's transformative properties to make himself more birdlike, with the goal of eventually flying away. He failed at the flying part. He is dressed as a crow. He is lying in the dark in the mines, in a sorry state. He does not appear to mind.
 
 ## Connection to Amy
 
-Kubler is responsible for [Amy](amelia-amy-loevinger.md)'s current existence. When Barret found her after her death, it was the Kubler's presence that kept her from being simply gone, and Kubler's knowledge that allowed her to be reassembled. She does not know the full extent of this in Chapter 1. By Chapter 5, it has been established thoroughly.
+Kubler is responsible for [Amy](amelia-amy-loevinger.md)'s current existence. When [Barret](barret-aricson.md) found her after her death, it was the [Kubler](the-kubler.md)'s presence that kept her from being simply gone, and Kubler's knowledge that allowed her to be reassembled. She does not know the full extent of this in [Chapter 1](chapter-1.md). By [Chapter 5](chapter-5.md), it has been established thoroughly.
 
 [REFERENCES]
 

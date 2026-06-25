@@ -24,11 +24,11 @@ Evangeline and Ilina are two women who descended into the [Ingersole Caverns](in
 [SECONDARY]
 ## Overview
 
-**Evangeline Aerona** was one of Daniel Cadwallader's medical assistants in the Ingersole Caverns — attending the sick, the changed, the things that were neither. She stayed when others couldn't, because she was practical and careful and thought she could hold herself together through it.
+**Evangeline Aerona** was one of [Daniel Cadwallader](dr-daniel-cadwallader.md)'s medical assistants in the [Ingersole Caverns](ingersole-caverns.md), attending the sick, the changed, the things that were neither. She stayed when others couldn't, because she was practical and careful and thought she could hold herself together through it.
 
-**Ilina** was another assistant. She was not practical. She was horrified, terrified, and chemically unstable in a way that the deep Kubler spore field made catastrophically worse. Evangeline, who knew medicine and loved her sister and had watched what losing a person looked like from up close too many times, did what she thought was the lesser horror: she bled Ilina out, stabilised her, and then — carefully, over time — reduced her. Removed pieces. Took them away. Made her smaller. Made the fear smaller. Made the hurt smaller. Made Ilina smaller.
+**Ilina** was another assistant. She was not practical. She was horrified, terrified, and chemically unstable in a way that the deep Kubler spore field made catastrophically worse. Evangeline, who knew medicine and loved her sister and had watched what losing a person looked like from up close too many times, did what she thought was the lesser horror: she bled Ilina out, stabilised her, and then, carefully, over time, reduced her. Removed pieces. Took them away. Made her smaller. Made the fear smaller. Made the hurt smaller. Made Ilina smaller.
 
-Ilina is now the size of a large pea. She passed through the floor cracks. She lives in the space between floors. She is entirely calm. She can perceive time non-linearly — past and future both visible to her, the way they are to things that have been reduced past caring which direction they're facing.
+Ilina is now the size of a large pea. She passed through the floor cracks. She lives in the space between floors. She is entirely calm. She can perceive time non-linearly, with past and future both visible to her, the way they are to things that have been reduced past caring which direction they're facing.
 
 ---
 
@@ -46,7 +46,7 @@ Evangeline does not know she is looping. She believes she simply found her siste
 
 ## Role in the Game
 
-Amy can consult Evangeline and Ilina once she has found them. Evangeline asks the question. Ilina considers it. Evangeline translates. The hints they offer are always accurate and never fully explicit — they describe possibilities rather than solutions, because Ilina sees all of them at once and cannot choose which one Amy will take.
+Amy can consult Evangeline and Ilina once she has found them. Evangeline asks the question. Ilina considers it. Evangeline translates. The hints they offer are always accurate and never fully explicit; they describe possibilities rather than solutions, because Ilina sees all of them at once and cannot choose which one [Amy](amelia-amy-loevinger.md) will take.
 
 They are useful for players who are stuck on multi-solution puzzles and do not want to be told the answer outright.
 
@@ -56,7 +56,7 @@ You only encounter them after you have already seen what they are. The game does
 
 ## The Fishbowl Ending
 
-This ending is only available when [Amy](amelia-amy-loevinger.md) is on a path toward the worst possible outcome — when the accumulation of choices has made leaving the hotel into something she will not survive.
+This ending is only available when [Amy](amelia-amy-loevinger.md) is on a path toward the worst possible outcome, when the accumulation of choices has made leaving the hotel into something she will not survive.
 
 Evangeline knows. Ilina told her.
 
@@ -68,7 +68,7 @@ Amy steps back. Of course they know.
 
 A **Yes/No** prompt.
 
-If Amy says **Yes**: Ilina begins to hum. A lullaby, small and shapeless, coming from something the size of a pea. The screen dims slowly. Credits roll over the sound of it. Amy stays. The pain goes. She does not remember what she was going to do outside.
+If Amy says **Yes**: [Ilina](evangeline-aerona-and-ilina.md) begins to hum. A lullaby, small and shapeless, coming from something the size of a pea. The screen dims slowly. Credits roll over the sound of it. Amy stays. The pain goes. She does not remember what she was going to do outside.
 
 The game does not present this as a bad ending. It does not present it as a good ending. Amy is not distressed. The idea of forgetting was, genuinely, enticing. She did not regret saying yes.
 
@@ -81,7 +81,7 @@ This is the Fishbowl Ending. It is one of the most discussed endings in the game
 - Evangeline and Ilina are not listed in the hotel's official records. Barret knows they are here and does not enter that floor.
 - Ilina's pea-sized form is the result of deliberate medical reduction, not a birth condition or Kubler transformation. Evangeline chose this. Ilina, now, does not object.
 - The lullaby Ilina hums in the Fishbowl Ending is the same melody heard faintly in the Ingersole Caverns in Chapter 3. It is her loop: she hums the same song in the dark, smaller and smaller, until everything that was frightening is too far away to reach her.
-- Evangeline's loop is her body. The Kubler didn't need to give her one — she gave it to herself.
+- Evangeline's loop is her body. The [Kubler](the-kubler.md) didn't need to give her one; she gave it to herself.
 
 [REFERENCES]
 

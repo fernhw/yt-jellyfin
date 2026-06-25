@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The Ball Room, the large dining room near the kitchen, which is used mainly by Baya, the wife of Albert Ross.
+The Ball Room, the large dining room near the [kitchen](clementines-kitchen.md), which is used mainly by [Baya](baya-ross.md), the wife of [Albert Ross](albert-ross.md).
 
 [SECONDARY]
 _Add more details here._

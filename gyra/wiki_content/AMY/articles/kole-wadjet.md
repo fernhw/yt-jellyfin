@@ -18,16 +18,16 @@ relationships
 
 
 [MAIN_SECTION]
-A grumpy old man who has held numerous assistant positions throughout his life, now works as a receptionist and hotel manager's assistant at the Ross Hotel. He appears to never sleep, suggesting that some people may not have time for dreams.
+A grumpy old man who has held numerous assistant positions throughout his life, now works as a receptionist and hotel manager's assistant at the [Ross Hotel](ross-hotel.md). He appears to never sleep, suggesting that some people may not have time for dreams.
 
 [SECONDARY]
 ## Overview
-Kole Wadjet is the closest thing the Ross Hotel has to an institutional record, and he has no particular interest in being one. He has held assistant positions across most of his adult life and arrived at reception work the way one arrives at resignation — by running out of better options. He does not sleep. He does not explain why.
+Kole Wadjet is the closest thing the [Ross Hotel](ross-hotel.md) has to an institutional record, and he has no particular interest in being one. He has held assistant positions across most of his adult life and arrived at reception work the way one arrives at resignation, by running out of better options. He does not sleep. He does not explain why.
 
 ---
 
 ## Personality
-Kole is grumpy, precise, and reliable. He will tell Amy exactly what she needs to know and nothing else. He will not soften information. He will not elaborate unless pressed, and sometimes not even then. There is no malice in this — he is simply a man who has watched a great many guests ask questions and fail to listen to the answers, and he has adjusted his approach accordingly.
+Kole is grumpy, precise, and reliable. He will tell Amy exactly what she needs to know and nothing else. He will not soften information. He will not elaborate unless pressed, and sometimes not even then. There is no malice in this; he is simply a man who has watched a great many guests ask questions and fail to listen to the answers, and he has adjusted his approach accordingly.
 
 He is not afraid of Amy. He is not afraid of much. Some people in the hotel appear to be waiting for something to change. Kole seems to have concluded, at some point in the past, that nothing will.
 
@@ -46,7 +46,7 @@ Kole is not naive about what the hotel is. He has been here long enough to have 
 ---
 
 ## At the Bar
-Kole does not join the Liminal Bar through a puzzle. He arrives, if conditions are right, on his own terms and in his own time. He sits at the far end. He may have ordered something. He does not celebrate.
+Kole does not join the [Liminal Bar](the-liminal-bar.md) through a puzzle. He arrives, if conditions are right, on his own terms and in his own time. He sits at the far end. He may have ordered something. He does not celebrate.
 
 [REFERENCES]
 

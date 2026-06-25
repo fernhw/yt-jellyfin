@@ -14,7 +14,7 @@ notes=?
 
 *Unlocked exclusively by completing the ARG. Not obtainable through normal play.*
 
-The ARG — [Melina's Impossible Puzzle](melinas-impossible-puzzle-arg.md) — is a real-world alternate reality game tied to the game's release. Completing it reveals the full truth of what happened to [Albert Ross](albert-ross.md) after he left the hotel in 1978. It also unlocks a unique ending state unavailable through any other path.
+The ARG, [Melina's Impossible Puzzle](melinas-impossible-puzzle-arg.md), is a real-world alternate reality game tied to the game's release. Completing it reveals the full truth of what happened to [Albert Ross](albert-ross.md) after he left the hotel in 1978. It also unlocks a unique ending state unavailable through any other path.
 
 The content of this ending is documented separately to avoid spoiling either the ARG or the ending for players who have not completed both.
 

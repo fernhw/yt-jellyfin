@@ -38,16 +38,16 @@ Amy needs the duster from a high shelf. Climbing for it sends Darby tumbling ben
 
 | Solution | Method | Outcome |
 |---|---|---|
-| **The Lamp** | Set his oil lamp alight — smoke and heat | He wakes badly shaken. Part of the hotel scorches. **Sin Mark applied: soot on [Amy](amelia-amy-loevinger.md).** Sam does not appear in the [Liminal Bar](the-liminal-bar.md). |
+| **The Lamp** | Set his oil lamp alight; smoke and heat | He wakes badly shaken. Part of the hotel scorches. **Sin Mark applied: soot on [Amy](amelia-amy-loevinger.md).** Sam does not appear in the [Liminal Bar](the-liminal-bar.md). |
 | **His Fear** | Learn what terrifies him from [Blueth](dr-elizabeth-blueth-needham.md); use it | He wakes startled. Moderate outcome; he recovers. |
-| **The Long Talk** | Sit with Sam and speak to him for 4–5 minutes | He wakes naturally, feeling heard. **Best outcome** — joins the [Liminal Bar](the-liminal-bar.md) if other conditions are met. |
+| **The Long Talk** | Sit with Sam and speak to him for 4–5 minutes | He wakes naturally, feeling heard. **Best outcome**, joins the [Liminal Bar](the-liminal-bar.md) if other conditions are met. |
 
-The fire solution is also the game's first **achievement trigger** on the bad path — the easiest to stumble into, and the one with the most visible consequence (the soot mark on Amy, the scorch on the hotel).
+The fire solution is also the game's first **achievement trigger** on the bad path, the easiest to stumble into, and the one with the most visible consequence (the soot mark on Amy, the scorch on the hotel).
 
 ---
 
 ## At the Liminal Bar
-Sam is not a large presence. He is the man who sleeps near a duster. But the Bar exists as a record of who Amy helped, and Sam's presence — or absence — is the game's simplest question: *did you take the easy way?*
+Sam is not a large presence. He is the man who sleeps near a duster. But the [Liminal Bar](the-liminal-bar.md) exists as a record of who [Amy](amelia-amy-loevinger.md) helped, and Sam's presence or absence is the game's simplest question: *did you take the easy way?*
 
 [REFERENCES]
 

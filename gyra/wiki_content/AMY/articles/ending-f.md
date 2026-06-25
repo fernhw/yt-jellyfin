@@ -18,13 +18,13 @@ notes=?
 
 ---
 
-Amy finds [Barret](barret-aricson.md) last. She gives him the **party cigar** — an item she could only have thought to bring him if she understood what this place actually cost him. Not just the work. The waiting.
+Amy finds [Barret](barret-aricson.md) last. She gives him the **party cigar**, an item she could only have thought to bring him if she understood what this place actually cost him. Not just the work. The waiting.
 
 Barret hears what she did. He knows the [Liminal Bar](the-liminal-bar.md) is full right now. He opens the door. He doesn't stop her. He doesn't say much. He doesn't need to.
 
 Credits roll.
 
-Post-credits: a letter from [Albert Ross](albert-ross.md) is readable on screen. It is an apology and a welcome card. If anyone ever needs help — send them here. The hotel is a bad place. It is also, now, a place that helped someone.
+Post-credits: a letter from [Albert Ross](albert-ross.md) is readable on screen. It is an apology and a welcome card. If anyone ever needs help, send them here. The hotel is a bad place. It is also, now, a place that helped someone.
 
 After the credits: **"Thanks for playing."**
 

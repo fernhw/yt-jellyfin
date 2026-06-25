@@ -18,7 +18,7 @@ relationships
 
 
 [MAIN_SECTION]
-Clementine's loving husband, remains puzzled by the cause of his wife's anger and patiently awaits her forgiveness so they can be together again.
+[Clementine](clementine-wellington.md)'s loving husband, remains puzzled by the cause of his wife's anger and patiently awaits her forgiveness so they can be together again.
 
 [SECONDARY]
 ## Overview
@@ -33,7 +33,7 @@ Julianne and [Clementine](clementine-wellington.md) have been in a long, sustain
 
 ## In Gameplay and Symbolism
 
-Julianne's area is a door and a hallway from [Kane's theater](aaron-kane.md), placing him at the junction of [Chapter 2](chapter-2.md) and [Chapter 3](chapter-3.md). He maps symbolically to both Anger and Bargaining — he is angry about his situation in the way that people who are also terrified tend to be angry, and he is perpetually in a state of negotiation with his circumstances. The quarrel with Clementine enacts both. He bargains. She gets angrier. He gets more scared. Round and round.
+Julianne's area is a door and a hallway from [Kane's theater](the-theater-of-dreams.md), placing him at the junction of [Chapter 2](chapter-2.md) and [Chapter 3](chapter-3.md). He maps symbolically to both Anger and Bargaining: he is angry about his situation in the way that people who are also terrified tend to be angry, and he is perpetually in a state of negotiation with his circumstances. The quarrel with Clementine enacts both. He bargains. She gets angrier. He gets more scared. Round and round.
 
 [REFERENCES]
 
