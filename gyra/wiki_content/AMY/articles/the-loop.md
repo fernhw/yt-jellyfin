@@ -1,5 +1,5 @@
 [META]
-title=The Loop
+title=Entrapment Loops
 authors=Studio High Ground
 template=generic
 status=canonical
