@@ -1,5 +1,5 @@
 [META]
-title=Genre
+title=Genre - Dark Fantasy
 authors=Unknown
 template=generic
 status=?
@@ -10,11 +10,13 @@ notes=?
 
 
 [MAIN_SECTION]
-Amy's Escape is a dark, horror, coming-of-age, and psychological horror story with elements of adventure, puzzles, and stealth.
+Amy's Escape is a dark fantasy, coming-of-age, and psychological horror story with elements of adventure, puzzles, and stealth.
 
 [SECONDARY]
-_Add more details here._
+# Dark Fantasy
+Dark fantasy to list a few **Expedition 33**, **Undertale**, **etc**
+
+# Why Dark Fantasy?
 
 [REFERENCES]
-
 

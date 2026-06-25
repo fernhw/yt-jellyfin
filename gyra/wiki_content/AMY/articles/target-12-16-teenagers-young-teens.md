@@ -14,6 +14,7 @@ notes=?
 
 "Amy's Escape" is a horror-adventure game made specifically for **12–16 year olds**.
 
+[SECONDARY]
 **Market Appeal**
 - Inspired by **Coraline**, **Undertale**, and **Little Nightmares** (games that sold tens of millions).
 - Perfect for the gap between “too childish” and “too mature”.
@@ -30,9 +31,7 @@ notes=?
 **T for Teen**
 
 > Note: Optional M-rated DLC possible (see DLC section for details).
-
-[SECONDARY]
-_Add more details here._
+>
 
 [REFERENCES]
 

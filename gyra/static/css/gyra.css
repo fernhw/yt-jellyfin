@@ -4024,6 +4024,7 @@ body.wiki-mode {
   font-family: -apple-system, 'Linux Libertine', Georgia, serif;
   background: #fff;
   color: #202122;
+  display: flex; flex-direction: column; min-height: 100vh;
 }
 body.wiki-mode a { color: #3366cc; }
 body.wiki-mode a:visited { color: #5580aa; }
@@ -4034,24 +4035,35 @@ body.wiki-mode a:visited { color: #5580aa; }
 
 /* ── Wiki home topbar ── */
 .wiki-topbar {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 32px;
-  background: #f8f9fa; border-bottom: 1px solid #a2a9b1;
+  display: flex; align-items: center;
+  padding: 0 28px;
+  height: 42px;
+  background: #fff;
+  border-bottom: 1px solid #a2a9b1;
   position: sticky; top: 0; z-index: 100;
+  transition: transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease;
+  will-change: transform;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+}
+.wiki-topbar.is-hidden {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
 }
 .wiki-topbar-left {
-  display: flex; align-items: center; gap: 10px; flex: 1;
+  display: flex; align-items: center; gap: 0; flex: 1; overflow: hidden;
 }
 .wiki-topbar-logo {
-  width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
+  width: 24px; height: 24px; border-radius: 50%; overflow: hidden;
   background: #eaecf0; border: 1px solid #a2a9b1;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; font-size: 18px;
+  flex-shrink: 0; font-size: 12px; margin-right: 12px;
 }
 .wiki-topbar-logo img { width: 100%; height: 100%; object-fit: cover; }
-.wiki-topbar-name { font-size: 15px; font-weight: 700; color: #202122; line-height: 1.2; }
+.wiki-topbar-name { font-size: 13px; font-weight: 500; color: #202122; line-height: 1.2; }
 .wiki-topbar-sub  { font-size: 11px; color: #72777d; }
-.wiki-topbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.wiki-topbar-right { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-left: auto; }
 
 /* ── Wiki home content area ── */
 .wiki-home-content { padding: 24px 32px; }
@@ -4097,13 +4109,44 @@ body.wiki-mode a:visited { color: #5580aa; }
 .wiki-te-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── Wiki article topbar (crumbtrail) ── */
-.wiki-topbar-home { font-weight: 700; color: #3366cc; text-decoration: none; }
+.wiki-topbar-home {
+  font-weight: 600; color: #3366cc; text-decoration: none;
+  white-space: nowrap; flex-shrink: 0;
+  padding: 0 4px 0 0;
+}
 .wiki-topbar-home:hover { text-decoration: underline; }
-.wiki-topbar-sep  { color: #a2a9b1; }
-.wiki-topbar-crumb { color: #54595d; text-decoration: none; }
+.wiki-topbar-sep  { color: #a2a9b1; margin: 0 6px; flex-shrink: 0; font-size: 11px; }
+.wiki-topbar-crumb { color: #54595d; text-decoration: none; white-space: nowrap; }
 .wiki-topbar-crumb:hover { color: #3366cc; text-decoration: underline; }
-.wiki-topbar-current { font-weight: 600; color: #202122; }
-.wiki-topbar-right { margin-left: auto; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.wiki-topbar-current {
+  color: #202122; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+  font-weight: 400;
+}
+/* wh-nav buttons (shared across wiki pages) */
+.wh-topbar-nav { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.wh-nav-btn {
+  display: inline-flex; align-items: center;
+  padding: 4px 11px; border-radius: 5px;
+  font-size: 12px; font-weight: 500; line-height: 1;
+  color: #54595d; text-decoration: none;
+  background: transparent; border: 1px solid transparent;
+  cursor: pointer; transition: background .12s, color .12s, border-color .12s;
+  white-space: nowrap;
+}
+.wh-nav-btn:hover { background: #f0f4ff; color: #3366cc; border-color: #cdd5f0; }
+.wh-nav-btn-primary {
+  color: #3366cc;
+  background: #eaf0ff;
+  border-color: #b3c7f5;
+}
+.wh-nav-btn-primary:hover { background: #d8e7ff; }
+.wh-nav-icon { font-size: 15px; padding: 4px 8px; }
+.wh-nav-sep { width: 1px; height: 18px; background: #d0d4dc; margin: 0 4px; flex-shrink: 0; }
+.wiki-topbar .wiki-draft-badge {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+  background: #FEF3C7; color: #92400E; flex-shrink: 0; margin-right: 4px;
+}
 
 /* Wiki editor footer */
 .wiki-editor-footer {
@@ -4120,28 +4163,72 @@ body.wiki-mode a:visited { color: #5580aa; }
   display: grid;
   grid-template-columns: 200px 1fr 260px;
   gap: 0;
-  align-items: start;
+  align-items: stretch;
   max-width: 1400px;
   margin: 0 auto;
+  flex: 1;
+  width: 100%;
+}
+.wiki-article-layout.sidebar-collapsed {
+  grid-template-columns: 32px 1fr 260px;
 }
 
 /* Left nav */
 .wiki-aside-nav {
-  position: sticky; top: 37px;
+  position: sticky; top: var(--topbar-h, 42px);
   padding: 16px 0;
-  max-height: calc(100vh - 37px);
+  height: calc(100vh - var(--topbar-h, 42px));
   overflow-y: auto;
   font-size: 12.5px;
   border-right: 1px solid #eaecf0;
+  transition: top .28s cubic-bezier(.4,0,.2,1), height .28s cubic-bezier(.4,0,.2,1), width .15s;
+  scrollbar-width: thin;
 }
+/* Sidebar collapse toggle */
+.wiki-sidebar-toggle {
+  display: block; width: 100%; padding: 4px 0;
+  background: none; border: none; border-bottom: 1px solid #eaecf0;
+  cursor: pointer; color: #a2a9b1; font-size: 13px; text-align: right;
+  padding-right: 10px; line-height: 1;
+  transition: color .1s;
+}
+.wiki-sidebar-toggle:hover { color: #3366cc; }
+.sidebar-collapsed .wiki-aside-nav { overflow: hidden; }
+.sidebar-collapsed .wiki-aside-nav .wiki-sidebar-toggle { text-align: center; padding-right: 0; border-bottom-color: #eaecf0; }
+.sidebar-collapsed .wiki-aside-nav > *:not(.wiki-sidebar-toggle) { display: none; }
+.sidebar-collapsed .wiki-aside-nav .wiki-sidebar-toggle { display: block; }
+/* Edit link at bottom of sidebar */
+.wiki-sidebar-edit {
+  position: sticky; bottom: 0;
+  display: block; padding: 8px 14px;
+  font-size: 12px; color: #72777d;
+  text-decoration: none; background: #f8f9fa;
+  border-top: 1px solid #eaecf0;
+  transition: color .1s, background .1s;
+}
+.wiki-sidebar-edit:hover { color: #3366cc; background: #eaf0ff; }
+body.wiki-dark .wiki-sidebar-toggle { border-color: #303030; color: #555; }
+body.wiki-dark .wiki-sidebar-toggle:hover { color: #a8c4e8; }
+body.wiki-dark .sidebar-collapsed .wiki-aside-nav .wiki-sidebar-toggle { border-color: #303030; }
+body.wiki-dark .wiki-sidebar-edit { background: #1e1e1e; border-color: #303030; color: #666; }
+body.wiki-dark .wiki-sidebar-edit:hover { color: #a8c4e8; background: #252525; }
 .wiki-aside-title {
   font-size: 10px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
   color: #72777d; padding: 4px 14px 6px;
 }
+.wiki-toc-article-title {
+  font-weight: 700 !important; font-size: 13.5px !important;
+  color: #202122 !important; border-left: 3px solid #a2a9b1 !important;
+  padding-top: 5px !important; padding-bottom: 5px !important;
+  line-height: 1.35;
+}
+.wiki-toc-article-title:hover { color: #3366cc !important; border-left-color: #3366cc !important; background: #f0f4ff; }
+body.wiki-dark .wiki-toc-article-title { color: #f0ece6 !important; border-left-color: #555 !important; }
+body.wiki-dark .wiki-toc-article-title:hover { color: #a8c4e8 !important; border-left-color: #a8c4e8 !important; background: #252525; }
 .wiki-toc-list { list-style: none; margin: 0; padding: 0; }
 .wiki-toc-list li a { display: block; padding: 3px 14px; color: #3366cc; text-decoration: none; font-size: 13px; }
 .wiki-toc-list li a:hover { text-decoration: underline; }
-.wiki-toc-h3 a { padding-left: 24px !important; font-size: 12px; color: #6b4ba1 !important; }
+.wiki-toc-h3 a { padding-left: 24px !important; font-size: 12px; color: #5580aa !important; }
 .wiki-nav-item { }
 .wiki-nav-link {
   display: block; padding: 3px 14px; color: #202122;
@@ -4154,8 +4241,9 @@ body.wiki-mode a:visited { color: #5580aa; }
 /* Article body */
 .wiki-article-body {
   min-width: 0; padding: 16px 28px 40px;
-  font-family: 'Linux Libertine', Georgia, serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Linux Libertine', Georgia, sans-serif;
   font-size: 15px; line-height: 1.75; color: #202122;
+  min-height: calc(100vh - var(--topbar-h, 42px));
 }
 .wiki-gdd-num-above {
   font-size: 11.5px; font-weight: 400; color: #72777d;
@@ -4164,19 +4252,21 @@ body.wiki-mode a:visited { color: #5580aa; }
   display: block;
 }
 .wiki-article-h1 {
-  font-size: 28px; font-weight: normal; font-family: 'Linux Libertine', Georgia, serif;
+  font-size: 32px; font-weight: normal; font-family: 'Linux Libertine', Georgia, 'Times New Roman', serif;
   color: #202122; border-bottom: 1px solid #a2a9b1;
-  padding-bottom: 5px; margin-bottom: 6px; margin-top: 0;
+  padding-bottom: 8px; margin-bottom: 4px; margin-top: 0;
+  letter-spacing: -.01em; line-height: 1.2;
 }
-.wiki-article-meta { font-size: 11px; color: #72777d; margin-bottom: 18px; font-family: -apple-system, sans-serif; }
-.wiki-article-content { line-height: 1.75; color: #202122; font-size: 15px; font-family: 'Linux Libertine', Georgia, serif; }
+.wiki-article-meta { font-size: 12px; color: #72777d; margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; border-bottom: 1px solid #eaecf0; padding-bottom: 14px; }
+.wiki-article-content { line-height: 1.75; color: #202122; font-size: 15px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
 .wiki-article-content h2 {
-  font-size: 21px; font-weight: normal; margin: 28px 0 10px;
-  border-bottom: 1px solid #a2a9b1; padding-bottom: 3px;
-  font-family: 'Linux Libertine', Georgia, serif;
+  font-size: 22px; font-weight: normal; margin: 32px 0 10px;
+  border-bottom: 1px solid #a2a9b1; padding-bottom: 4px;
+  font-family: 'Linux Libertine', Georgia, 'Times New Roman', serif;
+  color: #202122;
 }
-.wiki-article-content h3 { font-size: 17px; font-weight: bold; margin: 20px 0 8px; }
-.wiki-article-content h4 { font-size: 15px; font-weight: bold; margin: 16px 0 6px; }
+.wiki-article-content h3 { font-size: 17px; font-weight: bold; margin: 20px 0 8px; font-family: 'Linux Libertine', Georgia, 'Times New Roman', serif; }
+.wiki-article-content h4 { font-size: 15px; font-weight: bold; margin: 16px 0 6px; font-family: 'Linux Libertine', Georgia, 'Times New Roman', serif; }
 .wiki-article-content p  { margin-bottom: 12px; }
 .wiki-article-content ul, .wiki-article-content ol { margin: 8px 0 12px 28px; }
 .wiki-article-content li { margin-bottom: 3px; }
@@ -4249,9 +4339,7 @@ body.wiki-mode a:visited { color: #5580aa; }
 }
 .wiki-infobox-row {
   display: grid; grid-template-columns: 110px 1fr;
-  border-bottom: 1px solid #eaecf0;
 }
-.wiki-infobox-row:last-child { border-bottom: none; }
 .wiki-infobox-key {
   padding: 6px 8px; background: #eaecf0;
   font-weight: bold; font-size: 11.5px; color: #202122;
@@ -4807,7 +4895,7 @@ body.wiki-dark .wiki-infobox-sep { color: #64748b; border-color: #2d3148; }
   .wiki-import-layout { grid-template-columns: 1fr; }
   .wiki-home-content { padding: 16px; }
   .wiki-home-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
-  .wiki-topbar { padding: 8px 16px; }
+  .wiki-topbar { padding: 0 14px; height: 38px; }
   .gdd-document { padding: 0 16px 48px; }
   .gdd-cover-title { font-size: 38px; }
   .gdd-cover-form-grid { grid-template-columns: 1fr; }

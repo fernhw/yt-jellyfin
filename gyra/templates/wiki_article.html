@@ -6,7 +6,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{{ article.title }} — {{ project.name }} Wiki</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}">
 </head>
 <body class="wiki-mode"><script>(function(){var s=localStorage.getItem('wiki_dark_mode'),q=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)');if(s==='1'||(s===null&&q&&q.matches))document.body.classList.add('wiki-dark');})();</script>
 
@@ -25,21 +25,23 @@
     {% if not article.is_published %}<span class="wiki-draft-badge">Draft</span>{% endif %}
     <a class="wh-nav-btn" href="{{ url_for('wiki_gdd', project_id=project.id) }}">GDD</a>
     <a class="wh-nav-btn" href="{{ url_for('wiki_images_page', project_id=project.id) }}">Images</a>
-    {% if session.role != 'viewer' %}
-    <span class="wh-nav-sep"></span>
-    <a class="wh-nav-btn wh-nav-btn-primary" href="{{ url_for('wiki_edit', project_id=project.id, slug=article.slug) }}">✏ Edit</a>
-    {% endif %}
     <button class="wh-nav-btn wh-nav-icon" id="wiki-dark-toggle" title="Toggle dark mode">🌙</button>
   </nav>
 </div>
 
 {# ── Three-column Wikipedia layout ── #}
+{# Mobile-only drawer toggle — lives OUTSIDE the drawer so it's never transformed off-screen #}
+<button class="wiki-sidebar-toggle" id="wiki-sidebar-toggle" title="Open navigation">☰</button>
+
 <div class="wiki-article-layout">
 
   {# Left: TOC + article nav — sticky sidebar #}
   <aside class="wiki-aside-nav">
-    <a href="#" class="wiki-back-top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">↑ Top</a>
+    <div class="wiki-aside-inner">
     <div class="wiki-aside-title">Contents</div>
+    <div class="wiki-nav-item wiki-toc-top-item">
+      <a href="#wiki-article-top" class="wiki-nav-link wiki-toc-article-title" id="wiki-toc-title-link">{{ article.title }}</a>
+    </div>
     <div class="wiki-toc" id="wiki-toc">
       {# Populated by JS from rendered headings #}
     </div>
@@ -73,6 +75,7 @@
     </div>
     {% endfor %}
     {% endif %}
+    </div>{# /wiki-aside-inner #}
   </aside>
 
   {# Article body: infobox floats right inside, text wraps around it (Wikipedia style) #}
@@ -85,7 +88,7 @@
       </div>
     </aside>
 
-    <h1 class="wiki-article-h1">
+    <h1 class="wiki-article-h1" id="wiki-article-top">
       {% if gdd_num %}<div class="wiki-gdd-num-above">{{ gdd_num }}</div>{% endif %}
       {{ article.title }}
     </h1>
@@ -121,7 +124,8 @@
 
 </div>
 
-{# ── Prev / Next navigation ── #}
+{# ── Footer — single wrapper with solid bg covers fixed sidebar ── #}
+<div class="wiki-footer-wrap">
 <div class="wiki-prevnext">
   {% if prev_art %}
   <a class="wiki-prev" href="{{ url_for('wiki_article', project_id=project.id, slug=prev_art.slug) }}">
@@ -145,6 +149,33 @@
   <a href="{{ url_for('wiki_home', project_id=project.id) }}" class="wiki-editor-footer-link">← All articles</a>
 </div>
 {% endif %}
+</div>{# /wiki-footer-wrap #}
+
+{# Scroll-hide topbar — hide on scroll down (2px threshold), reveal on scroll up #}
+<script>
+(function(){
+  var topbar = document.querySelector('.wiki-topbar');
+  var layout  = document.querySelector('.wiki-article-layout');
+  if (!topbar) return;
+  var TOPBAR_H = topbar.offsetHeight || 42;
+  var ticking = false;
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(function() {
+        var y = window.scrollY || window.pageYOffset;
+        var hide = y > 2;
+        topbar.classList.toggle('is-hidden', hide);
+        if (layout) layout.style.setProperty('--topbar-h', hide ? '0px' : TOPBAR_H + 'px');
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }
+  // set initial value
+  if (layout) layout.style.setProperty('--topbar-h', TOPBAR_H + 'px');
+  window.addEventListener('scroll', onScroll, { passive: true });
+})();
+</script>
 
 {# marked.js — renders all Markdown client-side #}
 <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
@@ -501,8 +532,8 @@
   font-family: 'Linux Libertine', Georgia, serif;
   margin-top: 6px;
 }
-.wiki-child-body h2 { font-size: 18px; font-weight: normal; margin: 18px 0 6px; border-bottom: 1px solid #eaecf0; padding-bottom: 3px; }
-.wiki-child-body h3 { font-size: 15px; font-weight: bold; margin: 14px 0 4px; }
+.wiki-child-body h2 { font-size: 18px; font-weight: normal; margin: 18px 0 6px; border-bottom: 1px solid #eaecf0; padding-bottom: 3px; font-family: 'Linux Libertine', Georgia, serif; }
+.wiki-child-body h3 { font-size: 15px; font-weight: bold; margin: 14px 0 4px; font-family: 'Linux Libertine', Georgia, serif; }
 .wiki-child-body p  { margin-bottom: 10px; }
 .wiki-child-body ul, .wiki-child-body ol { margin: 6px 0 10px 24px; }
 .wiki-child-body li { margin-bottom: 3px; }
@@ -624,6 +655,131 @@ body.wiki-dark .wiki-child-readmore a:hover { background:#1e2540; border-color:#
 </script>
 
 <style>
+/* ═══════════════════════════════════════════════════
+   WIKI ARTICLE — layout overrides (desktop/mobile)
+   ═══════════════════════════════════════════════════ */
+
+/* ─── Toggle: hidden on desktop, floating button on mobile ─── */
+.wiki-sidebar-toggle { display: none; }
+
+/* ─── Desktop sidebar: static grid cell + fixed inner ─── */
+.wiki-aside-nav {
+  position: static;           /* override wiki.css sticky */
+  height: auto;
+  overflow: visible;
+  padding: 0;
+  border-right: 1px solid #eaecf0;
+}
+.wiki-aside-inner {
+  position: fixed;
+  top: var(--topbar-h, 42px);
+  width: 200px;
+  height: calc(100vh - var(--topbar-h, 42px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  z-index: 99;
+  padding-bottom: 116px;      /* generous breathing room at scroll end */
+  transition: top .28s cubic-bezier(.4,0,.2,1), height .28s cubic-bezier(.4,0,.2,1);
+}
+
+/* Single footer wrapper — solid background covers the full width including sidebar column */
+.wiki-footer-wrap {
+  position: relative;
+  z-index: 100;
+  background: #fff;
+}
+.wiki-prevnext {
+  position: static;
+  z-index: auto;
+  background: none;
+  padding-left: 200px;
+}
+.wiki-editor-footer {
+  position: static;
+  z-index: auto;
+  background: none;
+  padding-left: 200px;
+}
+
+/* ─── Mobile ≤900px: sidebar becomes a slide-in drawer ─── */
+@media (max-width: 900px) {
+  /* Toggle: free-standing fixed button, never inside the drawer */
+  .wiki-sidebar-toggle {
+    display: flex;
+    position: fixed;
+    top: 12px; left: 12px;
+    z-index: 300;              /* above everything */
+    width: 34px; height: 34px;
+    border-radius: 6px;
+    align-items: center; justify-content: center;
+    background: rgba(248,249,250,.97);
+    border: 1px solid #c8ccd1;
+    box-shadow: 0 1px 4px rgba(0,0,0,.2);
+    padding: 0;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    color: #54595d;
+    transition: background .1s, color .1s;
+  }
+  .wiki-sidebar-toggle:hover { background: #eaecf0; color: #202122; }
+
+  .wiki-article-layout {
+    grid-template-columns: 1fr;
+    padding: 0 12px;
+  }
+  .wiki-aside-info {
+    float: none;
+    width: 100%;
+    margin: 0 0 16px 0;
+  }
+  .wiki-infobox { max-width: 100%; }
+
+  /* Drawer: fixed panel, slides in from left */
+  .wiki-aside-nav {
+    display: block;            /* override wiki.css display:none */
+    position: fixed;
+    top: 0; left: 0;
+    width: 280px;
+    height: 100vh;
+    overflow: visible;
+    background: #f8f9fa;
+    border-right: 1px solid #c8ccd1;
+    box-shadow: 2px 0 16px rgba(0,0,0,.18);
+    z-index: 250;
+    transform: translateX(-100%);
+    transition: transform .22s cubic-bezier(.4,0,.2,1);
+  }
+  .wiki-aside-nav.drawer-open {
+    transform: translateX(0);
+  }
+  .wiki-aside-inner {
+    position: static;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    padding-top: 16px;
+    padding-bottom: 116px;
+    background: #f8f9fa;
+  }
+
+  /* Overlay backdrop — tap to dismiss */
+  .wiki-sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 249;
+    display: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wiki-sidebar-overlay.active { display: block; }
+
+  /* Footer is in normal flow on mobile — no z-index needed */
+  .wiki-prevnext,
+  .wiki-editor-footer { position: static; z-index: auto; }
+}
+
 /* ── Lightbox ── */
 .wiki-lightbox-overlay {
   display:none;position:fixed;inset:0;z-index:10000;
@@ -733,6 +889,23 @@ body.wiki-dark .wiki-next:hover       { background:#252525; }
 body.wiki-dark .wiki-editor-footer      { background:#1e1e1e; border-color:#303030; }
 body.wiki-dark .wiki-editor-footer-link { color:#6d9de8; }
 body.wiki-dark .wiki-editor-footer-sep  { color:#555; }
+
+/* Dark: footer wrapper solid background */
+body.wiki-dark .wiki-footer-wrap  { background:#1a1a1a; }
+body.wiki-dark .wiki-prevnext     { border-color:#303030; }
+body.wiki-dark .wiki-editor-footer{ background:none; border-color:#303030; }
+
+/* Dark: mobile drawer */
+@media (max-width: 900px) {
+  body.wiki-dark .wiki-aside-nav   { background:#1a1a1a; border-color:#303030; box-shadow: 2px 0 16px rgba(0,0,0,.5); }
+  body.wiki-dark .wiki-aside-inner { background:#1a1a1a; }
+  body.wiki-dark .wiki-sidebar-toggle {
+    background: rgba(26,26,26,.97);
+    border-color: #444;
+    color: #908880;
+  }
+  body.wiki-dark .wiki-sidebar-toggle:hover { background: #2a2a2a; color: #ddd8d0; }
+}
 </style>
 
 <script>
@@ -757,6 +930,64 @@ body.wiki-dark .wiki-editor-footer-sep  { color:#555; }
       if (localStorage.getItem(DARK_KEY) === null) applyDark(e.matches);
     });
   }
+})();
+</script>
+
+<script>
+(function () {
+  var nav     = document.querySelector('.wiki-aside-nav');
+  var btn     = document.getElementById('wiki-sidebar-toggle');
+  if (!nav || !btn) return;
+
+  var isMobile = function () { return window.innerWidth <= 900; };
+  var isOpen   = false;
+
+  /* Overlay — created once, appended to body */
+  var overlay = document.createElement('div');
+  overlay.className = 'wiki-sidebar-overlay';
+  overlay.addEventListener('click', close);
+  document.body.appendChild(overlay);
+
+  function open() {
+    isOpen = true;
+    nav.classList.add('drawer-open');
+    overlay.classList.add('active');
+    btn.textContent = '✕';
+    btn.title = 'Close navigation';
+    btn.setAttribute('aria-expanded', 'true');
+  }
+  function close() {
+    isOpen = false;
+    nav.classList.remove('drawer-open');
+    overlay.classList.remove('active');
+    btn.textContent = '☰';
+    btn.title = 'Open navigation';
+    btn.setAttribute('aria-expanded', 'false');
+  }
+
+  /* Desktop: hide toggle, ensure drawer class absent */
+  function syncDesktop() {
+    nav.classList.remove('drawer-open');
+    overlay.classList.remove('active');
+  }
+
+  btn.addEventListener('click', function () {
+    if (!isMobile()) return;
+    isOpen ? close() : open();
+  });
+
+  /* Close on Escape */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOpen) close();
+  });
+
+  window.addEventListener('resize', function () {
+    if (!isMobile()) syncDesktop();
+  });
+
+  /* Init: closed on mobile, desktop doesn't need it */
+  if (!isMobile()) syncDesktop();
+  else close();
 })();
 </script>
 <div class="wiki-lightbox-overlay" id="wiki-lightbox">
