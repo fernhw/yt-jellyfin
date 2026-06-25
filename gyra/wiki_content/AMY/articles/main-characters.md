@@ -10,17 +10,10 @@ notes=?
 
 
 [MAIN_SECTION]
-> _Add details here._
-
-## Overview
-
-## Notes
-
--
+Characters with relevance to plot.
 
 [SECONDARY]
-_Add more details here._
+
 
 [REFERENCES]
-
 

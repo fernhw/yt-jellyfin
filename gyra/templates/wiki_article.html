@@ -8,12 +8,12 @@
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/gyra.css') }}">
 </head>
-<body class="wiki-mode">
+<body class="wiki-mode"><script>(function(){var s=localStorage.getItem('wiki_dark_mode'),q=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)');if(s==='1'||(s===null&&q&&q.matches))document.body.classList.add('wiki-dark');})();</script>
 
 {# ── Top bar — navigation only, no edit buttons ── #}
 <div class="wiki-topbar">
   <div class="wiki-topbar-left">
-    <a class="wiki-topbar-home" href="{{ url_for('wiki_home', project_id=project.id) }}">📖 {{ project.name }} Wiki</a>
+    <a class="wiki-topbar-home" href="{{ url_for('wiki_home', project_id=project.id) }}">{{ project.name }}</a>
     {% for bc in breadcrumb %}
     <span class="wiki-topbar-sep">›</span>
     <a class="wiki-topbar-crumb" href="{{ url_for('wiki_article', project_id=project.id, slug=bc.slug) }}">{{ bc.title }}</a>
@@ -21,12 +21,16 @@
     <span class="wiki-topbar-sep">›</span>
     <span class="wiki-topbar-current">{{ article.title }}</span>
   </div>
-  <div class="wiki-topbar-right">
+  <nav class="wh-topbar-nav">
     {% if not article.is_published %}<span class="wiki-draft-badge">Draft</span>{% endif %}
-    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_gdd', project_id=project.id) }}">📄 GDD</a>
-    <a class="btn btn-sm btn-ghost" href="{{ url_for('wiki_images_page', project_id=project.id) }}">🖼 Images</a>
-    <button class="btn btn-sm btn-ghost" id="wiki-dark-toggle" title="Toggle dark mode">🌙</button>
-  </div>
+    <a class="wh-nav-btn" href="{{ url_for('wiki_gdd', project_id=project.id) }}">GDD</a>
+    <a class="wh-nav-btn" href="{{ url_for('wiki_images_page', project_id=project.id) }}">Images</a>
+    {% if session.role != 'viewer' %}
+    <span class="wh-nav-sep"></span>
+    <a class="wh-nav-btn wh-nav-btn-primary" href="{{ url_for('wiki_edit', project_id=project.id, slug=article.slug) }}">✏ Edit</a>
+    {% endif %}
+    <button class="wh-nav-btn wh-nav-icon" id="wiki-dark-toggle" title="Toggle dark mode">🌙</button>
+  </nav>
 </div>
 
 {# ── Three-column Wikipedia layout ── #}
@@ -34,6 +38,7 @@
 
   {# Left: TOC + article nav — sticky sidebar #}
   <aside class="wiki-aside-nav">
+    <a href="#" class="wiki-back-top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">↑ Top</a>
     <div class="wiki-aside-title">Contents</div>
     <div class="wiki-toc" id="wiki-toc">
       {# Populated by JS from rendered headings #}
@@ -629,36 +634,105 @@ body.wiki-dark .wiki-child-readmore a:hover { background:#1e2540; border-color:#
 .wiki-lightbox-inner img { max-width:90vw;max-height:80vh;object-fit:contain;border-radius:4px;box-shadow:0 4px 40px rgba(0,0,0,.6); }
 .wiki-lightbox-caption { color:#e2e8f0;font-size:13px;margin-top:10px;max-width:600px; }
 .wiki-lightbox-close { position:absolute;top:-16px;right:-16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;width:36px;height:36px;border-radius:50%;cursor:pointer;line-height:36px;text-align:center;padding:0; }
-body.wiki-dark .wiki-topbar { background:#1a1d2e; border-color:#2d3148; }
-body.wiki-dark .wiki-topbar-home,body.wiki-dark .wiki-topbar-crumb { color:#93c5fd; }
-body.wiki-dark .wiki-topbar-current { color:#e2e8f0; }
-body.wiki-dark .wiki-aside-nav { background:#161925; border-color:#2d3148; }
-body.wiki-dark .wiki-aside-title { color:#94a3b8; border-color:#2d3148; }
-body.wiki-dark .wiki-nav-link { color:#93c5fd; }
-body.wiki-dark .wiki-nav-link:hover { background:#1e2540; }
-body.wiki-dark .wiki-nav-item.is-current { background:#1e2540; }
-body.wiki-dark .wiki-article-body { background:#161925; border-color:#2d3148; color:#e2e8f0; }
-body.wiki-dark .wiki-infobox { background:#1a1d2e; border-color:#2d3148; color:#cbd5e1; }
-body.wiki-dark .wiki-infobox-title { color:#f1f5f9; border-color:#2d3148; }
-body.wiki-dark .wiki-infobox-key { color:#94a3b8; }
-body.wiki-dark .wiki-infobox-row { border-color:#2d3148; }
-body.wiki-dark .wiki-article-body h1,body.wiki-dark .wiki-article-body h2,
-body.wiki-dark .wiki-article-body h3,body.wiki-dark .wiki-article-body h4 { color:#f1f5f9; border-color:#2d3148; }
-body.wiki-dark .wiki-article-body a { color:#93c5fd; }
-body.wiki-dark .wiki-article-body blockquote { border-color:#3b4fd8; background:#1a1d2e; color:#94a3b8; }
-body.wiki-dark .wiki-article-body code,body.wiki-dark .wiki-article-body pre { background:#0d1117; color:#c9d1d9; border-color:#30363d; }
-body.wiki-dark .wiki-article-body table th { background:#1e2540; }
-body.wiki-dark .wiki-article-body table td,body.wiki-dark .wiki-article-body table th { border-color:#2d3148; }
-body.wiki-dark .wiki-article-body table tr:nth-child(even) { background:#161925; }
-body.wiki-dark .wiki-children-section { border-color:#2d3148; }
-body.wiki-dark .wiki-children-heading { color:#94a3b8; }
-body.wiki-dark .wiki-prevnext { border-color:#2d3148; }
-body.wiki-dark .wiki-prevnext a { color:#93c5fd; }
-body.wiki-dark .wiki-extra-section { border-color:#2d3148; background:#161925; }
-body.wiki-dark .wiki-extra-section-title { color:#94a3b8; }
-body.wiki-dark .wiki-secondary-section .wiki-secondary-divider { border-color:#2d3148; }
-body.wiki-dark .wiki-editor-footer { background:#1a1d2e; border-color:#2d3148; }
-body.wiki-dark .wiki-editor-footer-link { color:#93c5fd; }
+
+/* ═══════════════════════════════════════════════════
+   DARK MODE  –  warm neutral palette, nothing blue
+   ═══════════════════════════════════════════════════ */
+body.wiki-dark                       { background:#1a1a1a; color:#ddd8d0; }
+body.wiki-dark .wiki-article-layout  { background:#1a1a1a; }
+
+/* Topbar */
+body.wiki-dark .wiki-topbar          { background:#222; border-color:#383838; }
+body.wiki-dark .wiki-topbar-home     { color:#a8c4e8; }
+body.wiki-dark .wiki-topbar-crumb    { color:#8a9eb8; }
+body.wiki-dark .wiki-topbar-current  { color:#ddd8d0; }
+body.wiki-dark .wiki-topbar-sep      { color:#555; }
+
+/* Sidebar nav */
+body.wiki-dark .wiki-aside-nav       { background:#1a1a1a; border-color:#303030; }
+body.wiki-dark .wiki-aside-title     { color:#777; border-color:#303030; }
+body.wiki-dark .wiki-nav-link        { color:#b8cce0; }
+body.wiki-dark .wiki-nav-link:hover  { background:#2a2a2a; color:#ddd8d0; }
+body.wiki-dark .wiki-nav-item.is-current .wiki-nav-link { background:#2a2a2a; color:#ddd8d0; border-left-color:#8a9eb8; }
+body.wiki-dark .wiki-toc-list li a   { color:#a8c0d8; }
+body.wiki-dark .wiki-toc-h3 a        { color:#7aa0c0 !important; }
+
+/* Article body container */
+body.wiki-dark .wiki-article-body   { background:#1a1a1a; color:#ddd8d0; border-color:#303030; }
+body.wiki-dark .wiki-article-meta   { color:#666; }
+body.wiki-dark .wiki-gdd-num-above  { color:#666; }
+body.wiki-dark .wiki-article-h1     { color:#f0ece6; border-color:#383838; }
+body.wiki-dark .wiki-draft-badge    { background:#3a2000; color:#fde68a; border-color:#5a3800; }
+
+/* Article content — the actual text */
+body.wiki-dark .wiki-article-content               { color:#ddd8d0; }
+body.wiki-dark .wiki-article-content h2            { color:#f0ece6; border-color:#383838; }
+body.wiki-dark .wiki-article-content h3            { color:#f0ece6; }
+body.wiki-dark .wiki-article-content h4            { color:#ddd8d0; }
+body.wiki-dark .wiki-article-content a             { color:#6d9de8; }
+body.wiki-dark .wiki-article-content a:visited     { color:#5a8ab8; }
+body.wiki-dark .wiki-article-content a:hover       { color:#a8c4e8; }
+body.wiki-dark .wiki-article-content blockquote    { border-left-color:#4a4a4a; background:#222; color:#908880; }
+body.wiki-dark .wiki-article-content hr            { border-top-color:#303030; }
+body.wiki-dark .wiki-article-content code          { background:#141414; border-color:#333; color:#d4cfca; }
+body.wiki-dark .wiki-article-content pre           { background:#141414; border-color:#333; }
+body.wiki-dark .wiki-article-content pre code      { background:none; border:none; color:#d4cfca; }
+body.wiki-dark .wiki-article-content table         { border-color:#383838; }
+body.wiki-dark .wiki-article-content th            { background:#2a2a2a; border-color:#383838; color:#ddd8d0; }
+body.wiki-dark .wiki-article-content td            { border-color:#303030; color:#ddd8d0; }
+body.wiki-dark .wiki-article-content tbody tr:nth-child(even) { background:#202020; }
+body.wiki-dark .wiki-article-content tbody tr:hover { background:#252525; }
+
+/* Infobox — the hero/meta sidebar */
+body.wiki-dark .wiki-infobox         { background:#222; border-color:#383838; color:#ddd8d0; }
+body.wiki-dark .wiki-infobox-title   { background:#2a2a2a; color:#f0ece6; border-color:#383838; }
+body.wiki-dark .wiki-infobox-hero    { background:#1a1a1a; border-color:#303030; }
+body.wiki-dark .wiki-infobox-caption { color:#777; }
+body.wiki-dark .wiki-infobox-row     { border-color:#303030; }
+body.wiki-dark .wiki-infobox-key     { background:#242424; color:#908880; border-color:#303030; }
+body.wiki-dark .wiki-infobox-val     { background:#222; color:#ddd8d0; }
+body.wiki-dark .wiki-infobox-sep     { color:#555; border-color:#303030; }
+body.wiki-dark .wiki-infobox a       { color:#6d9de8; }
+
+/* Secondary + extra sections */
+body.wiki-dark .wiki-secondary-body  { color:#ddd8d0; }
+body.wiki-dark .wiki-secondary-divider { border-color:#303030; }
+body.wiki-dark .wiki-extra-section   { background:none; border-color:#303030; }
+body.wiki-dark .wiki-extra-heading   { color:#f0ece6; border-color:#383838; }
+body.wiki-dark .wiki-extra-body      { color:#ddd8d0; }
+body.wiki-dark .wiki-extra-body a    { color:#6d9de8; }
+body.wiki-dark .wiki-extra-body h2,
+body.wiki-dark .wiki-extra-body h3   { color:#f0ece6; border-color:#383838; }
+body.wiki-dark .wiki-extra-body table th  { background:#2a2a2a; border-color:#383838; color:#ddd8d0; }
+body.wiki-dark .wiki-extra-body table td  { border-color:#303030; color:#ddd8d0; }
+body.wiki-dark .wiki-extra-body tbody tr:nth-child(even) { background:#202020; }
+body.wiki-dark .wiki-extra-body code { background:#141414; border-color:#333; color:#d4cfca; }
+
+/* References */
+body.wiki-dark .wiki-refs-heading    { color:#f0ece6; border-color:#383838; }
+body.wiki-dark .wiki-refs-body       { color:#908880; }
+body.wiki-dark .wiki-refs-body a     { color:#6d9de8; }
+
+/* Children section */
+body.wiki-dark .wiki-children-section  { border-color:#303030; }
+body.wiki-dark .wiki-children-heading  { color:#908880; border-color:#303030; }
+
+/* Wiki-links */
+body.wiki-dark .wiki-link             { color:#6d9de8; }
+body.wiki-dark .wiki-link:visited     { color:#5a8ab8; }
+body.wiki-dark .wiki-link-missing     { color:#e07070; border-color:#e07070; }
+
+/* Prev/Next nav */
+body.wiki-dark .wiki-prevnext         { border-color:#303030; }
+body.wiki-dark .wiki-prev,
+body.wiki-dark .wiki-next             { color:#a8c4e8; border-color:#383838; }
+body.wiki-dark .wiki-prev:hover,
+body.wiki-dark .wiki-next:hover       { background:#252525; }
+
+/* Editor footer */
+body.wiki-dark .wiki-editor-footer      { background:#1e1e1e; border-color:#303030; }
+body.wiki-dark .wiki-editor-footer-link { color:#6d9de8; }
+body.wiki-dark .wiki-editor-footer-sep  { color:#555; }
 </style>
 
 <script>
@@ -669,12 +743,20 @@ body.wiki-dark .wiki-editor-footer-link { color:#93c5fd; }
     document.body.classList.toggle('wiki-dark', on);
     if (btn) btn.textContent = on ? '☀️' : '🌙';
   }
-  applyDark(localStorage.getItem(DARK_KEY) === '1');
+  // Sync button emoji to current state (class already applied by inline script)
+  applyDark(document.body.classList.contains('wiki-dark'));
   if (btn) btn.addEventListener('click', function () {
     var on = !document.body.classList.contains('wiki-dark');
     localStorage.setItem(DARK_KEY, on ? '1' : '0');
     applyDark(on);
   });
+  // Live-update if system theme changes while page is open and user hasn't set a preference
+  var mq = window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)');
+  if (mq && mq.addEventListener) {
+    mq.addEventListener('change', function(e) {
+      if (localStorage.getItem(DARK_KEY) === null) applyDark(e.matches);
+    });
+  }
 })();
 </script>
 <div class="wiki-lightbox-overlay" id="wiki-lightbox">

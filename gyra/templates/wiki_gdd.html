@@ -14,7 +14,7 @@
     @page :first { margin-top: 0; }
   </style>
 </head>
-<body class="wiki-mode">
+<body class="wiki-mode"><script>(function(){var s=localStorage.getItem('wiki_dark_mode'),q=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)');if(s==='1'||(s===null&&q&&q.matches))document.body.classList.add('wiki-dark');})();</script>
 
 {# ── Floating screen-only controls ── #}
 <div class="gdd-controls no-print">
@@ -25,6 +25,7 @@
   <a class="gdd-ctrl-btn" href="{{ url_for('wiki_gdd_export', project_id=project.id) }}" title="Download .md">⬇ .md</a>
   <button class="gdd-ctrl-btn" onclick="window.print()" title="Print / save as PDF">🖨 Print</button>
   <a class="gdd-ctrl-btn gdd-ctrl-btn-pdf" href="{{ url_for('wiki_gdd_pdf', project_id=project.id) }}" target="_blank" title="Open clean PDF page">⬇ PDF</a>
+  <button class="gdd-ctrl-btn" id="gdd-dark-toggle" title="Toggle dark mode">🌙</button>
 </div>
 
 {# ═══════════════════════════════════════════════════
@@ -164,6 +165,101 @@
   });
   var modal = document.getElementById('gdd-cover-modal');
   if (modal) modal.addEventListener('click', function (e) { if (e.target === this) this.style.display = 'none'; });
+})();
+</script>
+
+<style>
+/* ── GDD Dark mode — warm neutral, not vibe-code navy ── */
+body.wiki-dark                     { background: #1a1a1a; color: #ddd8d0; }
+body.wiki-dark .gdd-document       { color: #ddd8d0; }
+body.wiki-dark .gdd-controls       { background: rgba(30,30,30,.97); border-color: #383838; }
+body.wiki-dark .gdd-ctrl-btn       { color: #a8c4e8; }
+body.wiki-dark .gdd-ctrl-btn:hover { background: #2a2a2a; }
+body.wiki-dark .gdd-ctrl-btn-pdf   { color: #e8916a; }
+body.wiki-dark .gdd-ctrl-btn-pdf:hover { background: #2a1a10; }
+/* Cover page */
+body.wiki-dark .gdd-cover-studio   { color: #777; }
+body.wiki-dark .gdd-cover-title    { color: #f0ece6; }
+body.wiki-dark .gdd-cover-subtitle { color: #908880; }
+body.wiki-dark .gdd-cover-tagline  { color: #a8c4e8; }
+body.wiki-dark .gdd-cover-meta-table              { border-color: #383838; }
+body.wiki-dark .gdd-cover-meta-table th           { color: #908880; border-color: #303030; }
+body.wiki-dark .gdd-cover-meta-table td           { color: #ddd8d0; border-color: #303030; }
+body.wiki-dark .gdd-cover-meta-table tr:last-child th,
+body.wiki-dark .gdd-cover-meta-table tr:last-child td { border-color: transparent; }
+body.wiki-dark .gdd-cover-desc     { color: #908880; border-color: #303030; }
+/* TOC page */
+body.wiki-dark .gdd-toc-page       { border-color: #383838; }
+body.wiki-dark .gdd-toc-heading    { color: #f0ece6; border-color: #383838; }
+body.wiki-dark .gdd-toc-entry      { color: #ddd8d0; border-bottom-color: #2e2e2e; }
+body.wiki-dark .gdd-toc-entry:hover { color: #a8c4e8; }
+body.wiki-dark .gdd-toc-d3         { color: #908880; }
+body.wiki-dark .gdd-toc-d4         { color: #666; }
+body.wiki-dark .gdd-toc-num        { color: #666; }
+body.wiki-dark .gdd-toc-dots       { border-bottom-color: #303030; }
+body.wiki-dark .gdd-toc-arrow      { color: #555; }
+/* Pages */
+body.wiki-dark .gdd-page           { border-bottom-color: #303030; }
+/* Headings */
+body.wiki-dark .gdd-h1             { color: #f0ece6; border-color: #383838; }
+body.wiki-dark .gdd-h2             { color: #e8e4de; }
+body.wiki-dark .gdd-h3             { color: #d8d4ce; }
+body.wiki-dark .gdd-h4             { color: #908880; }
+body.wiki-dark .gdd-num            { color: #555; }
+/* Section content */
+body.wiki-dark .gdd-section-content                   { color: #ddd8d0; }
+body.wiki-dark .gdd-section-content a                 { color: #6d9de8; }
+body.wiki-dark .gdd-section-content a:visited         { color: #9e8fd4; }
+body.wiki-dark .gdd-section-content h1,
+body.wiki-dark .gdd-section-content h2,
+body.wiki-dark .gdd-section-content h3,
+body.wiki-dark .gdd-section-content h4                { color: #f0ece6; }
+body.wiki-dark .gdd-section-content h2                { border-color: #383838; }
+body.wiki-dark .gdd-section-content code              { background: #141414; border-color: #333; color: #d4cfca; }
+body.wiki-dark .gdd-section-content pre               { background: #141414; border-color: #333; }
+body.wiki-dark .gdd-section-content blockquote        { border-left-color: #4a4a4a; background: #222; color: #908880; }
+body.wiki-dark .gdd-section-content hr                { border-top-color: #303030; }
+body.wiki-dark .gdd-section-content th                { background: #2a2a2a; border-color: #383838; color: #ddd8d0; }
+body.wiki-dark .gdd-section-content td                { border-color: #303030; color: #ddd8d0; }
+body.wiki-dark .gdd-section-content tbody tr:nth-child(even) { background: #202020; }
+body.wiki-dark .gdd-section-content tbody tr:hover    { background: #252525; }
+/* Ref links & wiki links */
+body.wiki-dark .gdd-ref-link       { background: #222; border-color: #383838; color: #a8c4e8; }
+body.wiki-dark .gdd-ref-link:hover { background: #2a2a2a; }
+body.wiki-dark .gdd-wiki-link      { color: #555; }
+body.wiki-dark .gdd-wiki-link:hover { color: #6d9de8; background: #242424; }
+/* Cover modal */
+body.wiki-dark .gdd-cover-modal-box { background: #222; color: #ddd8d0; }
+body.wiki-dark .gdd-modal-close     { color: #777; }
+body.wiki-dark .gdd-modal-close:hover { color: #ddd8d0; }
+body.wiki-dark .gdd-cover-form label { color: #908880; }
+body.wiki-dark .gdd-cover-form input,
+body.wiki-dark .gdd-cover-form textarea { background: #1a1a1a; border-color: #383838; color: #ddd8d0; }
+body.wiki-dark .gdd-cover-form input:focus,
+body.wiki-dark .gdd-cover-form textarea:focus { border-color: #6d9de8; }
+</style>
+
+<script>
+(function () {
+  var DARK_KEY = 'wiki_dark_mode';
+  var btn = document.getElementById('gdd-dark-toggle');
+  function applyDark(on) {
+    document.body.classList.toggle('wiki-dark', on);
+    if (btn) btn.textContent = on ? '☀️' : '🌙';
+  }
+  // Sync button emoji to current state (class already applied by inline script)
+  applyDark(document.body.classList.contains('wiki-dark'));
+  if (btn) btn.addEventListener('click', function () {
+    var on = !document.body.classList.contains('wiki-dark');
+    localStorage.setItem(DARK_KEY, on ? '1' : '0');
+    applyDark(on);
+  });
+  var mq = window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)');
+  if (mq && mq.addEventListener) {
+    mq.addEventListener('change', function(e) {
+      if (localStorage.getItem(DARK_KEY) === null) applyDark(e.matches);
+    });
+  }
 })();
 </script>
 </body>
