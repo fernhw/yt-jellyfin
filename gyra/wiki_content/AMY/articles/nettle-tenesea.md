@@ -29,7 +29,7 @@ She is comic relief. She is also, in the back half of the game, one of Amy's mos
 
 ## First Puzzle
 
-Nettle is [Chapter 1](chapter-1.md)'s first actual puzzle. She is in the public bath tub. She is asking to be flushed — she wants out of the pool and into the wider pipe system. The complication is that Barret's room is a few metres away. If Amy attempts the flush and fails, Nettle screams. Barret wakes up. The puzzle requires getting it right, or getting it right before getting too far wrong.
+Nettle is [Chapter 1](chapter-1.md)'s first actual puzzle. She is in the public bath tub. She is asking to be flushed; she wants out of the pool and into the wider pipe system. The complication is that Barret's room is a few metres away. If Amy attempts the flush and fails, Nettle screams. Barret wakes up. The puzzle requires getting it right, or getting it right before getting too far wrong.
 
 This is the game's first introduction to the rule that noise has consequences.
 

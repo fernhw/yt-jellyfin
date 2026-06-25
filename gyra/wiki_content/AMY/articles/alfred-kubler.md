@@ -26,7 +26,7 @@ scientist who found the flowers in the ingersole Mines.
 [SECONDARY]
 ## Overview
 
-Alfred Kubler found a crater forest in 1844. Animals in it died and came back. He killed a bird; it came back. He killed a fly; it came back. He spent years studying the site, watching other researchers fail to find what he found, and eventually identified the source: a fragment of a meteor embedded in the earth at the crater's centre. Contact with the fragment — or with the fungal megastructures that had grown from it over centuries — produced spores that kept organic matter alive regardless of damage. No matter what you did.
+Alfred Kubler found a crater forest in 1844. Animals in it died and came back. He killed a bird; it came back. He killed a fly; it came back. He spent years studying the site, watching other researchers fail to find what he found, and eventually identified the source: a fragment of a meteor embedded in the earth at the crater's centre. Contact with the fragment, or with the fungal megastructures that had grown from it over centuries, produced spores that kept organic matter alive regardless of damage. No matter what you did.
 
 He reported this to [Albert Ross](albert-ross.md). Ross understood immediately what it meant, because Ross had a dying son.
 

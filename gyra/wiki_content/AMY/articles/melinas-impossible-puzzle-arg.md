@@ -23,7 +23,7 @@ She eventually succumbed to the hotel in the same way all the maids did. The rec
 
 ## The ARG
 
-Melina's records extend outside the game. Clues within *Amy's Escape* point to real-world locations — websites, encoded documents, community puzzles — that collectively reconstruct what Melina knew. The design is inspired by the Demon's Souls Remake medallion ARG: layered, community-driven, requiring collective effort to resolve.
+Melina's records extend outside the game. Clues within *Amy's Escape* point to real-world locations, websites, encoded documents, community puzzles, that collectively reconstruct what Melina knew. The design is inspired by the Demon's Souls Remake medallion ARG: layered, community-driven, requiring collective effort to resolve.
 
 Completing the ARG unlocks an ending that cannot be reached through in-game play alone.
 

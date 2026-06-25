@@ -463,17 +463,34 @@ def _extract_hero_filename(project_key: str, slug: str) -> str:
 
 
 _IMAGE_SHORTCODE_RE = re.compile(
-    r'\[image\s+name="([^"]+)"(?:\s+caption="([^"]*)")?(?:\s+side="[^"]*")?\s*\/?\]',
+    r'\[image\s+name="([^"]+)"(?:\s+caption="([^"]*)")?(?:\s+side="([^"]*)")?(?:\s+width="([^"]*)")?\s*\/?\]',
     re.IGNORECASE,
 )
 
 
 def _expand_image_shortcodes(text: str) -> str:
-    """Convert [image name="file.jpg" caption="cap"] shortcodes to standard markdown ![cap](file.jpg)."""
+    """Convert [image] shortcodes to figure HTML preserving side/width/center."""
     def _repl(m):
         name    = m.group(1)
-        caption = m.group(2) or name
-        return f"![{caption}]({name})"
+        caption = m.group(2) or ''
+        side    = (m.group(3) or '').lower()
+        width   = (m.group(4) or '').strip()
+        if width:
+            max_w = width if ('%' in width or width.endswith('px')) else width + 'px'
+        else:
+            max_w = '80%' if side == 'center' else '48%' if side in ('left', 'right') else '100%'
+        float_s = 'float:left;' if side == 'left' else 'float:right;' if side == 'right' else ''
+        margin  = '8px 16px 8px 0' if side == 'left' else '8px 0 8px 16px' if side == 'right' else '16px auto' if side == 'center' else '8px auto'
+        display = 'display:block;' if side == 'center' else 'display:inline-block;'
+        fig_style = f'{display}{float_s}max-width:{max_w};vertical-align:top;margin:{margin};text-align:center;'
+        alt = caption or name
+        cap_html = f'<figcaption style="font-size:11px;color:#54595d;margin-top:3px">{caption}</figcaption>' if caption else ''
+        return (
+            f'<figure style="{fig_style}">'
+            f'<img src="{name}" alt="{alt}" style="max-width:100%;border-radius:3px">'
+            f'{cap_html}'
+            f'</figure>'
+        )
     return _IMAGE_SHORTCODE_RE.sub(_repl, text)
 
 

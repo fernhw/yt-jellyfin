@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-A white flower-like fungal creature discovered by Alfred Kubler, the Kubler plant is a singular fungal life form appearing as a white-flowered field. It is present all around the game. Its spores keep the Ross Hotel alive and well. Fungal structures are but one entity; the Ross Hotel has two fighting Kubler megaorganisms.
+A white flower-like fungal creature discovered by [Alfred Kubler](alfred-kubler.md), the Kubler plant is a singular fungal life form appearing as a white-flowered field. It is present all around the game. Its spores keep the [Ross Hotel](ross-hotel.md) alive and well. Fungal structures are but one entity; the Ross Hotel has two fighting Kubler megaorganisms.
 1.3.1 The Lost Ones
 Children with terminal illnesses were sent to the Ross Hotel at the request of their parents. They work in the kitchen under Clementine's rule.
 1.3.1 Sky Garden

@@ -36,7 +36,7 @@ Ilina is now the size of a large pea. She passed through the floor cracks. She l
 
 Evangeline's loop is the most physically literal in the hotel.
 
-She was in an upper room. She wept. She wept for what she had done to Ilina, for what the mines had made of everyone, for what she had not been able to stop. She wept until her body followed her tears — literally, not metaphorically. Her mass went through her own eyes. She melted through the floor. She found Ilina already waiting in the space below, pea-sized and serene, capable of seeing everything.
+She was in an upper room. She wept. She wept for what she had done to Ilina, for what the mines had made of everyone, for what she had not been able to stop. She wept until her body followed her tears, literally, not metaphorically. Her mass went through her own eyes. She melted through the floor. She found Ilina already waiting in the space below, pea-sized and serene, capable of seeing everything.
 
 Now Evangeline flows. She is not contained to one room. She is distributed between floors, a residue of grief that congealed into something functional. She speaks for Ilina. Ilina speaks through her. Together they are a fortune teller.
 

@@ -15,7 +15,7 @@ notes=?
 [SECONDARY]
 ## Overview
 
-The theater was built for the guests and is listed as a hotel amenity in all original documentation. It is always full. It has been full for over a century. [Aaron Kane](aaron-kane.md), who installed the VIP elevator that runs from the upper floors to the Ingersole depth, eventually redirected his attention from engineering to performance — building marionette puppets, then removing parts of himself to put into them, until there were forty distributed bodies and the theater had a permanent cast that could not leave and did not need an audience.
+The theater was built for the guests and is listed as a hotel amenity in all original documentation. It is always full. It has been full for over a century. [Aaron Kane](aaron-kane.md), who installed the VIP elevator that runs from the upper floors to the Ingersole depth, eventually redirected his attention from engineering to performance: building marionette puppets, then removing parts of himself to put into them, until there were forty distributed bodies and the theater had a permanent cast that could not leave and did not need an audience.
 
 The theater is adults-only. Access requires [Baya Ross](baya-ross.md)'s permission as hotel matriarch, or a workaround. [Amy](amelia-amy-loevinger.md) is fourteen. She needs Baya's help or another path.
 

@@ -20,7 +20,7 @@ The game's moral tracking system. Every bad-path puzzle solution leaves a physic
 
 The Sin System does not use a number. It does not use a bar or a meter. It uses Amy's body.
 
-Every puzzle in *Amy's Escape* has three solutions. The good solution sends a character to the [Liminal Bar](the-liminal-bar.md). The neutral solution gets Amy through without reward. The bad solution — the one that hurts someone, takes the easy path at cost, burns something down — leaves a mark on Amy. A burn from a lamp fire. A stain from a spilled substance. A cut in her jacket from something she did or allowed to happen. The mark is specific to the choice that caused it. It stays.
+Every puzzle in *Amy's Escape* has three solutions. The good solution sends a character to the [Liminal Bar](the-liminal-bar.md). The neutral solution gets Amy through without reward. The bad solution, the one that hurts someone, takes the easy path at cost, or burns something down, leaves a mark on [Amy](amelia-amy-loevinger.md). A burn from a lamp fire. A stain from a spilled substance. A cut in her jacket from something she did or allowed to happen. The mark is specific to the choice that caused it. It stays.
 
 By the endgame, Amy's appearance is a record of how she played. A player who took every bad path arrives at the final encounter looking like someone who has been through things. A player who took good paths looks like a fourteen-year-old who has been through a hotel.
 

@@ -30,7 +30,7 @@ Each chapter in *Amy's Escape* maps to one of the **five stages of grief**, expr
 ---
 
 ## Tone
-The chapter opens in a rare state of optimism. The tutorial is built inside it deliberately — the player learns the systems alongside Amy's momentum, in a brief window where escape seems genuinely possible. Then the camera cuts. The hope collapses without explanation. The game never explains what happened at that door.
+The chapter opens in a rare state of optimism. The tutorial is built inside it deliberately; the player learns the systems alongside Amy's momentum, in a brief window where escape seems genuinely possible. Then the camera cuts. The hope collapses without explanation. The game never explains what happened at that door.
 
 Darby returns. Amy stands up. The rest of the chapter is quieter than the opening promised.
 

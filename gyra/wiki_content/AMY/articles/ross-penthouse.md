@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Ross' penthouse is located on the top floor of the hotel, and surrounding the space is a large garden. The place is primarily used as the office of Albert Ross, who is the owner of the hotel.
+[Albert Ross](albert-ross.md)'s penthouse is located on the top floor of the [Ross Hotel](ross-hotel.md), surrounded by a large garden. The place is primarily used as the office of [Albert Ross](albert-ross.md), who is the owner of the hotel.
 
 [SECONDARY]
 _Add more details here._

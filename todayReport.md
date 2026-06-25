@@ -1,16 +1,23 @@
 # What to Watch — 2026-06-25
 
-> *Good morning! Here's what landed on Thursday, June 25, 2026 at 11:39 AM.*
-> **YT Mirror:** 647.65 GB used · 0.56 TB free
+> *Good afternoon! Here's what landed on Thursday, June 25, 2026 at 03:26 PM.*
+> **YT Mirror:** 637.08 GB used · 0.57 TB free
 
 ## Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **Half in the Bag: 2026 Mid-year Catch-up (part 2)** — *RedLetterMedia* · downloaded 03:12 PM · podcastable
+- **Killer Bean (dunk's view)** — *videogamedunkey* · downloaded 03:04 PM · not podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **Dustin Lucas Will Mike Burp Is Frying Me** — *Lessons in Meme Culture* · downloaded 03:22 PM · not podcastable
+- **Devil May Cry 5 Switch 2 Review: The RE Engine At 60FPS And Beyond** — *Digital Foundry* · downloaded 03:21 PM · not podcastable
+- **These people are animals..** — *Asmongold TV* · downloaded 03:20 PM · not podcastable
+- **Some Thoughts on the Retroid Pocket Nova** — *Retro Game Corps* · downloaded 03:17 PM · podcastable
+- **I Finally Understand The Stanley Parable** — *ConnorDawg* · downloaded 03:16 PM · not podcastable
+- **How I Coded the Perks in my Roguelike** — *Game Maker's Toolkit* · downloaded 03:06 PM · not podcastable · *35 days since their last upload*
 - **The Nintendo 64 Thirty Years Later! An LGR Retrospective** — *LGR* · downloaded 11:37 AM · not podcastable
 - **Forza vs Screamer: When Too Much is Enough** — *Second Wind* · downloaded 11:34 AM · podcastable
 - **In Praise of Brilliant Voiceover** — *Thomas Flight* · downloaded 09:36 AM · not podcastable

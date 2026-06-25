@@ -16,7 +16,7 @@ relationships
 
 
 [MAIN_SECTION]
-are manifestations of Kane, parts of his body spread into countless puppets living in constant showmanship from him in the Theater of Dreams. (see 1.3.5 for more)
+Are manifestations of [Kane](aaron-kane.md), parts of his body spread into countless puppets living in constant showmanship from him in the [Theater of Dreams](the-theater-of-dreams.md).
 
 [SECONDARY]
 _Add more details here._

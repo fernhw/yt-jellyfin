@@ -68,7 +68,7 @@ Her body is a record of what she did and what she chose.
 
 ## Notes
 
-- Amy is the only person in the hotel who *can* leave. The [Kubler](the-kubler.md)'s immortality effect is keyed to biological death: she died, so she was pulled into its field, but she was not *permanent* in the way the long-term guests are. The children trapped here — the Lost Ones — are held by a different mechanism. [Darby](darby-glowing-bird.md), biologically extinct, cannot cross the threshold. Amy can.
+- Amy is the only person in the hotel who *can* leave. The [Kubler](the-kubler.md)'s immortality effect is keyed to biological death: she died, so she was pulled into its field, but she was not *permanent* in the way the long-term guests are. The children trapped here, the Lost Ones, are held by a different mechanism. [Darby](darby-glowing-bird.md), biologically extinct, cannot cross the threshold. Amy can.
 - She is the seventh maid. The fates of the first six are scattered through the hotel as discoverable lore, partly through [The Cursed Maids](the-cursed-maids.md).
 - Her design philosophy: she should look like she wandered in from the real world and hasn't fully realized she hasn't left it.
 

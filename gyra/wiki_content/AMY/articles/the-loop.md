@@ -15,7 +15,7 @@ The in-universe term for a condition in which immortality works against the mind
 [SECONDARY]
 ## Overview
 
-The [Kubler](the-kubler.md) organism keeps the body alive. What it does not do is protect the mind from what prolonged, enforced, unchanging existence produces. A person who has been doing the same thing — the same route, the same task, the same grief, the same argument — for decades or centuries, with no biological release and no ability to stop, enters a loop.
+The [Kubler](the-kubler.md) organism keeps the body alive. What it does not do is protect the mind from what prolonged, enforced, unchanging existence produces. A person who has been doing the same thing, the same route, the same task, the same grief, the same argument, for decades or centuries, with no biological release and no ability to stop, enters a loop.
 
 It is not unconsciousness. It is not a trance. The person knows. They know they are doing it again. They know they have done it before. The knowledge does not help. The body continues. The mind accommodates, or doesn't, and the Kubler does not care which.
 

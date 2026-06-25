@@ -232,12 +232,17 @@
   // Resolve [image] shortcodes after marked renders the HTML
   function postProcessShortcodes(el) {
     el.innerHTML = el.innerHTML.replace(
-      /\[image\s+name="([^"]+)"(?:\s+caption="([^"]*)")?(?:\s+side="([^"]*)")?\s*\/?]/gi,
-      function (_, name, caption, side) {
+      /\[image\s+name="([^"]+)"(?:\s+caption="([^"]*)")?(?:\s+side="([^"]*)")?(?:\s+width="([^"]*)")?\s*\/?]/gi,
+      function (_, name, caption, side, width) {
         var src = name.startsWith('http') || name.startsWith('/') ? name : imgBase + name;
         var cap = caption || '';
         var align = (side || '').toLowerCase();
-        var figStyle = 'display:inline-block;max-width:' + (align ? '48%' : '100%') + ';vertical-align:top;margin:8px ' + (align === 'left' ? '16px 8px 0' : align === 'right' ? '0 16px 8px' : '8px') + ';text-align:center;';
+        var w = width ? (String(width).match(/^\d+$/) ? width + 'px' : width) : null;
+        var maxW = w ? w : (align === 'center' ? '80%' : align ? '48%' : '100%');
+        var floatStyle = align === 'left' ? 'float:left;' : align === 'right' ? 'float:right;' : '';
+        var marginStyle = align === 'left' ? '8px 16px 8px 0' : align === 'right' ? '8px 0 8px 16px' : align === 'center' ? '16px auto' : '8px auto';
+        var displayStyle = align === 'center' ? 'display:block;' : 'display:inline-block;';
+        var figStyle = displayStyle + floatStyle + 'max-width:' + maxW + ';vertical-align:top;margin:' + marginStyle + ';text-align:center;';
         return '<figure style="' + figStyle + '">'
           + '<img src="' + src + '" alt="' + cap + '" class="wiki-img wiki-lightbox-trigger" data-src="' + src + '" data-caption="' + cap + '" style="max-width:100%;cursor:zoom-in;border-radius:4px">'
           + (cap ? '<figcaption style="font-size:12px;color:#54595d;margin-top:4px">' + cap + '</figcaption>' : '')

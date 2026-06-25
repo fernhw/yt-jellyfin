@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-It is an intermediate cave between the Ross Hotel and the caverns, in this space are the Knots with which you must do a minigame with them to be able to pass.
+It is an intermediate cave between the [Ross Hotel](ross-hotel.md) and the [Ingersole Caverns](ingersole-caverns.md). In this space are the Knotts, with whom [Amy](amelia-amy-loevinger.md) must complete a minigame in order to pass.
 
 [SECONDARY]
 _Add more details here._

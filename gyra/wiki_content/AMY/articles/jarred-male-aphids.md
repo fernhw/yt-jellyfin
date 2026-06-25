@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The Moonlight Aphids that Amy seeks are Jarred Male Aphids. When released, these creatures instinctively search for their queen to mate. Blueth playfully comments that the males will naturally be drawn to their queen since "they are boys after all."
+The [Moonlight Aphids](the-12-moonlight-aphids.md) that [Amy](amelia-amy-loevinger.md) seeks are Jarred Male Aphids. When released, these creatures instinctively search for their queen to mate. [Blueth](dr-elizabeth-blueth-needham.md) playfully comments that the males will naturally be drawn to their queen since "they are boys after all."
 
 [SECONDARY]
 _Add more details here._

@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-If captured by Barry, he confiscates Amy's keys and imprisons her in her room indefinitely. Amy can't escape the game-over.
+If captured by [Barret](barret-aricson.md), he confiscates [Amy](amelia-amy-loevinger.md)'s keys and imprisons her in her room indefinitely. Amy can't escape the game-over.
 
 [SECONDARY]
 _Add more details here._

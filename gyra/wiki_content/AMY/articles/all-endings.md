@@ -49,7 +49,7 @@ The **Fishbowl** ([Ending D](ending-d.md)) is only reachable when Amy is already
 
 ## "Thanks for Playing"
 
-Only [Ending F](ending-f.md) receives these words — after the credits, not before. The game earns them or it doesn't. Most playthroughs don't.
+Only [Ending F](ending-f.md) receives these words, after the credits, not before. The game earns them or it doesn't. Most playthroughs don't.
 
 [REFERENCES]
 

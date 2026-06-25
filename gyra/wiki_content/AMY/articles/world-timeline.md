@@ -10,9 +10,9 @@ notes=The main timeline is fully anchored. Only the loop-onset dates for Evangel
 
 
 [MAIN_SECTION]
-The events of *Amy's Escape* span **181 years** — from a university research expedition in South America in 1844 to a present-day hotel in which nothing has moved toward an exit in forty years. The game itself takes place entirely in the final hours of that stillness.
+The events of *Amy's Escape* span **181 years**, from a university research expedition in South America in 1844 to a present-day hotel in which nothing has moved toward an exit in forty years. The game itself takes place entirely in the final hours of that stillness.
 
-At its center is the **[Kubler](the-kubler.md)**: a spore organism, grown from the seeds embedded in a meteor, that prevents the death of anything within its field — and, over enough time, locks its hosts into compulsive behavioural loops they cannot perceive. Immortality research built the **[Ross Hotel](ross-hotel.md)** over the crater where the Kubler was found. The hotel never let anyone go.
+At its center is the **[Kubler](the-kubler.md)**: a spore organism, grown from the seeds embedded in a meteor, that prevents the death of anything within its field and, over enough time, locks its hosts into compulsive behavioural loops they cannot perceive. Immortality research built the **[Ross Hotel](ross-hotel.md)** over the crater where the Kubler was found. The hotel never let anyone go.
 
 ### The story in seven beats
 
@@ -66,7 +66,7 @@ At its center is the **[Kubler](the-kubler.md)**: a spore organism, grown from t
 ### 1842
 **[Eila Bartlett](eila-bartlett.md)** retires from university at approximately 63. His field has moved past him. His family is gone. He has no garden. He is already the oldest person connected to what will become this project.
 
-He does not stop working. He cannot. This is not ambition — it is the only available alternative to feeling what his life has cost him. He will spend the next decade looking for somewhere to put it. He does not know that the Kubler is already the answer. He does not know that the Kubler does not need to give him a loop — he already has one. It will only need to make it permanent.
+He does not stop working. He cannot. This is not ambition; it is the only available alternative to feeling what his life has cost him. He will spend the next decade looking for somewhere to put it. He does not know that the Kubler is already the answer. He does not know that the Kubler does not need to give him a loop; he already has one. It will only need to make it permanent.
 
 ### 1844
 **[Alfred Kubler](alfred-kubler.md)**, age 24, on a university field research expedition in South America, discovers a meteor crater — later purchased and renamed **Ross Valley**. The meteoric material contains organisms that cannot be killed. Tissue samples regenerate under lethal conditions. Nothing in the existing taxonomy explains it. Kubler publishes. The paper does not travel far in mainstream channels, but a summary of it reaches, through a chain of acquaintances, a 15-year-old from a wealthy oil family who is still in school.
@@ -108,7 +108,7 @@ The scientific cohort assembles over the following years, staggered as the resea
 
 Francena designs the hotel's operational uniforms. Daniel treats Baya. For a time, they are two people in a functioning marriage inside a strange and isolated place.
 
-Baya recovers. The accounts describe it as a miracle. It is not entirely a miracle. Her recovery is the point at which her behavioural loop begins to take hold — the earliest loop in the hotel save for Eila's own.
+Baya recovers. The accounts describe it as a miracle. It is not entirely a miracle. Her recovery is the point at which her behavioural loop begins to take hold, the earliest loop in the hotel save for Eila's own.
 
 ### 1857
 **[Jone Ross](jone-ross.md)** is born. [Albert Ross](albert-ross.md) is 28.
@@ -123,46 +123,46 @@ Baya recovers. The accounts describe it as a miracle. It is not entirely a mirac
 ## ERA III — The Experiments and Their Consequences (1870s–1893)
 
 ### ~1870–1890
-The [God Seeds](god-seeds.md) — also catalogued by [Kubler](alfred-kubler.md) as *Tears of God* and *Immortality Seeds* — are studied intensively. The [Kubler](the-kubler.md) plant organism, grown from the seeds' ancient spores embedded in the meteor, has by now spread through the hotel's structure. Its key property has become undeniable: the spore field prevents the biological death of organisms within sufficient proximity to it. The mechanism is symbiotic. The Kubler requires living hosts. It keeps them alive to maintain this.
+The [God Seeds](god-seeds.md), also catalogued by [Kubler](alfred-kubler.md) as *Tears of God* and *Immortality Seeds*, are studied intensively. The [Kubler](the-kubler.md) plant organism, grown from the seeds' ancient spores embedded in the meteor, has by now spread through the hotel's structure. Its key property has become undeniable: the spore field prevents the biological death of organisms within sufficient proximity to it. The mechanism is symbiotic. The Kubler requires living hosts. It keeps them alive to maintain this.
 
 The ethical implications are clear. The cohort proceeds.
 
 ### 1892
-An experiment in the [Ingersole Caverns](ingersole-caverns.md) produces an outcome no one planned for. **[Emerette of the Deep](emerette-of-the-deep.md)** — a ten-meter creature, the first fully immortal organism to emerge from God Seed exposure — comes into being.
+An experiment in the [Ingersole Caverns](ingersole-caverns.md) produces an outcome no one planned for. **[Emerette of the Deep](emerette-of-the-deep.md)**, a ten-meter creature, the first fully immortal organism to emerge from God Seed exposure, comes into being.
 
-**[Barret Aricson](barret-aricson.md)**, age 58, attempts to seal the mines before Emerette can reach the hotel floors. Emerette crushes his head during the sealing. Barret dies. The [Kubler](the-kubler.md) revives him. He is no longer who he was — not the sweet Barry his friends remember. The drapes he wears over his face from this point are not decorative.
+**[Barret Aricson](barret-aricson.md)**, age 58, attempts to seal the mines before Emerette can reach the hotel floors. Emerette crushes his head during the sealing. Barret dies. The [Kubler](the-kubler.md) revives him. He is no longer who he was, not the sweet Barry his friends remember. The drapes he wears over his face from this point are not decorative.
 
 **[Alfred Kubler](alfred-kubler.md)**, age 72, is caught in the crossfire. He does not emerge. Over subsequent years, in darkness, in the deep Kubler spore field, alongside the miners who were also sealed in, he transforms. What he becomes walks among the [City of Quitters](city-of-quitters.md) as its crow-person patriarch: **[Relbuk Derfla](relbuk-derfla.md)**. His name reversed. His shape unrecognisable. He believed he could fly out. He could not.
 
-The same sealing traps others in the caverns. Among them, in time, are **[Evangeline Aerona and Ilina](evangeline-aerona-and-ilina.md)** — two figures whose loops form below, in the dark, well after the mines close. Their exact onset is unrecorded.
+The same sealing traps others in the caverns. Among them, in time, are **[Evangeline Aerona and Ilina](evangeline-aerona-and-ilina.md)**, two figures whose loops form below, in the dark, well after the mines close. Their exact onset is unrecorded.
 
 ### 1893
 [Albert Ross](albert-ross.md), age 64, having seen the full result of his project, issues the order: **no one leaves.** [Barret](barret-aricson.md)'s standing mission from this point: maintain the hotel, keep the inhabitants inside, keep [Jone](jone-ross.md) alive by whatever means available, and wait for correspondence from Ross.
 
-The **Lost Children** program begins through a private foundation established by Ross — terminal cases sent by desperate parents to a place that promises life. The arrangement is that the children live. What it costs them to live is not in the agreement. [Jone Ross](jone-ross.md), whose God Seed-altered body requires transplanted tissue to persist, is kept alive through this system. Adult tissue degrades in him quickly. The children's does not. Those of the Lost Children who endure the longest become the **[Cursed Maids](the-cursed-maids.md)** — the survivors of the program who remain bound to the hotel's service. [Melina](melinas-impossible-puzzle-arg.md) is one of them.
+The **Lost Children** program begins through a private foundation established by Ross, terminal cases sent by desperate parents to a place that promises life. The arrangement is that the children live. What it costs them to live is not in the agreement. [Jone Ross](jone-ross.md), whose God Seed-altered body requires transplanted tissue to persist, is kept alive through this system. Adult tissue degrades in him quickly. The children's does not. Those of the Lost Children who endure the longest become the **[Cursed Maids](the-cursed-maids.md)**, the survivors of the program who remain bound to the hotel's service. [Melina](melinas-impossible-puzzle-arg.md) is one of them.
 
 ---
 
 ## ERA IV — The Long Silence (1900s–1985)
 
 ### ~1920
-**[Aaron Kane](aaron-kane.md)**, long since retired from engineering, begins building his first marionette puppet from materials at hand. Then more. Then — understanding the curse and the nature of what the [Kubler](the-kubler.md) has made of him, and finding that his engineering work is done — he retreats into what he always actually was: a man who wanted to make theater.
+**[Aaron Kane](aaron-kane.md)**, long since retired from engineering, begins building his first marionette puppet from materials at hand. Then more. Then, understanding the curse and the nature of what the [Kubler](the-kubler.md) has made of him and finding that his engineering work is done, he retreats into what he always actually was: a man who wanted to make theater.
 
-He begins distributing parts of his own nervous system outward into his puppet bodies. Each one he can feel, control, direct. The [Theater of Dreams](the-theater-of-dreams.md) is built not as a venue but as the only context in which all of him is in the same room at once. The shows are terrible — he knows this. Every piece of himself watching from the seats hates what the piece of himself on stage is doing, including the one still calling himself Kane. He does this anyway. He cannot stop.
+He begins distributing parts of his own nervous system outward into his puppet bodies. Each one he can feel, control, direct. The [Theater of Dreams](the-theater-of-dreams.md) is built not as a venue but as the only context in which all of him is in the same room at once. The shows are terrible; he knows this. Every piece of himself watching from the seats hates what the piece of himself on stage is doing, including the one still calling himself Kane. He does this anyway. He cannot stop.
 
 By 2025 there are roughly forty distributed bodies. The theater has not been dark in over a century. At intervals, Kane throws himself into the [Ingersole Caverns](ingersole-caverns.md). The fall does nothing. The Kubler reassembles him. The show continues.
 
 ### 1945
-**[Dr. Blueth Needham](dr-elizabeth-blueth-needham.md)**, age 123, engineers the **[Moonlight Aphids](the-12-moonlight-aphids.md)** — bioluminescent insects designed to feed on and suppress the [Kubler](the-kubler.md). They ignore the Kubler entirely and wander the hotel indefinitely. They become its most pervasive residents. They are still here.
+**[Dr. Blueth Needham](dr-elizabeth-blueth-needham.md)**, age 123, engineers the **[Moonlight Aphids](the-12-moonlight-aphids.md)**, bioluminescent insects designed to feed on and suppress the [Kubler](the-kubler.md). They ignore the Kubler entirely and wander the hotel indefinitely. They become its most pervasive residents. They are still here.
 
 ### 1958
-Blueth, age 136, engineers a second countermeasure: the **Firebirds** — a line of bioluminescent birds designed to hunt the aphids. They also fail to perform their function. Blueth makes the entire line sterile to prevent further spread. **[Darby](darby-glowing-bird.md)** — the last of them — hatches around this time.
+Blueth, age 136, engineers a second countermeasure: the **Firebirds**, a line of bioluminescent birds designed to hunt the aphids. They also fail to perform their function. Blueth makes the entire line sterile to prevent further spread. **[Darby](darby-glowing-bird.md)**, the last of them, hatches around this time.
 
 ### 1960
 The last surviving Firebird, [Darby](darby-glowing-bird.md), is caged in a storage room. Blueth forgets about it. [Barret](barret-aricson.md) forgets about it. The [Kubler](the-kubler.md) keeps it alive regardless. It waits in darkness for **65 years.**
 
 ### 1978
-**[Albert Ross](albert-ross.md)**, age 149 — the Kubler has kept him alive far beyond any natural span — leaves the hotel. He tells Barret he is going to make things right and that he will return. This is his second-to-last communication.
+**[Albert Ross](albert-ross.md)**, age 149, the Kubler has kept him alive far beyond any natural span, leaves the hotel. He tells Barret he is going to make things right and that he will return. This is his second-to-last communication.
 
 ### 1985
 **[Jenna Martina](jenna-martina.md)**'s birthday. Age 155. The guests gather at the [Liminal Bar](the-liminal-bar.md). There is something resembling a party. No one can fully articulate afterwards why everyone went.
@@ -185,12 +185,12 @@ Ross does not come back.
 The [Ross Hotel](ross-hotel.md) is, in every practical sense, frozen. No new arrivals through official channels. No departures. [Barret](barret-aricson.md) maintains the premises. The [Kubler](the-kubler.md) continues. [Eila Bartlett](eila-bartlett.md), age 206 in 1985, is by this point more tree than man. [Francena](francena-cadwallader.md) has not finished the dress. [Daniel](dr-daniel-cadwallader.md)'s neck is longer than it was. [Sam](sam-bernal.md) cannot wake up. Something outside the hotel still sends the bar's supplies in. Nobody asks why.
 
 ### 2012
-**[Kole Wadjet](kole-wadjet.md)** is hired by [Barret](barret-aricson.md) at age 42. He arrives under NDA, takes the reception desk, and begins the work of being second to everything. He has been here 13 years by the time [Amy](amelia-amy-loevinger.md) arrives — by which point he is in his mid-fifties.
+**[Kole Wadjet](kole-wadjet.md)** is hired by [Barret](barret-aricson.md) at age 42. He arrives under NDA, takes the reception desk, and begins the work of being second to everything. He has been here 13 years by the time [Amy](amelia-amy-loevinger.md) arrives, by which point he is in his mid-fifties.
 
 ### 2025
 **[Custard Loevinger](custard-loevinger.md)**, age 8, drinks cleaning supplies while [Amy](amelia-amy-loevinger.md) is nearby — doing homework, in her own head, being fourteen. She realises. She tries to help. She cannot. He dies.
 
-**[Amy](amelia-amy-loevinger.md)** runs. Not because she made a clearly wrong choice but because she was present, normal, and it happened anyway. Weeks later — somewhere lost, somewhere not the hotel — she attempts to end her life.
+**[Amy](amelia-amy-loevinger.md)** runs. Not because she made a clearly wrong choice but because she was present, normal, and it happened anyway. Weeks later, somewhere lost, somewhere not the hotel, she attempts to end her life.
 
 The [Kubler](the-kubler.md)'s immortality field does not distinguish between a child swallowed by the building's hunger and a girl dying in its proximity. It intercepts her. **[Amelia "Amy" Loevinger](amelia-amy-loevinger.md)**, age 14, is reassembled. She wakes in the [Ventilation Maintenance Room](ventilation-maintenance-room-amys-room.md) with a set of keys she doesn't remember picking up. Scars on her that the hotel put there, not her. Her iPhone is in her jacket pocket. No signal.
 

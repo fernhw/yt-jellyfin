@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-ingersole was created to find the great secret to immortality, it is a large space filled with flowers and rays of light falling from the ceiling.
+[Ingersole](ingersole-caverns.md) was created to find the great secret to immortality. It is a large space filled with flowers and rays of light falling from the ceiling. The [Kubler](the-kubler.md) organism, [Emerette of the Deep](emerette-of-the-deep.md), and the [City of Quitters](city-of-quitters.md) all originate here.
 
 [SECONDARY]
 _Add more details here._

@@ -94,14 +94,14 @@ notes=This article must be read before the achievement list makes any sense. The
 | Get the City to help neutrally | Neutral assist. Miners survive but don't commit. |
 | *(good)* Use the mirrors / burn Emerette with light | Emerette destroyed. City joins the bar. God Seed accessible. |
 
-*(If Amy never returns, the miners are not killed outright — they are slowly broken and deformed by Emerette, numbers dwindling, until the survivors retreat into the nest and stop fighting.)*
+*(If [Amy](amelia-amy-loevinger.md) never returns, the miners are not killed outright; they are slowly broken and deformed by [Emerette](emerette-of-the-deep.md), numbers dwindling, until the survivors retreat into the nest and stop fighting.)*
 
 ---
 
 ## Collectable Achievements
 
 **[Dr. Blueth Needham](dr-elizabeth-blueth-needham.md)'s Moonlight Alphyd Rescue**
-Requires solving puzzles across the full hotel. Blueth joins the bar if completed. Her puzzle is a rescue mission — functions separately from the 10 story puzzles.
+Requires solving puzzles across the full hotel. [Blueth](dr-elizabeth-blueth-needham.md) joins the bar if completed. Her puzzle is a rescue mission; it functions separately from the 10 story puzzles.
 
 ---
 
@@ -122,7 +122,7 @@ Most games give you an achievement for doing the right thing. For finding everyt
 
 **Every achievement is awarded for the wrong choice.**
 
-Not because we want to reward cruelty. Because the wrong choice is the interesting one to document. The good solution to every puzzle is its own reward — the bar fills, the character heals, you get the ending that earns *"Thanks for playing."* That is the reward. An achievement on top of it would cheapen it. The game does not pop a notification when [Jenna](jenna-martina.md)'s birthday finally has enough guests. It just fills the bar. That's the whole thing.
+Not because we want to reward cruelty. Because the wrong choice is the interesting one to document. The good solution to every puzzle is its own reward; the bar fills, the character heals, you get the ending that earns *"Thanks for playing."* That is the reward. An achievement on top of it would cheapen it. The game does not pop a notification when [Jenna](jenna-martina.md)'s birthday finally has enough guests. It just fills the bar. That's the whole thing.
 
 The bad path gets the achievement icon because the bad path is what the game needs you to acknowledge. You chose it. You knew. The game will give you the achievement. It will not congratulate you.
 

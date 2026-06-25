@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The hotel lobby has a Victorian style, it consists of several seats for the rest of the visitors, in the place is Kole who is the hotel receptionist.
+The hotel lobby has a Victorian style, consisting of several seats for visitors. [Kole Wadjet](kole-wadjet.md) serves as the hotel receptionist here.
 
 [SECONDARY]
 _Add more details here._

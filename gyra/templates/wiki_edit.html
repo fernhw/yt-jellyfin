@@ -266,12 +266,15 @@ Background detail, lore depth, design notes.
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;font-family:monospace;font-size:13px;margin:0 0 8px;white-space:pre">![Caption text](filename.jpg)
 
 [image name="filename.jpg" caption="Caption" side="right"]
+[image name="filename.jpg" caption="Caption" side="center"]
+[image name="filename.jpg" caption="Caption" width="400"]
+[image name="filename.jpg" caption="Caption" side="center" width="60%"]
 
 {# Hero / infobox image — goes inside [HERO]: #}
 [HERO]
 filename.jpg
 Optional caption</div>
-      <p style="font-size:13px;color:#6b7280;margin:0 0 24px">Upload via the <strong>🖼 Add Image</strong> button. The filename is inserted at the cursor. Use <strong>🖼 Set Hero</strong> to set the infobox image.</p>
+      <p style="font-size:13px;color:#6b7280;margin:0 0 24px">Upload via the <strong>🖼 Add Image</strong> button. The filename is inserted at the cursor. Use <strong>🖼 Set Hero</strong> to set the infobox image.<br><strong>side</strong>: <code>left</code> · <code>right</code> · <code>center</code> &nbsp;|&nbsp; <strong>width</strong>: pixels (<code>400</code>) or percent (<code>60%</code>)</p>
 
       {# ── MARKDOWN REFERENCE ── #}
       <h2 style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#7c3aed;border-bottom:2px solid #ede9fe;padding-bottom:6px;margin:0 0 14px">Markdown Reference</h2>
@@ -444,9 +447,21 @@ function renderPreview() {
   var mainMd = hasAny ? (mainS ? mainS.content : '') : raw;
 
   function expandImageShortcodes(md) {
-    // Convert [image name="file.jpg" caption="text"] shortcodes to standard markdown images
-    return md.replace(/\[image\s+name="([^"]+)"(?:\s+caption="([^"]*)")?(?:\s+side="[^"]*")?\s*\/?]/gi, function(_, name, caption) {
-      return '![' + (caption || '') + '](' + name + ')';
+    // Convert [image name="file.jpg" caption="text" side="center" width="400"] shortcodes to figure HTML
+    return md.replace(/\[image\s+name="([^"]+)"(?:\s+caption="([^"]*)")?(?:\s+side="([^"]*)")?(?:\s+width="([^"]*)")?\s*\/?]/gi, function(_, name, caption, side, width) {
+      var src = name;
+      var cap = caption || '';
+      var align = (side || '').toLowerCase();
+      var w = width ? (String(width).match(/^\d+$/) ? width + 'px' : width) : null;
+      var maxW = w ? w : (align === 'center' ? '80%' : align ? '48%' : '100%');
+      var floatStyle = align === 'left' ? 'float:left;' : align === 'right' ? 'float:right;' : '';
+      var margin = align === 'left' ? '8px 16px 8px 0' : align === 'right' ? '8px 0 8px 16px' : align === 'center' ? '16px auto' : '8px auto';
+      var display = align === 'center' ? 'display:block;' : 'display:inline-block;';
+      var figStyle = display + floatStyle + 'max-width:' + maxW + ';vertical-align:top;margin:' + margin + ';text-align:center;';
+      return '<figure style="' + figStyle + '">'
+        + '<img src="' + src + '" alt="' + cap + '" style="max-width:100%;border-radius:3px">'
+        + (cap ? '<figcaption style="font-size:12px;color:#54595d;margin-top:4px">' + cap + '</figcaption>' : '')
+        + '</figure>';
     });
   }
 
@@ -1041,7 +1056,8 @@ previewBtn.addEventListener('click', function () {
     .then(function (res) {
       if (!res.ok) {
         alert('Upload failed: ' + (res.error || 'unknown error'));
-        if (uploadLabel) uploadLabel.querySelector('span').textContent = '🖼 Add Image';
+        var _sp = uploadLabel ? uploadLabel.querySelector('span') : null;
+        if (_sp) _sp.textContent = '🖼 Add Image';
         return;
       }
       onSuccess(res);
@@ -1050,7 +1066,8 @@ previewBtn.addEventListener('click', function () {
     })
     .catch(function (err) {
       alert('Upload error: ' + err.message);
-      if (uploadLabel) uploadLabel.querySelector('span').textContent = '🖼 Add Image';
+      var _sp = uploadLabel ? uploadLabel.querySelector('span') : null;
+      if (_sp) _sp.textContent = '🖼 Add Image';
     });
   }
 
@@ -1067,12 +1084,14 @@ previewBtn.addEventListener('click', function () {
       var file = this.files[0]; this.value = '';
       if (!file) return;
       // Show uploading state on the label
-      if (uploadLabel) uploadLabel.querySelector('span').textContent = '⏳ Uploading…';
+      var _sp = uploadLabel ? uploadLabel.querySelector('span') : null;
+      if (_sp) _sp.textContent = '⏳ Uploading…';
       doUpload(file, function (res) {
         insertMd(res.md_snippet);
-        if (uploadLabel) {
-          uploadLabel.querySelector('span').textContent = '✓ Inserted!';
-          setTimeout(function () { uploadLabel.querySelector('span').textContent = '🖼 Add Image'; }, 1500);
+        var _sp2 = uploadLabel ? uploadLabel.querySelector('span') : null;
+        if (_sp2) {
+          _sp2.textContent = '✓ Inserted!';
+          setTimeout(function () { _sp2.textContent = '🖼 Add Image'; }, 1500);
         }
       });
     });

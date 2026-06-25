@@ -1,5 +1,5 @@
 [META]
-title=Rëlbûk Dërflä
+title=Relbul Derfla
 authors=Unknown
 template=character
 role=Crow-Person Patriarch / Self-Proclaimed Mayor of the City of Quitters
@@ -30,7 +30,7 @@ The crow form was intentional, at least initially. [Kubler](alfred-kubler.md) wa
 
 ## The City of Quitters
 
-The [City of Quitters](city-of-quitters.md) is what the miners built in the upper chambers of Ingersole. It is a nest, in the literal sense — built along the lines Relbuk understands, structured the way crows structure things, lit entirely by whatever equipment the miners could salvage and run continuously. The lights are not decorative. [Emerette of the Deep](emerette-of-the-deep.md) remains in the lower mines, and the creature cannot tolerate sustained artificial light. The City of Quitters exists because the lights never go out.
+The [City of Quitters](city-of-quitters.md) is what the miners built in the upper chambers of Ingersole. It is a nest, in the literal sense, built along the lines [Relbuk](relbuk-derfla.md) understands, structured the way crows structure things, lit entirely by whatever equipment the miners could salvage and run continuously. The lights are not decorative. [Emerette of the Deep](emerette-of-the-deep.md) remains in the lower mines, and the creature cannot tolerate sustained artificial light. The City of Quitters exists because the lights never go out.
 
 Relbuk is patriarch of this community. He is neither a tyrant nor a figurehead. He is simply the oldest, the one who has been here longest, the one who decided to stop and watch and accept what the mines made of him.
 
@@ -39,5 +39,4 @@ Relbuk is patriarch of this community. He is neither a tyrant nor a figurehead. 
 [Chapter 5](chapter-5.md), Throe, the acceptance chapter, takes place almost entirely in [Ingersole](ingersole-caverns.md) and the [City of Quitters](city-of-quitters.md). [Relbuk](relbuk-derfla.md) is a central figure. [Amy](amelia-amy-loevinger.md)'s navigation of the chapter involves understanding what the miners chose and why, and Relbuk is the most direct articulation of that choice: he stopped moving, and he found it was enough.
 
 [REFERENCES]
-
 
