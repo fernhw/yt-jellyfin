@@ -44,7 +44,7 @@
 
 {# ── Reorder panel (hidden by default) ── #}
 {% if session.role in ('admin','super_user') %}
-<div id="wiki-reorder-panel" style="display:none;background:#f8f9fa;border-bottom:1px solid #a2a9b1;padding:12px 24px 16px;">
+<div id="wiki-reorder-panel" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:#f8f9fa;overflow:hidden;flex-direction:column;padding:12px 24px 16px;">
   <div style="font-size:11px;color:#72777d;margin-bottom:8px;">
     <strong>⠿</strong> drag to reorder &nbsp;·&nbsp;
     <strong>←</strong> unindent &nbsp;·&nbsp;
@@ -63,7 +63,7 @@
              style="font-size:12px;border:1px solid #c4b5fd;border-radius:3px;padding:2px 8px;flex:1;min-width:120px;max-width:240px;outline:none;background:#faf5ff;">
       <span id="wiki-te-dealloc-filter-count" style="font-size:11px;color:#a0a0a0;"></span>
     </div>
-    <div id="wiki-te-dealloc-list" style="border:1px solid #c4b5fd;border-radius:4px;background:#faf5ff;max-height:280px;overflow-y:auto;"></div>
+    <div id="wiki-te-dealloc-list" style="border:1px solid #c4b5fd;border-radius:4px;background:#faf5ff;max-height:30vh;overflow-y:auto;"></div>
   </div>
 
   {# ── Full list with optional filter ── #}
@@ -73,7 +73,7 @@
            style="font-size:12px;border:1px solid #c8ccd1;border-radius:3px;padding:2px 8px;flex:1;max-width:260px;outline:none;">
     <span id="wiki-te-filter-count" style="font-size:11px;color:#a0a0a0;"></span>
   </div>
-  <div id="wiki-te-list" style="max-height:420px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:4px;background:#fff;"></div>
+  <div id="wiki-te-list" style="flex:1;min-height:0;overflow-y:auto;border:1px solid #e0e0e0;border-radius:4px;background:#fff;"></div>
   <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
     <button class="btn btn-sm btn-primary" id="wiki-te-save">💾 Save order</button>
     <button class="btn btn-sm btn-ghost" id="wiki-te-cancel">✕ Cancel</button>
@@ -1021,11 +1021,18 @@ body.wiki-dark .wh-nav-sep { background: #334155; }
         openBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/><path d="M10 2h4v4"/><line x1="14" y1="2" x2="7" y2="9"/></svg>';
         openBtn.addEventListener('click', function(e) { e.stopPropagation(); });
 
-        var editBtn = document.createElement('a');
-        editBtn.href = base + '/edit';
-        editBtn.className = 'wiki-te-act-btn'; editBtn.title = 'Edit';
+        var editBtn = document.createElement('button');
+        editBtn.type = 'button'; editBtn.className = 'wiki-te-act-btn'; editBtn.title = 'Edit (saves first)'; editBtn.draggable = false;
         editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>';
-        editBtn.addEventListener('click', function(e) { e.stopPropagation(); });
+        (function(editUrl) {
+          editBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (confirm('Save the current order before opening the editor?')) {
+              document.getElementById('wiki-te-save').click();
+            }
+            window.open(editUrl, '_blank', 'noopener');
+          });
+        }(base + '/edit'));
 
         var delBtn = document.createElement('button');
         delBtn.type = 'button'; delBtn.className = 'wiki-te-act-btn wiki-te-act-del'; delBtn.title = 'Delete'; delBtn.draggable = false;
@@ -1034,10 +1041,14 @@ body.wiki-dark .wh-nav-sep { background: #334155; }
           e.stopPropagation();
           if (!confirm('Delete "' + it.title + '"? This cannot be undone.')) return;
           var csrf = document.querySelector('meta[name="csrf-token"]').content;
-          var form = document.createElement('form');
-          form.method = 'POST'; form.action = base + '/delete';
-          var inp = document.createElement('input'); inp.type = 'hidden'; inp.name = '_csrf'; inp.value = csrf;
-          form.appendChild(inp); document.body.appendChild(form); form.submit();
+          delBtn.disabled = true;
+          fetch(base + '/delete', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': csrf } })
+            .then(function(r) {
+              if (!r.ok) { alert('Delete failed (' + r.status + ')'); delBtn.disabled = false; return; }
+              var idx = items.indexOf(it);
+              if (idx >= 0) items.splice(idx, 1);
+              enforceInvariant(); recomputeNumbers(); renderAll();
+            }).catch(function() { alert('Delete failed'); delBtn.disabled = false; });
         });
 
         actWrap.appendChild(openBtn); actWrap.appendChild(editBtn); actWrap.appendChild(delBtn);
@@ -1143,11 +1154,18 @@ body.wiki-dark .wh-nav-sep { background: #334155; }
         openBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/><path d="M10 2h4v4"/><line x1="14" y1="2" x2="7" y2="9"/></svg>';
         openBtn.addEventListener('click', function(e) { e.stopPropagation(); });
 
-        var editBtn = document.createElement('a');
-        editBtn.href = base + '/edit';
-        editBtn.className = 'wiki-te-act-btn'; editBtn.title = 'Edit';
+        var editBtn = document.createElement('button');
+        editBtn.type = 'button'; editBtn.className = 'wiki-te-act-btn'; editBtn.title = 'Edit (saves first)'; editBtn.draggable = false;
         editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>';
-        editBtn.addEventListener('click', function(e) { e.stopPropagation(); });
+        (function(editUrl) {
+          editBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (confirm('Save the current order before opening the editor?')) {
+              document.getElementById('wiki-te-save').click();
+            }
+            window.open(editUrl, '_blank', 'noopener');
+          });
+        }(base + '/edit'));
 
         var delBtn = document.createElement('button');
         delBtn.type = 'button'; delBtn.className = 'wiki-te-act-btn wiki-te-act-del'; delBtn.title = 'Delete'; delBtn.draggable = false;
@@ -1156,10 +1174,14 @@ body.wiki-dark .wh-nav-sep { background: #334155; }
           e.stopPropagation();
           if (!confirm('Delete "' + it.title + '"? This cannot be undone.')) return;
           var csrf = document.querySelector('meta[name="csrf-token"]').content;
-          var form = document.createElement('form');
-          form.method = 'POST'; form.action = base + '/delete';
-          var inp = document.createElement('input'); inp.type = 'hidden'; inp.name = '_csrf'; inp.value = csrf;
-          form.appendChild(inp); document.body.appendChild(form); form.submit();
+          delBtn.disabled = true;
+          fetch(base + '/delete', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': csrf } })
+            .then(function(r) {
+              if (!r.ok) { alert('Delete failed (' + r.status + ')'); delBtn.disabled = false; return; }
+              var di = dealloc.indexOf(it);
+              if (di >= 0) dealloc.splice(di, 1);
+              renderDeallocBucket();
+            }).catch(function() { alert('Delete failed'); delBtn.disabled = false; });
         });
 
         actWrap.appendChild(openBtn); actWrap.appendChild(editBtn); actWrap.appendChild(delBtn);
@@ -1224,7 +1246,7 @@ body.wiki-dark .wh-nav-sep { background: #334155; }
       panel.style.display = 'none'; reorderBtn.textContent = '\u21c4 Reorder';
     } else {
       buildState(); renderAll();
-      panel.style.display = ''; reorderBtn.textContent = '\u2715 Close';
+      panel.style.display = 'flex'; reorderBtn.textContent = '\u2715 Close';
     }
   });
 
