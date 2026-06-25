@@ -54,13 +54,16 @@
     click = select &nbsp;·&nbsp; Shift+click = range
   </div>
 
-  {# ── Deallocated bucket ── #}
+  {# ── Unallocated bucket ── #}
   <div id="wiki-te-dealloc-bucket" style="display:none;margin-bottom:10px;">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-      <span style="font-size:11px;font-weight:600;color:#dc2626;text-transform:uppercase;letter-spacing:.04em;">⊘ Deallocated — drag back to place</span>
-      <span id="wiki-te-dealloc-count" style="font-size:10px;background:#fee2e2;color:#991b1b;border-radius:10px;padding:1px 7px;"></span>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+      <span style="font-size:11px;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:.04em;">&#9744; Unallocated &mdash; exists, just not in the hierarchy</span>
+      <span id="wiki-te-dealloc-count" style="font-size:10px;background:#ede9fe;color:#5b21b6;border-radius:10px;padding:1px 7px;"></span>
+      <input type="search" id="wiki-te-dealloc-filter" placeholder="Filter unallocated…"
+             style="font-size:12px;border:1px solid #c4b5fd;border-radius:3px;padding:2px 8px;flex:1;min-width:120px;max-width:240px;outline:none;background:#faf5ff;">
+      <span id="wiki-te-dealloc-filter-count" style="font-size:11px;color:#a0a0a0;"></span>
     </div>
-    <div id="wiki-te-dealloc-list" style="border:1px solid #fca5a5;border-radius:4px;background:#fff5f5;max-height:220px;overflow-y:auto;"></div>
+    <div id="wiki-te-dealloc-list" style="border:1px solid #c4b5fd;border-radius:4px;background:#faf5ff;max-height:280px;overflow-y:auto;"></div>
   </div>
 
   {# ── Full list with optional filter ── #}
@@ -167,8 +170,8 @@
 /* dealloc rows */
 .wiki-te-dealloc-row {
   display: flex; align-items: center; padding: 5px 8px;
-  border-bottom: 1px solid #fee2e2; cursor: default; user-select: none;
-  background: #fff5f5; min-height: 30px;
+  border-bottom: 1px solid #ede9fe; cursor: default; user-select: none;
+  background: #faf5ff; min-height: 30px;
 }
 .wiki-te-dealloc-row:last-child { border-bottom: none; }
 .wiki-te-dealloc-row.wiki-te-dragging { opacity: 0.4; }
@@ -179,6 +182,19 @@
   margin-left: 4px; line-height: 1;
 }
 .wiki-te-reattach-btn:hover { background: #dcfce7; }
+/* row action buttons (open/edit/delete) */
+.wiki-te-actions { display: flex; align-items: center; gap: 1px; margin-left: 6px; flex-shrink: 0; opacity: 0; transition: opacity .12s; }
+.wiki-te-row:hover .wiki-te-actions,
+.wiki-te-dealloc-row:hover .wiki-te-actions { opacity: 1; }
+.wiki-te-act-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border: none; background: none;
+  color: #72777d; border-radius: 4px; cursor: pointer;
+  text-decoration: none; flex-shrink: 0;
+  transition: background .1s, color .1s;
+}
+.wiki-te-act-btn:hover { background: #e8eaf0; color: #202122; text-decoration: none; }
+.wiki-te-act-del:hover { background: #fee2e2; color: #dc2626; }
 </style>
 {% endif %}
 {# ── Hero banner ── #}
@@ -448,7 +464,8 @@ body.wiki-dark .wh-nav-sep { background: #334155; }
 
 <script>
 (function () {
-  var flat = JSON.parse(document.getElementById('wiki-flat-data').textContent);
+  var flat = JSON.parse(document.getElementById('wiki-flat-data').textContent)
+    .filter(function(a) { return a.allocated !== 0; });
   var base = '/project/{{ project.id }}/wiki/';
   if (!flat.length) return;
   var ACCENTS = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#ec4899','#6366f1','#14b8a6'];
@@ -699,43 +716,42 @@ body.wiki-dark .wh-nav-sep { background: #334155; }
 
 <script>
 (function () {
-  var reorderBtn  = document.getElementById('wiki-reorder-btn');
-  var panel       = document.getElementById('wiki-reorder-panel');
-  var teList      = document.getElementById('wiki-te-list');
-  var newBucket   = document.getElementById('wiki-te-new-bucket');
-  var newList     = document.getElementById('wiki-te-new-list');
-  var newCount    = document.getElementById('wiki-te-new-count');
-  var newOnlyCb   = document.getElementById('wiki-te-new-only');
-  var filterInput = document.getElementById('wiki-te-filter');
-  var filterCount = document.getElementById('wiki-te-filter-count');
-  var saveBtn     = document.getElementById('wiki-te-save');
-  var cancelBtn   = document.getElementById('wiki-te-cancel');
-  var statusEl    = document.getElementById('wiki-te-status');
+  var reorderBtn    = document.getElementById('wiki-reorder-btn');
+  var panel         = document.getElementById('wiki-reorder-panel');
+  var teList        = document.getElementById('wiki-te-list');
+  var deallocBucket = document.getElementById('wiki-te-dealloc-bucket');
+  var deallocList   = document.getElementById('wiki-te-dealloc-list');
+  var deallocCount  = document.getElementById('wiki-te-dealloc-count');
+  var deallocFilterInput = document.getElementById('wiki-te-dealloc-filter');
+  var deallocFilterCount = document.getElementById('wiki-te-dealloc-filter-count');
+  var filterInput   = document.getElementById('wiki-te-filter');
+  var filterCount   = document.getElementById('wiki-te-filter-count');
+  var saveBtn       = document.getElementById('wiki-te-save');
+  var cancelBtn     = document.getElementById('wiki-te-cancel');
+  var statusEl      = document.getElementById('wiki-te-status');
   if (!reorderBtn || !panel) return;
 
-  // NEW = created within last 7 days (unix seconds)
-  var NEW_THRESHOLD_SECS = 7 * 24 * 3600;
-
   // ── State ──────────────────────────────────────────────────────────────────
-  // items: [{id, title, depth}] in display (pre-order) order
-  var items = [];
-  var dragSrcIdx = null;
+  var items        = [];   // [{id,title,depth,gdd_num,created_at}] pre-order
+  var dealloc      = [];   // articles removed from tree
+  var folded       = {};   // {id: true} nodes whose children are hidden
+  var selected     = new Set();
+  var lastClickIdx = null;
+  var dragSrcIdx     = null;
+  var dragSrcDealloc = null;  // item from dealloc[] being dragged to tree
+  var deallocDragSrcIdx = null; // index in dealloc[] for within-bucket reorder
 
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   // ── Tree helpers ───────────────────────────────────────────────────────────
-
-  // Returns {start, end} for subtree rooted at index i (inclusive start, exclusive end)
   function subtreeBounds(i) {
-    var d = items[i].depth;
-    var end = i + 1;
+    var d = items[i].depth, end = i + 1;
     while (end < items.length && items[end].depth > d) end++;
     return {start: i, end: end};
   }
 
-  // Returns parent id of item at index i (null if depth 0)
   function getParentId(i) {
     var d = items[i].depth;
     if (d === 0) return null;
@@ -745,22 +761,18 @@ body.wiki-dark .wh-nav-sep { background: #334155; }
     return null;
   }
 
-  // Enforce: no item's depth > previous item's depth + 1
   function enforceInvariant() {
     for (var i = 1; i < items.length; i++) {
-      if (items[i].depth > items[i - 1].depth + 1) {
+      if (items[i].depth > items[i - 1].depth + 1)
         items[i].depth = items[i - 1].depth + 1;
-      }
     }
   }
 
-  // Recompute gdd_num for every item (pre-order traversal assumption holds)
   function recomputeNumbers() {
-    var gddNumOf  = {};
-    var sibCount  = {};
+    var gddNumOf = {}, sibCount = {};
     for (var i = 0; i < items.length; i++) {
-      var pid  = getParentId(i);
-      var key  = pid !== null ? String(pid) : 'root';
+      var pid = getParentId(i);
+      var key = pid !== null ? String(pid) : 'root';
       sibCount[key] = (sibCount[key] || 0) + 1;
       var prefix = pid !== null ? ((gddNumOf[pid] || '') + '.') : '';
       gddNumOf[items[i].id] = prefix + sibCount[key];
@@ -768,184 +780,297 @@ body.wiki-dark .wh-nav-sep { background: #334155; }
     }
   }
 
-  // ── Indent / Unindent ──────────────────────────────────────────────────────
+  // Returns array of items[] indices that are not inside a folded subtree
+  function getVisibleIndices() {
+    var vis = [], foldDepth = -1;
+    for (var i = 0; i < items.length; i++) {
+      if (foldDepth >= 0 && items[i].depth > foldDepth) continue;
+      foldDepth = -1;
+      vis.push(i);
+      if (folded[items[i].id]) foldDepth = items[i].depth;
+    }
+    return vis;
+  }
 
+  // ── Indent / Unindent ──────────────────────────────────────────────────────
   function indent(i) {
-    if (i === 0) return;
-    // Can only indent if depth < previous item's depth + 1
-    if (items[i].depth > items[i - 1].depth) return;
+    if (i === 0 || items[i].depth > items[i - 1].depth) return;
     var b = subtreeBounds(i);
     for (var j = b.start; j < b.end; j++) items[j].depth++;
-    recomputeNumbers();
-    renderList();
+    recomputeNumbers(); renderAll();
   }
 
   function unindent(i) {
     if (items[i].depth === 0) return;
     var b = subtreeBounds(i);
-    for (var j = b.start; j < b.end; j++) {
-      items[j].depth = Math.max(0, items[j].depth - 1);
-    }
-    // enforce for items that come after the subtree
-    enforceInvariant();
-    recomputeNumbers();
-    renderList();
+    for (var j = b.start; j < b.end; j++) items[j].depth = Math.max(0, items[j].depth - 1);
+    enforceInvariant(); recomputeNumbers(); renderAll();
   }
 
-  // ── Drag / Drop ────────────────────────────────────────────────────────────
-
-  function onDragStart(i) {
-    dragSrcIdx = i;
-  }
-
-  // Drop before targetIdx (pass items.length to drop at end)
-  function onDropBefore(targetIdx) {
-    if (dragSrcIdx === null) return;
-    if (targetIdx === dragSrcIdx) { dragSrcIdx = null; return; }
-
-    var b = subtreeBounds(dragSrcIdx);
-    // Check that targetIdx is not inside the dragged subtree
-    if (targetIdx > b.start && targetIdx <= b.end) { dragSrcIdx = null; return; }
-
-    // Extract subtree
-    var subtree = items.splice(b.start, b.end - b.start);
-
-    // Adjust targetIdx for the removal
-    var insertAt = targetIdx;
-    if (insertAt > b.start) insertAt -= subtree.length;
-    insertAt = Math.max(0, Math.min(insertAt, items.length));
-
-    // Determine new root depth: become sibling of the item we drop before.
-    // maxDepth caps how deep the first slot allows (tree validity).
-    var maxDepth = insertAt === 0 ? 0 : items[insertAt - 1].depth + 1;
-    var newRootDepth;
-    if (insertAt < items.length) {
-      // Sibling of the item at insertAt — adopt its depth, clamped by parent slot
-      newRootDepth = Math.min(items[insertAt].depth, maxDepth);
-    } else {
-      // Dropping at end: preserve depth if valid, otherwise go to root
-      newRootDepth = Math.min(subtree[0].depth, maxDepth);
-    }
-    newRootDepth = Math.max(0, newRootDepth);
-
-    var delta = newRootDepth - subtree[0].depth;
-    if (delta !== 0) {
-      for (var k = 0; k < subtree.length; k++) {
-        subtree[k].depth = Math.max(0, subtree[k].depth + delta);
+  // ── Fold / Unfold ──────────────────────────────────────────────────────────
+  function toggleFold(id, altKey) {
+    if (altKey) {
+      // Check if ANY parent node is currently folded
+      var anyFolded = false;
+      for (var i = 0; i < items.length; i++) {
+        var b = subtreeBounds(i);
+        if (b.end > i + 1 && folded[items[i].id]) { anyFolded = true; break; }
       }
+      for (var i = 0; i < items.length; i++) {
+        var b = subtreeBounds(i);
+        if (b.end > i + 1) {
+          if (anyFolded) delete folded[items[i].id];
+          else folded[items[i].id] = true;
+        }
+      }
+    } else {
+      if (folded[id]) delete folded[id]; else folded[id] = true;
     }
+    renderAll();
+  }
 
-    // Insert subtree
-    for (var k = subtree.length - 1; k >= 0; k--) {
-      items.splice(insertAt, 0, subtree[k]);
+  // ── Eject from tree → dealloc ──────────────────────────────────────────────
+  function ejectItem(i) {
+    var b = subtreeBounds(i);
+    var ejected = items.splice(b.start, b.end - b.start);
+    ejected.forEach(function(it) { it.depth = 0; dealloc.push(it); });
+    enforceInvariant(); recomputeNumbers(); renderAll();
+  }
+
+  // ── Selection ─────────────────────────────────────────────────────────────
+  function handleRowClick(i, e) {
+    if (e.target.closest('button')) return;
+    if (e.shiftKey && lastClickIdx !== null) {
+      var lo = Math.min(i, lastClickIdx), hi = Math.max(i, lastClickIdx);
+      for (var j = lo; j <= hi; j++) selected.add(items[j].id);
+    } else {
+      selected.clear();
+      selected.add(items[i].id);
+      lastClickIdx = i;
     }
-
-    enforceInvariant();
-    recomputeNumbers();
     renderList();
+  }
+
+  // ── Drag / Drop ───────────────────────────────────────────────────────────
+  function onDropBefore(targetIdx) {
+    // Drop from dealloc into tree
+    if (dragSrcDealloc !== null) {
+      var item = dragSrcDealloc;
+      var maxD = targetIdx === 0 ? 0 : items[targetIdx - 1].depth + 1;
+      var newD = targetIdx < items.length ? Math.min(items[targetIdx].depth, maxD) : 0;
+      item.depth = Math.max(0, newD);
+      items.splice(targetIdx, 0, item);
+      var di = dealloc.indexOf(item);
+      if (di >= 0) dealloc.splice(di, 1);
+      dragSrcDealloc = null;
+      enforceInvariant(); recomputeNumbers(); renderAll();
+      return;
+    }
+
+    if (dragSrcIdx === null) return;
+
+    // Multi-drag: dragging a selected item when 2+ are selected
+    var isMulti = selected.size > 1 && selected.has(items[dragSrcIdx].id);
+    if (isMulti) {
+      // Collect selected subtrees in original order
+      var seen = new Set();
+      var groups = [];
+      for (var k = 0; k < items.length; k++) {
+        if (selected.has(items[k].id) && !seen.has(items[k].id)) {
+          var b = subtreeBounds(k);
+          groups.push({start: b.start, end: b.end, subtree: items.slice(b.start, b.end)});
+          for (var m = b.start; m < b.end; m++) seen.add(items[m].id);
+        }
+      }
+      // Abort if dropping inside a selected subtree
+      for (var gi = 0; gi < groups.length; gi++) {
+        if (targetIdx > groups[gi].start && targetIdx <= groups[gi].end) {
+          dragSrcIdx = null; return;
+        }
+      }
+      // Count extracted items before targetIdx
+      var removedBefore = 0;
+      for (var k = 0; k < targetIdx; k++) {
+        if (seen.has(items[k].id)) removedBefore++;
+      }
+      // Filter items array
+      items = items.filter(function(it) { return !seen.has(it.id); });
+      var insertAt = Math.max(0, Math.min(targetIdx - removedBefore, items.length));
+      var maxD = insertAt === 0 ? 0 : items[insertAt - 1].depth + 1;
+      var tgtD = Math.max(0, insertAt < items.length ? Math.min(items[insertAt].depth, maxD) : 0);
+      var pos = insertAt;
+      groups.forEach(function(g) {
+        var delta = tgtD - g.subtree[0].depth;
+        if (delta) g.subtree.forEach(function(it) { it.depth = Math.max(0, it.depth + delta); });
+        for (var k = 0; k < g.subtree.length; k++) items.splice(pos + k, 0, g.subtree[k]);
+        pos += g.subtree.length;
+      });
+      selected.clear(); lastClickIdx = null;
+    } else {
+      // Single drag
+      if (targetIdx === dragSrcIdx) { dragSrcIdx = null; return; }
+      var b = subtreeBounds(dragSrcIdx);
+      if (targetIdx > b.start && targetIdx <= b.end) { dragSrcIdx = null; return; }
+      var subtree = items.splice(b.start, b.end - b.start);
+      var insertAt = targetIdx;
+      if (insertAt > b.start) insertAt -= subtree.length;
+      insertAt = Math.max(0, Math.min(insertAt, items.length));
+      var maxD = insertAt === 0 ? 0 : items[insertAt - 1].depth + 1;
+      var newRootD = insertAt < items.length
+        ? Math.min(items[insertAt].depth, maxD)
+        : Math.min(subtree[0].depth, maxD);
+      newRootD = Math.max(0, newRootD);
+      var delta = newRootD - subtree[0].depth;
+      if (delta) subtree.forEach(function(it) { it.depth = Math.max(0, it.depth + delta); });
+      for (var k = subtree.length - 1; k >= 0; k--) items.splice(insertAt, 0, subtree[k]);
+    }
+
     dragSrcIdx = null;
+    enforceInvariant(); recomputeNumbers(); renderAll();
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
+  function renderAll() { renderList(); renderDeallocBucket(); }
 
   function renderList() {
     teList.innerHTML = '';
+    var vis = getVisibleIndices();
 
-    items.forEach(function(item, i) {
-      var b          = subtreeBounds(i);
-      var childCount = b.end - b.start - 1;
+    vis.forEach(function(i) {
+      var item = items[i];
+      var b = subtreeBounds(i);
+      var hasChildren = b.end > i + 1;
+      var totalDesc = b.end - b.start - 1;
 
       var row = document.createElement('div');
-      row.className   = 'wiki-te-row';
-      row.draggable   = true;
+      row.className = 'wiki-te-row' + (selected.has(item.id) ? ' wiki-te-selected' : '');
+      row.draggable = true;
+      row.dataset.idx = i;
 
-      // indent pad
+      // indent spacer
       var pad = document.createElement('span');
       pad.style.cssText = 'display:inline-block;width:' + (item.depth * 20) + 'px;flex-shrink:0';
 
+      // fold toggle
+      var foldBtn = document.createElement('button');
+      foldBtn.type = 'button'; foldBtn.className = 'wiki-te-fold-btn'; foldBtn.draggable = false;
+      if (hasChildren) {
+        foldBtn.textContent = folded[item.id] ? '▶' : '▼';
+        foldBtn.title = (folded[item.id] ? 'Expand' : 'Collapse') + ' — Alt+click to ' + (folded[item.id] ? 'expand' : 'collapse') + ' all';
+        (function(id) {
+          foldBtn.addEventListener('click', function(e) { e.stopPropagation(); toggleFold(id, e.altKey); });
+        }(item.id));
+      } else {
+        foldBtn.style.visibility = 'hidden'; foldBtn.tabIndex = -1;
+      }
+
       // drag handle
       var handle = document.createElement('span');
-      handle.className = 'wiki-te-drag';
-      handle.textContent = '⠿';
+      handle.className = 'wiki-te-drag'; handle.textContent = '⠿';
 
-      // unindent btn
+      // unindent
       var btnOut = document.createElement('button');
-      btnOut.type      = 'button';
-      btnOut.className = 'wiki-te-indent-btn';
-      btnOut.title     = 'Unindent (move left)';
-      btnOut.textContent = '←';
-      btnOut.draggable  = false;
-      btnOut.disabled  = (item.depth === 0);
-      (function(idx) {
-        btnOut.addEventListener('click', function(e) { e.stopPropagation(); unindent(idx); });
-      }(i));
+      btnOut.type = 'button'; btnOut.className = 'wiki-te-indent-btn';
+      btnOut.title = 'Unindent'; btnOut.textContent = '←'; btnOut.draggable = false;
+      btnOut.disabled = item.depth === 0;
+      (function(idx) { btnOut.addEventListener('click', function(e) { e.stopPropagation(); unindent(idx); }); }(i));
 
-      // indent btn
+      // indent
       var btnIn = document.createElement('button');
-      btnIn.type      = 'button';
-      btnIn.className = 'wiki-te-indent-btn';
-      btnIn.title     = 'Indent (move right, becomes child of item above)';
-      btnIn.textContent = '→';
-      btnIn.draggable  = false;
-      btnIn.disabled  = (i === 0 || item.depth > items[i - 1].depth);
-      (function(idx) {
-        btnIn.addEventListener('click', function(e) { e.stopPropagation(); indent(idx); });
-      }(i));
+      btnIn.type = 'button'; btnIn.className = 'wiki-te-indent-btn';
+      btnIn.title = 'Indent'; btnIn.textContent = '→'; btnIn.draggable = false;
+      btnIn.disabled = i === 0 || item.depth > items[i - 1].depth;
+      (function(idx) { btnIn.addEventListener('click', function(e) { e.stopPropagation(); indent(idx); }); }(i));
 
-      // gdd number
+      // gdd num
       var numSpan = document.createElement('span');
-      numSpan.className   = 'wiki-te-num';
-      numSpan.textContent = item.gdd_num || '';
+      numSpan.className = 'wiki-te-num'; numSpan.textContent = item.gdd_num || '';
 
       // title
       var titleSpan = document.createElement('span');
-      titleSpan.className   = 'wiki-te-title-text';
-      titleSpan.textContent = item.title;
+      titleSpan.className = 'wiki-te-title-text'; titleSpan.textContent = item.title;
 
-      row.appendChild(pad);
-      row.appendChild(handle);
-      row.appendChild(btnOut);
-      row.appendChild(btnIn);
-      row.appendChild(numSpan);
-      row.appendChild(titleSpan);
+      row.appendChild(pad); row.appendChild(foldBtn); row.appendChild(handle);
+      row.appendChild(btnOut); row.appendChild(btnIn);
+      row.appendChild(numSpan); row.appendChild(titleSpan);
 
-      if (childCount > 0) {
+      if (hasChildren) {
         var badge = document.createElement('span');
-        badge.className   = 'wiki-te-children-badge';
-        badge.textContent = childCount + (childCount === 1 ? ' child' : ' children');
+        badge.className = 'wiki-te-children-badge';
+        badge.textContent = folded[item.id]
+          ? (totalDesc + ' \u2514 collapsed')
+          : (totalDesc + (totalDesc === 1 ? ' child' : ' children'));
         row.appendChild(badge);
       }
 
-      // ── Drag events ────────────────────────────────────────────────────────
+      // eject button
+      var ejectBtn = document.createElement('button');
+      ejectBtn.type = 'button'; ejectBtn.className = 'wiki-te-eject-btn';
+      ejectBtn.title = 'Remove from hierarchy'; ejectBtn.textContent = '\u229d'; ejectBtn.draggable = false;
+      (function(idx) { ejectBtn.addEventListener('click', function(e) { e.stopPropagation(); ejectItem(idx); }); }(i));
+      row.appendChild(ejectBtn);
+
+      // action buttons: open, edit, delete
+      var actWrap = document.createElement('span');
+      actWrap.className = 'wiki-te-actions';
+      (function(it) {
+        var base = '/project/{{ project.id }}/wiki/' + it.slug;
+        var openBtn = document.createElement('a');
+        openBtn.href = base; openBtn.target = '_blank'; openBtn.rel = 'noopener';
+        openBtn.className = 'wiki-te-act-btn'; openBtn.title = 'Open in new tab';
+        openBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/><path d="M10 2h4v4"/><line x1="14" y1="2" x2="7" y2="9"/></svg>';
+        openBtn.addEventListener('click', function(e) { e.stopPropagation(); });
+
+        var editBtn = document.createElement('a');
+        editBtn.href = base + '/edit';
+        editBtn.className = 'wiki-te-act-btn'; editBtn.title = 'Edit';
+        editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>';
+        editBtn.addEventListener('click', function(e) { e.stopPropagation(); });
+
+        var delBtn = document.createElement('button');
+        delBtn.type = 'button'; delBtn.className = 'wiki-te-act-btn wiki-te-act-del'; delBtn.title = 'Delete'; delBtn.draggable = false;
+        delBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 5 13 5"/><path d="M6 5V3h4v2"/><path d="M5 5l1 9h4l1-9"/></svg>';
+        delBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (!confirm('Delete "' + it.title + '"? This cannot be undone.')) return;
+          var csrf = document.querySelector('meta[name="csrf-token"]').content;
+          var form = document.createElement('form');
+          form.method = 'POST'; form.action = base + '/delete';
+          var inp = document.createElement('input'); inp.type = 'hidden'; inp.name = '_csrf'; inp.value = csrf;
+          form.appendChild(inp); document.body.appendChild(form); form.submit();
+        });
+
+        actWrap.appendChild(openBtn); actWrap.appendChild(editBtn); actWrap.appendChild(delBtn);
+      }(item));
+      row.appendChild(actWrap);
+
+      // Selection click
+      (function(idx) { row.addEventListener('click', function(e) { handleRowClick(idx, e); }); }(i));
+
+      // Drag events
       (function(idx) {
-        // dragstart/dragend live on the ROW so dragging from anywhere on it works
         row.addEventListener('dragstart', function(e) {
-          dragSrcIdx = idx;
+          dragSrcIdx = idx; dragSrcDealloc = null;
           row.classList.add('wiki-te-dragging');
           e.dataTransfer.effectAllowed = 'move';
           e.dataTransfer.setData('text/plain', String(idx));
         });
         row.addEventListener('dragend', function() {
           row.classList.remove('wiki-te-dragging');
-          dragSrcIdx = null;
-          clearDropIndicators();
+          dragSrcIdx = null; clearDropIndicators();
         });
-
         row.addEventListener('dragover', function(e) {
-          if (dragSrcIdx === null || dragSrcIdx === idx) return;
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'move';
-          clearDropIndicators();
-          row.classList.add('wiki-te-drop-before');
+          if (dragSrcIdx === null && dragSrcDealloc === null) return;
+          if (dragSrcIdx === idx) return;
+          e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+          clearDropIndicators(); row.classList.add('wiki-te-drop-before');
         });
         row.addEventListener('dragleave', function(e) {
           if (e.relatedTarget && row.contains(e.relatedTarget)) return;
           row.classList.remove('wiki-te-drop-before');
         });
         row.addEventListener('drop', function(e) {
-          e.preventDefault();
-          clearDropIndicators();
-          onDropBefore(idx);
+          e.preventDefault(); clearDropIndicators(); onDropBefore(idx);
         });
       }(i));
 
@@ -954,107 +1079,111 @@ body.wiki-dark .wh-nav-sep { background: #334155; }
 
     // End-of-list drop zone
     var endZone = document.createElement('div');
-    endZone.className = 'wiki-te-end-drop';
-    endZone.textContent = ' ';
+    endZone.className = 'wiki-te-end-drop'; endZone.textContent = ' ';
     endZone.addEventListener('dragover', function(e) {
-      if (dragSrcIdx === null) return;
-      e.preventDefault();
-      clearDropIndicators();
-      endZone.classList.add('wiki-te-drop-before');
+      if (dragSrcIdx === null && dragSrcDealloc === null) return;
+      e.preventDefault(); clearDropIndicators(); endZone.classList.add('wiki-te-drop-before');
     });
-    endZone.addEventListener('dragleave', function() {
-      endZone.classList.remove('wiki-te-drop-before');
-    });
+    endZone.addEventListener('dragleave', function() { endZone.classList.remove('wiki-te-drop-before'); });
     endZone.addEventListener('drop', function(e) {
-      e.preventDefault();
-      clearDropIndicators();
-      onDropBefore(items.length);
+      e.preventDefault(); clearDropIndicators(); onDropBefore(items.length);
     });
     teList.appendChild(endZone);
     applyFilter();
-    renderNewBucket();
   }
 
   function clearDropIndicators() {
-    teList.querySelectorAll('.wiki-te-drop-before').forEach(function(el) {
+    teList.querySelectorAll('.wiki-te-drop-before, .wiki-te-dragging').forEach(function(el) {
+      el.classList.remove('wiki-te-drop-before');
+    });
+    if (deallocList) deallocList.querySelectorAll('.wiki-te-drop-before').forEach(function(el) {
       el.classList.remove('wiki-te-drop-before');
     });
   }
 
-  // ── Init & open ───────────────────────────────────────────────────────────
-
-  function buildState() {
-    var raw = JSON.parse(document.getElementById('wiki-flat-data').textContent);
-    // raw is already in pre-order with depth computed server-side
-    items = raw.map(function(a) {
-      return { id: a.id, title: a.title, depth: a.depth || 0, gdd_num: a.gdd_num || '', created_at: a.created_at || 0 };
-    });
-    enforceInvariant();
-    recomputeNumbers();
-  }
-
-  // ── New bucket ────────────────────────────────────────────────────────────
-
-  function renderNewBucket() {
-    var nowSecs = Math.floor(Date.now() / 1000);
-    var newItems = items.filter(function(it) {
-      return it.created_at && (nowSecs - it.created_at) < NEW_THRESHOLD_SECS;
-    });
-    if (newItems.length === 0) {
-      newBucket.style.display = 'none';
-      return;
-    }
-    newBucket.style.display = '';
-    newCount.textContent = newItems.length + ' article' + (newItems.length === 1 ? '' : 's');
-    newList.innerHTML = '';
-    newItems.forEach(function(item) {
-      var i = items.indexOf(item);
+  function renderDeallocBucket() {
+    if (!deallocBucket || !deallocList) return;
+    if (dealloc.length === 0) { deallocBucket.style.display = 'none'; return; }
+    deallocBucket.style.display = '';
+    deallocCount.textContent = dealloc.length + ' article' + (dealloc.length === 1 ? '' : 's');
+    deallocList.innerHTML = '';
+    dealloc.forEach(function(item) {
       var row = document.createElement('div');
-      row.className = 'wiki-te-row';
-      row.style.background = '#fffbeb';
-      row.draggable = true;
-
-      var badge = document.createElement('span');
-      badge.style.cssText = 'font-size:9px;font-weight:700;background:#f59e0b;color:#fff;border-radius:3px;padding:1px 5px;margin-right:6px;flex-shrink:0;';
-      badge.textContent = 'NEW';
+      row.className = 'wiki-te-dealloc-row'; row.draggable = true;
 
       var handle = document.createElement('span');
-      handle.className = 'wiki-te-drag';
-      handle.textContent = '⠿';
-
-      var numSpan = document.createElement('span');
-      numSpan.className = 'wiki-te-num';
-      numSpan.textContent = item.gdd_num || '—';
+      handle.className = 'wiki-te-drag'; handle.textContent = '⠿';
 
       var titleSpan = document.createElement('span');
-      titleSpan.className = 'wiki-te-title-text';
-      titleSpan.textContent = item.title;
+      titleSpan.className = 'wiki-te-title-text'; titleSpan.textContent = item.title;
 
-      row.appendChild(badge);
-      row.appendChild(handle);
-      row.appendChild(numSpan);
-      row.appendChild(titleSpan);
+      // Re-attach button (add to end of tree)
+      var reattachBtn = document.createElement('button');
+      reattachBtn.type = 'button'; reattachBtn.className = 'wiki-te-reattach-btn';
+      reattachBtn.title = 'Add back to end of hierarchy'; reattachBtn.textContent = '\u21a9'; reattachBtn.draggable = false;
+      (function(it) {
+        reattachBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var di = dealloc.indexOf(it);
+          if (di >= 0) { it.depth = 0; dealloc.splice(di, 1); items.push(it); }
+          enforceInvariant(); recomputeNumbers(); renderAll();
+        });
+      }(item));
 
-      (function(idx) {
+      row.appendChild(handle); row.appendChild(titleSpan); row.appendChild(reattachBtn);
+
+      // action buttons for dealloc rows
+      var actWrap = document.createElement('span');
+      actWrap.className = 'wiki-te-actions';
+      (function(it) {
+        var base = '/project/{{ project.id }}/wiki/' + it.slug;
+        var openBtn = document.createElement('a');
+        openBtn.href = base; openBtn.target = '_blank'; openBtn.rel = 'noopener';
+        openBtn.className = 'wiki-te-act-btn'; openBtn.title = 'Open in new tab';
+        openBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/><path d="M10 2h4v4"/><line x1="14" y1="2" x2="7" y2="9"/></svg>';
+        openBtn.addEventListener('click', function(e) { e.stopPropagation(); });
+
+        var editBtn = document.createElement('a');
+        editBtn.href = base + '/edit';
+        editBtn.className = 'wiki-te-act-btn'; editBtn.title = 'Edit';
+        editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-9 9H2v-3L11 2z"/></svg>';
+        editBtn.addEventListener('click', function(e) { e.stopPropagation(); });
+
+        var delBtn = document.createElement('button');
+        delBtn.type = 'button'; delBtn.className = 'wiki-te-act-btn wiki-te-act-del'; delBtn.title = 'Delete'; delBtn.draggable = false;
+        delBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 5 13 5"/><path d="M6 5V3h4v2"/><path d="M5 5l1 9h4l1-9"/></svg>';
+        delBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (!confirm('Delete "' + it.title + '"? This cannot be undone.')) return;
+          var csrf = document.querySelector('meta[name="csrf-token"]').content;
+          var form = document.createElement('form');
+          form.method = 'POST'; form.action = base + '/delete';
+          var inp = document.createElement('input'); inp.type = 'hidden'; inp.name = '_csrf'; inp.value = csrf;
+          form.appendChild(inp); document.body.appendChild(form); form.submit();
+        });
+
+        actWrap.appendChild(openBtn); actWrap.appendChild(editBtn); actWrap.appendChild(delBtn);
+      }(item));
+      row.appendChild(actWrap);
+
+      (function(it) {
         row.addEventListener('dragstart', function(e) {
-          dragSrcIdx = idx;
+          dragSrcDealloc = it; dragSrcIdx = null;
           row.classList.add('wiki-te-dragging');
           e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData('text/plain', String(idx));
+          e.dataTransfer.setData('text/plain', 'dealloc');
         });
         row.addEventListener('dragend', function() {
           row.classList.remove('wiki-te-dragging');
-          dragSrcIdx = null;
-          clearDropIndicators();
+          dragSrcDealloc = null; clearDropIndicators();
         });
-      }(i));
+      }(item));
 
-      newList.appendChild(row);
+      deallocList.appendChild(row);
     });
   }
 
   // ── Filter ────────────────────────────────────────────────────────────────
-
   function applyFilter() {
     var q = filterInput ? filterInput.value.trim().toLowerCase() : '';
     var rows = teList.querySelectorAll('.wiki-te-row');
@@ -1065,90 +1194,77 @@ body.wiki-dark .wh-nav-sep { background: #334155; }
       row.style.display = show ? '' : 'none';
       if (show) visible++;
     });
-    if (filterCount) {
-      filterCount.textContent = q ? (visible + ' match' + (visible === 1 ? '' : 'es')) : '';
+    if (filterCount) filterCount.textContent = q ? (visible + ' match' + (visible === 1 ? '' : 'es')) : '';
+  }
+
+  // ── Init & open ───────────────────────────────────────────────────────────
+  function buildState() {
+    var raw = JSON.parse(document.getElementById('wiki-flat-data').textContent);
+    // Split by allocated flag: allocated=1 (or missing) goes into the tree, 0 goes into dealloc bucket
+    var treeRaw    = raw.filter(function(a) { return a.allocated !== 0; });
+    var deallocRaw = raw.filter(function(a) { return a.allocated === 0; });
+    items = treeRaw.map(function(a) {
+      return { id: a.id, slug: a.slug, title: a.title, depth: a.depth || 0, gdd_num: a.gdd_num || '', created_at: a.created_at || 0 };
+    });
+    dealloc = deallocRaw.map(function(a) {
+      return { id: a.id, slug: a.slug, title: a.title, depth: 0, gdd_num: '', created_at: a.created_at || 0 };
+    });
+    selected.clear(); lastClickIdx = null;
+    enforceInvariant(); recomputeNumbers();
+    // Fold everything by default — open only what you need
+    folded = {};
+    for (var i = 0; i < items.length; i++) {
+      var b = subtreeBounds(i);
+      if (b.end > i + 1) folded[items[i].id] = true;
     }
   }
 
-  reorderBtn.addEventListener('click', function () {
+  reorderBtn.addEventListener('click', function() {
     if (panel.style.display !== 'none') {
-      panel.style.display = 'none';
-      reorderBtn.textContent = '⇄ Reorder';
+      panel.style.display = 'none'; reorderBtn.textContent = '\u21c4 Reorder';
     } else {
-      buildState();
-      renderList();
-      renderNewBucket();
-      panel.style.display = '';
-      reorderBtn.textContent = '✕ Close';
+      buildState(); renderAll();
+      panel.style.display = ''; reorderBtn.textContent = '\u2715 Close';
     }
   });
 
-  if (filterInput) {
-    filterInput.addEventListener('input', applyFilter);
-  }
+  if (filterInput) filterInput.addEventListener('input', applyFilter);
+  if (deallocFilterInput) deallocFilterInput.addEventListener('input', renderDeallocBucket);
+  if (deallocFilterInput) deallocFilterInput.addEventListener('input', renderDeallocBucket);
 
-  if (newOnlyCb) {
-    newOnlyCb.addEventListener('change', function() {
-      var nowSecs = Math.floor(Date.now() / 1000);
-      var rows = teList.querySelectorAll('.wiki-te-row');
-      if (newOnlyCb.checked) {
-        rows.forEach(function(row, i) {
-          var item = items[i];
-          var isNew = item && item.created_at && (nowSecs - item.created_at) < NEW_THRESHOLD_SECS;
-          row.style.display = isNew ? '' : 'none';
-        });
-        if (filterCount) filterCount.textContent = '';
-      } else {
-        applyFilter();
-      }
-    });
-  }
-
-  cancelBtn.addEventListener('click', function () {
-    panel.style.display = 'none';
-    reorderBtn.textContent = '⇄ Reorder';
-    statusEl.textContent = '';
+  cancelBtn.addEventListener('click', function() {
+    panel.style.display = 'none'; reorderBtn.textContent = '\u21c4 Reorder'; statusEl.textContent = '';
   });
 
   // ── Save ──────────────────────────────────────────────────────────────────
-
-  saveBtn.addEventListener('click', function () {
-    var sibCount  = {};
-    var payload   = items.map(function(item, i) {
-      var pid = getParentId(i);
-      var key = pid !== null ? String(pid) : 'root';
+  saveBtn.addEventListener('click', function() {
+    var sibCount = {}, payload = items.map(function(item, i) {
+      var pid = getParentId(i), key = pid !== null ? String(pid) : 'root';
       sibCount[key] = (sibCount[key] || 0) + 1;
-      return { id: item.id, parent_id: pid, order_index: sibCount[key] };
+      return { id: item.id, parent_id: pid, order_index: sibCount[key], allocated: 1 };
+    });
+    // Unallocated articles: no parent, allocated=0
+    dealloc.forEach(function(item, di) {
+      payload.push({ id: item.id, parent_id: null, order_index: 9000 + di, allocated: 0 });
     });
 
-    saveBtn.disabled    = true;
-    saveBtn.textContent = 'Saving…';
-    statusEl.textContent = '';
-
+    saveBtn.disabled = true; saveBtn.textContent = 'Saving\u2026'; statusEl.textContent = '';
     fetch('/api/project/{{ project.id }}/wiki/reorder', {
-      method:      'POST',
-      headers:     { 'Content-Type': 'application/json',
-                     'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content },
-      body:        JSON.stringify({ items: payload }),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json',
+                 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content },
+      body: JSON.stringify({ items: payload }),
       credentials: 'same-origin'
     })
-    .then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
+    .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
     .then(function() {
-      saveBtn.disabled    = false;
-      saveBtn.textContent = '💾 Save order';
-      statusEl.textContent = '✓ Saved';
-      statusEl.style.color = '#22863a';
-      // Reload page so grid reflects new order
+      saveBtn.disabled = false; saveBtn.textContent = '\ud83d\udcbe Save order';
+      statusEl.textContent = '\u2713 Saved'; statusEl.style.color = '#22863a';
       setTimeout(function() { window.location.reload(); }, 800);
     })
     .catch(function(err) {
-      saveBtn.disabled    = false;
-      saveBtn.textContent = '💾 Save order';
-      statusEl.textContent = '✗ Save failed: ' + err.message;
-      statusEl.style.color = '#d73a49';
+      saveBtn.disabled = false; saveBtn.textContent = '\ud83d\udcbe Save order';
+      statusEl.textContent = '\u2717 Save failed: ' + err.message; statusEl.style.color = '#d73a49';
     });
   });
 

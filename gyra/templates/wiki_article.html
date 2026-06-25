@@ -39,6 +39,16 @@
       {# Populated by JS from rendered headings #}
     </div>
 
+    {# Children of this article — directly below Contents #}
+    {% if children %}
+    <div class="wiki-aside-title" style="margin-top:18px">Next</div>
+    {% for c in children %}
+    <div class="wiki-nav-item" style="padding-left:12px">
+      <a href="{{ c.url }}" class="wiki-nav-link">{{ c.title }}</a>
+    </div>
+    {% endfor %}
+    {% endif %}
+
     {# Parent article #}
     {% if parent_art %}
     <div class="wiki-aside-title" style="margin-top:18px">Parent</div>
@@ -55,16 +65,6 @@
       <a href="{{ s.url }}" class="wiki-nav-link{% if s.slug == article.slug %} is-current{% endif %}">
         {% if s.slug == article.slug %}<strong>{{ s.title }}</strong>{% else %}{{ s.title }}{% endif %}
       </a>
-    </div>
-    {% endfor %}
-    {% endif %}
-
-    {# Children of this article #}
-    {% if children %}
-    <div class="wiki-aside-title" style="margin-top:18px">Sub-articles</div>
-    {% for c in children %}
-    <div class="wiki-nav-item" style="padding-left:12px">
-      <a href="{{ c.url }}" class="wiki-nav-link">{{ c.title }}</a>
     </div>
     {% endfor %}
     {% endif %}
@@ -461,25 +461,32 @@
 <style>
 /* ── Inline child article sections ── */
 .wiki-child-section {
-  margin-top: 40px;
-  border-top: 2px solid #a2a9b1;
-  padding-top: 24px;
+  margin-top: 28px;
   clear: both;
 }
 .wiki-child-section + .wiki-child-section {
-  margin-top: 36px;
+  margin-top: 22px;
 }
 .wiki-child-heading {
-  font-size: 21px; font-weight: normal;
+  font-size: 20px; font-weight: bold;
   font-family: 'Linux Libertine', Georgia, serif;
   color: #202122;
-  margin: 0 0 4px;
-  display: flex; align-items: baseline; gap: 10px;
+  margin: 0 0 6px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid #eaecf0;
+  padding-bottom: 4px;
 }
-.wiki-child-heading a {
-  color: #202122; text-decoration: none;
+.wiki-child-heading-title {
+  color: #202122;
 }
-.wiki-child-heading a:hover { color: #3366cc; text-decoration: underline; }
+.wiki-child-open-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #a2a9b1; flex-shrink: 0;
+  padding: 2px 3px; border-radius: 3px;
+  text-decoration: none;
+  transition: color .12s, background .12s;
+}
+.wiki-child-open-icon:hover { color: #3366cc; background: #eaf0ff; text-decoration: none; }
 .wiki-child-num {
   font-family: ui-monospace, monospace; font-size: 12px;
   color: #72777d; flex-shrink: 0;
@@ -487,39 +494,25 @@
 .wiki-child-body {
   font-size: 15px; line-height: 1.75; color: #202122;
   font-family: 'Linux Libertine', Georgia, serif;
-  margin-top: 10px;
+  margin-top: 6px;
 }
-.wiki-child-body h2 { font-size: 18px; font-weight: normal; margin: 20px 0 8px; border-bottom: 1px solid #eaecf0; padding-bottom: 3px; }
-.wiki-child-body h3 { font-size: 15px; font-weight: bold; margin: 16px 0 6px; }
+.wiki-child-body h2 { font-size: 18px; font-weight: normal; margin: 18px 0 6px; border-bottom: 1px solid #eaecf0; padding-bottom: 3px; }
+.wiki-child-body h3 { font-size: 15px; font-weight: bold; margin: 14px 0 4px; }
 .wiki-child-body p  { margin-bottom: 10px; }
 .wiki-child-body ul, .wiki-child-body ol { margin: 6px 0 10px 24px; }
 .wiki-child-body li { margin-bottom: 3px; }
 .wiki-child-body code { background:#f0f0f0; border:1px solid #d0d0d0; padding:1px 5px; border-radius:3px; font-size:13px; color:#202122; }
 .wiki-child-body pre  { background:#f6f8fa; border:1px solid #d0d0d0; border-left:3px solid #3366cc; padding:12px 14px; border-radius:4px; overflow-x:auto; margin:10px 0; }
 .wiki-child-body pre code { background:none; border:none; padding:0; font-size:13px; color:#202122; }
-.wiki-child-readmore {
-  display: flex; justify-content: flex-end;
-  margin-top: 12px;
-}
-.wiki-child-readmore a {
-  font-size: 13px; font-family: -apple-system, sans-serif;
-  color: #3366cc; text-decoration: none;
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 10px; border: 1px solid #a2c4e0; border-radius: 4px;
-  transition: background .12s, border-color .12s;
-}
-.wiki-child-readmore a:hover {
-  background: #eaf0ff; border-color: #3366cc;
-  text-decoration: none;
-}
 .wiki-child-empty-note {
   font-size: 13.5px; color: #72777d; font-style: italic;
   font-family: -apple-system, sans-serif;
-  margin-top: 10px;
+  margin-top: 6px;
 }
-body.wiki-dark .wiki-child-section { border-color: #2d3148; }
-body.wiki-dark .wiki-child-heading a { color: #e2e8f0; }
-body.wiki-dark .wiki-child-heading a:hover { color: #93c5fd; }
+body.wiki-dark .wiki-child-heading { border-color: #2d3148; }
+body.wiki-dark .wiki-child-heading-title { color: #e2e8f0; }
+body.wiki-dark .wiki-child-open-icon { color: #475569; }
+body.wiki-dark .wiki-child-open-icon:hover { color: #93c5fd; background: #1e2540; }
 body.wiki-dark .wiki-child-num { color: #94a3b8; }
 body.wiki-dark .wiki-child-body { color: #e2e8f0; }
 body.wiki-dark .wiki-child-body h2 { color: #f1f5f9; border-color: #2d3148; }
@@ -592,10 +585,18 @@ body.wiki-dark .wiki-child-readmore a:hover { background:#1e2540; border-color:#
     var h = document.createElement('h2');
     h.className = 'wiki-child-heading';
     if (child.gdd_num) h.innerHTML = '<span class="wiki-child-num">' + escHtml(child.gdd_num) + '</span>';
-    var a = document.createElement('a');
-    a.href = child.url;
-    a.textContent = child.title;
-    h.appendChild(a);
+    var titleSpan = document.createElement('span');
+    titleSpan.className = 'wiki-child-heading-title';
+    titleSpan.textContent = child.title;
+    h.appendChild(titleSpan);
+    // Open-article icon — clickable, not the title itself
+    var iconLink = document.createElement('a');
+    iconLink.href = child.url;
+    iconLink.className = 'wiki-child-open-icon';
+    iconLink.title = 'Read full';
+    iconLink.setAttribute('aria-label', 'Read full article: ' + child.title);
+    iconLink.innerHTML = '<svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="1" width="10" height="10" rx="2"/><path d="M11 7H1v10h10V7z" stroke-width="1.7"/></svg>';
+    h.appendChild(iconLink);
     section.appendChild(h);
 
     // Body content
@@ -611,12 +612,6 @@ body.wiki-dark .wiki-child-readmore a:hover { background:#1e2540; border-color:#
       body.innerHTML = '<p class="wiki-child-empty-note">No content yet.</p>';
     }
     section.appendChild(body);
-
-    // Read more
-    var rm = document.createElement('div');
-    rm.className = 'wiki-child-readmore';
-    rm.innerHTML = '<a href="' + child.url + '">Read full article →</a>';
-    section.appendChild(rm);
 
     childrenEl.appendChild(section);
   });

@@ -423,7 +423,7 @@ def _get_tree(project_id: int) -> list:
     conn = get_db()
     rows = conn.execute(
         """SELECT id, slug, title, parent_id, order_index, is_published,
-                  params, updated_at, created_at
+                  COALESCE(allocated, 1) as allocated, params, updated_at, created_at
            FROM wiki_articles WHERE project_id=?
            ORDER BY order_index""",
         (project_id,)
@@ -494,7 +494,10 @@ def _get_numbered_flat(project_id: int, project_key: str = None) -> list:
     flat = _get_tree(project_id)
     tree = _build_nested(flat)
     numbered = _assign_numbers(tree)
-    return [
+    # Articles with allocated=0 are outside the hierarchy entirely
+    unallocated = [a for a in flat if not a.get("allocated", 1)]
+    unalloc_ids = {a["id"] for a in unallocated}
+    result = [
         {
             "id":           n["id"],
             "slug":         n["slug"],
@@ -502,6 +505,7 @@ def _get_numbered_flat(project_id: int, project_key: str = None) -> list:
             "parent_id":    n["parent_id"],
             "order_index":  n["order_index"],
             "is_published": n["is_published"],
+            "allocated":    1,
             "params":       n.get("params"),
             "updated_at":   n.get("updated_at"),
             "created_at":   n.get("created_at"),
@@ -509,8 +513,26 @@ def _get_numbered_flat(project_id: int, project_key: str = None) -> list:
             "depth":        n["gdd_num"].count("."),
             "hero_image":   _extract_hero_filename(project_key, n["slug"]) if project_key else "",
         }
-        for n in numbered
+        for n in numbered if n["id"] not in unalloc_ids
     ]
+    # Append unallocated articles at the end, tagged
+    for a in unallocated:
+        result.append({
+            "id":           a["id"],
+            "slug":         a["slug"],
+            "title":        a["title"],
+            "parent_id":    None,
+            "order_index":  a["order_index"],
+            "is_published": a["is_published"],
+            "allocated":    0,
+            "params":       a.get("params"),
+            "updated_at":   a.get("updated_at"),
+            "created_at":   a.get("created_at"),
+            "gdd_num":      "",
+            "depth":        0,
+            "hero_image":   _extract_hero_filename(project_key, a["slug"]) if project_key else "",
+        })
+    return result
 
 
 # ── Lazy init ─────────────────────────────────────────────────────────────────
@@ -938,13 +960,14 @@ def register(app) -> None:
         _check_access(project_id)
         enforce_csrf()
         data = request.get_json(force=True)
-        # items: [{id, parent_id, order_index}]
+        # items: [{id, parent_id, order_index, allocated?}]
         conn = get_db()
         for item in data.get("items", []):
-            pid = item.get("parent_id")  # may be None
+            pid       = item.get("parent_id")   # may be None
+            allocated = 0 if item.get("allocated") == 0 else 1
             conn.execute(
-                "UPDATE wiki_articles SET parent_id=?, order_index=? WHERE id=? AND project_id=?",
-                (pid, item["order_index"], item["id"], project_id)
+                "UPDATE wiki_articles SET parent_id=?, order_index=?, allocated=? WHERE id=? AND project_id=?",
+                (pid, item["order_index"], allocated, item["id"], project_id)
             )
         conn.commit()
         return jsonify({"ok": True})

@@ -282,6 +282,7 @@ CREATE TABLE IF NOT EXISTS wiki_articles (
     order_index  REAL    NOT NULL DEFAULT 0,
     params       TEXT    NOT NULL DEFAULT '{}',  -- JSON: infobox key/value pairs
     is_published INTEGER NOT NULL DEFAULT 1,
+    allocated    INTEGER NOT NULL DEFAULT 1,     -- 0 = outside hierarchy (Unallocated)
     created_by   INTEGER REFERENCES users(id),
     created_at   INTEGER NOT NULL DEFAULT (strftime('%s','now')),
     updated_by   INTEGER REFERENCES users(id),

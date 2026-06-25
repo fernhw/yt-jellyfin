@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-24
 
-> *Good evening! Here's what landed on Wednesday, June 24, 2026 at 08:04 PM.*
-> **YT Mirror:** 647.15 GB used · 0.56 TB free
+> *Good evening! Here's what landed on Wednesday, June 24, 2026 at 09:08 PM.*
+> **YT Mirror:** 647.66 GB used · 0.56 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **Everything Wrong With The Star Wars Universe** — *Atrioc* · downloaded 09:06 PM · not podcastable
+- **BEGONE, BING!** — *TechLinked* · downloaded 09:05 PM · podcastable
 - **A Mario for Every Genre** — *Scott's Stash* · downloaded 07:05 PM · not podcastable
 - **I TOLD you this would happen..** — *Asmongold TV* · downloaded 06:05 PM · not podcastable
 - **They Basically Told Valve To F*ck Off** — *Bellular News* · downloaded 05:10 PM · podcastable
