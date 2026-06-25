@@ -4654,7 +4654,7 @@ body.wiki-dark .wiki-infobox-sep { color: #64748b; border-color: #2d3148; }
 }
 
 /* ── TOC page ── */
-.gdd-toc-page { padding-top: 56px; }
+.gdd-toc-page { padding-top: 56px; padding-bottom: 64px; border-bottom: 2px solid #a2a9b1; margin-bottom: 56px; }
 .gdd-toc-heading {
   font-size: 32px; font-weight: normal; margin-bottom: 32px;
   border-bottom: 1px solid #a2a9b1; padding-bottom: 8px;
@@ -4816,7 +4816,7 @@ body.wiki-dark .wiki-infobox-sep { color: #64748b; border-color: #2d3148; }
   .gdd-document { max-width: none; margin: 0; padding: 0; }
   .gdd-page { min-height: 0; border-bottom: none; padding: 0; }
   .gdd-cover-page { page-break-after: always; break-after: page; min-height: 0; padding: 0; }
-  .gdd-toc-page { page-break-after: always; break-after: page; }
+  .gdd-toc-page { page-break-after: always; break-after: page; border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
   .gdd-section.gdd-depth-1 { page-break-before: always; break-before: page; }
   .gdd-toc-entry { color: #000 !important; border-bottom: none; }
   .gdd-toc-dots { border-bottom: 1px dotted #999; }
