@@ -7,12 +7,6 @@
   <title>{% if mode == 'new' %}New Article{% else %}Edit: {{ article.title }}{% endif %} — {{ project.name }} Wiki</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}?v=1782411831">
-  <link rel="modulepreload" crossorigin href="https://esm.sh/@codemirror/state@6">
-  <link rel="modulepreload" crossorigin href="https://esm.sh/@codemirror/view@6">
-  <link rel="modulepreload" crossorigin href="https://esm.sh/@codemirror/commands@6">
-  <link rel="modulepreload" crossorigin href="https://esm.sh/@codemirror/lang-markdown@6">
-  <link rel="modulepreload" crossorigin href="https://esm.sh/@codemirror/theme-one-dark@6">
-  <link rel="modulepreload" crossorigin href="https://esm.sh/@codemirror/language@6">
 </head>
 <body class="wiki-mode">
 <script>(function(){var s=localStorage.getItem('wiki_dark_mode'),q=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)');if(s==='1'||(s===null&&q&&q.matches))document.body.classList.add('wiki-dark');})();</script>
@@ -316,20 +310,15 @@ Optional caption</div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@codemirror/state@6/dist/index.js"    type="module" id="cm-state"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@codemirror/view@6/dist/style.css">
 <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>{# Article list for [[ autocomplete #}
 <script id="wiki-articles-json" type="application/json">{{ articles_json | safe }}</script>
 
-{# We use a simpler CDN bundle that exposes window.CodeMirror-free approach:
-   use the all-in-one CM6 bundle from jsdelivr #}
 <script type="module">
-import {EditorState} from 'https://esm.sh/@codemirror/state@6';
-import {EditorView, keymap, lineNumbers, highlightActiveLine} from 'https://esm.sh/@codemirror/view@6';
-import {defaultKeymap, history, historyKeymap} from 'https://esm.sh/@codemirror/commands@6';
-import {markdown, markdownLanguage} from 'https://esm.sh/@codemirror/lang-markdown@6';
-import {oneDark} from 'https://esm.sh/@codemirror/theme-one-dark@6';
-import {syntaxHighlighting, defaultHighlightStyle} from 'https://esm.sh/@codemirror/language@6';
+import {EditorState, EditorView, keymap, lineNumbers, highlightActiveLine,
+        defaultKeymap, history, historyKeymap,
+        markdown, markdownLanguage,
+        oneDark, syntaxHighlighting, defaultHighlightStyle}
+  from '{{ url_for("static", filename="js/cm6-bundle.js") }}';
 
 var ta      = document.getElementById('wiki-textarea');
 // Populate textarea from JSON-injected content (safe: avoids HTML-escaping issues)

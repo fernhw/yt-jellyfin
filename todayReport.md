@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-25
 
-> *Good afternoon! Here's what landed on Thursday, June 25, 2026 at 03:26 PM.*
-> **YT Mirror:** 637.08 GB used · 0.57 TB free
+> *Good evening! Here's what landed on Thursday, June 25, 2026 at 05:07 PM.*
+> **YT Mirror:** 637.17 GB used · 0.57 TB free
 
 ## Priority Videos
 
@@ -12,6 +12,7 @@
 
 ## Non-Priority Videos
 
+- **The Xbox Price Increase Is Actually Insane** — *Spawn Wave* · downloaded 05:05 PM · not podcastable
 - **Dustin Lucas Will Mike Burp Is Frying Me** — *Lessons in Meme Culture* · downloaded 03:22 PM · not podcastable
 - **Devil May Cry 5 Switch 2 Review: The RE Engine At 60FPS And Beyond** — *Digital Foundry* · downloaded 03:21 PM · not podcastable
 - **These people are animals..** — *Asmongold TV* · downloaded 03:20 PM · not podcastable
