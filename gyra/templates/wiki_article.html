@@ -124,7 +124,7 @@
 
 </div>
 
-{# ── Footer — single wrapper with solid bg covers fixed sidebar ── #}
+{# ── Footer ── #}
 <div class="wiki-footer-wrap">
 <div class="wiki-prevnext">
   {% if prev_art %}
@@ -138,8 +138,6 @@
   </a>
   {% endif %}
 </div>
-
-{# ── Editor footer — discreet, out of the way ── #}
 {% if session.role != 'viewer' %}
 <div class="wiki-editor-footer">
   <a href="{{ url_for('wiki_edit', project_id=project.id, slug=article.slug) }}" class="wiki-editor-footer-link">✏ Edit this article</a>
@@ -504,13 +502,13 @@
   margin-top: 22px;
 }
 .wiki-child-heading {
-  font-size: 20px; font-weight: bold;
+  font-size: 22px; font-weight: normal;
   font-family: 'Linux Libertine', Georgia, serif;
   color: #202122;
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   display: flex; align-items: center; gap: 8px;
-  border-bottom: 1px solid #eaecf0;
-  padding-bottom: 4px;
+  border-bottom: 1px solid #a2a9b1;
+  padding-bottom: 5px;
 }
 .wiki-child-heading-title {
   color: #202122;
@@ -529,17 +527,22 @@
 }
 .wiki-child-body {
   font-size: 15px; line-height: 1.75; color: #202122;
-  font-family: 'Linux Libertine', Georgia, serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   margin-top: 6px;
 }
-.wiki-child-body h2 { font-size: 18px; font-weight: normal; margin: 18px 0 6px; border-bottom: 1px solid #eaecf0; padding-bottom: 3px; font-family: 'Linux Libertine', Georgia, serif; }
-.wiki-child-body h3 { font-size: 15px; font-weight: bold; margin: 14px 0 4px; font-family: 'Linux Libertine', Georgia, serif; }
-.wiki-child-body p  { margin-bottom: 10px; }
-.wiki-child-body ul, .wiki-child-body ol { margin: 6px 0 10px 24px; }
+.wiki-child-body h2 { font-size: 22px; font-weight: normal; margin: 28px 0 10px; border-bottom: 1px solid #a2a9b1; padding-bottom: 4px; font-family: 'Linux Libertine', Georgia, serif; color: #202122; }
+.wiki-child-body h3 { font-size: 17px; font-weight: bold; margin: 20px 0 8px; font-family: 'Linux Libertine', Georgia, serif; color: #202122; }
+.wiki-child-body h4 { font-size: 15px; font-weight: bold; margin: 16px 0 6px; font-family: 'Linux Libertine', Georgia, serif; color: #202122; }
+.wiki-child-body p  { margin-bottom: 12px; }
+.wiki-child-body ul, .wiki-child-body ol { margin: 8px 0 12px 28px; }
 .wiki-child-body li { margin-bottom: 3px; }
-.wiki-child-body code { background:#f0f0f0; border:1px solid #d0d0d0; padding:1px 5px; border-radius:3px; font-size:13px; color:#202122; }
-.wiki-child-body pre  { background:#f6f8fa; border:1px solid #d0d0d0; border-left:3px solid #3366cc; padding:12px 14px; border-radius:4px; overflow-x:auto; margin:10px 0; }
-.wiki-child-body pre code { background:none; border:none; padding:0; font-size:13px; color:#202122; }
+.wiki-child-body table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 13.5px; }
+.wiki-child-body th, .wiki-child-body td { border: 1px solid #a2a9b1; padding: 7px 12px; }
+.wiki-child-body th { background: #eaecf0; font-weight: bold; }
+.wiki-child-body blockquote { border-left: 3px solid #a2a9b1; margin: 14px 0; padding: 6px 16px; color: #54595d; font-style: italic; }
+.wiki-child-body code { background:#f8f9fa; border:1px solid #eaecf0; padding:1px 5px; border-radius:2px; font-size:13px; color:#202122; font-family: ui-monospace, Menlo, monospace; }
+.wiki-child-body pre  { background:#f6f8fa; border:1px solid #d0d7de; border-left:3px solid #3366cc; padding:14px 16px; border-radius:4px; overflow-x:auto; margin:14px 0; color:#202122; }
+.wiki-child-body pre code { background:none; border:none; padding:0; font-size:12.5px; color:#202122; }
 .wiki-child-empty-note {
   font-size: 13.5px; color: #72777d; font-style: italic;
   font-family: -apple-system, sans-serif;
@@ -684,23 +687,7 @@ body.wiki-dark .wiki-child-readmore a:hover { background:#1e2540; border-color:#
 }
 
 /* Single footer wrapper — solid background covers the full width including sidebar column */
-.wiki-footer-wrap {
-  position: relative;
-  z-index: 100;
-  background: #fff;
-}
-.wiki-prevnext {
-  position: static;
-  z-index: auto;
-  background: none;
-  padding-left: 200px;
-}
-.wiki-editor-footer {
-  position: static;
-  z-index: auto;
-  background: none;
-  padding-left: 200px;
-}
+/* footer padding handled by wiki.css */
 
 /* ─── Mobile ≤900px: sidebar becomes a slide-in drawer ─── */
 @media (max-width: 900px) {
