@@ -357,7 +357,8 @@ var view = new EditorView({
           var before = line.text.slice(0, cursor - line.from);
           var m      = before.match(/\[\[([^\]]*)$/);
           if (m) {
-            acFrom = cursor - m[0].length;
+            acFrom   = cursor - m[0].length;
+            acSelTo  = cursor;
             if (!acActive) acShow(m[1]);
             else {
               acSearchEl.value = m[1];
@@ -372,9 +373,11 @@ var view = new EditorView({
           }
         }
       }),
+      EditorView.lineWrapping,
       EditorView.theme({
         '&': { height: '100%', fontSize: '13px' },
-        '.cm-scroller': { overflow: 'auto', fontFamily: 'ui-monospace,Menlo,monospace' }
+        '.cm-scroller': { overflow: 'auto', fontFamily: 'ui-monospace,Menlo,monospace' },
+        '.cm-content': { whiteSpace: 'pre-wrap', wordBreak: 'break-word' }
       })
     ]
   }),
@@ -755,7 +758,7 @@ var CMDS = {
   'codeblock': function (sel) { return '```\n' + (sel || 'code') + '\n```'; },
   'hr':        function ()    { return '\n---\n'; },
   'ul':        function (sel) { return '- ' + (sel || 'item'); },
-  'link':      function (sel) { return '[' + (sel || 'text') + '](https://)'; },
+  // 'link' is intentionally omitted — handled by openWikiLinkModal() below
   'spoiler':   function (sel) { return '||' + (sel || 'spoiler text') + '||'; },
 };
 
@@ -766,7 +769,8 @@ var acResultsEl = document.getElementById('wiki-link-results');
 var acArticles  = [];
 try { acArticles = JSON.parse(document.getElementById('wiki-articles-json').textContent); } catch(e) {}
 
-var acFrom      = 0;   // cursor position when modal was opened (for insertion)
+var acFrom      = 0;   // start of range to replace when modal inserts
+var acSelTo     = 0;   // end of range to replace (= acFrom for bare cursor)
 var acActive    = false;
 var acSelected  = -1;
 
@@ -840,26 +844,11 @@ function acHide() {
 }
 
 function acInsert(title) {
-  // Insert at the saved cursor position (acFrom), replacing any partial text typed after [[
-  var cursor = view.state.selection.main.head;
-  // If triggered from toolbar button, acFrom === cursor (no [[ to replace)
-  var from = acFrom;
-  var to   = cursor;
-  // Detect if the user typed [[ manually and the modal triggered from the updateListener
-  var docSlice = view.state.sliceDoc(from, to);
-  if (docSlice.startsWith('[[')) {
-    // Remove the [[ the user typed, replace with full link
-    view.dispatch({
-      changes: { from: from, to: to, insert: '[[' + title + ']]' },
-      selection: { anchor: from + title.length + 4 }
-    });
-  } else {
-    // Toolbar-triggered: insert fresh link at cursor
-    view.dispatch({
-      changes: { from: from, to: from, insert: '[[' + title + ']]' },
-      selection: { anchor: from + title.length + 4 }
-    });
-  }
+  var insert = '[[' + title + ']]';
+  view.dispatch({
+    changes: { from: acFrom, to: acSelTo, insert: insert },
+    selection: { anchor: acFrom + insert.length }
+  });
   acHide();
 }
 
@@ -900,10 +889,20 @@ acSearchEl.addEventListener('keydown', function (e) {
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escAttr(s) { return String(s).replace(/"/g,'&quot;'); }
 
+// ── Open article search modal (link button + wikilink button) ───────────────
+function openWikiLinkModal() {
+  var range  = view.state.selection.main;
+  var selTxt = view.state.sliceDoc(range.from, range.to);
+  acFrom  = range.from;
+  acSelTo = range.to;
+  acShow(selTxt.trim()); // pre-fill search with selected text (or empty)
+}
+
 document.querySelectorAll('.wiki-editor-toolbar button[data-cmd]').forEach(function (btn) {
   btn.addEventListener('click', function (e) {
     e.preventDefault();
     var cmd = btn.dataset.cmd;
+    if (cmd === 'link') { openWikiLinkModal(); return; }
     if (!CMDS[cmd]) return;
     var range  = view.state.selection.main;
     var selTxt = view.state.sliceDoc(range.from, range.to);
@@ -914,6 +913,13 @@ document.querySelectorAll('.wiki-editor-toolbar button[data-cmd]').forEach(funct
     });
     view.focus();
   });
+});
+
+// [[W]] wikilink toolbar button
+var wikiBtnEl = document.getElementById('wiki-wikilink-btn');
+if (wikiBtnEl) wikiBtnEl.addEventListener('click', function (e) {
+  e.preventDefault();
+  openWikiLinkModal();
 });
 
 // ── Preview toggle ───────────────────────────────────────────────────────────
