@@ -40,11 +40,12 @@ The game constructs a careful lie about Amy's circumstances, and it maintains th
 
 **What the game presents:** Amy came to the hotel searching for a way to help her brother Custard. She mentions him once, early, as if it's a small and slightly funny story. She has been here for some number of days — working, serving, keeping her head down. The night the game begins, she has stolen [Barret](barret-aricson.md)'s keys. She wants to leave.
 
-**What actually happened:** [Custard Loevinger](custard-loevinger.md), Amy's younger brother, drank a cleaning product at home while Amy watched. He died. Amy, consumed by a guilt she could not carry, took her own life outside the hotel. [Barret Aricson](barret-aricson.md) found what remained of her. The [Kubler](the-kubler.md) organism — whose immortality-sustaining spore field permeates the hotel — kept her from dying permanently. She was put back together and put to work. She has been in the [Ross Hotel](ross-hotel.md) for an unannounced number of days, serving. The [Ventilation Maintenance Room](ventilation-maintenance-room-amys-room.md) is her room. On the night the game begins, she steals Barret's keys and plans to escape.
-
+||**What actually happened:** [Custard Loevinger](custard-loevinger.md), Amy's younger brother, drank a cleaning product at home while Amy watched. He died. Amy, consumed by a guilt she could not carry, took her own life outside the hotel. [Barret Aricson](barret-aricson.md) found what remained of her. The [Kubler](the-kubler.md) organism — whose immortality-sustaining spore field permeates the hotel — kept her from dying permanently. She was put back together and put to work. She has been in the [Ross Hotel](ross-hotel.md) for an unannounced number of days, serving. The [Ventilation Maintenance Room](ventilation-maintenance-room-amys-room.md) is her room. On the night the game begins, she steals Barret's keys and plans to escape.
+||
 Amy does not know this is what she is doing here. She represses it. The game represses it *with* her. The player is never told. It is assembled over time through observation: the reassembly scars on her hands (visible in the opening, still healing), the flatness with which she processes mortal danger, the moments she almost says something true and pulls back.
 
-The game's real arc — never announced, never named — is Amy finding a reason to stay alive. If the player makes the right choices, she leaves the hotel with one. If they don't, she stays. Or worse.
+||The game's real arc — never announced, never named — is Amy finding a reason to stay alive. If the player makes the right choices, she leaves the hotel with one. If they don't, she stays. Or worse.
+||
 
 ---
 

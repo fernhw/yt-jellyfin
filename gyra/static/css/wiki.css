@@ -124,14 +124,19 @@ textarea { resize: vertical; }
   height: 42px;
   background: #fff;
   border-bottom: 1px solid #a2a9b1;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   transition: transform .28s cubic-bezier(.4,0,.2,1), opacity .28s ease;
   will-change: transform;
   font-family: var(--wiki-font);
   font-size: 13px;
 }
+/* Push page content below the fixed topbar */
+body.wiki-mode { padding-top: 42px; }
+/* Desktop scroll-hide (applied by JS on article pages only) */
 .wiki-topbar.is-hidden {
   transform: translateY(-100%);
   opacity: 0;

@@ -6,7 +6,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{{ article.title }} — {{ project.name }} Wiki</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}?v=1782411831">
 </head>
 <body class="wiki-mode"><script>(function(){var s=localStorage.getItem('wiki_dark_mode'),q=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)');if(s==='1'||(s===null&&q&&q.matches))document.body.classList.add('wiki-dark');})();</script>
 
@@ -157,19 +157,21 @@
   if (!topbar) return;
   var TOPBAR_H = topbar.offsetHeight || 42;
   var ticking = false;
+  /* Use matchMedia — reliable on all devices including iOS */
+  var mqlMobile = window.matchMedia && window.matchMedia('(max-width: 640px)');
   function onScroll() {
     if (!ticking) {
       requestAnimationFrame(function() {
         var y = window.scrollY || window.pageYOffset;
         var hide = y > 2;
         topbar.classList.toggle('is-hidden', hide);
+        document.body.classList.toggle('topbar-hidden', hide);
         if (layout) layout.style.setProperty('--topbar-h', hide ? '0px' : TOPBAR_H + 'px');
         ticking = false;
       });
       ticking = true;
     }
   }
-  // set initial value
   if (layout) layout.style.setProperty('--topbar-h', TOPBAR_H + 'px');
   window.addEventListener('scroll', onScroll, { passive: true });
 })();
@@ -695,22 +697,25 @@ body.wiki-dark .wiki-child-readmore a:hover { background:#1e2540; border-color:#
   .wiki-sidebar-toggle {
     display: flex;
     position: fixed;
-    top: 12px; left: 12px;
-    z-index: 300;              /* above everything */
+    top: 42px; left: 0;
+    z-index: 99;              /* below topbar (z:100) but above content */
     width: 34px; height: 34px;
-    border-radius: 6px;
+    border-radius: 0 0 6px 0;
     align-items: center; justify-content: center;
     background: rgba(248,249,250,.97);
     border: 1px solid #c8ccd1;
-    box-shadow: 0 1px 4px rgba(0,0,0,.2);
+    border-top: none; border-left: none;
+    box-shadow: 2px 2px 4px rgba(0,0,0,.1);
     padding: 0;
     font-size: 16px;
     line-height: 1;
     cursor: pointer;
     color: #54595d;
-    transition: background .1s, color .1s;
+    transition: top .28s cubic-bezier(.4,0,.2,1), background .1s, color .1s;
   }
   .wiki-sidebar-toggle:hover { background: #eaecf0; color: #202122; }
+  /* When topbar hides, slide toggle up to fill its space */
+  body.topbar-hidden .wiki-sidebar-toggle { top: 0; border-radius: 0 0 6px 0; }
 
   .wiki-article-layout {
     grid-template-columns: 1fr;

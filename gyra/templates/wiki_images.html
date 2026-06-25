@@ -6,13 +6,8 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Images — {{ project.name }} Wiki</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}">
-</head>
-<body class="wiki-mode">
-
-<div class="wiki-topbar">
-  <div class="wiki-topbar-left">
-    <a class="wiki-topbar-home" href="{{ url_for('wiki_home', project_id=project.id) }}">📖 {{ project.name }} Wiki</a>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}?v=1782411831">
+  📖 {{ project.name }} Wiki</a>
     <span class="wiki-topbar-sep">›</span>
     <span class="wiki-topbar-current">Images</span>
   </div>

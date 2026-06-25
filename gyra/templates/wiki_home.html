@@ -6,11 +6,13 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{{ project.name }} Wiki</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}?v=1782411831">
 </head>
 <body class="wiki-mode"><script>(function(){var s=localStorage.getItem('wiki_dark_mode'),q=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)');if(s==='1'||(s===null&&q&&q.matches))document.body.classList.add('wiki-dark');})();</script>
 
 {# ── Wiki top bar ── #}
+{# CSS-only hamburger toggle — works on all devices, zero JS #}
+<input type="checkbox" id="wh-ham-chk" class="wh-ham-chk">
 <div class="wiki-topbar">
   <div class="wiki-topbar-left">
     <div class="wiki-topbar-logo">
@@ -25,7 +27,7 @@
       <div class="wiki-topbar-sub">Wiki</div>
     </div>
   </div>
-  <nav class="wh-topbar-nav">
+  <nav class="wh-topbar-nav wh-topbar-nav-desktop">
     {% if session.role != 'viewer' %}
     <a class="wh-nav-btn" href="{{ url_for('wiki_gdd', project_id=project.id) }}">GDD</a>
     <a class="wh-nav-btn" href="{{ url_for('wiki_images_page', project_id=project.id) }}">Images</a>
@@ -40,6 +42,26 @@
     {% endif %}
     <button class="wh-nav-btn wh-nav-icon" id="wiki-dark-toggle" title="Toggle dark mode">🌙</button>
   </nav>
+  {# Mobile: dark toggle + hamburger label #}
+  <div class="wh-topbar-mobile">
+    <button class="wh-nav-btn wh-nav-icon" id="wiki-dark-toggle-mob" title="Toggle dark mode">🌙</button>
+    <label for="wh-ham-chk" class="wh-hamburger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </label>
+  </div>
+</div>
+{# Mobile nav drawer — shown via CSS when checkbox is checked #}
+<div class="wh-mobile-drawer">
+  {% if session.role != 'viewer' %}
+  <a class="wh-drawer-item" href="{{ url_for('wiki_gdd', project_id=project.id) }}">GDD</a>
+  <a class="wh-drawer-item" href="{{ url_for('wiki_images_page', project_id=project.id) }}">Images</a>
+  {% if session.role in ('admin','super_user') %}
+  <button class="wh-drawer-item" id="wiki-reorder-btn-mob">⇄ Reorder</button>
+  <a class="wh-drawer-item" href="{{ url_for('wiki_import', project_id=project.id) }}">⬆ Import</a>
+  <button class="wh-drawer-item" id="wiki-sync-titles-btn-mob">↺ Sync Titles</button>
+  {% endif %}
+  <a class="wh-drawer-item wh-drawer-item-primary" href="{{ url_for('wiki_new', project_id=project.id) }}">+ New Article</a>
+  {% endif %}
 </div>
 
 {# ── Reorder panel (hidden by default) ── #}
@@ -271,8 +293,6 @@
 
 <style>
 /* ───────────────────────────────────── HERO */
-.wh-hero {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f2744 100%);
 .wh-search-strip { padding: 14px 24px; border-bottom: 1px solid #eaecf0; background: #f8f9fa; }
 .wh-search-wrap { position: relative; max-width: 560px; }
 .wh-search-box {
@@ -429,11 +449,66 @@ body.wiki-dark .wh-nav-btn:hover { background: #2a2a2a; border-color: #383838; c
 body.wiki-dark .wh-nav-btn-primary { background: #1d4ed8 !important; color: #fff !important; }
 body.wiki-dark .wh-nav-btn-primary:hover { background: #1e40af !important; }
 body.wiki-dark .wh-nav-sep { background: #383838; }
-@media (max-width: 640px) {
-  .wiki-topbar { padding: 8px 12px; flex-wrap: wrap; height: auto; min-height: 52px; }
-  .wh-topbar-nav { gap: 2px; }
-  .wh-nav-sep { display: none; }
+/* ── Hamburger (CSS-only toggle) ── */
+.wh-ham-chk { display: none; }
+.wh-hamburger {
+  display: none;
+  flex-direction: column; justify-content: center; align-items: center;
+  width: 34px; height: 34px; gap: 5px;
+  background: none; border: none; cursor: pointer; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
+.wh-hamburger span {
+  display: block; width: 20px; height: 2px;
+  background: #54595d; border-radius: 2px;
+  transition: transform .2s, opacity .2s;
+}
+body.wiki-dark .wh-hamburger span { background: #a0a0a0; }
+/* ── Mobile drawer ── */
+.wh-mobile-drawer {
+  display: none;
+  position: fixed;
+  top: 42px; left: 0; right: 0;
+  z-index: 200;
+  background: #fff;
+  border-bottom: 2px solid #a2a9b1;
+  flex-direction: column;
+  box-shadow: 0 8px 24px rgba(0,0,0,.15);
+  max-height: calc(100vh - 42px);
+  overflow-y: auto;
+}
+/* Checked state: show drawer, animate hamburger to X */
+.wh-ham-chk:checked ~ .wh-mobile-drawer { display: flex; }
+.wh-ham-chk:checked ~ .wiki-topbar .wh-hamburger span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.wh-ham-chk:checked ~ .wiki-topbar .wh-hamburger span:nth-child(2) { opacity: 0; }
+.wh-ham-chk:checked ~ .wiki-topbar .wh-hamburger span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.wh-drawer-item {
+  display: block; width: 100%;
+  padding: 13px 20px; font-size: 14px;
+  color: #202122; text-decoration: none;
+  background: none; border: none; text-align: left; cursor: pointer;
+  border-bottom: 1px solid #f0f2f4;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+.wh-drawer-item:hover { background: #f8f9fa; }
+.wh-drawer-item-primary { color: #1d4ed8; font-weight: 600; }
+body.wiki-dark .wh-mobile-drawer { background: #222; border-color: #555; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+body.wiki-dark .wh-drawer-item { color: #ddd8d0; border-color: #333; }
+body.wiki-dark .wh-drawer-item:hover { background: #2a2a2a; }
+.wh-topbar-mobile { display: none; align-items: center; gap: 4px; margin-left: auto; }
+@media (max-width: 640px) {
+  .wiki-topbar { padding: 0 12px; height: 42px; flex-wrap: nowrap; }
+  .wiki-topbar-name-wrap .wiki-topbar-sub { display: none; }
+  .wh-topbar-nav-desktop { display: none !important; }
+  .wh-topbar-mobile { display: flex; }
+  .wh-hamburger { display: flex; }
+  .wh-search-strip { padding: 10px 12px; }
+}
+body.wiki-dark .wh-search-strip { background: #1a1a1a; border-color: #383838; }
+body.wiki-dark .wh-search-box { background: #2a2a2a; border-color: #444; }
+body.wiki-dark #wh-search-input { color: #ddd8d0; }
+body.wiki-dark #wh-search-input::placeholder { color: #666; }
 /* ── Depth picker in section settings modal ── */
 .wh-modal-depth { padding: 12px 16px 14px; border-top: 1px solid #f1f5f9; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .wh-modal-depth-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #64748b; white-space: nowrap; }
@@ -1332,13 +1407,18 @@ body.wiki-dark .wh-mode-opt small { color:#777; }
   function applyDark(on) {
     document.body.classList.toggle('wiki-dark', on);
     if (btn) btn.textContent = on ? '☀️' : '🌙';
+    var btnMob = document.getElementById('wiki-dark-toggle-mob');
+    if (btnMob) btnMob.textContent = on ? '☀️' : '🌙';
   }
   applyDark(document.body.classList.contains('wiki-dark'));
-  if (btn) btn.addEventListener('click', function () {
+  function darkClick() {
     var on = !document.body.classList.contains('wiki-dark');
     localStorage.setItem(DARK_KEY, on ? '1' : '0');
     applyDark(on);
-  });
+  }
+  if (btn) btn.addEventListener('click', darkClick);
+  var btnMob = document.getElementById('wiki-dark-toggle-mob');
+  if (btnMob) btnMob.addEventListener('click', darkClick);
   var mq = window.matchMedia && window.matchMedia('(prefers-color-scheme:dark)');
   if (mq && mq.addEventListener) {
     mq.addEventListener('change', function(e) {
@@ -1377,6 +1457,17 @@ body.wiki-dark .wh-mode-opt small { color:#777; }
       });
     });
   }
+})();
+</script>
+<script>
+(function () {
+  /* Bridge mobile reorder/sync buttons to their desktop counterparts */
+  var mobReorder = document.getElementById('wiki-reorder-btn-mob');
+  var deskReorder = document.getElementById('wiki-reorder-btn');
+  if (mobReorder && deskReorder) mobReorder.addEventListener('click', function () { deskReorder.click(); });
+  var mobSync = document.getElementById('wiki-sync-titles-btn-mob');
+  var deskSync = document.getElementById('wiki-sync-titles-btn');
+  if (mobSync && deskSync) mobSync.addEventListener('click', function () { deskSync.click(); });
 })();
 </script>
 </body>
