@@ -619,31 +619,62 @@ function renderPreview() {
     }
   });
 
-  // ── Render child article previews ────────────────────────────────────────
+  // ── Render child article previews — matches wiki_article.html exactly ─────
   var previewChildrenEl = document.getElementById('preview-children');
   if (previewChildrenEl) {
     var childDataEl = document.getElementById('wiki-edit-children-data');
     var editChildren = childDataEl ? JSON.parse(childDataEl.textContent) : [];
     previewChildrenEl.innerHTML = '';
+
+    function fixChildLinks(el) {
+      el.querySelectorAll('a[href]').forEach(function(a) {
+        var href = a.getAttribute('href') || '';
+        if (href && !href.startsWith('http') && !href.startsWith('/') && !href.startsWith('#') && href.endsWith('.md')) {
+          a.setAttribute('href', '/project/{{ project.id }}/wiki/' + encodeURIComponent(href.slice(0, -3)));
+          a.classList.add('wiki-link');
+        } else if (href.startsWith('/project/')) {
+          a.classList.add('wiki-link');
+        }
+      });
+      el.querySelectorAll('img').forEach(function(img) {
+        var src = img.getAttribute('src') || '';
+        if (src && !src.startsWith('http') && !src.startsWith('/')) img.src = '/project/{{ project.id }}/wiki/images/' + src;
+        img.classList.add('wiki-img'); img.loading = 'lazy';
+      });
+    }
+
     editChildren.forEach(function(child) {
       var section = document.createElement('div');
       section.className = 'wiki-child-section';
+
+      // Heading — matches article page: title as plain span + separate icon link
       var h = document.createElement('h2');
       h.className = 'wiki-child-heading';
       if (child.gdd_num) h.innerHTML = '<span class="wiki-child-num">' + child.gdd_num.replace(/</g,'&lt;') + '</span>';
-      var a = document.createElement('a');
-      a.href = child.url; a.textContent = child.title;
-      h.appendChild(a); section.appendChild(h);
+      var titleSpan = document.createElement('span');
+      titleSpan.className = 'wiki-child-heading-title';
+      titleSpan.textContent = child.title;
+      h.appendChild(titleSpan);
+      var iconLink = document.createElement('a');
+      iconLink.href = child.url;
+      iconLink.className = 'wiki-child-open-icon';
+      iconLink.title = 'Read full';
+      iconLink.setAttribute('aria-label', 'Read full article: ' + child.title);
+      iconLink.innerHTML = '<svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="1" width="10" height="10" rx="2"/><path d="M11 7H1v10h10V7z" stroke-width="1.7"/></svg>';
+      h.appendChild(iconLink);
+      section.appendChild(h);
+
+      // Body content
       var body = document.createElement('div');
       body.className = 'wiki-child-body';
       var mc = (child.main_content || '').trim().replace(/^#[^\n]*\n/, '').trim();
-      if (mc) { body.innerHTML = renderMd(mc); }
-      else { body.innerHTML = '<p class="wiki-child-empty-note">No content yet.</p>'; }
+      if (mc) {
+        body.innerHTML = renderMd(mc);
+        fixChildLinks(body);
+      } else {
+        body.innerHTML = '<p class="wiki-child-empty-note">No content yet.</p>';
+      }
       section.appendChild(body);
-      var rm = document.createElement('div');
-      rm.className = 'wiki-child-readmore';
-      rm.innerHTML = '<a href="' + child.url + '">Read full article →</a>';
-      section.appendChild(rm);
       previewChildrenEl.appendChild(section);
     });
   }
