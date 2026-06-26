@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-25
 
-> *Good evening! Here's what landed on Thursday, June 25, 2026 at 08:04 PM.*
-> **YT Mirror:** 637.33 GB used · 0.57 TB free
+> *Good evening! Here's what landed on Thursday, June 25, 2026 at 09:10 PM.*
+> **YT Mirror:** 637.75 GB used · 0.57 TB free
 
 ## Priority Videos
 
@@ -12,6 +12,7 @@
 
 ## Non-Priority Videos
 
+- **Rockstar pulls a Nintendo** — *GameLinked* · downloaded 09:08 PM · podcastable
 - **A Silly Little Hot Dog Eating Contest** — *Scott's Stash* · downloaded 07:04 PM · not podcastable
 - **The Xbox Price Increase Is Actually Insane** — *Spawn Wave* · downloaded 05:05 PM · not podcastable
 - **Dustin Lucas Will Mike Burp Is Frying Me** — *Lessons in Meme Culture* · downloaded 03:22 PM · not podcastable
