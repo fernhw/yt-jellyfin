@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-25",
+  "updated": "2026-06-26",
   "shows": [
     {
       "show": "Re:Zero kara Hajimeru Isekai Seikatsu",
@@ -10,7 +10,7 @@
       "week": "?",
       "status": "searching",
       "release_days": "wed",
-      "days_until": 6,
+      "days_until": 5,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-re-zero-kara-hajimeru-isekai-seikatsu.jpg"
     },
@@ -23,7 +23,7 @@
       "week": "?",
       "status": "searching",
       "release_days": "sat",
-      "days_until": 2,
+      "days_until": 1,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-agents-of-the-four-seasons-dance-of-spring.jpg"
     }
