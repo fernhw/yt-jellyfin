@@ -1,16 +1,18 @@
 # What to Watch — 2026-06-26
 
-> *Good afternoon! Here's what landed on Friday, June 26, 2026 at 03:14 PM.*
-> **YT Mirror:** 637.81 GB used · 0.57 TB free
+> *Good evening! Here's what landed on Friday, June 26, 2026 at 05:09 PM.*
+> **YT Mirror:** 639.15 GB used · 0.57 TB free
 
 ## Priority Videos
 
+- **Gamers Are Eating Good in 2026 | Trash Taste #314** — *Trash Taste* · downloaded 05:06 PM · podcastable
 - **Digital Days** — *GLITCH* · downloaded 03:03 PM · not podcastable
 
 ---
 
 ## Non-Priority Videos
 
+- **Hollywood never learns..** — *Asmongold TV* · downloaded 05:06 PM · not podcastable
 - **Apple Explains Why They Hiked Prices** — *SAMTIME* · downloaded 03:11 PM · not podcastable
 - **Their Campaign To Hike Game Prices FAILED** — *Bellular News* · downloaded 03:09 PM · podcastable
 - **CAPTAIN TSUBASA 2: WORLD FIGHTERS – Pre-order Trailer – Nintendo Switch** — *Nintendo of America* · downloaded 03:05 PM · not podcastable
