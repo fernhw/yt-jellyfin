@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-26
 
-> *Good evening! Here's what landed on Friday, June 26, 2026 at 05:09 PM.*
-> **YT Mirror:** 639.15 GB used · 0.57 TB free
+> *Good evening! Here's what landed on Friday, June 26, 2026 at 06:05 PM.*
+> **YT Mirror:** 639.60 GB used · 0.57 TB free
 
 ## Priority Videos
 
@@ -12,6 +12,7 @@
 
 ## Non-Priority Videos
 
+- **"He Was WHITE, He DESERVED IT" The Delusional Defenders of Karmelo Anthony** — *Shoe0nHead* · downloaded 06:04 PM · podcastable · *45 days since their last upload*
 - **Hollywood never learns..** — *Asmongold TV* · downloaded 05:06 PM · not podcastable
 - **Apple Explains Why They Hiked Prices** — *SAMTIME* · downloaded 03:11 PM · not podcastable
 - **Their Campaign To Hike Game Prices FAILED** — *Bellular News* · downloaded 03:09 PM · podcastable
