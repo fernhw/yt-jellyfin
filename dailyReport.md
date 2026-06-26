@@ -2,17 +2,21 @@
 
 ## What to Watch — 2026-06-26
 
-> *Good morning! Here's what landed on Friday, June 26, 2026 at 11:44 AM.*
-> **YT Mirror:** 636.64 GB used · 0.57 TB free
+> *Good afternoon! Here's what landed on Friday, June 26, 2026 at 03:14 PM.*
+> **YT Mirror:** 637.81 GB used · 0.57 TB free
 
 ### Priority Videos
 
-No priority uploads today — your favorites are taking a break.
+- **Digital Days** — *GLITCH* · downloaded 03:03 PM · not podcastable
 
 ---
 
 ### Non-Priority Videos
 
+- **Apple Explains Why They Hiked Prices** — *SAMTIME* · downloaded 03:11 PM · not podcastable
+- **Their Campaign To Hike Game Prices FAILED** — *Bellular News* · downloaded 03:09 PM · podcastable
+- **CAPTAIN TSUBASA 2: WORLD FIGHTERS – Pre-order Trailer – Nintendo Switch** — *Nintendo of America* · downloaded 03:05 PM · not podcastable
+- **Venezuela got destroyed..** — *Asmongold TV* · downloaded 03:05 PM · not podcastable
 - **This Game Sold 7 Million Copies in 12 Days | Unpacked** — *Second Wind* · downloaded 11:39 AM · podcastable
 - **So I Tried Star Fox..** — *Asmongold TV* · downloaded 11:38 AM · not podcastable
 - **Don’t Buy A Tungsten Cube** — *Lessons in Meme Culture* · downloaded 09:42 AM · not podcastable

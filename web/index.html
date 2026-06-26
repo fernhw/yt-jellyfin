@@ -188,7 +188,7 @@
       <div class="title-wrap">
         <div class="kicker">Recent Download Report</div>
         <h1>Latest downloads</h1>
-        <p class="lede">Good morning. This view keeps the latest 4 days in download order, split into priority, podcastable, rare drops, and everything else.</p>
+        <p class="lede">Good afternoon. This view keeps the latest 4 days in download order, split into priority, podcastable, rare drops, and everything else.</p>
       </div>
       <div class="top-meta">
         <button class="notify-btn" onclick="subscribeNotify()">Get notified</button>
@@ -204,13 +204,30 @@
       <button class="filter-chip active" type="button" data-filter-bucket="all">All</button>
       <button class="filter-chip" type="button" data-filter-bucket="priority">Priority</button>
       <button class="filter-chip" type="button" data-filter-bucket="nonpriority">Non-Priority</button>
-      <div class="filter-status" id="filterStatus">Showing all 60 videos.</div>
+      <div class="filter-status" id="filterStatus">Showing all 65 videos.</div>
     </section>
 
     <div id="filterResults"><div class="cards" id="filterCards"></div></div>
 
     <main id="feedMain">
-      <section class="day-section"><div class="day-header"><h2>Today <span>Friday, June 26</span></h2></div><section class="category"><h3>Podcasts</h3><div class="cards"><a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="this game sold 7 million copies in 12 days | unpacked second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: This Game Sold 7 Million Copies in 12 Days | Unpacked">
+      <section class="day-section"><div class="day-header"><h2>Today <span>Friday, June 26</span></h2></div><section class="category"><h3>Priority Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="digital days glitch" data-bucket="priority" aria-label="Open in Jellyfin: Digital Days">
+  <article class="card priority">
+    <img src="thumbs/glitch.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Digital Days</div>
+      <div class="meta-row">GLITCH <span>&middot;</span> Jun 26, 2026</div>
+    </div>
+  </article>
+</a></div></section><section class="category"><h3>Podcasts</h3><div class="cards"><a class="card-link" href="#" data-app-urls="audiobooth://" data-filter-text="their campaign to hike game prices failed bellular news" data-bucket="nonpriority" aria-label="Open in AudioBooth: Their Campaign To Hike Game Prices FAILED">
+  <article class="card podcast">
+    <img src="thumbs/bellularnews.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Their Campaign To Hike Game Prices FAILED</div>
+      <div class="meta-row">Bellular News <span>&middot;</span> Jun 26, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-show-picker="1" data-jellyfin-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-abs-urls="audiobooth://" data-filter-text="this game sold 7 million copies in 12 days | unpacked second wind" data-bucket="nonpriority" aria-label="Open in Jellyfin or AudioBooth: This Game Sold 7 Million Copies in 12 Days | Unpacked">
   <article class="card podcast">
     <img src="thumbs/secondwind.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -227,7 +244,34 @@
       <div class="meta-row">TechDweeb <span>&middot;</span> Jun 26, 2026</div>
     </div>
   </article>
-</a></div></section><section class="category"><h3>Other Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="so i tried star fox.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Jellyfin: So I Tried Star Fox..">
+</a></div></section><section class="category"><h3>Other Videos</h3><div class="cards"><a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="apple explains why they hiked prices samtime" data-bucket="nonpriority" aria-label="Open in Jellyfin: Apple Explains Why They Hiked Prices">
+  <article class="card">
+    <img src="thumbs/samtime.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Apple Explains Why They Hiked Prices</div>
+      <div class="meta-row">SAMTIME <span>&middot;</span> Jun 26, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="captain tsubasa 2: world fighters – pre-order trailer – nintendo switch nintendo of america" data-bucket="nonpriority" aria-label="Open in Jellyfin: CAPTAIN TSUBASA 2: WORLD FIGHTERS – Pre-order Trailer – Nintendo Switch">
+  <article class="card">
+    <img src="thumbs/nintendoofamerica.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">CAPTAIN TSUBASA 2: WORLD FIGHTERS – Pre-order Trailer – Nintendo Switch</div>
+      <div class="meta-row">Nintendo of America <span>&middot;</span> Jun 26, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="venezuela got destroyed.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Jellyfin: Venezuela got destroyed..">
+  <article class="card">
+    <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
+    <div class="info">
+      <div class="title">Venezuela got destroyed..</div>
+      <div class="meta-row">Asmongold TV <span>&middot;</span> Jun 26, 2026</div>
+    </div>
+  </article>
+</a>
+<a class="card-link" href="#" data-app-urls="org.jellyfin.expo://|jellyfin://|https://jellyfin.fernhw.com" data-filter-text="so i tried star fox.. asmongold tv  " data-bucket="nonpriority" aria-label="Open in Jellyfin: So I Tried Star Fox..">
   <article class="card">
     <img src="thumbs/asmongoldtv.jpg" onerror="this.style.display='none'" alt="">
     <div class="info">
@@ -746,7 +790,7 @@
     <section class="bottom-panel">
       <div class="bottom-head">
         <h2>Report details</h2>
-        <p>Good morning. 60 items from the last 4 days.</p>
+        <p>Good afternoon. 65 items from the last 4 days.</p>
       </div>
 
       <div class="warn-stack"></div>
@@ -758,24 +802,24 @@
         </div>
         <div class="summary-tile">
           <strong>Updated</strong>
-          <span>2026-06-26 11:44</span>
+          <span>2026-06-26 15:15</span>
         </div>
         <div class="summary-tile">
           <strong>Today</strong>
-          <span>11 downloads on Friday</span>
+          <span>16 downloads on Friday</span>
         </div>
         <div class="summary-tile">
           <strong>Recent Downloads</strong>
-          <span>60 items across 4 days</span>
+          <span>65 items across 4 days</span>
         </div>
         <div class="summary-tile">
           <strong>Library Storage</strong>
-          <span>636.64 GB used &middot; 0.57 TB free</span>
+          <span>637.81 GB used &middot; 0.57 TB free</span>
         </div>
       </section>
     </section>
 
-    <footer>report.fernhw.com &middot; updated 2026-06-26 11:44</footer>
+    <footer>report.fernhw.com &middot; updated 2026-06-26 15:15</footer>
   </div>
 </div>
 
