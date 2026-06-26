@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-26
 
-> *Good morning! Here's what landed on Friday, June 26, 2026 at 09:46 AM.*
-> **YT Mirror:** 635.18 GB used · 0.58 TB free
+> *Good morning! Here's what landed on Friday, June 26, 2026 at 11:44 AM.*
+> **YT Mirror:** 636.64 GB used · 0.57 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,8 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **This Game Sold 7 Million Copies in 12 Days | Unpacked** — *Second Wind* · downloaded 11:39 AM · podcastable
+- **So I Tried Star Fox..** — *Asmongold TV* · downloaded 11:38 AM · not podcastable
 - **Don’t Buy A Tungsten Cube** — *Lessons in Meme Culture* · downloaded 09:42 AM · not podcastable
 - **DF Direct Q+A: Steam Machine - The Big Price/Performance/Form Factor Discussion** — *Digital Foundry* · downloaded 09:41 AM · not podcastable
 - **Sony brings down the axe on Bungie + GTA VI pricing and Xbox price hikes | This Week in Videogames** — *Skill Up* · downloaded 09:39 AM · not podcastable
