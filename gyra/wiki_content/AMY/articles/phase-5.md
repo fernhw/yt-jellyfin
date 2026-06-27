@@ -10,9 +10,9 @@ notes=?
 
 
 [MAIN_SECTION]
-Ascension: The victim, now a permanent shrub-like entity, transcends their human and fungal origins to become a unique, undying life form, trapped in a state of eternal torment. At this point, the infection is permanent.
+Ascension: The infection is permanent. The victim becomes a shrub. Awareness remains. The [Kubler](the-kubler.md) keeps them alive indefinitely.
 
-Amy, now a permanent shrub-like entity, is trapped in a state of eternal torment. At this point, the infection is permanent, and Amy suffers the tragedy and game over.
+Amy, if she reaches this point, is the game-over state.
 
 [SECONDARY]
 _Add more details here._

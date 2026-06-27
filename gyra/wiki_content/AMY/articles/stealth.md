@@ -13,7 +13,7 @@ owner=?
 
 
 [MAIN_SECTION]
-The game's mechanics are designed to constantly challenge players, encouraging them to think and react to the world around them.
+Stealth is the core loop. Think, position, time your moves.
 
 [SECONDARY]
 _Add more details here._

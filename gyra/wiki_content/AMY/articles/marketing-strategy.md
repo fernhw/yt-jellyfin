@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-At Studio High Ground. We build differently so to start and to generate buzz and anticipation for Amy's Escape, the marketing strategy will focus on a combination of social media campaigns, influencer outreach, and partnerships with gaming media outlets. but we have twists to stand out.
+At Studio High Ground. We build differently — social media campaigns, influencer outreach, and gaming media partnerships, but with twists that make us stand out.
 
 [SECONDARY]
 _Add more details here._

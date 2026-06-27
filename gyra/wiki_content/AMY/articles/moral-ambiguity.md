@@ -13,7 +13,7 @@ location=?
 
 
 [MAIN_SECTION]
-The game presents players with moral dilemmas, where the line between right and wrong is often blurred. The choices players make will not only affect the game's outcome but also reveal more about Amy's own character and motivations.
+The right call is rarely obvious. Some puzzles have no solution that helps everyone. Your choices expose who Amy is as much as they shape what happens.
 
 [SECONDARY]
 _Add more details here._

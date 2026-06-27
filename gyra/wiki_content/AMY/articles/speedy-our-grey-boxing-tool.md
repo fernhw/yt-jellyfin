@@ -14,19 +14,11 @@ time_limit=?
 
 
 [MAIN_SECTION]
-Greyboxing, a crucial step in level design, entails crafting a basic, playable prototype of a stage to evaluate its gameplay potential prior to refining its aesthetics. This widely-used approach allows designers to assess the layout's effectiveness in delivering an engaging gaming experience. By focusing on functionality first, greyboxing ensures a solid foundation for visually stunning and enjoyable levels.
+Greyboxing builds a playable prototype before any art goes in. Test the layout, fix what doesn't work, then refine. Speedy is our in-house tool for this, built in Unity.
 
-The greyboxing process is both user-friendly and efficient. Each 3D object can be placed in editing mode, allowing for seamless layering and customization as needed. This flexibility enables the stacking and overlapping of objects to create complex designs with multiple layers.
+Each 3D object goes in as an editable block that can be layered and stacked. Lasso-select multiple nodes at once to rework geometry fast.
 
-
-
-
-
-
-The editing process is further streamlined by the ability to lasso and select multiple nodes at once, as they are Unity objects. This functionality enables swift and significant alterations to the geometry of entire stages. The result is an efficient and flexible design process that allows for rapid iteration and optimization, making it an ideal choice for quickly refining and perfecting game environments.
-
-
-In the internal code, what is happening is that Amy's character is interacting with the triangles closest to her position, while also predicting her future movements forward.
+Under the hood, Amy's character interacts with the triangles closest to her position and predicts her forward movement from there.
 
 [SECONDARY]
 _Add more details here._

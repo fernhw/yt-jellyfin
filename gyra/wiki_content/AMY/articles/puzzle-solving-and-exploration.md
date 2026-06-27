@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Throughout Amy's journey, players will encounter numerous puzzles that require critical thinking and resourcefulness. The hotel is filled with hidden rooms and secret passages waiting to be discovered, rewarding curious players with new insights into the hotel's backstory and its inhabitants.
+The hotel is full of puzzles. Hidden rooms and secret passages are there for players who look. Most of them hold pieces of the hotel's history.
 
 [SECONDARY]
 _Add more details here._

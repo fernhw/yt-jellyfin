@@ -13,7 +13,7 @@ platform=?
 
 
 [MAIN_SECTION]
-Customizable shaders and rendering options allow developers to create unique visuals that are tailored to their mod.
+Customizable shaders and rendering options for precise control over the game's visual style.
 
 [SECONDARY]
 _Add more details here._

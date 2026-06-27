@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-At High Ground Studio, we value realistic character animations. That's why we've added the ability for Amy to lean on surfaces, which helps convey her fatigue to the player.
+Amy leans on surfaces when she's tired. It's in her animation set.
 
 [SECONDARY]
 _Add more details here._

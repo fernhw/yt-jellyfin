@@ -13,7 +13,7 @@ platform=?
 
 
 [MAIN_SECTION]
-Our highly skilled development team, led by a top-of-the-line 10x unicorn engineer and supported by industry veterans, possesses the expertise and resources required to overcome technical challenges that may arise. We will allocate resources for debugging and quality assurance to ensure a polished final product.
+The team is led by a 10x unicorn engineer. Technical challenges get solved, not deferred. Resources are allocated for debugging and QA.
 
 [SECONDARY]
 _Add more details here._

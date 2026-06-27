@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-We'll create a set of animations to ensure that Amy can realistically pick up important objects in her environment instead of them magically appearing in her inventory.
+Amy has pickup animations for important objects. They don't just appear in her inventory.
 
 [SECONDARY]
 _Add more details here._

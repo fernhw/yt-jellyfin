@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Amy's running style will adapt to her emotions in certain situations. For example, if she is scared, she may run differently than if she is calm.
+Amy runs differently depending on how she feels. Scared is a different run than calm.
 
 [Needs an image]
 

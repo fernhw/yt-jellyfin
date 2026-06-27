@@ -13,7 +13,7 @@ platform=?
 
 
 [MAIN_SECTION]
-Developers can create custom tools within Unity to streamline the development process and increase efficiency.
+Custom tools built in Unity to streamline the development process.
 
 [SECONDARY]
 _Add more details here._

@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Our game will not be a typical horror experience. Instead, we are creating a dark fantasy adventure with a whimsical, cartoony, Ghibli-esque visual style that is both charming and unsettling. By targeting an audience that appreciates deep storytelling and unique aesthetics, we will attract players who are hungry for more than just the horror genre. At Studio High Ground, we are not satisfied with making "samey" content. We've designed our game from the ground up to stand out in a crowded market.
+Not a typical horror game. Dark fantasy, coming-of-age, Ghibli-esque visual style — charming and unsettling at the same time. We're not interested in samey content. The whole thing is built to be something players haven't played before.
 
 [SECONDARY]
 _Add more details here._

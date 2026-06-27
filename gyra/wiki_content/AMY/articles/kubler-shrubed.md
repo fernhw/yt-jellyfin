@@ -10,9 +10,9 @@ notes=?
 
 
 [MAIN_SECTION]
-The Kubler produces an abundance of spores that blanket surfaces quickly. In search of nutrients, these spores turn hostile, attacking nearby humans and causing them to morph into flower-adorned shrubs. 
+The Kubler produces spores that blanket surfaces fast. The spores attack nearby humans, causing them to morph into flower-covered shrubs.
 
-The infected experience paralysis, immobility, and ongoing distress as a hybrid life form. The infection progresses through five stages and can be counteracted by light exposure. However, once a fungal network forms inside the host, the infection becomes untreatable.
+Infection goes through five stages. Paralysis comes first, then immobility as the plant takes hold. Light can stop it early. Once a fungal network forms inside the body, it's over.
 
 [SECONDARY]
 _Add more details here._

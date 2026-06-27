@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Aggressive Spread: The spores infiltrate the bloodstream, utilizing the victim's body to further their development and spread throughout the system.
+Aggressive Spread: The spores enter the bloodstream, using the body to spread throughout the system.
 
 [SECONDARY]
 _Add more details here._

@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Developed by Playdead, is an atmospheric puzzle-platformer with a distinctive art style. Unity's flexibility allowed Playdead to push the boundaries of visual storytelling, creating a haunting and immersive world. The team utilized Unity's tools to achieve their desired aesthetic and optimize performance, delivering a seamless and engaging experience to players.
+Playdead used Unity for Inside. They pushed the engine hard on visual storytelling and performance. Shows what Unity can do with the right team and the right aesthetic target.
 
 [SECONDARY]
 _Add more details here._

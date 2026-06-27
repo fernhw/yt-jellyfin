@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-With IK stepping not being enough, we will use our custom physics engine, Rustle, to create unique animation data similar to Playdead's Inside, enhancing the tactile feel and responsiveness of Amelia's movements.
+IK stepping alone isn't enough. We use our custom physics engine, Rustle, to generate animation data similar to Playdead's Inside — better feel and responsiveness in Amy's movement.
 
 [SECONDARY]
 _Add more details here._

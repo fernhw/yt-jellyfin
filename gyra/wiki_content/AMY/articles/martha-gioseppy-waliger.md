@@ -19,9 +19,7 @@ relationships
 
 
 [MAIN_SECTION]
-is the former housekeeper of the Albert Ross Hotel. She turned into a bush, and no one knows how it happened. Martha was a tea enthusiast, so much so that she carried a tea diary wherever she went. The teas she made were the hotel owner's favorites.
-
-1.6.2.15 Sara Reizes Klein - is a girl who lives in the walls with long white hair. She's supposed to be the only person to ever escape but never did. You meet her in a secret place.
+is the former housekeeper of the [Ross Hotel](ross-hotel.md). She turned into a shrub while experimenting with a tea recipe. She's still in her room. The Tea Book is still open beside her on the same page.
 
 [SECONDARY]
 ## Overview

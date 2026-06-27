@@ -13,7 +13,7 @@ owner=?
 
 
 [MAIN_SECTION]
-Our game's graphic style is closely related to cartoon styles, which is why we looked for a suitable shader to achieve this level. After a long search, we found the Real Toon Shader, which is used by several popular Unity games that were developed with this cartoon design. Our studio decided to use this shader, but we adapted it to our needs so that ambient lights have effects on Amy, normal smoothing and so that a rim light can be placed around her to make her stand out even in the darkest of environments.
+The art style is cartoon-adjacent, so we needed a shader built for that. We landed on Real Toon Shader, used by several Unity games with the same look. Modified for our needs: ambient light affects Amy, normal smoothing, and a rim light so she reads clearly even in the darkest areas.
 
 [SECONDARY]
 _Add more details here._

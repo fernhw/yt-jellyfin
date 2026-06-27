@@ -13,7 +13,7 @@ platform=?
 
 
 [MAIN_SECTION]
-Access to the engine's source code allows developers to modify existing features or add new ones to suit their specific needs.
+Access to Unity's source code means we can modify or extend the engine itself when needed.
 
 [SECONDARY]
 _Add more details here._

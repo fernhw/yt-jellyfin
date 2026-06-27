@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Utilizing platforms such as Twitter, Instagram, and Facebook, the development team will share teasers, trailers, screenshots, and updates about the game's progress. Engaging with the community and hosting giveaways will encourage user-generated content and word-of-mouth promotion.
+Teasers, trailers, screenshots, and dev updates on Twitter, Instagram, and Facebook. Giveaways and community engagement to build word of mouth.
 
 [SECONDARY]
 _Add more details here._

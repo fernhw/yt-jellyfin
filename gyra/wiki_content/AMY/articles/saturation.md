@@ -11,7 +11,7 @@ notes=?
 
 [MAIN_SECTION]
 Making A God Game Instead
-The current horror game market may be saturated, but our unique approach to game design will ensure that our project stands out from the competition. While most horror games focus on first-person environments and simple gameplay, our game takes inspiration from widely successful titles like Little Nightmares, Undertale, and Paper Mario. These games are beloved for their heart, compelling narratives, and distinctive visual styles.
+The horror game market is saturated with first-person screamers and simple gameplay loops. We're not competing in that lane. Amy's Escape draws from Little Nightmares, Undertale, and Paper Mario — games built on heart, narrative, and distinct visual style.
 
 [SECONDARY]
 _Add more details here._

@@ -11,7 +11,7 @@ notes=?
 
 [MAIN_SECTION]
 Masks
-Amy can acquire diverse masks with unique designs and functions, altering certain facets of her personality, such as her gait or speech. This is reminiscent of the Legend of Zelda series, where the protagonist undergoes a transformation with each mask.
+Amy can find and wear different masks. Each one changes something about her — how she walks, how she talks. Think Majora's Mask.
 
 [Needs an image]
 

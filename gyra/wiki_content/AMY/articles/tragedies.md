@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Instead of just dying and restarting, players experience the harrowing outcomes of their choices, which can result in gruesome or psychologically disturbing situations for [Amy](amelia-amy-loevinger.md). These tragedies heighten the stakes and make the gameplay experience even more immersive and emotionally engaging. Death doesn't exist in this world, only horrors.
+Instead of dying and restarting, Amy experiences the actual outcomes of her choices. Gruesome or psychologically disturbing situations. Death doesn't exist in this world. Only horrors.
 
 [SECONDARY]
 _Add more details here._

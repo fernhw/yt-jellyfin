@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-To provide a comprehensive ROI (Return on Investment) breakdown, we will analyze the potential revenue streams, sales figures, and estimated profit margins for the project. Please note that these are estimates and actual results may vary.
+ROI breakdown based on potential revenue, sales figures, and estimated profit margins. All figures are projections.
 
 [SECONDARY]
 _Add more details here._

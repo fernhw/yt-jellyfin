@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The development team utilizes custom-built editors, a level editor, and a custom programming language for managing dynamic gameplay scenarios. These tools allow for speedy iteration, maximum polish, and an exceptional gaming experience. The tools are already built.
+Custom-built editors, a level editor, and a custom programming language for managing dynamic gameplay scenarios. Built for speed and polish. The tools are already done.
 
 [SECONDARY]
 _Add more details here._

@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-We love Unreal. But Unity and Unreal Engine are two of the most popular game engines in the industry. While both engines have their strengths and weaknesses, Unity has proven to be a more suitable choice for projects with stylized graphics, smaller budgets, smaller file sizes, and better optimization, particularly on mobile.
+We love Unreal. But for this project: stylized graphics, smaller budget, smaller file sizes, and better mobile optimization pointed us toward Unity. It fits.
 
 [SECONDARY]
 _Add more details here._

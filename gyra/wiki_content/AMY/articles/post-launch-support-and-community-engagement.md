@@ -10,10 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Following Amy's Escape's release, the development team will actively engage with the community, providing updates, bug fixes, and addressing player feedback. Regular Q&A sessions, developer diaries, and livestreams will maintain a strong connection with players and showcase the team's dedication to providing an exceptional gaming experience.
-
-
-6- Innovative Difficulty System: The Non-RNG Approach
+After release: updates, bug fixes, Q&As, developer diaries, and livestreams. We stay engaged with the community.
 
 [SECONDARY]
 _Add more details here._

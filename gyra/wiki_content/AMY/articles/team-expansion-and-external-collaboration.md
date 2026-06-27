@@ -13,7 +13,7 @@ strength=?
 
 
 [MAIN_SECTION]
-We aim to grow our LATAM-based team from the current 4 members to a total of 10 talents for 2 years, with an average salary + spending (including insurance and repairs) of $2,000 per month per worker. This will cover most in-house development costs. Additionally, we will allocate part of the budget to hire external companies to assist with the large volume of assets required for the game.
+We're growing our LATAM-based team from 4 to 10 people over 2 years, at an average of $2,000/month per person (including insurance and repairs). The rest of the budget covers external companies for the large asset volume the game requires.
 
 [SECONDARY]
 _Add more details here._

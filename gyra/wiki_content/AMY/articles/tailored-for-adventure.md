@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Blackjack is an ideal system for adventure games, enabling writers to create engaging and immersive stories that take into account even the smallest player actions. Its simple editor and innovative card-based system make it easy for writers to create dynamic, branching stories that keep players engaged from beginning to end.
+Blackjack is built for adventure games. It tracks even small player actions and adjusts accordingly. Writers use the editor directly; the card system handles branching without the complexity getting out of control.
 
 [SECONDARY]
 _Add more details here._

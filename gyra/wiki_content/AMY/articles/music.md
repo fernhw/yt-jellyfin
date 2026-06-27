@@ -13,7 +13,7 @@ platform=?
 
 
 [MAIN_SECTION]
-Amy's Escape's atmospheric soundtrack, inspired by composers Kevin Penkin (Made in Abyss) and Christopher Larkin (Hollow Knight), perfectly complements the game's mood and scenarios.
+The soundtrack takes cues from Kevin Penkin (Made in Abyss) and Christopher Larkin (Hollow Knight).
 
 [SECONDARY]
 _Add more details here._

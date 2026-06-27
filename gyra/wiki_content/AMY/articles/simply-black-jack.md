@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The system's editor is simple to use, enabling writers to create organic and dynamic stories easily. All actions, dialogues, and events can be gated with the system's Blackjack Cards. This card-based system grants users an invisible Blackjack card when selecting a dialogue option or listening to a conversation, allowing for ever-changing and dynamic storytelling.
+Writers use a simple editor. All actions, dialogues, and events run through Blackjack Cards. The system grants an invisible card when a player chooses a dialogue option or hears a conversation, which gates what happens next.
 
 [SECONDARY]
 _Add more details here._

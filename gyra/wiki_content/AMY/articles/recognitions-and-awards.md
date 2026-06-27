@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Overall, game awards can be a great way to boost sales and marketing efforts for video games. They provide increased visibility, credibility, differentiation, positive word of mouth, and press coverage, all of which can help drive sales and grow a fanbase.
+Awards drive visibility, credibility, word of mouth, and press coverage. All of that affects sales.
 
 [SECONDARY]
 _Add more details here._
