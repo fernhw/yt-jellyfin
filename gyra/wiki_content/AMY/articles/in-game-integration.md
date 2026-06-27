@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The ARG will be seamlessly integrated into the game, with clues and messages hidden within the game world that Melina left in her computer.
+Clues from the ARG are hidden in the game world. Messages Melina left on her computer.
 
 [SECONDARY]
 _Add more details here._

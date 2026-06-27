@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-One way for players to gauge their progress is by observing which characters end up at the Liminal Bar. If a character does not appear in the bar after being saved, it indicates that the player solved their related puzzle in a manner that did not lead to the character's personal transformation or improvement.
+If a character isn't at the bar, you didn't get the good outcome for them. Their puzzle was solved, but not the way that helped.
 
 [SECONDARY]
 _Add more details here._
