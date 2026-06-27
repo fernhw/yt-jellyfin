@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The bird is a significant character in the game and will interact with Amy by perching on her hands. To achieve this, we will include a set of animations for Amy's arms and hands when the bird is perched on them. These animations will be added separately to avoid any interference with Amy's other movements.
+[Darby](darby-glowing-bird.md) perches on Amy's hands. We use a separate animation set for Amy's arms when she's carrying the bird, so it doesn't conflict with her other movement animations.
 
 [Needs an image]
 

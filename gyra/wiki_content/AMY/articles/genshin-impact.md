@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The Genshin Impact team faced challenges with Unity's default physics and graphics. They overcame these limitations by developing custom solutions for physics, collisions, and rendering. Their modifications resulted in a visually stunning game that runs smoothly across devices, demonstrating the engine's potential when tailored to a project's needs.
+Genshin Impact hit Unity's physics and rendering limits hard. They worked around them by writing custom physics, collision, and rendering systems. The result shows what the engine can do when you stop relying on its defaults.
 
 [SECONDARY]
 _Add more details here._

@@ -1,6 +1,6 @@
 [META]
-title=Statuettes For Larger Characters
-authors=Unknown
+title=Fettles
+authors=Fernando Holguin
 template=generic
 status=?
 owner=?
@@ -10,17 +10,15 @@ notes=?
 
 
 [MAIN_SECTION]
-For characters too large to enter the [Liminal Bar](the-liminal-bar.md) in person, a detailed statuette of them appears on the bar instead. Same outcome, different scale.
+Characters too large to enter the [Liminal Bar](the-liminal-bar.md) in person are represented by a Fettle placed on the bar instead.
 
 [SECONDARY]
 ## Overview
-
 The [Liminal Bar](the-liminal-bar.md) has a standard door. [Baya Ross](baya-ross.md) is twelve metres tall. [Julianne Wellington](julianne-wellington.md) is nine metres. The door does not accommodate this.
 
-For characters of this scale who have received a good-path resolution, the bar receives a statuette, a small, accurate figure placed on the counter or a shelf. The statuette is detailed enough to be recognisable. It is not a consolation prize. It is the same acknowledgment, at a different size.
+A Fettle is a small accurate figure of the character. It appears on the counter or a shelf when that character has reached a good-path resolution. No Fettle means the player has not reached that ending with that character — either the interaction has not happened or it did not go well.
 
-The statuettes serve a secondary function as a visual tracker: the player can survey the bar's counter and shelves to see which large characters have been resolved well and which have not. It is a quiet scoreboard at the edge of a room that is otherwise just a bar.
+The Fettles function as a passive tracker. The player can look at the bar and read immediately who has been resolved and who has not.
 
 [REFERENCES]
-
 

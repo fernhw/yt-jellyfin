@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Studio High Ground may be acquired by a more prominent game development studio or publisher that recognizes the potential of Amy's Escape and the team behind it. This acquisition would provide investors with a return on their investment and the opportunity for the team to continue developing games under the new ownership.
+Studio High Ground could be acquired by a larger studio or publisher. That gives investors a return and the team a chance to keep making games under new ownership.
 
 [SECONDARY]
 _Add more details here._

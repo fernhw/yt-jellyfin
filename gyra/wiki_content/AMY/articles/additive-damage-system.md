@@ -13,25 +13,25 @@ owner=?
 
 
 [MAIN_SECTION]
-Another system that will give a new touch of realism to our game is the damage system. Throughout the gameplay, Amy will be involved in a series of dangerous situations that will result in, for example, her clothes getting dirty or having marks of wounds. To achieve this, we will design a system that will change Amy's textures to add these details as the game progresses and the player makes physical decisions that affect the character.
+Amy takes damage visually. Clothes get dirty. Skin marks up. The texture system changes her look as the game progresses based on what she goes through.
 
-Purple stains on apron: noticeable stains that result from contact with a bruised area of the body.
-Mud: dirt and soil that stick to clothing and skin.
-Cut on the face: a visible wound or injury on the face caused by a sharp object.
-Burns on hands: visible injuries to the skin caused by contact with a hot object or flame.
+Purple stains on apron: bruise contact.
+Mud: fell, crawled, went somewhere she shouldn't.
+Cut on the face: sharp object.
+Burns on hands: fire or hot surface.
 
 (From left to right: clean, burnt hands, messed hair, hurt legs)
 
-Dirt: loose soil or earth that sticks to clothing and skin.
-Leg wounds: injuries on the legs caused by cuts, scrapes, or other physical trauma.
-Hand wounds: injuries on the hands caused by cuts, scrapes, or other physical trauma.
-Disheveled hair: messy or tangled hair resulting from physical activity or environmental conditions.
+Dirt: general grime.
+Leg wounds: cuts or scrapes on the legs.
+Hand wounds: cuts or scrapes on the hands.
+Disheveled hair: rough situations.
 
-Torn or worn sleeves: visible damage to the sleeves of Amy's clothing caused by physical activity or environmental conditions.
-Torn or worn skirt hem: visible damage to the hem of Amy's skirt caused by physical activity or environmental conditions.
-Hole in hand: a visible wound or injury on the hand caused by a sharp object or impact.
-Branch scars: visible scars on the skin caused by scratches or cuts from tree branches or other plants.
-Branch on head: A visible injury on the head caused by a sharp or blunt object, such as a branch or rock.
+Torn or worn sleeves: physical wear.
+Torn or worn skirt hem: same.
+Hole in hand: puncture wound.
+Branch scars: scratches from flora.
+Branch on head: blunt or sharp head injury.
 
 [SECONDARY]
 _Add more details here._

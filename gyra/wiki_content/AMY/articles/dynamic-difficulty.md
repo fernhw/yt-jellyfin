@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The game adjusts its difficulty based on player actions and choices, providing a personalized experience.
+The game tracks what you're doing and adjusts accordingly.
 
 [SECONDARY]
 _Add more details here._

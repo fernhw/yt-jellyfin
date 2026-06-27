@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-At High Ground Studio, we prioritize projecting emotions through body and facial expressions. Our character, Amy, can move her eyes to direct the player's attention to important elements within a scene, adding a new level of realism to the game.
+Amy's eyes move to things that matter. It's part of how the game guides attention without using UI markers.
 
 [SECONDARY]
 _Add more details here._

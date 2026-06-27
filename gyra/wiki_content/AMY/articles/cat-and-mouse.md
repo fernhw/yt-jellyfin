@@ -13,7 +13,7 @@ owner=?
 
 
 [MAIN_SECTION]
-Overview: "Cat and Mouse" mechanic central to our active stealth gameplay, drawing inspiration from the timeless charm of Tom and Jerry. Players engage with slow-moving enemies in dynamic interactions, performing clever actions like snatching items or tying shoelaces undetected. This encourages creativity and offers an enjoyable, immersive experience.
+The Cat and Mouse mechanic is the core of the stealth. Think Tom and Jerry. Enemies move slowly, Amy moves carefully. You steal things, you tie shoelaces, you do it without being seen. There's no one right way.
 
 [SECONDARY]
 _Add more details here._

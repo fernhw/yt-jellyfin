@@ -19,12 +19,12 @@ relationships
 
 
 [MAIN_SECTION]
-A small, loud, and angry woman, [Clementine](clementine-wellington.md) runs the [hotel's kitchen](clementines-kitchen.md). Her skills were honed through worldwide travels before settling at the prestigious [Ross Hotel](ross-hotel.md).
+A small, loud, and angry woman. She runs the [hotel's kitchen](clementines-kitchen.md). Cooked all over the world before landing at the [Ross Hotel](ross-hotel.md) and hasn't left since.
 
 [SECONDARY]
 ## Overview
 
-Clementine Wellington is the hotel cook and the wife of [Julianne Wellington](julianne-wellington.md). She has held the cook position for as long as the hotel has functioned with a kitchen, which is to say for most of its existence. [Clementine's Kitchen](clementines-kitchen.md) is her workspace and effectively her home; she is always in it or directly adjacent to it.
+Clementine Wellington is the hotel cook and [Julianne Wellington](julianne-wellington.md)'s wife. She's been in that kitchen for most of the hotel's existence. It's her workspace and her home.
 
 Her marriage to [Julianne](julianne-wellington.md) is long, loud, and ongoing. She hears what she wants to hear. He hears what he wants to hear. The quarrel between them has been running for so long that it has become part of the hotel's ambient noise, like the pipes or the smell of the [Kubler](the-kubler.md)'s flowers.
 

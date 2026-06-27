@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The controller remapping tool allows players to fully customize their control scheme to suit their preferences and needs. By offering the ability to reassign button functions, we ensure that our game can accommodate various playstyles and physical abilities, making it accessible to a wider range of gamers.
+Remap every button. Adjust the control scheme to match your playstyle or physical needs.
 
 [SECONDARY]
 _Add more details here._

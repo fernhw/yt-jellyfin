@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-An essential aspect of any investment opportunity is providing investors with a clear exit strategy. This ensures that they understand the potential return on their investment and the various paths available to them to realize that return. Studio High Ground has outlined several possible exit strategies for investors in the development and success of Amy's Escape.
+Studio High Ground has outlined several exit paths for investors. These cover the range from a successful launch through acquisition or IPO.
 
 [SECONDARY]
 _Add more details here._

@@ -16,7 +16,7 @@ first_appearance=?
 
 
 [MAIN_SECTION]
-Many of the puzzles are intertwined with the lives and stories of the hotel's inhabitants. By learning about their personalities, motivations, and relationships, players can piece together clues and find solutions to seemingly impossible challenges.
+Most puzzles are built around the characters. You learn who they are, what they want, what they're afraid of. That's how you solve things.
 
 [SECONDARY]
 _Add more details here._

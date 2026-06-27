@@ -19,7 +19,7 @@ relationships
 
 
 [MAIN_SECTION]
-A firebird from ancient times, Darby is a nocturnal creature that emits light to see in dark environments. While these birds are often associated with guiding weary travelers, they are more akin to sparkly cockatoos. Darby is well-trained.
+Darby is a firebird — a bioluminescent nocturnal species engineered by [Dr. Blueth Needham](dr-elizabeth-blueth-needham.md). These birds are often associated with guiding weary travelers through the dark. More akin to sparkly cockatoos. Darby is well-trained.
 
 [SECONDARY]
 ## What Darby Is

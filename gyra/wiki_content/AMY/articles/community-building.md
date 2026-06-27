@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The ARG is designed to promote conversation and collaboration, fostering a strong community of players working together to unravel the mystery.
+The ARG runs through the community. Players share findings and figure it out together.
 
 [SECONDARY]
 _Add more details here._

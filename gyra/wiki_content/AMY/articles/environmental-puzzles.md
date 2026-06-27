@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The hotel itself is a living, breathing character in the game, with its architecture and interior design playing a significant role in the puzzles. Players will need to interact with their surroundings, manipulate objects, and use the environment to solve puzzles and progress through the game.
+The hotel is the puzzle half the time. You use the rooms, the furniture, the layout. Move things. Climb things. The architecture matters.
 
 [SECONDARY]
 _Add more details here._

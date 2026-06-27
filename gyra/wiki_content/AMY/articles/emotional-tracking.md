@@ -10,9 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The game will feature meticulous tracking of Amy's emotions through her body and facial actions. We are working hard on the 3D modeling of Amy to ensure that she has perfect facial expressions when she is sad, angry, happy, and other emotions. 
-
-Overall, we believe that our focus on Amy's emotions and their impact on gameplay will create a more immersive and engaging experience for the player.
+Amy's emotions read through her face and body. Her expressions change with what she's going through — fear, grief, anger, relief. It's built into the 3D model.
 
 [SECONDARY]
 _Add more details here._

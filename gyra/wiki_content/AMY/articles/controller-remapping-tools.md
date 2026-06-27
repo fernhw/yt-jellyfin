@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Our team is committed to providing an accessible and enjoyable experience for all players, regardless of their choice of platform or input device. To achieve this goal, we have developed a robust controller remapping tool that is available across all versions of the game.
+Full controller remapping is available in every version of the game. Reassign anything to suit your setup or physical needs.
 
 [SECONDARY]
 _Add more details here._

@@ -26,7 +26,7 @@ is the one-man show. owner, author, writer, director, producer, and performer of
 
 Aaron Kane is an engineer and scientist, described by the development team as a self-insert of the game's creator. He has been in the [Ross Hotel](ross-hotel.md) long enough that his original body was no longer adequate for his purposes, so he distributed his consciousness and personhood across approximately forty puppet constructs. Most of them are decorative, serving as background figures and props in the theater he runs in the hotel's upper floors. Eight of them can hold a conversation.
 
-He wanted to be left alone in his own loop. That is the whole of it. He found the hotel, found the loops, found a configuration he could maintain indefinitely, and built a theater because he had the skills and the time and because creating something felt better than not creating something. He does not consider himself a threat to anyone. [Amy](amelia-amy-loevinger.md) has to get through his theater to reach the upper floors, which means she is, from his perspective, a complication.
+He wanted to be left alone in his own loop. That is the whole of it. He found the hotel, found a loop that worked, and built a theater. He had the skills. He had the time. Creating something felt better than not. He does not consider himself a threat to anyone. [Amy](amelia-amy-loevinger.md) has to get through his theater to reach the upper floors, which means she is, from his perspective, a complication.
 
 ## The Theater
 
@@ -40,7 +40,7 @@ In the ending the game considers good for Kane's arc, the miners of [Ingersole](
 
 ## Voice
 
-The English voice wishlist for Kane includes Mark Hamill. He is a man who has been alone with his own ideas for a very long time and has become entirely comfortable with the result, which could go many directions depending on performance.
+The English voice wishlist for Kane includes Mark Hamill. He's been alone with his own ideas for a very long time and is completely fine with it. Performance direction for this can go many places.
 
 [REFERENCES]
 

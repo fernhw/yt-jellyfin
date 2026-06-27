@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Establishing partnerships with gaming media outlets, such as IGN, GameSpot, and Kotaku, will help generate in-depth coverage, previews, and reviews. By offering exclusive interviews with the development team and behind-the-scenes looks at the game, Amy's Escape can generate buzz and excitement within the gaming community.
+We're targeting partnerships with IGN, GameSpot, and Kotaku for coverage, previews, and reviews. Exclusive interviews and behind-the-scenes access are part of the pitch.
 
 [SECONDARY]
 _Add more details here._

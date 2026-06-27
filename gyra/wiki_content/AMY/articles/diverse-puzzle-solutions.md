@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-As a player, you'll enjoy the freedom to solve puzzles in different ways, offering multiple outcomes and enhancing replayability. Keep in mind that each solution has consequences, and finding a perfect answer that benefits everyone can be challenging. Your choices throughout the game will accumulate, ultimately shaping the final outcome.
+Puzzles have multiple solutions. Most don't have a clean answer that helps everyone. Your choices accumulate and shape the ending.
 
 [SECONDARY]
 _Add more details here._

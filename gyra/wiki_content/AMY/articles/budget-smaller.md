@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Unity is more accessible for smaller teams and indie developers due to its lower cost of entry compared to Unreal Engine. Unity offers a free version with all core features, while Unreal Engine takes a 5% royalty on gross revenue after the first $1 million. Unity's Asset Store also provides affordable premade assets, helping developers save time and money during the development process.
+Unity costs less to get into than Unreal. Free version covers all core features. Unreal takes 5% royalties after the first $1M in gross revenue. Unity's Asset Store has affordable premade assets, which saves time on a smaller team.
 
 [SECONDARY]
 _Add more details here._

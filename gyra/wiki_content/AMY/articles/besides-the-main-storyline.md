@@ -13,7 +13,7 @@ location=?
 
 
 [MAIN_SECTION]
-Numerous side quests and hidden lore await players, offering a rich and immersive world that will keep them engaged for hours on end.
+Side quests and hidden lore are spread through the whole hotel. Most of it you can miss entirely on a first run.
 
 [SECONDARY]
 _Add more details here._

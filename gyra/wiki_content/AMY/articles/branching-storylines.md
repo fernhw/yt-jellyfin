@@ -13,7 +13,7 @@ location=?
 
 
 [MAIN_SECTION]
-The game's narrative is designed to accommodate multiple branching paths, ensuring that each player's experience will be unique. By exploring different choices and outcomes, players can delve deeper into the hotel's secrets and uncover the truth behind the mysterious events that led to Amy's predicament.
+The game has multiple paths through it. Choices you make change what characters do, what information you find, and which ending fires. You can play it twice and see almost completely different things.
 
 [SECONDARY]
 _Add more details here._

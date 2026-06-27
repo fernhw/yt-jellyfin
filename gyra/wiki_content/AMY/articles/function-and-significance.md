@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-The bar serves as a hub area, providing refuge to characters Amy saves throughout the game. The presence of these characters in the bar signifies that players have successfully resolved their respective puzzles, leading them to personal growth and breaking them free from their infinite loops.
+The bar is where characters go when Amy gets it right. Each one joining the crowd means their puzzle was solved the good way — they're out of their loop.
 
 [SECONDARY]
 _Add more details here._

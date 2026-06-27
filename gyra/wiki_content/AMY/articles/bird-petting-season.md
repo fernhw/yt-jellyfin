@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Amidst the stealth and strategy, there are moments of serenity. Engaging with a bird shifts the perspective, overlaying a close-up of the creature. It's not just about viewing the bird but feeling its presence, sensing its delicate feathers, and experiencing the gentle act of petting, as Amy does.
+You can pet [Darby](darby-glowing-bird.md). The camera shifts to a close-up. You feel the feathers. Amy does it slowly.
 
 [SECONDARY]
 _Add more details here._

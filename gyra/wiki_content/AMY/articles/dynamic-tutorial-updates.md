@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-To further enhance the user experience, our controller remapping system also includes dynamic tutorial updates. When players modify their control scheme, the in-game tutorials will automatically adjust to reflect the updated button assignments. This feature ensures that players receive accurate guidance tailored to their customized control setup, reducing confusion and promoting a seamless gaming experience.
+When you remap controls, the in-game tutorials update to match your layout. You see your actual buttons in the instructions, not the defaults.
 
 [SECONDARY]
 _Add more details here._

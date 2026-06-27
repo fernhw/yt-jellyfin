@@ -20,7 +20,7 @@ relationships
 
 
 [MAIN_SECTION]
-A woman of simple needs, Dr. Blueth enjoys playing solitaire and drinking tea. She is the proud caretaker of 543 insects and has remained solitary for an extended period, causing her playing cards to lose their color.
+A woman of simple needs. She plays solitaire, drinks tea, and maintains 543 insects. She's been alone long enough that her playing cards have no color left.
 
 [SECONDARY]
 ## Overview

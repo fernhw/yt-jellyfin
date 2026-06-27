@@ -10,8 +10,9 @@ notes=?
 
 
 [MAIN_SECTION]
-Bumping into surfaces/tripping
-Amy's ability to vary her breathing adds realism, ranging from calm to heavy breathing. Amy's eye movements direct attention to important elements, increasing realism. Amy's ability to lean on surfaces enables the user to feel character fatigue. Amy stumbles and trips when encountering obstacles for increased realism and anxiety.
+Amy breathes naturally — calm while walking, labored after a sprint or a scare. Her eyes move to things worth looking at. She leans on walls when she's tired. She trips.
+
+All of it is built into her movement system.
 
 [SECONDARY]
 _Add more details here._

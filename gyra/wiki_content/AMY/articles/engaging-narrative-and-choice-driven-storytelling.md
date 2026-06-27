@@ -13,7 +13,7 @@ location=?
 
 
 [MAIN_SECTION]
-Amy's Escape features a rich, character-driven narrative that evolves based on the choices players make throughout the game. These choices can lead to different outcomes, revealing more about the hotel's mysterious past and its enigmatic residents.
+The story changes based on what you do. Your choices open or close paths into the hotel's history and the people inside it.
 
 [SECONDARY]
 _Add more details here._

@@ -13,8 +13,7 @@ owner=?
 
 
 [MAIN_SECTION]
-With the Queen Aphid in her possession, Amy will be followed by the male aphids as she traverses the ingersole Mines. This will make her entirely immune to the Kubler Shrub infection, allowing her to bypass the main puzzle of the City of Quitters without harming Darby. In addition, the Moonlight Aphids enable Amy to access previously unreachable areas in the mines, including the location of the final lost Seed of Beginnings.
-The Moonlight Aphids add an intriguing layer of gameplay, offering players a unique and visually captivating collectible that provides significant advantages when fully obtained.
+With the Queen Aphid, Amy is followed by the male aphids through the [Ingersole Mines](ingersole-caverns.md). This makes her immune to the Kubler Shrub infection and opens access to otherwise blocked areas, including the location of the final lost Seed of Beginnings.
 
 [SECONDARY]
 _Add more details here._

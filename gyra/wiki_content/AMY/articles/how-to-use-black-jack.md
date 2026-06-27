@@ -26,7 +26,6 @@ Optimization: to avoid GC errors we load in the bootstrap all directions and run
 
 
 The Blackjack-to-engine integration enables all parts of the game design, from changing cameras to removing a character or implementing full real-time cutscenes.
-By following these steps, writers and designers can easily create dynamic and engaging stories that incorporate all player actions and create a truly immersive gaming experience.
 
 [SECONDARY]
 _Add more details here._

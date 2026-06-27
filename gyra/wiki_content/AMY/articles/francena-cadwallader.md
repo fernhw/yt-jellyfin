@@ -18,7 +18,7 @@ relationships
 
 
 [MAIN_SECTION]
-A renowned dress designer and wife of [Dr. Daniel Cadwallader](dr-daniel-cadwallader.md), Francena was given a personal design studio at the [Ross Hotel](ross-hotel.md) as a condition of her relocation. Despite having many fans in the past, she has not released a new design in 80 years, causing most of her followers to pass away.
+A fashion designer and [Daniel Cadwallader](dr-daniel-cadwallader.md)'s wife. The [Ross Hotel](ross-hotel.md) built her a studio to get Daniel to relocate. She's been in it ever since. She hasn't released a new design in eighty years. Most of her former admirers have died of old age.
 
 [SECONDARY]
 ## Overview

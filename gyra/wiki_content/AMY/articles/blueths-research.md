@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-[Blueth](dr-elizabeth-blueth-needham.md) was among the group of scientists called upon by [Albert](albert-ross.md) to examine the seeds found in the mines. After witnessing the mishaps caused by the experimentation, she created natural enemies for the [Kubler](the-kubler.md) plants called [aphids](the-12-moonlight-aphids.md). However, despite her efforts, these insects were ineffective against the plants and wandered aimlessly around the map for years.
+[Blueth](dr-elizabeth-blueth-needham.md) was part of the group [Albert](albert-ross.md) called in to study the seeds from the mines. After watching what the experiments did to people, she bred natural enemies for the [Kubler](the-kubler.md) plants: insects she called [aphids](the-12-moonlight-aphids.md). They didn't work. The plants ignored them. The aphids wandered the hotel for years.
 
 [SECONDARY]
 _Add more details here._

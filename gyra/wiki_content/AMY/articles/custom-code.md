@@ -13,7 +13,7 @@ platform=?
 
 
 [MAIN_SECTION]
-Unity's powerful scripting system allows developers to create custom code to add new functionality to a game.
+Unity's scripting system is open. You can write custom code for anything the engine doesn't handle natively.
 
 [SECONDARY]
 _Add more details here._

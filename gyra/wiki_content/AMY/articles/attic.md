@@ -14,16 +14,9 @@ The attic is the second-to-last floor of the hotel, and it's primarily used as a
 
 [SECONDARY]
 ## Overview
-The attic is a long, irregular space under the hotel's roof, the second-to-last floor, used for storage and for the private arrangements of the two most unusual residents on the upper levels. A hundred and seventy years of occupation have left it full of covered furniture, trunks, labelled boxes for events that have already occurred, and items belonging to guests who have forgotten they own them.
+Half of it is just storage. A century and a half of covered furniture, labeled boxes for events that already happened, things guests forgot they owned. The other half is [Dr. Daniel Cadwallader](dr-daniel-cadwallader.md) and [Francena Cadwallader](francena-cadwallader.md), which is a different category entirely.
 
-It is also where [Dr. Daniel Cadwallader](dr-daniel-cadwallader.md)'s head hangs from the ceiling, and where [Francena Cadwallader](francena-cadwallader.md) has been making a dress since the mid-twentieth century.
-
----
-
-## Atmosphere
-The attic is divided between the ordinary accumulation of a very old building and two presences that are not ordinary at all. [Cadwallader](dr-daniel-cadwallader.md) occupies the far corridor, his neck a pale line disappearing into a crack above [Francena](francena-cadwallader.md)'s tailoring room door. The shadows here are different from the rest of the [Ross Hotel](ross-hotel.md): deeper, less decorated, shaped around things that have been in place for a long time.
-
----
+Cadwallader's neck disappears into a crack in the ceiling above Francena's tailoring room. Francena is at the table just below. The proximity is not an accident.
 
 ## The Kubler Presence
 The attic has significant [Kubler](the-kubler.md) growth: red-flowering patches along the walls and lower sections of the floor that emit a smell of rotting meat and cause burning on contact. Full attic navigation without [Darby](darby-glowing-bird.md) is impossible in [Chapter 1](chapter-1.md). Darby's bioluminescence temporarily suppresses the flowers' active stage, creating a path.

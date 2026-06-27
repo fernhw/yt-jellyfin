@@ -11,7 +11,7 @@ notes=?
 
 [MAIN_SECTION]
 BlackJack:
-BlackJack is our tailor-made event editor used for managing dynamic dialog and game events. The game continuously monitors player actions and adapts dialog and events accordingly, delivering a genuinely immersive experience. With BlackJack, we were able to establish all main events within six weeks, resulting in a polished alpha version of the game.
+BlackJack is our custom event editor. It manages dialog and game events, tracks what the player does, and adapts in real time. We had all the main events built in six weeks using it, which gave us a functional alpha fast.
 
 [SECONDARY]
 _Add more details here._

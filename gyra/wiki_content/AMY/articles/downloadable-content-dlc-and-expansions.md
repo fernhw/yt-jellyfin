@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-We're also charting audacious territory with an M-rated DLC. This isn't merely about added challenges. It unveils a game-changing limb-loss mechanism: when Amy's caught, she might lose a limb, radically altering gameplay dynamics. It's a daring move, crafted to stir conversation and solidify "Amy's Escape" as a standout title.
+There's an M-rated DLC in the plans. When Amy gets caught in that mode, she can lose a limb. It changes how you play. It's a deliberate conversation piece.
 
 [SECONDARY]
 _Add more details here._

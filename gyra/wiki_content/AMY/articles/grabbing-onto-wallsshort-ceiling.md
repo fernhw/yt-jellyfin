@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-We've added a new feature to the game where Amy will animate herself when approaching a wall or other tall objects. For instance, she will rest her hand on the surface as she walks by. This adds realism to the game and prevents Amy from standing still when colliding with a wall by allowing her to support herself with her arms.
+Amy reaches out to surfaces as she passes them. She puts her hand on walls as she walks by. It prevents the dead-stop-at-wall look and makes her feel like she actually occupies the space.
 
 [SECONDARY]
 _Add more details here._

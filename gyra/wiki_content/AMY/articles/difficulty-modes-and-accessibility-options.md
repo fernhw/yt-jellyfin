@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Amy’s Escape has four very unique ways of handling difficulty.
+Amy's Escape has four distinct ways of handling difficulty.
 
 Instead of the usual Easy, Medium, and Hard, we opted for a system where difficulty changes the game itself, not just numbers.
 

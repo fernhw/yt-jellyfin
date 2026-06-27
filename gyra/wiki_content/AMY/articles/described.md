@@ -10,11 +10,11 @@ notes=?
 
 
 [MAIN_SECTION]
-Amy's Escape is a terrifying and engrossing story-driven game about loss, trauma, and being trapped by a hell of your own making. Players are drawn into a twisted world full of eccentric characters, each with their own secrets and tragedies that unfold as you play.
+Amy's Escape is a story-driven game about loss, trauma, and being trapped by a hell of your own making. You're thrown into a hotel full of people who have been there too long, each with secrets and tragedies layered under the hospitality.
 
-The story's five chapters are based on the five stages of grief: denial, anger, bargaining, depression, and acceptance. As they progress through the chapters, players will encounter characters who are in denial as well as characters who are eager for their oppressive fate. The story is intended to draw players into the game's oppressive world by exploring the characters' stories and choices, which lead to a variety of endings and experiences.
+The five chapters map to the five stages of grief: denial, anger, bargaining, depression, and acceptance. Each chapter is built around a character or group that embodies their stage, whether they're still fighting it or have given up entirely.
 
-The story is nihilistic and cruel in hidden ways; the charm and jokes hide the 18 overlapping tragedies, but it is not a happy game that will end well unless you work for it; the game is a puzzle in itself.
+The game is nihilistic and cruel in hidden ways. The charm and the jokes cover 18 overlapping tragedies. It doesn't end well unless you work for it. The game itself is a puzzle.
 
 [SECONDARY]
 _Add more details here._

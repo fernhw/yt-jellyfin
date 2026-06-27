@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-​​At the hotel, we find ourselves in a large kitchen with big pots and cooking utensils. It's a cramped space that feels like a huge oven when they start cooking.
+A large kitchen in the basement of the hotel. Big pots, heavy utensils, cramped space. When the cooking starts it feels like standing inside an oven.
 
 [SECONDARY]
 _Add more details here._

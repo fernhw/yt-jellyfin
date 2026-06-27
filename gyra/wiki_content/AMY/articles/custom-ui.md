@@ -12,7 +12,7 @@ mockup=?
 
 
 [MAIN_SECTION]
-Developers can create custom UI elements, such as buttons and sliders, to enhance the user experience for modders and players alike.
+Custom UI elements — buttons, sliders, whatever the game needs. Not limited to Unity's defaults.
 
 [SECONDARY]
 _Add more details here._

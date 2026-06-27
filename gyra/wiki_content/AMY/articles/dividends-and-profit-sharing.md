@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-Depending on the success of Amy's Escape and subsequent projects, Studio High Ground may choose to distribute dividends to investors or implement a profit-sharing model that allows investors to receive a portion of the company's profits.
+If the game performs, Studio High Ground may distribute dividends or offer profit-sharing to investors.
 
 [SECONDARY]
 _Add more details here._

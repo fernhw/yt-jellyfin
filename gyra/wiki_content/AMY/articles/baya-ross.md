@@ -44,7 +44,7 @@ The Baya puzzle in Chapter 2 has three resolutions:
 
 ## Symbolic Role
 
-Baya is the chapter's answer to what grief's anger looks like when it isn't directed at anyone: a woman who became monstrous not through cruelty or choice but through the absence of the one thing that would have stopped her. Albert is not there. Martha can no longer help. She is hungry and alone and technically in charge of a hotel that no longer makes sense.
+Baya is the chapter's answer to what grief looks like when it isn't directed at anyone. A woman who became monstrous not through cruelty but through absence. Albert is gone. Martha can no longer help. She's hungry, alone, and technically in charge of a hotel that no longer makes sense.
 
 [REFERENCES]
 

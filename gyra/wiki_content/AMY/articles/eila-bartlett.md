@@ -19,7 +19,7 @@ relationships
 
 
 [MAIN_SECTION]
-The protector of the [sky garden](the-sky-garden.md), Eila spends his days caring for the plants as if they were his own children. His love for plants is so strong that he has become one himself.
+The protector of the [sky garden](the-sky-garden.md). He tends those plants with the care of someone who has spent two centuries thinking about them. He also became one, which he considers a separate matter.
 
 [SECONDARY]
 ## Overview

@@ -20,7 +20,7 @@ relationships
 
 
 [MAIN_SECTION]
-a highly renowned doctor hired to treat [Jone Ross'](jone-ross.md)' severe illness, Dr. Cadwallader initially refused to move to [Albert Ross](albert-ross.md)' household but eventually agreed after being offered financial incentives. He dislikes confined spaces and has been waiting for his wife to find the perfect dress for several decades.
+Brought in to treat [Jone Ross](jone-ross.md)'s illness. He refused twice before the money was right. He dislikes confined spaces and has been waiting for his wife to finish a dress for several decades.
 
 [SECONDARY]
 ## Overview

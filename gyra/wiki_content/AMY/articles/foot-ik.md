@@ -10,7 +10,7 @@ notes=?
 
 
 [MAIN_SECTION]
-We believe it's crucial for characters to adapt to different surfaces, like slopes or stairs. Our game includes this feature to ensure that Amy's legs and feet adjust correctly to any surface, adding to the realism of the game.
+Amy's feet and legs adapt to any surface — slopes, stairs, uneven ground.
 
 [Needs an image]
 
