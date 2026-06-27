@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-27
 
-> *Good morning! Here's what landed on Saturday, June 27, 2026 at 11:43 AM.*
-> **YT Mirror:** 639.38 GB used · 0.57 TB free
+> *Good afternoon! Here's what landed on Saturday, June 27, 2026 at 03:20 PM.*
+> **YT Mirror:** 642.10 GB used · 0.57 TB free
 
 ## Priority Videos
 
@@ -11,6 +11,10 @@ No priority uploads today — your favorites are taking a break.
 
 ## Non-Priority Videos
 
+- **Family Matters | Adventure Is Nigh! - The Slow Walk Home | Ep. 4** — *Second Wind* · downloaded 03:15 PM · podcastable
+- **We need to talk about this woman** — *Asmongold TV* · downloaded 03:13 PM · not podcastable
+- **I finally beat Star Fox after all these years..** — *Asmongold TV* · downloaded 03:12 PM · not podcastable
+- **Sneakerheads Are The Worst...** — *Papa Meat* · downloaded 03:05 PM · not podcastable
 - **I Changed My Opinion... (Again)** — *Karsten Runquist* · downloaded 11:41 AM · not podcastable
 - **He f*cked around and found out..** — *Asmongold TV* · downloaded 11:40 AM · not podcastable
 - **VFX Artists React to Bad & Great CGi 231** — *Corridor Crew* · downloaded 11:38 AM · not podcastable
