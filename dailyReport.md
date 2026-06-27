@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-27
 
-> *Good afternoon! Here's what landed on Saturday, June 27, 2026 at 03:20 PM.*
-> **YT Mirror:** 642.10 GB used · 0.57 TB free
+> *Good evening! Here's what landed on Saturday, June 27, 2026 at 05:08 PM.*
+> **YT Mirror:** 642.42 GB used · 0.57 TB free
 
 ### Priority Videos
 
@@ -13,6 +13,7 @@ No priority uploads today — your favorites are taking a break.
 
 ### Non-Priority Videos
 
+- **Nicholas Rossi aka "Arthur Knight" is Dead... Again. - Weekly Weird News** — *Internet Today* · downloaded 05:05 PM · not podcastable
 - **Family Matters | Adventure Is Nigh! - The Slow Walk Home | Ep. 4** — *Second Wind* · downloaded 03:15 PM · podcastable
 - **We need to talk about this woman** — *Asmongold TV* · downloaded 03:13 PM · not podcastable
 - **I finally beat Star Fox after all these years..** — *Asmongold TV* · downloaded 03:12 PM · not podcastable
