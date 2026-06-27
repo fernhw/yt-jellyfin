@@ -1,7 +1,7 @@
 # What to Watch — 2026-06-26
 
-> *Good evening! Here's what landed on Friday, June 26, 2026 at 09:04 PM.*
-> **YT Mirror:** 639.42 GB used · 0.57 TB free
+> *Good evening! Here's what landed on Friday, June 26, 2026 at 10:06 PM.*
+> **YT Mirror:** 639.63 GB used · 0.57 TB free
 
 ## Priority Videos
 
@@ -12,6 +12,7 @@
 
 ## Non-Priority Videos
 
+- **Micron: WTF?** — *Gamers Nexus* · downloaded 10:05 PM · not podcastable
 - **I'M NEVER UPGRADING.** — *TechLinked* · downloaded 08:04 PM · podcastable
 - **Night Trap - Scott, Sam, Eric, Dom, Justin and the Worst Year Ever** — *Scott's Stash* · downloaded 07:04 PM · not podcastable
 - **"He Was WHITE, He DESERVED IT" The Delusional Defenders of Karmelo Anthony** — *Shoe0nHead* · downloaded 06:04 PM · podcastable · *45 days since their last upload*
