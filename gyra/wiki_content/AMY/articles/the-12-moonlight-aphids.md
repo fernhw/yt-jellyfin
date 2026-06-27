@@ -1,5 +1,5 @@
 [META]
-title=The 12 Moonlight Aphids
+title=Moonlight Aphids
 authors=Unknown
 template=generic
 status=?
@@ -28,5 +28,4 @@ The twelve jars are hidden throughout all five chapters, some behind puzzles and
 Blueth's second countermeasure attempt, in 1958, was the Firebird line, birds designed to hunt the aphids. They also failed. The last surviving Firebird is [Darby](darby-glowing-bird.md).
 
 [REFERENCES]
-
 
