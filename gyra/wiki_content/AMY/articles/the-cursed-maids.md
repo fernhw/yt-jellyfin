@@ -1,6 +1,6 @@
 [META]
 title=The Cursed Maids
-authors=Unknown
+authors=Fernando Holguin
 template=generic
 status=?
 owner=?
