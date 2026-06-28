@@ -16,7 +16,13 @@ An expansion pack that adds new content, including a side quest to collect all [
 All these have meanings. In the case of the game it will focus on making itself fun, get caught too much and we will lower difficulty like Resident evil 4 does.
 
 [SECONDARY]
-_Add more details here._
+## Notes
+
+This DLC is free. It is not a separate product — it is additional content for players who want more.
+
+The God Seeds side quest is built for fanatics: players who have already seen everything and want one more thing to find. If it ships, it unlocks a new ending not accessible in the base game. This ending is not required for completion. It exists for the people who go looking.
+
+The DLC may not ship at launch. The base game ships complete. The DLC is only worth building if the audience for it exists.
 
 [REFERENCES]
 

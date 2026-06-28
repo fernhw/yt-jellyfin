@@ -34,7 +34,17 @@ Branch scars: scratches from flora.
 Branch on head: blunt or sharp head injury.
 
 [SECONDARY]
-_Add more details here._
+## Relationship to Sins and Achievements
+
+Each stain is a record. If Amy has a mark on her, she did something. The damage state is the physical ledger of her [sins](sin-system.md) and the visual proof that an [achievement](achievements.md) condition was met.
+
+This is intentional. No gameplay systems change based on her appearance. No NPC reacts to it. No dialogue branches on it. The damage is purely visual — but it is not decorative. It is documentation. A player who knows the system can read Amy's body at any moment and reconstruct what she has done.
+
+Clean Amy and marked Amy are not different characters mechanically. They are the same run, with different histories written on them.
+
+## Dev Notes
+
+The texture layers are additive and do not reset between scenes. Once a mark is on her, it stays. This was a deliberate decision: Amy does not get to clean off what she has done by moving to the next room.
 
 [REFERENCES]
 
