@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-27",
+  "updated": "2026-06-28",
   "shows": [
     {
       "show": "Re:Zero kara Hajimeru Isekai Seikatsu",
@@ -10,7 +10,7 @@
       "week": "?",
       "status": "searching",
       "release_days": "wed",
-      "days_until": 4,
+      "days_until": 3,
       "is_complete": false,
       "thumb": "media-thumbs/show-sched-re-zero-kara-hajimeru-isekai-seikatsu.jpg"
     }
