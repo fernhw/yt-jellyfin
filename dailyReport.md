@@ -2,8 +2,8 @@
 
 ## What to Watch — 2026-06-28
 
-> *Good evening! Here's what landed on Sunday, June 28, 2026 at 09:05 PM.*
-> **YT Mirror:** 643.18 GB used · 0.57 TB free
+> *Good evening! Here's what landed on Sunday, June 28, 2026 at 10:04 PM.*
+> **YT Mirror:** 642.49 GB used · 0.57 TB free
 
 ### Priority Videos
 
