@@ -20,8 +20,6 @@ done
 
 # ── Docker compose stacks ─────────────────────────────────────
 for stack in \
-  /Users/alexander-highground/Projects/yt-jellyfin/docker/nginx \
-  /Users/alexander-highground/Projects/yt-jellyfin/docker/audiobookshelf \
   /Users/alexander-highground/Projects/nextcloud \
   /Users/alexander-highground/Projects/vaultwarden; do
   if /usr/local/bin/docker info &>/dev/null; then
@@ -31,18 +29,5 @@ for stack in \
   fi
 done
 
-# ── GYRA Flask app (port 5050) ────────────────────────────────
-lsof -iTCP:5050 -sTCP:LISTEN | awk '/Python/{print $2}' | xargs kill -9 2>/dev/null || true
-sleep 1
-cd /Users/alexander-highground/Projects/yt-jellyfin/gyra
-nohup /usr/bin/python3 app.py > /tmp/gyra.log 2>&1 &
-echo "GYRA pid=$!"
-
-# ── metricsd (port 8766) ──────────────────────────────────────
-lsof -iTCP:8766 -sTCP:LISTEN | awk '/Python/{print $2}' | xargs kill -9 2>/dev/null || true
-sleep 1
-cd /Users/alexander-highground/Projects/yt-jellyfin/web/status
-nohup /usr/bin/python3 metricsd.py > /tmp/metricsd.log 2>&1 &
-echo "metricsd pid=$!"
 
 echo "=== startup.sh DONE $(date) ==="

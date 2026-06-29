@@ -1,25 +1,13 @@
-tunnel: jellyfin-tunnel
-credentials-file: /Users/alexander-highground/.cloudflared/7c61e981-605e-4aa0-bfac-5a5f91237519.json
+tunnel: agnos-tunnel
+credentials-file: /Users/alexander-highground/.cloudflared/fa140e1c-2573-48b9-a32f-1d9922fc83aa.json
 
 ingress:
-  - hostname: gyra.fernhw.com
-    service: http://127.0.0.1:5050
-  - hostname: jellyfin.fernhw.com
-    service: http://127.0.0.1:80
-  - hostname: abs.fernhw.com
-    service: http://127.0.0.1:13378
-  - hostname: report.fernhw.com
-    service: http://127.0.0.1:8765
-  - hostname: status.fernhw.com
-    service: http://127.0.0.1:80
-  - hostname: request.fernhw.com
-    service: http://127.0.0.1:8770
   - hostname: drive.fernhw.com
     service: http://127.0.0.1:80
   - hostname: office.fernhw.com
     service: http://127.0.0.1:7991
   - hostname: vault.fernhw.com
     service: http://127.0.0.1:7992
-  - hostname: photos.fernhw.com
-    service: http://127.0.0.1:2283
+  - hostname: request.fernhw.com
+    service: http://127.0.0.1:8770
   - service: http_status:404
